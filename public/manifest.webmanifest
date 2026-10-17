@@ -3,13 +3,15 @@
   "short_name": "Clube Aurora",
   "description": "Encontros, leituras e conversas em um só lugar.",
   "lang": "pt-BR",
-  "start_url": "/#/",
+  "id": "./",
+  "start_url": "./#/",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f8f4ef",
   "theme_color": "#5b3a73",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
