@@ -31,6 +31,8 @@ npm run preview
 
 As decisões de arquitetura, permissões, modelo relacional, wireframes e backlog estão em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md). Os requisitos de produto permanecem em [`docs/ESPECIFICACAO_PRODUTO.md`](docs/ESPECIFICACAO_PRODUTO.md).
 
+Uma galeria de capturas reais da interface está disponível em [`docs/PREVIA.md`](docs/PREVIA.md), sem exigir servidor local ou deploy.
+
 ## Limites de segurança desta fase
 
 - O estado de tema é guardado apenas no `localStorage` do navegador.
