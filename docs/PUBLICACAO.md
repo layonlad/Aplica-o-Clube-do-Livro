@@ -16,7 +16,7 @@ Orçamento autorizado: até **R$ 30 por mês**. Após identificar o pré-pagamen
 - Nenhum serviço pago foi criado e a aplicação ainda não foi publicada neste projeto.
 - Neon instalado e conectado. Projeto gratuito exclusivo `Clube do Livro` criado: `wandering-block-99253816`, região `aws-us-east-1`, PostgreSQL 17.
 - Banco `clube_do_livro`, branch `production` (`br-super-term-bco4myiu`). A migration `001_identity_and_clubs.sql` foi aplicada em transação após aprovação explícita e conferida pelo checksum. As sete tabelas foram confirmadas; a credencial de execução da API ainda precisa ser criada com acesso restrito.
-- Render CLI oficial v2.36.0 instalado localmente em `.local-data/tools/bin/render`, com o SHA-256 do pacote oficial verificado. A autorização da CLI foi aprovada pelo proprietário e ainda aguarda conclusão no navegador. Nenhum serviço Render foi criado.
+- Render CLI oficial v2.36.0 instalado localmente em `.local-data/tools/bin/render`, com o SHA-256 do pacote oficial verificado. A autorização da CLI foi aprovada e concluída; a conta `negocio.layon@gmail.com` foi confirmada pelo terminal. Nenhum serviço Render foi criado.
 
 O nome atual do projeto é `My First Project`. O ID é o identificador usado na implantação. O alias `production` em `.firebaserc` aponta exclusivamente para esse ID.
 
@@ -33,7 +33,7 @@ Esses arquivos preparam a implantação; não criam serviços nem representam um
 
 1. Ativação inicial e registro do app web concluídos.
 2. Autenticação habilitada. Usar apenas a configuração pública do app no frontend.
-3. Projeto Neon Free e estrutura inicial concluídos. Concluir autorização do Render e definir a credencial de banco restrita à execução. Não usar Render Postgres Free: esse banco expira após 30 dias.
+3. Projeto Neon Free, estrutura inicial e conexão da CLI Render concluídos. Confirmar a área de trabalho e definir a credencial de banco restrita à execução. Não usar Render Postgres Free: esse banco expira após 30 dias.
 4. Criar a API Render em **Free**, conforme `render.yaml`. Não habilitar plano pago, discos, pre-deploy pago, cobrança suplementar ou autoscaling. Se a conta já tiver cartão, verificar que os limites de gastos suplementares não permitem cobranças. Cloud Run/Cloud SQL não serão provisionados nessa alternativa.
 5. Armazenar `DATABASE_URL` como segredo de ambiente e a identidade Firebase como arquivo secreto do Render em `/etc/secrets/firebase-service-account.json`. A identidade deve pertencer somente a este projeto e ter permissão mínima para ler o estado dos usuários ao validar sessões. A criação/transmissão da credencial depende da aprovação e das políticas de IAM da conta. Nunca versionar o arquivo nem colocá-lo no frontend.
 6. Construir a imagem e executar migrations fora do Render Free com `node server/dist/migrate.js`, usando a credencial de migrations e conexão TLS com o Neon. O plano gratuito não fornece shell/jobs ou etapa paga de pre-deploy. A API usa uma credencial de banco de execução com privilégios restritos.

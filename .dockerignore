@@ -5,6 +5,8 @@ dist
 **/dist
 .local-data
 .firebase
+firebase-service-account.json
+**/firebase-service-account.json
 .env
 .env.*
 **/.env
