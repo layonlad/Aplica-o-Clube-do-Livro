@@ -5,6 +5,14 @@ import { useAuth } from './AuthProvider'
 import { readableError } from './api'
 import { Link } from 'react-router-dom'
 
+/** Painel editorial da entrada: estante em lombadas e uma citação em domínio público. */
+function AccessArt() {
+  return <aside className="access-art" aria-hidden="true">
+    <div className="access-art__shelf">{Array.from({ length: 11 }, (_, index) => <i key={index} />)}</div>
+    <blockquote>Ler é sonhar pela mão de outrem.<cite>Fernando Pessoa</cite></blockquote>
+  </aside>
+}
+
 export function AuthScreen() {
   const { auth } = useAuth()
   const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login')
@@ -34,8 +42,8 @@ export function AuthScreen() {
     catch (err) { setError(readableError(err)) }
     finally { setBusy(false) }
   }
-  return <main className="access-page"><section className="access-card">
-    <span className="brand-mark">CL</span><p className="eyebrow">CLUBE DO LIVRO</p>
+  return <main className="access-page access-page--split"><AccessArt /><section className="access-card">
+    <span className="brand-mark brand-mark--large">CL</span><p className="eyebrow">Clube do Livro</p>
     <h1>{mode === 'signup' ? 'Comece sua história' : mode === 'reset' ? 'Recuperar senha' : 'Bom ter você aqui'}</h1>
     <p>Entre para sincronizar suas leituras, acessar seus clubes ou aceitar um convite. Você também pode usar o aplicativo sem conta.</p>
     <Link className="button-link" to="/app">Continuar sem cadastro →</Link>

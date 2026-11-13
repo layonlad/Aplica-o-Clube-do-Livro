@@ -41,9 +41,10 @@ export function MobileShell() {
   if (isReader) return <Outlet />
 
   return (
-    <div className="app-frame">
+    <div className="app-frame" data-space="club">
+      <aside className="app-rail">
       <header className={`app-header ${isHome ? 'app-header--home' : ''}`}>
-        <div className="brand-lockup" onClick={() => navigate('/app')} role="button" tabIndex={0}>
+        <div className="brand-lockup" onClick={() => navigate('/app')} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') navigate('/app') }} role="button" tabIndex={0}>
           <span className="brand-mark">{theme.monogram}</span>
           <div>
             <small>{isHome ? 'BOA NOITE, MARINA' : theme.clubName}</small>
@@ -53,8 +54,6 @@ export function MobileShell() {
         <button className="icon-button" aria-label="Abrir menu" onClick={() => setMenuOpen(true)}><Menu /></button>
       </header>
 
-      <main className="page-content"><Outlet /></main>
-
       <nav className="bottom-nav" aria-label="Navegação principal">
         {primaryNav.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className={({ isActive }) => isActive ? 'active' : ''}>
@@ -63,6 +62,9 @@ export function MobileShell() {
           </NavLink>
         ))}
       </nav>
+      </aside>
+
+      <main className="page-content"><Outlet /></main>
 
       {menuOpen && (
         <div className="drawer-layer" role="presentation" onMouseDown={() => setMenuOpen(false)}>
