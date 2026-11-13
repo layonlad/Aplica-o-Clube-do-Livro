@@ -1,16 +1,35 @@
 {
   "name": "clube-do-livro",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
+  "workspaces": [
+    "server"
+  ],
+  "engines": {
+    "node": ">=24.12.0"
+  },
+  "overrides": {
+    "@firebase/firestore": { "@grpc/grpc-js": "^1.14.7" }
+  },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "api:dev": "npm run dev --workspace server",
+    "dev:local": "npm run local --workspace server",
+    "api:build": "npm run build --workspace server",
+    "db:migrate": "npm run migrate --workspace server",
+    "test:api": "npm test --workspace server",
+    "test:integration": "npm run test:integration --workspace server",
+    "check": "npm test && npm run test:api && npm run build && npm run api:build",
+    "auth:emulator": "firebase emulators:start --only auth --project demo-clube-do-livro",
+    "test:e2e": "firebase emulators:exec --only auth --project demo-clube-do-livro 'npm run test:auth --workspace server'"
   },
   "dependencies": {
+    "firebase": "^13.3.0",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -22,10 +41,11 @@
     "@testing-library/user-event": "^14.5.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^6.3.0",
+    "firebase-tools": "^15.36.0",
     "jsdom": "^25.0.1",
     "typescript": "~5.7.2",
-    "vite": "^6.0.5",
-    "vitest": "^2.1.8"
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
   }
 }

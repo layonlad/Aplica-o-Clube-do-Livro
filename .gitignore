@@ -9,3 +9,7 @@ vite.config.d.ts
 .env
 .env.*
 !.env.example
+firebase-debug.log*
+ui-debug.log*
+.firebase/
+.local-data/

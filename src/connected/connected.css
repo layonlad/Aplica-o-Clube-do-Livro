@@ -1,0 +1,28 @@
+.access-page { min-height: 100dvh; display: grid; place-content: center; padding: 24px; background: var(--color-canvas); }
+.access-card { width: min(100%, 460px); margin: auto; background: var(--color-surface); padding: clamp(24px, 5vw, 44px); border-radius: var(--radius-card); box-shadow: 0 12px 60px #35213d12; }
+.access-card h1 { margin: 24px 0 12px; }
+.access-card p, .connected-content p { line-height: 1.65; }
+.access-form { display: grid; gap: 18px; margin: 24px 0; max-width: 540px; }
+.access-form label, .invite-result label { display: grid; gap: 8px; font-weight: 600; }
+.access-form input, .invite-result input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 48px; padding: 12px 14px; border: 1px solid #b8acbe; border-radius: 12px; background: var(--color-surface); color: var(--color-text); font: inherit; }
+.access-form input:focus-visible, .invite-result input:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+.access-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.access-card > .access-actions { flex-direction: column; }
+.access-error { padding: 14px; border-radius: 12px; background: #fff0ec; color: #822f27; }
+.connected-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 16px max(20px, calc((100vw - 1000px)/2)); border-bottom: 1px solid #dcd3df; background: var(--color-surface); }
+.connected-header a, .connected-header > div { display: flex; align-items: center; gap: 12px; }
+.connected-header a { text-decoration: none; color: var(--color-primary); font-weight: 700; }
+.connected-header > div { flex-wrap: wrap; overflow-wrap: anywhere; }
+.connected-content { max-width: 1000px; margin: auto; padding: 32px 20px 72px; display: grid; gap: 24px; }
+.connected-content .card { padding: 24px; min-width: 0; }
+.club-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 20px; }
+.club-link { color: inherit; text-decoration: none; }
+.club-link .card { height: 100%; border: 1px solid #e0d5e6; }
+.club-link:hover .card { border-color: var(--color-primary); }
+.real-members { list-style: none; padding: 0; margin: 20px 0 0; }
+.real-members li { padding: 16px 0; border-bottom: 1px solid #e2dce6; display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+.real-members li > div:first-child { display: grid; gap: 6px; overflow-wrap: anywhere; }
+.real-members small, .invite-result small { color: var(--color-muted); }
+.form-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.invite-result { display: grid; gap: 14px; padding: 20px; border: 1px solid var(--color-primary); border-radius: 14px; }
+@media (max-width: 480px) { .form-columns { grid-template-columns: 1fr; } .connected-header > div > span { font-size: .85rem; } }

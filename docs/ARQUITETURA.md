@@ -2,9 +2,9 @@
 
 ## 1. Escopo desta entrega
 
-Esta versão é um protótipo navegável da fase 2. Toda informação visível vem de `src/data/mockData.ts` ou de estado local efêmero. A personalização visual usa `localStorage` somente para demonstrar persistência no dispositivo. Não há autenticação, API, upload, EPUB real, Firebase, PostgreSQL ou deploy.
+**Atualização 0.2:** autenticação, clubes, participantes e convites já têm implementação funcional com Firebase Authentication, API Fastify e PostgreSQL. O contrato, a execução local e as decisões atuais estão em [`BACKEND.md`](BACKEND.md). A implementação não provisiona serviços de produção.
 
-As interfaces antecipam regras futuras, mas não tentam simular segurança no cliente. Nenhuma ação da interface deve ser considerada autorização.
+O restante deste documento registra o desenho do produto completo e a organização original da fase 2. O modo demonstrativo preserva os mocks em `src/data/mockData.ts`; biblioteca/EPUB/comunidade permanecem planejados. Nenhuma ação da interface substitui autorização no servidor.
 
 ## 2. Organização do frontend
 
@@ -203,7 +203,9 @@ Textos do fórum devem ser tratados como texto ou sanitizados por allowlist rigo
 
 ## 10. Backlog por fase
 
-### Próxima fase: fundações do backend
+### Fundações do backend — implementadas parcialmente na versão 0.2
+
+API, migrations, autenticação, convites, associação, isolamento entre clubes e testes já foram implementados. Provisionamento, arquivos/Storage e ciclo de vida de dados continuam pendentes; ver [`BACKEND.md`](BACKEND.md).
 
 - fechar ADRs de provedor, ORM, framework HTTP e estratégia de migrations;
 - criar API e PostgreSQL isolados com testes de autorização cruzada;
@@ -233,4 +235,4 @@ Textos do fórum devem ser tratados como texto ou sanitizados por allowlist rigo
 
 ## 11. Decisões adiadas conscientemente
 
-Provedor PostgreSQL, hospedagem da API, projeto Firebase, domínio, CI/CD, biblioteca EPUB e empacotamento nativo dependem de avaliação e aprovação futuras. Nenhum deles foi criado ou conectado nesta entrega.
+Provedor PostgreSQL de produção, hospedagem da API, projeto Firebase real, domínio, biblioteca EPUB e empacotamento nativo continuam pendentes. O CI/CD da prévia demonstrativa já existe; a versão 0.2 acrescenta validação automatizada do backend. O ambiente local usa Auth Emulator e PostgreSQL isolados.
