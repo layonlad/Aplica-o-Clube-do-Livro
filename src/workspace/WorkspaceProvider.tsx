@@ -37,7 +37,7 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
         if(ticket!==generation.current)return
         setClubs(session.clubs)
         if(scope!=='personal'&&!session.clubs.some(c=>c.id===scope)){setScope('personal');return}
-        const value=await apiRequest<WorkspaceSnapshot>(identity,scope==='personal'?'/me/workspace':`/clubs/${scope}/workspace`)
+        const value=await apiRequest<WorkspaceSnapshot>(identity,scope==='personal'?'/me/workspace':`/clubs/${scope}/workspace?view=app`)
         if(ticket===generation.current)setSnapshot(value)
       }
     } catch(err){if(ticket===generation.current)setError(readableError(err))}
@@ -50,7 +50,7 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
     lock.current=true;setBusy(true);setError('')
     try {
       let next:WorkspaceSnapshot
-      if(identity){next=await apiRequest<WorkspaceSnapshot>(identity,scope==='personal'?'/me/workspace':`/clubs/${scope}/workspace`,'POST',{action,version:source.version})}
+      if(identity){next=await apiRequest<WorkspaceSnapshot>(identity,scope==='personal'?'/me/workspace':`/clubs/${scope}/workspace?view=app`,'POST',{action,version:source.version})}
       else {
         next=applyWorkspaceAction(source,action,{id:'visitor',name:localStorage.getItem('clube-livro-name')?.trim().slice(0,100)||'Você'},{id:crypto.randomUUID(),now:new Date().toISOString(),personal:true,...(action.type==='draw'&&source.state.nominations.length?{drawIndex:secureIndex(source.state.nominations.length)}:{})})
         await savePersonal(next)

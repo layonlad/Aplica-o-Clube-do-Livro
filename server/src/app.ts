@@ -1,3 +1,4 @@
+import {registerForumRoutes} from './forum-routes.js'
 import {registerCommunityRoutes} from './community-routes.js'
 import {ClubManagement} from './club-management.js'
 import {pageInput} from './pagination.js'
@@ -80,6 +81,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
       request.user = await service.syncUser(identity)
     })
     await registerCommunityRoutes(api,options.pool,options.storage)
+    await registerForumRoutes(api,options.pool)
     api.get('/clubs/:clubId/settings',request=>management.settings(request.user,clubParams.parse(request.params).clubId))
     api.post('/clubs/:clubId/settings',request=>management.updateSettings(request.user,clubParams.parse(request.params).clubId,z.object({name:z.string().trim().min(2).max(80),description:z.string().max(2000),visibility:z.enum(['private','discoverable','public']),accent:z.string().regex(/^#[0-9a-fA-F]{6}$/),version:z.number().int().min(0)}).strict().parse(request.body)))
     api.post('/clubs/:clubId/members/:userId/role',async(request,reply)=>{const {clubId,userId}=clubParams.extend({userId:z.uuid()}).parse(request.params);await management.setRole(request.user,clubId,userId,z.object({role:z.enum(['admin','moderator','member'])}).strict().parse(request.body).role);return reply.code(204).send()})
@@ -103,8 +105,8 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     const workspaceInput = z.object({ action: actionSchema, version: z.number().int().min(0) }).strict()
     api.get('/me/workspace', request => workspace.get(request.user))
     api.post('/me/workspace', { bodyLimit: 9000000 }, request => { const input=workspaceInput.parse(request.body); return workspace.act(request.user,input.action,input.version) })
-    api.get('/clubs/:clubId/workspace', request => workspace.get(request.user,clubParams.parse(request.params).clubId))
-    api.post('/clubs/:clubId/workspace', { bodyLimit: 3000000 }, request => { const input=workspaceInput.parse(request.body); return workspace.act(request.user,input.action,input.version,clubParams.parse(request.params).clubId) })
+    api.get('/clubs/:clubId/workspace', request => workspace.get(request.user,clubParams.parse(request.params).clubId,z.object({view:z.enum(['app']).optional()}).strict().parse(request.query).view!=='app'))
+    api.post('/clubs/:clubId/workspace', { bodyLimit: 3000000 }, request => { const input=workspaceInput.parse(request.body); return workspace.act(request.user,input.action,input.version,clubParams.parse(request.params).clubId,z.object({view:z.enum(['app']).optional()}).strict().parse(request.query).view!=='app') })
     api.post('/clubs', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
       const club = await service.createClub(request.user, createClubInput.parse(request.body))
       return reply.code(201).send(club)

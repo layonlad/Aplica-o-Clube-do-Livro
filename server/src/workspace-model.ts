@@ -27,7 +27,7 @@ export const workspaceSchema = z.object({
 }).strict()
 export type WorkspaceState = z.infer<typeof workspaceSchema>
 export type ReadingState = z.infer<typeof readingSchema>
-export interface WorkspaceSnapshot { state: WorkspaceState; reading: ReadingState; preferences?:ReadingPreferences; version: number; role: Role; actorId: string }
+export interface WorkspaceSnapshot { state: WorkspaceState; reading: ReadingState; preferences?:ReadingPreferences; version: number; role: Role; actorId: string;forumCount?:number }
 export const emptyWorkspace = (): WorkspaceState => ({ books: [], currentBookId: null, events: [], topics: [], nominations: [], draws: [] })
 
 export const actionSchema = z.discriminatedUnion('type', [

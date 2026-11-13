@@ -38,8 +38,9 @@ export class MediaService{
       await this.membership(client,userId,file.club_id,true)
       const {rows:[links]}=await client.query(`SELECT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=$1 AND p.deleted_at IS NULL AND p.audience='club') AS posted,
         EXISTS(SELECT 1 FROM album_media am JOIN club_albums a ON a.id=am.album_id WHERE am.media_id=$1 AND a.deleted_at IS NULL) AS album,
-        EXISTS(SELECT 1 FROM album_media am JOIN club_albums a ON a.id=am.album_id WHERE am.media_id=$1 AND a.deleted_at IS NULL AND a.allow_download) AS downloadable`,[id])
-      if(file.owner_user_id!==userId&&!links.posted&&!links.album)throw missing()
+        EXISTS(SELECT 1 FROM album_media am JOIN club_albums a ON a.id=am.album_id WHERE am.media_id=$1 AND a.deleted_at IS NULL AND a.allow_download) AS downloadable,
+        (EXISTS(SELECT 1 FROM forum_topic_media fm JOIN forum_topics t ON t.id=fm.topic_id WHERE fm.media_id=$1 AND t.deleted_at IS NULL) OR EXISTS(SELECT 1 FROM forum_reply_media fm JOIN forum_replies r ON r.id=fm.reply_id JOIN forum_topics t ON t.id=r.topic_id WHERE fm.media_id=$1 AND r.deleted_at IS NULL AND t.deleted_at IS NULL)) AS forum`,[id])
+      if(file.owner_user_id!==userId&&!links.posted&&!links.album&&!links.forum)throw missing()
       if(download&&file.owner_user_id!==userId&&!links.downloadable)throw new HttpError(403,'DOWNLOAD_DISABLED','O download não foi liberado para este arquivo.')
       return file
     })
@@ -62,7 +63,7 @@ export class MediaService{
   async cleanup(limit=20){
     if(!this.storage)throw unavailable()
     limit=Math.max(1,Math.min(50,limit))
-    await this.pool.query(`UPDATE media_objects SET state='deleted',deleted_at=now() WHERE id IN(SELECT m.id FROM media_objects m WHERE (m.state='pending' AND m.created_at<now()-interval '15 minutes') OR (m.state='active' AND m.created_at<now()-interval '1 day' AND NOT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=m.id AND p.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM album_media am JOIN club_albums a ON a.id=am.album_id WHERE am.media_id=m.id AND a.deleted_at IS NULL)) ORDER BY m.created_at LIMIT $1 FOR UPDATE SKIP LOCKED)`,[limit])
+    await this.pool.query(`UPDATE media_objects SET state='deleted',deleted_at=now() WHERE id IN(SELECT m.id FROM media_objects m WHERE (m.state='pending' AND m.created_at<now()-interval '15 minutes') OR (m.state='active' AND m.created_at<now()-interval '1 day' AND NOT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=m.id AND p.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM album_media am JOIN club_albums a ON a.id=am.album_id WHERE am.media_id=m.id AND a.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM forum_topic_media fm JOIN forum_topics t ON t.id=fm.topic_id WHERE fm.media_id=m.id AND t.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM forum_reply_media fm JOIN forum_replies r ON r.id=fm.reply_id JOIN forum_topics t ON t.id=r.topic_id WHERE fm.media_id=m.id AND r.deleted_at IS NULL AND t.deleted_at IS NULL)) ORDER BY m.created_at LIMIT $1 FOR UPDATE SKIP LOCKED)`,[limit])
     const {rows}=await this.pool.query<Media>("SELECT * FROM media_objects WHERE state='deleted' ORDER BY created_at LIMIT $1",[limit]);let purged=0,failed=0
     for(const file of rows){try{await this.purge(file);purged++}catch{failed++}}return {purged,failed}
   }

@@ -1,3 +1,4 @@
+import {ForumService} from './forum-service.js'
 import { randomInt, randomUUID } from 'node:crypto'
 import type { Pool, PoolClient } from 'pg'
 import type { UserProfile } from './contracts.js'
@@ -7,7 +8,8 @@ import { authorize } from './service.js'
 import { applyWorkspaceAction, emptyWorkspace, isPersonalAction, WorkspaceError, type WorkspaceAction, type WorkspaceSnapshot } from './workspace-model.js'
 
 export class WorkspaceService {
-  constructor(private pool: Pool) {}
+  private forum:ForumService
+  constructor(private pool: Pool) {this.forum=new ForumService(pool)}
   private async load(client: PoolClient, user: UserProfile, clubId?: string): Promise<WorkspaceSnapshot> {
     const role = clubId ? (await authorize(client, clubId, user.id)).role : 'owner'
     if (clubId) {
@@ -21,8 +23,15 @@ export class WorkspaceService {
     const { rows: [row] } = await client.query('SELECT state,reading,version,preferences FROM personal_workspaces WHERE user_id=$1 FOR UPDATE', [user.id])
     return { ...row, role, actorId: user.id }
   }
-  get(user: UserProfile, clubId?: string) { return transaction(this.pool, client => this.load(client,user,clubId)) }
-  act(user: UserProfile, action: WorkspaceAction, version: number, clubId?: string) {
+  private async present(client:PoolClient,value:WorkspaceSnapshot,user:UserProfile,clubId?:string,legacyForum=true):Promise<WorkspaceSnapshot>{
+    if(!clubId)return value
+    const topics=legacyForum?await this.forum.legacyTopics(client,clubId,user.id):[]
+    const {rows:[count]}=await client.query('SELECT count(*)::int AS count FROM forum_topics WHERE club_id=$1 AND deleted_at IS NULL',[clubId])
+    return {...value,state:{...value.state,topics},forumCount:count.count}
+  }
+  get(user: UserProfile, clubId?: string,legacyForum=true):Promise<WorkspaceSnapshot> { return transaction(this.pool, async client => this.present(client,await this.load(client,user,clubId),user,clubId,legacyForum)) }
+  async act(user: UserProfile, action: WorkspaceAction, version: number, clubId?: string,legacyForum=true):Promise<WorkspaceSnapshot> {
+    if(clubId&&(action.type==='topic.add'||action.type==='topic.reply'||action.type==='topic.like'||action.type==='topic.remove')){await this.forum.legacyAction(user,clubId,action,version);return this.get(user,clubId,legacyForum)}
     return transaction(this.pool, async client => {
       const current = await this.load(client,user,clubId)
       if (!isPersonalAction(action) && version !== current.version) throw new HttpError(409,'WORKSPACE_CHANGED','O espaço foi atualizado. Confira os dados e tente novamente.')
@@ -40,7 +49,7 @@ export class WorkspaceService {
         await client.query('UPDATE personal_workspaces SET state=$2,reading=$3,version=$4,preferences=$5,updated_at=now() WHERE user_id=$1',[user.id,next.state,next.reading,next.version,next.preferences])
         if(action.type==='book.remove'||action.type==='workspace.import')await client.query("UPDATE private_book_files SET state='deleted',deleted_at=now() WHERE owner_user_id=$1 AND state IN ('active','pending') AND NOT(book_id=ANY($2::uuid[]))",[user.id,next.state.books.map(book=>book.id)])
       }
-      return next
+      return this.present(client,next,user,clubId,legacyForum)
     })
   }
 }
