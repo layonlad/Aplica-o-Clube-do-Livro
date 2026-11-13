@@ -13,7 +13,8 @@ export async function apiRequest<T>(user: User, path: string, method = 'GET', bo
     cache: 'no-store',
     credentials: 'omit',
     referrerPolicy: 'no-referrer',
-    signal: AbortSignal.timeout(15000),
+    // Allow the free API host to wake up after an idle period; never retry mutations.
+    signal: AbortSignal.timeout(75000),
   })
   if (!response.ok) {
     const payload = await response.json().catch(() => null) as ApiErrorBody | null
