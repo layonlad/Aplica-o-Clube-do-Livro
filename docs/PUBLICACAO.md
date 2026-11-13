@@ -8,9 +8,13 @@ Orçamento autorizado: até **R$ 30 por mês**.
 
 - Acesso à conta conectado na CLI Firebase.
 - Projeto ativo e pertencente a uma organização Google Cloud.
-- O projeto ainda não possui Firebase; a tentativa `projects:addfirebase` retornou 403.
-- As permissões `firebase.projects.update`, `resourcemanager.projects.get` e `serviceusage.services.enable` estão presentes. A ativação inicial/aceitação de termos deve ser verificada no console da conta.
-- O faturamento está desativado. Nenhum serviço pago foi criado, e a aplicação ainda não foi publicada neste projeto.
+- Firebase ativado com sucesso após o proprietário concluir a ativação inicial.
+- App web `Clube do Livro` criado: `1:193866319464:web:6dfdecacaaef1a76ef9ddd`.
+- Configuração pública do SDK obtida e preparada em `.env.production.local`, ignorado pelo Git. A URL da API ainda não foi definida.
+- Configuração de login por e-mail/senha e Google preparada em `firebase.production.json`; sua implantação aguarda aprovação explícita dos provedores/domínios solicitada pela revisão automática de segurança.
+- O faturamento está desativado e a conta de faturamento vinculada informa `open=false`. O proprietário precisa vincular uma conta ativa para usar Cloud Run.
+- Nenhum serviço pago foi criado e a aplicação ainda não foi publicada neste projeto.
+- Foi sugerida a integração Neon para provisionar PostgreSQL em plano gratuito, preservando o orçamento de R$ 30/mês; a conexão ainda não foi confirmada.
 
 O nome atual do projeto é `My First Project`. O ID é o identificador usado na implantação. O alias `production` em `.firebaserc` aponta exclusivamente para esse ID.
 
@@ -24,8 +28,8 @@ Esses arquivos preparam a implantação; não criam serviços nem representam um
 
 ## Ordem de ativação
 
-1. Concluir a ativação inicial do Firebase nessa conta: https://console.firebase.google.com/?forceCheckTos=true . Aceitação de termos contratuais depende do proprietário.
-2. Adicionar Firebase ao projeto existente, criar um app web e habilitar autenticação por e-mail e Google. Usar apenas a configuração pública do app no frontend.
+1. Ativação inicial e registro do app web concluídos.
+2. Após a aprovação dos provedores/domínios, implantar a configuração de autenticação com `--only auth --config firebase.production.json`, selecionando explicitamente o projeto e a conta indicados. Usar apenas a configuração pública do app no frontend.
 3. Definir o PostgreSQL e a API dentro do orçamento. Cloud SQL tem cobrança contínua e não deve ser criado sem verificar o custo completo. Uma alternativa a avaliar é PostgreSQL externo com plano gratuito e Cloud Run com escala mínima zero. O banco externo precisa de conta/projeto próprio e TLS validado.
 4. Habilitar faturamento quando necessário. Alertas de orçamento do Google não são um teto rígido de cobrança; limites de instâncias e quotas ajudam a controlar consumo, mas não garantem o valor mensal máximo. A arquitetura precisa respeitar os R$ 30 autorizados.
 5. Guardar `DATABASE_URL` em Secret Manager, usar identidade própria da API com permissões mínimas para verificar usuários Firebase e acessar somente esse segredo. Não gerar chaves privadas no frontend.

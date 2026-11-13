@@ -1,4 +1,17 @@
 {
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Clube do Livro",
+        "supportEmail": "negocio.layon@gmail.com",
+        "authorizedRedirectUris": [
+          "https://project-acb850f4-4bb8-45de-a84.firebaseapp.com/__/auth/handler",
+          "https://project-acb850f4-4bb8-45de-a84.web.app/__/auth/handler"
+        ]
+      }
+    }
+  },
   "hosting": {
     "predeploy": ["npm run build:production"],
     "public": "dist",
