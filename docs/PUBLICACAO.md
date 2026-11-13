@@ -19,11 +19,11 @@ O modo publicado abre o aplicativo completo em `/app` **sem cadastro**. Visitant
 | --- | --- |
 | Projeto Firebase | `project-acb850f4-4bb8-45de-a84` |
 | App web | `1:193866319464:web:6dfdecacaaef1a76ef9ddd` |
-| Hosting | Site padrão do projeto; versão inicial `1081116535d14e0e` |
+| Hosting | Site padrão do projeto; versão atual `075827bfc434db94` |
 | Login | E-mail/senha e Google habilitados; domínios próprios `.web.app` e `.firebaseapp.com` autorizados |
 | Render | `Layon's workspace`, ID `tea-dbril3bm8hqs73d5n5ig` |
 | API | `clube-livro-api`, ID `srv-dbrjddl9fdbs73eikb0g`, Docker, **Free**, região Virginia, uma instância, sem disco |
-| Deploy inicial da API | `dep-dbrjde59fdbs73eikcfg`, estado `live`, commit `34758d485c0fa5da4b4711339d93a28ca0ffb814` |
+| Deploy atual da API | `dep-dbrk18bm8hqs73d9176g`, estado `live`, commit `482b29d2f2ef5611323feeaca331893ee1bbff0a` |
 | Branch da API | `codex/backend-auth-convites`; publicação automática desligada |
 | Neon | Projeto **Free** `wandering-block-99253816`, região `aws-us-east-1`, PostgreSQL 17 |
 | Banco | `clube_do_livro`; branch `production`, ID `br-super-term-bco4myiu` |
@@ -48,10 +48,10 @@ A configuração pública do frontend fica em `.env.production.local`, ignorado 
 - Build Docker concluído no Render e deploy confirmado como `live`.
 - `/health`: HTTP 200, `{"status":"ok"}`; comprova acesso ao Neon pela credencial restrita.
 - `/v1/me` sem autenticação: HTTP 401.
-- Firebase Hosting: HTTP 200, modo conectado; tela de login aberta no navegador sem erros de console.
+- Firebase Hosting: HTTP 200; aplicativo aberto sem cadastro, biblioteca e navegação completa conferidas no navegador sem erros de console. O leitor e a persistência IndexedDB após recarregar foram exercitados na prévia local.
 - Provedores de login e domínios autorizados conferidos na configuração Firebase.
 - Teste real explicitamente autorizado: conta temporária recebeu 403 sem e-mail confirmado, 401 quando desativada e 401 após revogação da sessão. As contas temporárias criadas pelos testes foram excluídas; nenhuma conta preexistente foi alterada e nenhum e-mail foi enviado.
-- 15 testes unitários da API e integração de autenticação com emulador/PostgreSQL passaram após a adaptação sem chave. Os testes anteriores de clubes, convites, concorrência e remoção continuam cobertos pelo CI, que passou na versão publicada.
+- 43 testes passaram: 13 de interface/importação EPUB, 15 unitários da API, 14 de integração PostgreSQL e uma integração Auth Emulator/PostgreSQL. Incluem acesso livre, persistência, texto de EPUB sem código ativo, separação de espaços pessoais, progresso privado, papéis e sorteio concorrente. O CI passou na versão publicada; a auditoria de produção não encontrou vulnerabilidades.
 
 O login interativo com uma conta Google do proprietário e o recebimento real dos e-mails não foram exercitados automaticamente.
 

@@ -1,13 +1,13 @@
 # Clube do Livro
 
-Aplicação mobile-first para clubes de leitura. A versão 0.2 adiciona uma base funcional de autenticação, clubes, participantes e convites, com API Node.js/TypeScript, PostgreSQL independente e Firebase Authentication.
+Aplicação mobile-first para leitura individual e clubes. [Abrir aplicativo](https://project-acb850f4-4bb8-45de-a84.web.app). A entrada é livre, sem cadastro e sem exigir participação em clube.
 
 Há dois modos explícitos:
 
-- **Conectado:** contas, confirmação de e-mail, clubes, convites e participantes com dados persistentes e autorização no servidor.
+- **Aplicativo:** biblioteca, leitor EPUB/TXT em texto, progresso, avaliações, histórico, agenda, fotos, anotações/fórum, indicações, sorteio, perfil e aparência. Visitantes salvam os registros neste navegador; contas confirmadas sincronizam o espaço pessoal com o servidor. Clubes têm espaço compartilhado com autorização por papel.
 - **Demonstração:** protótipo completo de interface com dados fictícios. A [prévia pública no GitHub Pages](https://layonlad.github.io/Aplica-o-Clube-do-Livro/) permanece nesse modo.
 
-Biblioteca, EPUB, progresso, sorteios, agenda, fotos e fórum ainda não possuem backend. Não são apresentados como funcionalidades prontas no modo conectado.
+Login é opcional para sincronizar; convite é necessário apenas para ingressar em um clube existente. O Perfil permite exportar/importar backups do espaço pessoal. Os espaços reais começam vazios. [Detalhes, permissões e limites](docs/BACKEND.md).
 
 ## Executar localmente
 
@@ -63,4 +63,4 @@ Uma galeria de capturas reais da interface está disponível em [`docs/PREVIA.md
 - Remoção de membro bloqueia imediatamente novas operações; não exclui a conta Firebase.
 - Credenciais privadas somente no servidor, fora do repositório. Variáveis de frontend contêm apenas configuração pública.
 - Cache privado desabilitado; service worker limitado ao modo demonstrativo.
-- Hospedagem da API, PostgreSQL e projeto Firebase de produção ainda precisam ser definidos. [Procedimento de ativação](docs/BACKEND.md#ativação-em-produção).
+- Firebase Hosting/Auth, Render Free e Neon Free estão configurados. [Publicação e operação](docs/PUBLICACAO.md).
