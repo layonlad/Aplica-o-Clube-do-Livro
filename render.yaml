@@ -21,7 +21,7 @@ services:
         value: project-acb850f4-4bb8-45de-a84
       - key: FRONTEND_ORIGIN
         value: https://project-acb850f4-4bb8-45de-a84.web.app
-      - key: GOOGLE_APPLICATION_CREDENTIALS
-        value: /etc/secrets/firebase-service-account.json
+      - key: FIREBASE_WEB_API_KEY
+        sync: false
       - key: DATABASE_URL
         sync: false

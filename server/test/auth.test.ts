@@ -22,7 +22,7 @@ const headers = (token: string) => ({ authorization: `Bearer ${token}` })
 beforeAll(async () => {
   readConfig({ ...process.env, DATABASE_URL: process.env.TEST_DATABASE_URL, FIREBASE_PROJECT_ID: projectId, FRONTEND_ORIGIN: 'http://localhost:5173' })
   db = await testDatabase()
-  app = await buildApp({ pool: db.pool, origin: 'http://localhost:5173', verifyToken: createFirebaseVerifier(projectId) })
+  app = await buildApp({ pool: db.pool, origin: 'http://localhost:5173', verifyToken: createFirebaseVerifier(projectId, 'demo-key') })
 })
 afterAll(async () => { await app?.close(); await db?.close(); await deleteApp(getApp()) })
 
@@ -47,6 +47,9 @@ it('integra cadastro, verificação, login, clube, convite e remoção com Fireb
   expect(session.clubs[0].id).toBe(club.id)
   expect((await app.inject({ method: 'DELETE', url: `/v1/clubs/${club.id}/members/${session.user.id}`, headers: headers(ownerLogin.idToken) })).statusCode).toBe(204)
   expect((await app.inject({ url: `/v1/clubs/${club.id}`, headers: headers(memberLogin.idToken) })).statusCode).toBe(403)
+  await new Promise(resolve => setTimeout(resolve, 1100))
+  await getAuth().revokeRefreshTokens(member.localId)
+  expect((await app.inject({ url: '/v1/me', headers: headers(memberLogin.idToken) })).statusCode).toBe(401)
   await getAuth().updateUser(owner.localId, { disabled: true })
   expect((await app.inject({ url: '/v1/me', headers: headers(ownerLogin.idToken) })).statusCode).toBe(401)
   expect((await app.inject({ url: '/v1/me', headers: headers('not-a-jwt') })).statusCode).toBe(401)

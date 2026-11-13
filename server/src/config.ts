@@ -4,6 +4,7 @@ const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   DATABASE_URL: z.string().url(),
   FIREBASE_PROJECT_ID: z.string().min(3),
+  FIREBASE_WEB_API_KEY: z.string().min(1).optional(),
   FIREBASE_AUTH_EMULATOR_HOST: z.string().optional(),
   FRONTEND_ORIGIN: z.string().url(),
   HOST: z.string().default('127.0.0.1'),

@@ -7,6 +7,8 @@ dist
 .firebase
 firebase-service-account.json
 **/firebase-service-account.json
+clube-api.env
+**/clube-api.env
 .env
 .env.*
 **/.env

@@ -16,4 +16,4 @@ COPY --from=build --chown=node:node /app/server/dist ./server/dist
 COPY --from=build --chown=node:node /app/server/migrations ./server/migrations
 USER node
 EXPOSE 8080
-CMD ["node", "server/dist/index.js"]
+CMD ["node", "--env-file-if-exists=/etc/secrets/clube-api.env", "server/dist/index.js"]
