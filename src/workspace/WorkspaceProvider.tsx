@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { applyWorkspaceAction, WorkspaceError, type WorkspaceAction, type WorkspaceSnapshot } from '../../server/src/workspace-model'
 import type { Club, Session } from '../../server/src/contracts'
 import { useAuth } from '../auth/AuthProvider'
-import { apiRequest, readableError } from '../auth/api'
+import { ApiError,apiRequest, readableError } from '../auth/api'
 import { loadPersonal, savePersonal, secureIndex } from './storage'
 
 interface ContextValue {
@@ -56,7 +56,7 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
       }
       if(ticket===generation.current&&identityRef.current?.uid===identity?.uid&&scopeRef.current===scope){current.current=next;setSnapshot(next)}
       return true
-    }catch(err){if(ticket===generation.current){setError(err instanceof WorkspaceError?err.message:readableError(err)); if((err as {status?:number}).status===409){void refresh().then(()=>setError('O espaço foi atualizado. Confira os dados e tente novamente.'))}}return false}
+    }catch(err){if(ticket===generation.current){setError(err instanceof WorkspaceError?err.message:readableError(err)); if(err instanceof ApiError&&['WORKSPACE_CHANGED','READING_CHANGED'].includes(err.code)){void refresh().then(()=>{if(identityRef.current?.uid===identity?.uid&&scopeRef.current===scope)setError(err.message)})}}return false}
     finally{lock.current=false;setBusy(false)}
   }
   return <Context.Provider value={{snapshot,clubs,scope,scopeName:scope==='personal'?'Meu espaço':clubs.find(c=>c.id===scope)?.name??'Clube',loading,busy,error,setScope,refresh,act}}>{children}</Context.Provider>

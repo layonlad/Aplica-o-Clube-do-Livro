@@ -10,6 +10,9 @@ import { HttpError } from './errors.js'
 import { ClubService } from './service.js'
 import { WorkspaceService } from './workspace-service.js'
 import { actionSchema } from './workspace-model.js'
+import { searchCatalog, type CatalogEntry } from './catalog.js'
+import { PrivateFiles } from './private-files.js'
+import type { PrivateStorage } from './private-storage.js'
 
 declare module 'fastify' { interface FastifyRequest { user: UserProfile } }
 
@@ -26,7 +29,7 @@ const inviteInput = z.object({
   expiresInDays: z.number().int().min(1).max(30).default(7),
 }).strict().refine((data) => !data.email || data.maxUses === 1, 'Convites por e-mail devem ter um único uso.')
 
-export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; logger?: boolean; rateMax?: number }) {
+export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage }) {
   const app = Fastify({
     logger: options.logger ? { redact: ['req.headers.authorization', 'req.body', 'res.headers'] } : false,
     logController: new LogController({ disableRequestLogging: true }),
@@ -36,6 +39,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
   })
   const service = new ClubService(options.pool)
   const workspace = new WorkspaceService(options.pool)
+  const files=new PrivateFiles(options.pool,options.storage)
   await app.register(cors, { origin: options.origin, methods: ['GET', 'POST', 'DELETE'], allowedHeaders: ['Authorization', 'Content-Type'] })
   await app.register(helmet)
   await app.register(rateLimit, { max: options.rateMax ?? 120, timeWindow: '1 minute' })
@@ -58,8 +62,12 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     try { await options.pool.query('SELECT 1'); return { status: 'ok' } }
     catch { throw new HttpError(503, 'DATABASE_UNAVAILABLE', 'Banco temporariamente indisponível.') }
   })
+  app.get('/v1/catalog',{config:{rateLimit:{max:30,timeWindow:'1 minute'}}},async request=>{
+    const {q}=z.object({q:z.string().trim().min(2).max(100)}).strict().parse(request.query)
+    return {items:await (options.catalogSearch??searchCatalog)(q)}
+  })
   await app.register(async (api) => {
-    api.addHook('preHandler', async (request) => {
+    api.addHook('onRequest', async (request) => {
       const match = /^Bearer ([^\s]+)$/.exec(request.headers.authorization ?? '')
       if (!match || match[1].length > 8192) throw new HttpError(401, 'AUTH_REQUIRED', 'Entre na sua conta para continuar.')
       const identity = await options.verifyToken(match[1])
@@ -67,6 +75,18 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
       request.user = await service.syncUser(identity)
     })
     api.get('/me', (request) => service.session(request.user))
+    const fileParams=z.object({bookId:z.uuid()})
+    api.get('/me/book-files/:bookId',request=>files.list(request.user.id,fileParams.parse(request.params).bookId))
+    api.post('/me/book-files/:bookId',{bodyLimit:15000000,config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(request,reply)=>{
+      const input=z.object({filename:z.string().min(1).max(150).regex(/^[^\p{C}]+\.epub$/iu),data:z.string().min(4).max(13333336).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/)}).strict().parse(request.body)
+      const bytes=Buffer.from(input.data,'base64')
+      return reply.code(201).send(await files.upload(request.user.id,fileParams.parse(request.params).bookId,input.filename,bytes))
+    })
+    api.get('/me/files/:id/content',async(request,reply)=>{
+      const {id}=z.object({id:z.uuid()}).parse(request.params);const file=await files.download(request.user.id,id)
+      return reply.type('application/epub+zip').header('Content-Disposition',`attachment; filename="book.epub"; filename*=UTF-8''${encodeURIComponent(file.filename)}`).send(Buffer.from(file.bytes))
+    })
+    api.delete('/me/files/:id',async(request,reply)=>{const {id}=z.object({id:z.uuid()}).parse(request.params);const result=await files.remove(request.user.id,id);return reply.code(result.purged?200:202).send(result)})
     const workspaceInput = z.object({ action: actionSchema, version: z.number().int().min(0) }).strict()
     api.get('/me/workspace', request => workspace.get(request.user))
     api.post('/me/workspace', { bodyLimit: 9000000 }, request => { const input=workspaceInput.parse(request.body); return workspace.act(request.user,input.action,input.version) })

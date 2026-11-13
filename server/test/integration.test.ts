@@ -7,6 +7,8 @@ import { migrate } from '../src/migrations.js'
 import { testDatabase } from './database.js'
 import type { Club, CreatedInvite, Session } from '../src/contracts.js'
 import type { WorkspaceSnapshot } from '../src/workspace-model.js'
+import {strToU8,zipSync} from 'fflate'
+import {PrivateFiles} from '../src/private-files.js'
 
 let db: Awaited<ReturnType<typeof testDatabase>>
 let app: Awaited<ReturnType<typeof buildApp>>
@@ -158,5 +160,51 @@ describe('API com PostgreSQL real', () => {
     const saved=(await app.inject({url,headers:headers()})).json<WorkspaceSnapshot>()
     expect(saved.state.draws).toHaveLength(1);expect(saved.state.nominations).toEqual([])
     expect((await db.pool.query("SELECT count(*)::int AS count FROM audit_logs WHERE club_id=$1 AND action='draw'",[club.id])).rows[0].count).toBe(1)
+  })
+  it('isola estantes, preferências e anotações de membros no mesmo clube',async()=>{
+    const url=`/v1/clubs/${club.id}/workspace`
+    const state=(await app.inject({url,headers:headers('member')})).json<WorkspaceSnapshot>()
+    const book=state.state.books[0]
+    const send=(action:unknown)=>app.inject({url,method:'POST',headers:headers('member'),payload:{version:state.version,action}})
+    expect((await send({type:'shelf.add',name:'Minha estante privada'})).statusCode).toBe(200)
+    expect((await send({type:'reading.annotate',id:book.id,start:0,end:8,quote:'Conteúdo',note:'Nota que não compartilhei'})).statusCode).toBe(200)
+    const mine=(await app.inject({url,headers:headers('member')})).json<WorkspaceSnapshot>()
+    const other=await app.inject({url,headers:headers()})
+    expect(mine.preferences?.shelves).toContain('Minha estante privada')
+    expect(mine.reading[book.id].annotations?.[0].note).toBe('Nota que não compartilhei')
+    expect(other.body).not.toContain('Minha estante privada');expect(other.body).not.toContain('Nota que não compartilhei')
+    const rejected=await send({type:'reading.update',id:book.id,percent:3,expectedRevision:0})
+    expect(rejected.statusCode).toBe(409);expect(rejected.json().error.code).toBe('READING_CHANGED')
+  })
+  it('armazena e entrega EPUB original somente ao titular, sem expor chave de storage',async()=>{
+    const objects=new Map<string,Buffer>();let failDelete=false;const storage={put:async(key:string,bytes:Buffer)=>{objects.set(key,bytes)},get:async(key:string)=>objects.get(key)!,remove:async(key:string)=>{if(failDelete)throw Error('temporary storage outage');objects.delete(key)}}
+    const filesApp=await buildApp({pool:db.pool,origin:'https://club.example',verifyToken:async(token)=>identity(token),storage,rateMax:1000})
+    try{
+      const initial=(await filesApp.inject({url:'/v1/me/workspace',headers:headers('file-owner')})).json<WorkspaceSnapshot>()
+      const created=(await filesApp.inject({url:'/v1/me/workspace',method:'POST',headers:headers('file-owner'),payload:{version:initial.version,action:{type:'book.add',title:'Meu arquivo',author:'Autora',category:'',content:'Texto próprio.'}}})).json<WorkspaceSnapshot>()
+      const bookId=created.state.books[0].id
+      const bytes=Buffer.from(zipSync({'mimetype':strToU8('application/epub+zip'),'META-INF/container.xml':strToU8('<rootfile full-path="book.opf"/>'),'book.opf':strToU8('<package/>')}))
+      const payload={filename:'minha-leitura.epub',data:bytes.toString('base64')}
+      const uploaded=await filesApp.inject({url:`/v1/me/book-files/${bookId}`,method:'POST',headers:headers('file-owner'),payload})
+      expect(uploaded.statusCode).toBe(201);expect(uploaded.body).not.toContain('object_key');expect(uploaded.body).not.toContain('private-epub')
+      const id=uploaded.json().id
+      expect((await filesApp.inject({url:`/v1/me/book-files/${bookId}`,method:'POST',headers:headers('file-owner'),payload})).statusCode).toBe(409)
+      expect((await filesApp.inject({url:`/v1/me/files/${id}/content`,headers:headers('outsider')})).statusCode).toBe(404)
+      const downloaded=await filesApp.inject({url:`/v1/me/files/${id}/content`,headers:headers('file-owner')})
+      expect(downloaded.statusCode).toBe(200);expect(downloaded.rawPayload.equals(bytes)).toBe(true);expect(downloaded.headers['cache-control']).toBe('no-store')
+      expect((await filesApp.inject({url:`/v1/me/files/${id}`,method:'DELETE',headers:headers('outsider')})).statusCode).toBe(404)
+      failDelete=true
+      expect((await filesApp.inject({url:`/v1/me/files/${id}`,method:'DELETE',headers:headers('file-owner')})).statusCode).toBe(202)
+      expect((await filesApp.inject({url:`/v1/me/files/${id}/content`,headers:headers('file-owner')})).statusCode).toBe(404);expect(objects.size).toBe(1)
+      failDelete=false
+      expect(await new PrivateFiles(db.pool,storage).cleanup()).toEqual({purged:1,failed:0});expect(objects.size).toBe(0)
+      const replacement=await filesApp.inject({url:`/v1/me/book-files/${bookId}`,method:'POST',headers:headers('file-owner'),payload})
+      expect(replacement.statusCode).toBe(201)
+      const removed=await filesApp.inject({url:'/v1/me/workspace',method:'POST',headers:headers('file-owner'),payload:{version:created.version,action:{type:'book.remove',id:bookId}}})
+      expect(removed.statusCode).toBe(200)
+      expect((await filesApp.inject({url:`/v1/me/files/${replacement.json().id}/content`,headers:headers('file-owner')})).statusCode).toBe(404)
+      expect(await new PrivateFiles(db.pool,storage).cleanup()).toEqual({purged:1,failed:0});expect(objects.size).toBe(0)
+      expect((await filesApp.inject({url:`/v1/me/book-files/${bookId}`,method:'POST',payload:{data:'not base64'}})).statusCode).toBe(401)
+    }finally{await filesApp.close()}
   })
 })
