@@ -65,8 +65,11 @@ it('mantém um voto por pessoa e impede votar numa opção de outra publicação
 })
 it('processa fotos privadas de verdade e impede mídia de outro titular ou clube mesmo no banco',async()=>{
   imageId=await upload()
+  const drafts=(await app.inject({url:base()+'/media/drafts',headers:headers()})).json<Page<{id:string}>>();expect(drafts.items.some(item=>item.id===imageId)).toBe(true)
+  expect((await app.inject({url:base()+'/media/drafts',headers:headers('social-member')})).json().items.some((item:{id:string})=>item.id===imageId)).toBe(false)
   const initial=await app.inject({url:`/v1/media/${imageId}/content`,headers:headers('social-member')});expect(initial.statusCode).toBe(404)
   const id=await createPost({body:'Nossa foto privada',mediaIds:[imageId]})
+  expect((await app.inject({url:base()+'/media/drafts',headers:headers()})).json().items.some((item:{id:string})=>item.id===imageId)).toBe(false)
   const thumb=await app.inject({url:`/v1/media/${imageId}/content`,headers:headers('social-member')})
   expect(thumb.statusCode).toBe(200);expect(thumb.headers['content-type']).toContain('image/webp');expect(thumb.headers['cache-control']).toBe('no-store');expect((await sharp(thumb.rawPayload).metadata()).exif).toBeUndefined()
   expect((await app.inject({url:`/v1/media/${imageId}/content`,headers:headers('social-other')})).statusCode).toBe(404)

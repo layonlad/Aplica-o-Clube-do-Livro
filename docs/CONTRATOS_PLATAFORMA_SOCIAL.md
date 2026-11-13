@@ -10,6 +10,18 @@ Status: desenho técnico; só rotas implementadas e testadas poderão ser marcad
 - `GET /v1/me/files/:id/content`: download binário autenticado, sem URL de storage no DTO; erro 404 para outro titular ou livro removido.
 - `DELETE /v1/me/files/:id`: revoga acesso antes da remoção física; 200 quando purgado, 202 quando a limpeza física precisa ser repetida.
 
+## Contratos implementados nas entregas 02/03
+
+- `GET /v1/discover/clubs`: descoberta anônima paginada de clubes opt-in; não concede acesso ao conteúdo.
+- `/v1/clubs/:clubId/settings`, `/members`, `/members/:userId/role`, `/join-requests`, `/join-requests/:id/review` e `/leave`: capacidades e associação validadas no servidor.
+- `/v1/clubs/:clubId/posts`: mural privado paginado, com rotas de edição, remoção, like, save, vote e comentários/respostas. Identidade e clube são determinados pela API.
+- `/v1/clubs/:clubId/media` e `/media/drafts`: processamento e recuperação paginada de mídia própria. `/v1/media/:id/content` entrega bytes privados após autorização atual; `/v1/media/:id` revoga/exclui conforme titularidade ou moderação.
+- `/v1/clubs/:clubId/albums`, `/albums/:albumId/photos`, `/photos/:mediaId/tags` e `/consent`: álbuns, política de upload/download e identificação consentida.
+- `/v1/clubs/:clubId/forum/topics`: tópicos paginados, fixados separados, detalhe, edição com versão, moderação, like e respostas com fotos. O mural não é o fórum.
+- `/v1/clubs/:clubId/workspace?view=app`: snapshot sem histórico do fórum e com `forumCount`. A projeção anterior e as ações `topic.*` continuam compatíveis pelo adaptador normalizado.
+
+Limites, verificação e pendências: `ENTREGA_PLATAFORMA_02.md` e `ENTREGA_PLATAFORMA_03.md`.
+
 As rotas `/v2` a seguir são propostas para fases futuras, não interfaces já disponíveis.
 
 ## Limites e identidade

@@ -2,6 +2,8 @@
 
 Branch: `codex/plataforma-social`. Desenvolvimento isolado, sem merge ou deploy em produção. Esta entrega amplia a fase 3; o fórum normalizado, a comunidade pública e as notificações ainda serão concluídos em incrementos seguintes. A entrega 01 continua registrada como histórico.
 
+Atualização posterior: [fórum estruturado e integração visual](ENTREGA_PLATAFORMA_03.md).
+
 ## Implementado
 
 - Proprietário, administrador, moderador e membro, com capacidades verificadas no backend. Só o proprietário delega papéis. Administradores não removem o proprietário nem administradores pares. Moderadores podem remover conteúdo, mas não convidam, promovem membros ou administram o acervo.

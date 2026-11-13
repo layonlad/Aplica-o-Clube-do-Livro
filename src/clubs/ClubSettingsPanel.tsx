@@ -13,7 +13,7 @@ export function ClubSettingsPanel({clubId,role,onUpdated}:{clubId:string;role:Ro
   useEffect(()=>{let live=true;setSettings(null);setRequests({items:[],nextCursor:null});setError('');if(!open||!manager)return
     Promise.all([apiRequest<ClubSettings>(user!,`/clubs/${clubId}/settings`),apiRequest<Page>(user!,`/clubs/${clubId}/join-requests`)]).then(([value,items])=>{if(live){setSettings(value);setRequests(items)}}).catch(err=>live&&setError(readableError(err)))
     return()=>{live=false}
-  },[clubId,user,manager,open,revision])
+  },[clubId,user?.uid,user?.emailVerified,manager,open,revision])
   if(!manager)return null
   async function save(event:FormEvent){event.preventDefault();setBusy(true);setError('');try{setSettings(await apiRequest<ClubSettings>(user!,`/clubs/${clubId}/settings`,'POST',settings));setMessage('Configurações salvas. O conteúdo do clube continua restrito aos participantes.');onUpdated()}catch(err){setError(readableError(err))}finally{setBusy(false)}}
   async function review(id:string,decision:'approved'|'rejected'){setBusy(true);setError('');try{await apiRequest(user!,`/clubs/${clubId}/join-requests/${id}/review`,'POST',{decision});setMessage(decision==='approved'?'Participação aprovada.':'Solicitação recusada.');setRevision(v=>v+1);onUpdated()}catch(err){setError(readableError(err))}finally{setBusy(false)}}

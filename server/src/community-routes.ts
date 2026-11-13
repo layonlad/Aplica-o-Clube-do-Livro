@@ -23,6 +23,7 @@ export async function registerCommunityRoutes(api:FastifyInstance,pool:Pool,stor
   api.post('/clubs/:clubId/posts/:postId/comments',{config:{rateLimit:{max:30,timeWindow:'1 minute'}}},async(request,reply)=>{const {clubId,postId}=postParams.parse(request.params);return reply.code(201).send(await posts.comment(request.user,clubId,postId,z.object({body:z.string().trim().min(1).max(2000),parentId:z.uuid().optional()}).strict().parse(request.body)))})
   api.delete('/clubs/:clubId/posts/:postId/comments/:commentId',async(request,reply)=>{const {clubId,postId,commentId}=postParams.extend({commentId:z.uuid()}).parse(request.params);await posts.removeComment(request.user,clubId,postId,commentId);return reply.code(204).send()})
   api.post('/clubs/:clubId/posts/:postId/comments/:commentId/like',request=>{const {clubId,postId,commentId}=postParams.extend({commentId:z.uuid()}).parse(request.params);return posts.likeComment(request.user,clubId,postId,commentId,bool.parse(request.body).value)})
+  api.get('/clubs/:clubId/media/drafts',request=>media.drafts(request.user.id,clubParams.parse(request.params).clubId,pageInput.strict().parse(request.query)))
   api.post('/clubs/:clubId/media',{bodyLimit:15000000,config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(request,reply)=>{
     const {clubId}=clubParams.parse(request.params)
     const input=z.object({kind:z.enum(['image','video']),data:z.string().min(4).max(13333336).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/)}).strict().parse(request.body)

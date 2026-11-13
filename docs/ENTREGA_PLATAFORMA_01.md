@@ -4,6 +4,8 @@ Data: 13/11/2026. Branch: `codex/plataforma-social`. Não publicada.
 
 Registro do primeiro incremento. As alterações posteriores de clubes/mural/galeria estão em [ENTREGA_PLATAFORMA_02.md](ENTREGA_PLATAFORMA_02.md).
 
+Atualização posterior: [fórum estruturado e integração visual](ENTREGA_PLATAFORMA_03.md).
+
 ## Situação das fases
 
 | Fase | Estado nesta entrega |

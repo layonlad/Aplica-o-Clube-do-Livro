@@ -25,7 +25,7 @@ export class WorkspaceService {
   }
   private async present(client:PoolClient,value:WorkspaceSnapshot,user:UserProfile,clubId?:string,legacyForum=true):Promise<WorkspaceSnapshot>{
     if(!clubId)return value
-    const topics=legacyForum?await this.forum.legacyTopics(client,clubId,user.id):[]
+    const topics=await this.forum.legacyTopics(client,clubId,user.id,legacyForum)
     const {rows:[count]}=await client.query('SELECT count(*)::int AS count FROM forum_topics WHERE club_id=$1 AND deleted_at IS NULL',[clubId])
     return {...value,state:{...value.state,topics},forumCount:count.count}
   }

@@ -1,3 +1,4 @@
+import {decodeCursor,pageOf} from './pagination.js'
 import type {Pool,PoolClient} from 'pg'
 import {randomUUID} from 'node:crypto'
 import {transaction} from './database.js'
@@ -31,6 +32,16 @@ export class MediaService{
       if(error instanceof HttpError)throw error;throw new HttpError(503,'UPLOAD_FAILED','Não foi possível concluir o envio da mídia.')
     }
   }
+  drafts(userId:string,clubId:string,input:{limit:number;cursor?:string}){if(!this.storage)throw unavailable();return transaction(this.pool,async client=>{
+    await this.membership(client,userId,clubId,true);const cursor=decodeCursor(input.cursor)
+    const {rows}=await client.query(`SELECT m.id,m.kind,m.width,m.height,m.duration,m.created_at AS "createdAt",m.created_at::text AS "sortTime" FROM media_objects m WHERE m.owner_user_id=$1 AND m.club_id=$2 AND m.state='active'
+      AND ($3::timestamptz IS NULL OR (m.created_at,m.id)<($3,$4::uuid))
+      AND NOT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=m.id AND p.deleted_at IS NULL)
+      AND NOT EXISTS(SELECT 1 FROM album_media am JOIN club_albums a ON a.id=am.album_id WHERE am.media_id=m.id AND a.deleted_at IS NULL)
+      AND NOT EXISTS(SELECT 1 FROM forum_topic_media fm JOIN forum_topics t ON t.id=fm.topic_id WHERE fm.media_id=m.id AND t.deleted_at IS NULL)
+      AND NOT EXISTS(SELECT 1 FROM forum_reply_media fm JOIN forum_replies r ON r.id=fm.reply_id JOIN forum_topics t ON t.id=r.topic_id WHERE fm.media_id=m.id AND r.deleted_at IS NULL AND t.deleted_at IS NULL)
+      ORDER BY m.created_at DESC,m.id DESC LIMIT $5`,[userId,clubId,cursor?.time??null,cursor?.id??null,input.limit+1]);return pageOf(rows,input.limit)
+  })}
   async content(userId:string,id:string,thumbnail:boolean,download=false){
     if(!this.storage)throw unavailable()
     const media=await transaction(this.pool,async client=>{

@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from 'react'
 import {Play,X} from 'lucide-react'
 import {useAuth} from '../auth/AuthProvider'
 import {apiRequest,ApiError,readableError} from '../auth/api'
-import type {PostMedia} from '../../server/src/community-contracts'
+import type {PostMedia,Page} from '../../server/src/community-contracts'
 import {Button} from '../components/ui'
 export async function uploadMediaFile(user:NonNullable<ReturnType<typeof useAuth>['user']>,clubId:string,file:File):Promise<PostMedia>{
   const kind=file.type.startsWith('video/')?'video':'image'
@@ -12,11 +12,13 @@ export async function uploadMediaFile(user:NonNullable<ReturnType<typeof useAuth
   return apiRequest<PostMedia>(user,`/clubs/${clubId}/media`,'POST',{kind,data:btoa(binary)})
 }
 export function MediaPicker({clubId,value,onChange,onBusy,imagesOnly=false}:{clubId:string;imagesOnly?:boolean;value:PostMedia[];onChange:(value:PostMedia[])=>void;onBusy?:(busy:boolean)=>void}){
-  const {user}=useAuth(),[busy,setBusy]=useState(false),[error,setError]=useState('')
+  const {user}=useAuth(),[busy,setBusy]=useState(false),[error,setError]=useState(''),[recover,setRecover]=useState(false),[drafts,setDrafts]=useState<Page<PostMedia>>({items:[],nextCursor:null})
+  useEffect(()=>{if(!recover||!user?.emailVerified)return;let live=true;apiRequest<Page<PostMedia>>(user,`/clubs/${clubId}/media/drafts`).then(value=>live&&setDrafts(value)).catch(err=>live&&setError(readableError(err)));return()=>{live=false}},[user?.uid,user?.emailVerified,clubId,recover])
+  async function moreDrafts(){if(!drafts.nextCursor||!user)return;setBusy(true);try{const next=await apiRequest<Page<PostMedia>>(user,`/clubs/${clubId}/media/drafts?cursor=${encodeURIComponent(drafts.nextCursor)}`);setDrafts(value=>({items:[...value.items,...next.items],nextCursor:next.nextCursor}))}catch(err){setError(readableError(err))}finally{setBusy(false)}}
   async function files(files:File[]){if(!user)return;setBusy(true);onBusy?.(true);setError('');const selected=[...value]
     try{if(imagesOnly&&files.some(file=>file.type.startsWith('video/')))throw Error('Anexe somente fotos nesta discussão.');if(files.length+value.length>4)throw Error('Adicione até quatro arquivos de cada vez.');for(const file of files){selected.push(await uploadMediaFile(user,clubId,file));onChange([...selected])}}catch(err){setError(readableError(err))}finally{setBusy(false);onBusy?.(false)}}
   async function remove(id:string){if(!user)return;setBusy(true);onBusy?.(true);setError('');try{await apiRequest(user,`/media/${id}`,'DELETE');onChange(value.filter(item=>item.id!==id))}catch(err){setError(readableError(err))}finally{setBusy(false);onBusy?.(false)}}
-  return <div className="media-picker"><label className="file-button">{imagesOnly?'Adicionar fotos':'Adicionar fotos ou vídeo'}<input type="file" accept={imagesOnly?'image/jpeg,image/png,image/webp':'image/jpeg,image/png,image/webp,video/mp4'} multiple disabled={busy||value.length>=4} onChange={event=>{if(event.target.files)void files(Array.from(event.target.files));event.target.value=''}}/></label><small>Fotos: até 5 MB. MP4: até 10 MB e 30 segundos. Os registros pertencem a este clube.</small>{busy&&<p role="status">Preparando o arquivo e sua miniatura…</p>}{error&&<p role="alert">{error}</p>}<div className="post-media-grid">{value.map(item=><div key={item.id}><PrivateMedia media={item} alt="Arquivo preparado para a publicação"/><Button disabled={busy} variant="ghost" type="button" onClick={()=>void remove(item.id)}>Retirar arquivo</Button></div>)}</div></div>
+  return <div className="media-picker"><label className="file-button">{imagesOnly?'Adicionar fotos':'Adicionar fotos ou vídeo'}<input type="file" accept={imagesOnly?'image/jpeg,image/png,image/webp':'image/jpeg,image/png,image/webp,video/mp4'} multiple disabled={busy||value.length>=4} onChange={event=>{if(event.target.files)void files(Array.from(event.target.files));event.target.value=''}}/></label><small>{imagesOnly?'Fotos de até 5 MB, visíveis somente neste clube.':'Fotos: até 5 MB. MP4: até 10 MB e 30 segundos. Os registros pertencem a este clube.'}</small>{busy&&<p role="status">Preparando o arquivo e sua miniatura…</p>}{error&&<p role="alert">{error}</p>}<div className="post-media-grid">{value.map(item=><div key={item.id}><PrivateMedia media={item} alt="Arquivo preparado para a publicação"/><Button disabled={busy} variant="ghost" type="button" onClick={()=>void remove(item.id)}>Retirar arquivo</Button></div>)}</div><details onToggle={event=>setRecover(event.currentTarget.open)}><summary>Recuperar arquivos preparados</summary><p>Arquivos seus que ainda não estão publicados. A limpeza pode removê-los depois de um dia sem uso.</p><div className="post-media-grid">{drafts.items.filter(item=>(!imagesOnly||item.kind==='image')&&!value.some(selected=>selected.id===item.id)).map(item=><div key={item.id}><PrivateMedia media={item} alt="Arquivo ainda não publicado"/><Button variant="secondary" type="button" disabled={busy||value.length>=4} onClick={()=>onChange([...value,item])}>Usar este arquivo</Button></div>)}</div>{!drafts.items.length&&<p>Nenhum arquivo preparado para recuperar.</p>}{drafts.nextCursor&&<Button variant="ghost" type="button" disabled={busy} onClick={()=>void moreDrafts()}>Mais arquivos preparados</Button>}</details></div>
 }
 function useMediaUrl(id:string,full:boolean,enabled:boolean){
   const {user}=useAuth(),[url,setUrl]=useState(''),[error,setError]=useState(''),[retry,setRetry]=useState(0)
@@ -25,7 +27,7 @@ function useMediaUrl(id:string,full:boolean,enabled:boolean){
       const blob=await response.blob();if(abort.signal.aborted)return;objectUrl=URL.createObjectURL(blob);setUrl(objectUrl)
     }catch(err){if(!abort.signal.aborted)setError(readableError(err))}})()
     return()=>{abort.abort();if(objectUrl)URL.revokeObjectURL(objectUrl)}
-  },[user,id,full,enabled,retry]);return {url,error,retry:()=>setRetry(value=>value+1)}
+  },[user?.uid,user?.emailVerified,id,full,enabled,retry]);return {url,error,retry:()=>setRetry(value=>value+1)}
 }
 export function PrivateMedia({media,alt,full=false}:{media:PostMedia;alt:string;full?:boolean}){
   const [visible,setVisible]=useState(full),[expanded,setExpanded]=useState(false),ref=useRef<HTMLDivElement>(null)

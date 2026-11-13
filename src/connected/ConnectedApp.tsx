@@ -19,7 +19,7 @@ export function Protected({ children }: { children: ReactNode }) {
 function Shell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth()
   const [error, setError] = useState('')
-  return <div className="connected-shell"><header className="connected-header"><Link to="/app"><span className="brand-mark">CL</span> Voltar ao aplicativo</Link>
+  return <div className="connected-shell" data-space="club"><header className="connected-header"><Link to="/app"><span className="brand-mark">CL</span> Voltar ao aplicativo</Link>
     <div><span>{user?.displayName || user?.email}</span><Button variant="ghost" onClick={() => void signOut().catch((err) => setError(readableError(err)))}>Sair</Button></div></header>
     <main className="connected-content">{error && <p role="alert">{error}</p>}{children}</main></div>
 }
@@ -36,7 +36,7 @@ export function ClubList() {
     setError(''); setSession(null)
     apiRequest<Session>(user!, '/me').then((value) => { if (!cancelled) setSession(value) }).catch((err) => { if (!cancelled) setError(readableError(err)) })
     return () => { cancelled = true }
-  }, [user, reload])
+  }, [user?.uid,user?.emailVerified, reload])
   async function create(event: FormEvent) {
     event.preventDefault(); setBusy(true); setError('')
     try { const club = await apiRequest<Club>(user!, '/clubs', 'POST', { name }); navigate(`/clubs/${club.id}`) }
@@ -99,7 +99,7 @@ export function ClubPage() {
     }
     void load()
     return () => { cancelled = true }
-  }, [user, clubId, reload])
+  }, [user?.uid,user?.emailVerified, clubId, reload])
   useEffect(() => { setInviteLink(''); setMessage('') }, [clubId])
   async function action(work: () => Promise<void>) {
     setBusy(true); setError(''); setMessage('')

@@ -18,7 +18,30 @@ const topicColumns=`t.id,t.title,t.body,t.spoiler,t.book_id AS "bookId",t.book_t
  COALESCE((SELECT jsonb_agg(jsonb_build_object('id',m.id,'kind',m.kind,'width',m.width,'height',m.height,'duration',m.duration) ORDER BY fm.position) FROM forum_topic_media fm JOIN media_objects m ON m.id=fm.media_id WHERE fm.topic_id=t.id AND m.state='active'),'[]') AS media`
 export class ForumService{
   constructor(private pool:Pool){}
-  private async access(client:PoolClient,user:UserProfile,clubId:string,read=false){try{return await authorize(client,clubId,user.id,false,read?'share':'update')}catch(error){if(error instanceof HttpError&&error.statusCode===403)throw missing();throw error}}
+  private async access(client:PoolClient,user:UserProfile,clubId:string,read=false){try{const club=await authorize(client,clubId,user.id,false,read?'share':'update');await this.reconcileLegacy(client,clubId);return club}catch(error){if(error instanceof HttpError&&error.statusCode===403)throw missing();throw error}}
+  private async reconcileLegacy(client:PoolClient,clubId:string){
+    await client.query("INSERT INTO forum_legacy_checkpoints(club_id,topics) SELECT club_id,'[]'::jsonb FROM club_workspaces WHERE club_id=$1 ON CONFLICT DO NOTHING",[clubId])
+    const {rows:[change]}=await client.query<{before:WorkspaceState['topics'];after:WorkspaceState['topics']}>(`SELECT c.topics AS before,w.state->'topics' AS after FROM forum_legacy_checkpoints c JOIN club_workspaces w ON w.club_id=c.club_id WHERE c.club_id=$1 AND c.topics IS DISTINCT FROM w.state->'topics' FOR UPDATE OF c`,[clubId])
+    if(!change)return
+    const candidates=[...new Set(change.after.flatMap(topic=>[topic.by,...topic.replies.map(reply=>reply.by),...topic.likedBy]))]
+    if(candidates.some(id=>!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)))throw new HttpError(409,'FORUM_RECONCILIATION','As conversas anteriores precisam de reconciliação de autoria.')
+    const allowed=new Set((await client.query<{user_id:string}>('SELECT user_id FROM club_memberships WHERE club_id=$1 AND user_id=ANY($2::uuid[])',[clubId,candidates])).rows.map(member=>member.user_id))
+    if(change.after.some(topic=>!allowed.has(topic.by)||topic.replies.some(reply=>!allowed.has(reply.by))||topic.likedBy.some(id=>!allowed.has(id))))throw new HttpError(409,'FORUM_RECONCILIATION','As conversas anteriores precisam de uma verificação pela administração antes de continuar.')
+    const previous=new Map(change.before.map(topic=>[topic.id,topic])),current=new Set(change.after.map(topic=>topic.id))
+    for(const topic of change.after){
+      await client.query('INSERT INTO forum_topics(id,club_id,author_user_id,title,body,spoiler,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$7) ON CONFLICT DO NOTHING',[topic.id,clubId,topic.by,topic.title,topic.body,topic.spoiler,topic.at])
+      const belongs=await client.query('SELECT 1 FROM forum_topics WHERE id=$1 AND club_id=$2 AND author_user_id=$3',[topic.id,clubId,topic.by]);if(!belongs.rowCount)throw new HttpError(409,'FORUM_RECONCILIATION','Uma discussão anterior precisa de reconciliação de identificadores.')
+      for(const reply of topic.replies){
+        await client.query('INSERT INTO forum_replies(id,topic_id,club_id,author_user_id,body,created_at) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING',[reply.id,topic.id,clubId,reply.by,reply.body,reply.at])
+        if(!(await client.query('SELECT 1 FROM forum_replies WHERE id=$1 AND topic_id=$2 AND club_id=$3 AND author_user_id=$4',[reply.id,topic.id,clubId,reply.by])).rowCount)throw new HttpError(409,'FORUM_RECONCILIATION','Uma resposta anterior precisa de reconciliação de identificadores.')
+      }
+      const oldLikes=new Set(previous.get(topic.id)?.likedBy??[]),newLikes=new Set(topic.likedBy)
+      for(const id of newLikes)if(!oldLikes.has(id))await client.query('INSERT INTO forum_topic_likes(topic_id,club_id,user_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING',[topic.id,clubId,id])
+      for(const id of oldLikes)if(!newLikes.has(id))await client.query('DELETE FROM forum_topic_likes WHERE topic_id=$1 AND user_id=$2',[topic.id,id])
+    }
+    for(const topic of change.before)if(!current.has(topic.id))await client.query("UPDATE forum_topics SET deleted_at=COALESCE(deleted_at,now()),title='Discussão excluída',body='Discussão excluída',version=version+1 WHERE id=$1 AND club_id=$2 AND deleted_at IS NULL",[topic.id,clubId])
+    await client.query('UPDATE forum_legacy_checkpoints SET topics=$2,updated_at=now() WHERE club_id=$1',[clubId,JSON.stringify(change.after)])
+  }
   private async topic(client:PoolClient,clubId:string,id:string){const {rows:[topic]}=await client.query("SELECT id,author_user_id,closed,pinned,version FROM forum_topics WHERE id=$1 AND club_id=$2 AND deleted_at IS NULL FOR UPDATE",[id,clubId]);if(!topic)throw missing();return topic as {id:string;author_user_id:string;closed:boolean;pinned:boolean;version:number}}
   private async reference(client:PoolClient,clubId:string,bookId?:string|null){
     if(!bookId)return {title:'',author:''}
@@ -31,7 +54,9 @@ export class ForumService{
       await client.query(`INSERT INTO ${table}(${column},media_id,club_id,position) VALUES($1,$2,$3,$4)`,[id,mediaId,clubId,position])
     }
   }
-  async legacyTopics(client:PoolClient,clubId:string,userId:string):Promise<WorkspaceState['topics']>{
+  async legacyTopics(client:PoolClient,clubId:string,userId:string,includeTopics=true):Promise<WorkspaceState['topics']>{
+    await this.reconcileLegacy(client,clubId)
+    if(!includeTopics)return []
     const {rows}=await client.query(`SELECT t.id,t.title,t.body,t.author_user_id AS by,u.name,to_char(t.created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS at,t.spoiler,
       COALESCE((SELECT jsonb_agg(l.user_id) FROM (SELECT user_id FROM forum_topic_likes WHERE topic_id=t.id ORDER BY (user_id=$2) DESC,user_id LIMIT 500) l),'[]') AS "likedBy",
       COALESCE((SELECT jsonb_agg(jsonb_build_object('id',r.id,'body',r.body,'by',r.author_user_id,'name',author.name,'at',r.created_at) ORDER BY r.created_at,r.id) FROM (SELECT * FROM forum_replies WHERE topic_id=t.id AND deleted_at IS NULL ORDER BY created_at DESC,id DESC LIMIT 100) r JOIN users author ON author.id=r.author_user_id),'[]') AS replies

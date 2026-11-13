@@ -62,7 +62,7 @@ export class AlbumService {
     await client.query('DELETE FROM album_media WHERE album_id=$1 AND media_id=$2',[id,mediaId])
     await client.query("UPDATE social_posts SET deleted_at=now(),body='Registro retirado do álbum',version=version+1 WHERE id=$1",[photo.post_id])
     await client.query('DELETE FROM post_media WHERE post_id=$1',[photo.post_id])
-    await client.query("UPDATE media_objects SET state='deleted',deleted_at=now() WHERE id=$1 AND NOT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=$1 AND p.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM album_media am WHERE am.media_id=$1)",[mediaId])
+    await client.query("UPDATE media_objects SET state='deleted',deleted_at=now() WHERE id=$1 AND NOT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=$1 AND p.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM album_media am WHERE am.media_id=$1) AND NOT EXISTS(SELECT 1 FROM forum_topic_media fm JOIN forum_topics t ON t.id=fm.topic_id WHERE fm.media_id=$1 AND t.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM forum_reply_media fm JOIN forum_replies r ON r.id=fm.reply_id JOIN forum_topics t ON t.id=r.topic_id WHERE fm.media_id=$1 AND r.deleted_at IS NULL AND t.deleted_at IS NULL)",[mediaId])
     await client.query("INSERT INTO audit_logs(club_id,actor_user_id,action,entity_id) VALUES($1,$2,'album.photo.removed',$3)",[clubId,user.id,mediaId])
   })}
   remove(user:UserProfile,clubId:string,id:string){return transaction(this.pool,async client=>{

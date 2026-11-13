@@ -52,3 +52,10 @@ INSERT INTO forum_topic_likes(topic_id,club_id,user_id)
   FROM club_workspaces w CROSS JOIN LATERAL jsonb_array_elements(w.state->'topics') t CROSS JOIN LATERAL jsonb_array_elements_text(t->'likedBy') liked;
 -- Legacy snapshots remain intact for reconciliation/backup, but the API routes
 -- new club forum mutations to these tables. Personal notes keep the old format.
+
+-- Reconcile legacy writes made by an older API instance during rollout. The
+-- checkpoint stores only the bounded old snapshot; new forum writes never use it.
+CREATE TABLE forum_legacy_checkpoints (
+  club_id uuid PRIMARY KEY REFERENCES clubs(id),topics jsonb NOT NULL DEFAULT '[]',updated_at timestamptz NOT NULL DEFAULT now()
+);
+INSERT INTO forum_legacy_checkpoints(club_id,topics) SELECT club_id,state->'topics' FROM club_workspaces;
