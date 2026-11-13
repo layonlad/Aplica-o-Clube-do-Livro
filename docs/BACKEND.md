@@ -1,10 +1,23 @@
-# Backend, autenticação e convites — versão 0.2
+# Aplicativo, autenticação e espaços de leitura
 
 ## Entrega funcional
 
-O modo conectado implementa cadastro e login por e-mail/senha ou Google, confirmação de e-mail, recuperação de senha, criação de clube, listagem de clubes e participantes, criação/aceite/revogação de convites e remoção/reativação de membros. Todos os dados dessas operações persistem em PostgreSQL. A identidade vem do Firebase Authentication.
+O app publicado abre em `/app`, sem exigir cadastro ou participação em clube. Biblioteca, leitor, progresso, avaliações, histórico, agenda, fotos dos encontros, anotações, indicações, sorteio, perfil e aparência estão disponíveis no espaço pessoal. Visitantes persistem seus registros em IndexedDB neste navegador, com exportação/importação de backup JSON no Perfil. A aparência e a meta anual ficam neste aparelho.
 
-Biblioteca, EPUB, progresso, avaliações, sorteios, agenda, fotos e fórum continuam no backlog. As telas dessas áreas existem apenas no modo demonstrativo. O modo conectado não apresenta dados fictícios como se fossem do usuário.
+Uma conta com e-mail confirmado sincroniza o espaço pessoal com PostgreSQL, sem exigir clube. O usuário pode alternar para o espaço compartilhado de um clube pelo seletor superior. Login por e-mail/senha e Google, recuperação de senha, criação de clube, participantes, criação/aceite/revogação de convites e remoção/reativação de membros continuam disponíveis em `/clubs`. Esses dados usam Firebase Authentication e PostgreSQL.
+
+Os espaços começam vazios, sem participantes, acervos ou estatísticas fictícias. As páginas antigas com dados simulados permanecem apenas no modo `demo`, separado da versão publicada.
+
+## Módulos e persistência
+
+- Livros: título/autor/categoria, destaque de leitura, conteúdo de texto e remoção com confirmação. EPUB sem DRM e TXT de até 10 MB são processados no navegador; até 600 mil caracteres de texto por livro. O leitor apresenta texto, sem importar imagens ou diagramação do EPUB. XML/HTML não é inserido na página: somente texto é renderizado. Há limites para arquivos descompactados, capítulos, itens e tamanho total do espaço.
+- Leitor: navegação entre páginas, fonte, modo noturno, marcador, progresso manual, conclusão e avaliação. O progresso do clube é privado por usuário e separado do acervo compartilhado.
+- Agenda: data/hora, local, descrição, confirmação individual e até oito fotos JPEG por evento, reduzidas no navegador antes de salvar. Datas são armazenadas como instantes ISO e exibidas no fuso do aparelho.
+- Conversas: caderno privado no espaço pessoal; tópicos, comentários, curtidas e proteção de spoilers no clube. Autor é determinado pela API. O responsável modera; cada membro pode excluir seus próprios tópicos.
+- Indicações: lista pessoal livre; no clube, uma indicação por membro por rodada. O responsável sorteia e encerra a rodada com `crypto.randomInt` no servidor, guardando participantes e resultado, com auditoria append-only. Ações concorrentes usam lock do clube e versão para impedir resultados duplicados. O sorteio pessoal usa `crypto.getRandomValues` com amostragem sem viés no navegador.
+- Backup: exportação do espaço escolhido; importação substitui somente o espaço pessoal, com validação de formato e limites. Ao começar a usar uma conta, o espaço local não é enviado automaticamente: o usuário pode exportar o backup local e importá-lo no espaço da conta.
+
+`002_complete_workspace.sql` adiciona `personal_workspaces`, `club_workspaces` e `club_reading_states`. Os documentos JSONB são limitados e validados por schemas Zod e ações discriminadas; o cliente não grava snapshots arbitrários em clubes. Todas as leituras/mutações compartilhadas verificam associação ativa na transação, usando a mesma ordem de locks da remoção. O responsável gerencia acervo/encontros; membros participam sem poder reescrever o clube. Atualizações usam versão e rejeitam conflitos com HTTP 409. Atualização de progresso não altera a versão compartilhada. Não há sincronização em tempo real; recarregar consulta a versão atual.
 
 ## Decisões
 
@@ -15,7 +28,7 @@ Biblioteca, EPUB, progresso, avaliações, sorteios, agenda, fotos e fórum cont
 - Papéis implementados: responsável (`owner`) e membro (`member`). Admin delegado e transferência de propriedade ficam para uma etapa própria com permissões explícitas.
 - Qualquer conta confirmada pode criar até cinco clubes próprios. Criar conta não dá acesso a clubes existentes; a entrada nesses clubes exige convite. O primeiro visitante nunca se torna dono de um clube já existente.
 - Autenticação do navegador usa persistência de sessão. O app não copia bearer tokens para armazenamento próprio.
-- Firebase Storage será integrado com o módulo de arquivos, usando autorização da API e URLs temporárias. Não há uploads nem endpoints de arquivos nesta entrega.
+- Livros importados são convertidos em texto; fotos são reduzidas a JPEG. O conteúdo fica no espaço JSONB protegido, sem depender de Firebase Storage ou do disco efêmero do Render. Limites: 100 livros/encontros/rodadas, 200 conversas e 8 milhões de caracteres serializados por espaço. Armazenamento em grande escala e distribuição do EPUB original ficam fora desta versão.
 
 ## Organização
 

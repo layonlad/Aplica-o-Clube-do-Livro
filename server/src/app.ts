@@ -8,6 +8,8 @@ import type { VerifyToken } from './auth.js'
 import type { UserProfile } from './contracts.js'
 import { HttpError } from './errors.js'
 import { ClubService } from './service.js'
+import { WorkspaceService } from './workspace-service.js'
+import { actionSchema } from './workspace-model.js'
 
 declare module 'fastify' { interface FastifyRequest { user: UserProfile } }
 
@@ -33,6 +35,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     trustProxy: false,
   })
   const service = new ClubService(options.pool)
+  const workspace = new WorkspaceService(options.pool)
   await app.register(cors, { origin: options.origin, methods: ['GET', 'POST', 'DELETE'], allowedHeaders: ['Authorization', 'Content-Type'] })
   await app.register(helmet)
   await app.register(rateLimit, { max: options.rateMax ?? 120, timeWindow: '1 minute' })
@@ -64,6 +67,11 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
       request.user = await service.syncUser(identity)
     })
     api.get('/me', (request) => service.session(request.user))
+    const workspaceInput = z.object({ action: actionSchema, version: z.number().int().min(0) }).strict()
+    api.get('/me/workspace', request => workspace.get(request.user))
+    api.post('/me/workspace', { bodyLimit: 9000000 }, request => { const input=workspaceInput.parse(request.body); return workspace.act(request.user,input.action,input.version) })
+    api.get('/clubs/:clubId/workspace', request => workspace.get(request.user,clubParams.parse(request.params).clubId))
+    api.post('/clubs/:clubId/workspace', { bodyLimit: 3000000 }, request => { const input=workspaceInput.parse(request.body); return workspace.act(request.user,input.action,input.version,clubParams.parse(request.params).clubId) })
     api.post('/clubs', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
       const club = await service.createClub(request.user, createClubInput.parse(request.body))
       return reply.code(201).send(club)

@@ -9,7 +9,9 @@ Publicado e verificado em **13/11/2026** na conta `negocio.layon@gmail.com`, usa
 - Saúde da API e do banco: https://clube-livro-api.onrender.com/health
 - Painel Render: https://dashboard.render.com/web/srv-dbrjddl9fdbs73eikb0g
 
-O modo publicado é **conectado**: cadastro/login, clubes, membros e convites usam Firebase Authentication e PostgreSQL. Biblioteca, EPUB, progresso, avaliações, sorteios, agenda, fotos e fórum continuam no backlog, conforme `BACKEND.md`.
+O modo publicado abre o aplicativo completo em `/app` **sem cadastro**. Visitantes têm espaço pessoal local com biblioteca, leitor de texto EPUB/TXT, progresso, avaliação, histórico, agenda, fotos, notas, indicações, sorteio, perfil e aparência. Conta é opcional para sincronização; clube é opcional para compartilhamento. Os detalhes e limites estão em `BACKEND.md`.
+
+`002_complete_workspace.sql` foi aplicada em transação e adicionou três tabelas para espaço pessoal, espaço de clube e progresso privado de cada membro. Checksum: `1597255a223eea57e0eeee385221095509e4ba27a205ebf05c4ec1e209f798c4`. Dados existentes de clubes e convites foram preservados; a identidade `clube_runtime` recebeu SELECT/INSERT/UPDATE nessas tabelas, sem DELETE.
 
 ## Recursos configurados
 

@@ -7,7 +7,7 @@ import { ApiError, apiRequest, readableError } from '../auth/api'
 import { Button, Card } from '../components/ui'
 import './connected.css'
 
-function Protected({ children }: { children: ReactNode }) {
+export function Protected({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
   if (loading) return <main className="access-page" role="status">Carregando sua conta…</main>
   if (!user) return <AuthScreen />
@@ -17,11 +17,11 @@ function Protected({ children }: { children: ReactNode }) {
 function Shell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth()
   const [error, setError] = useState('')
-  return <div className="connected-shell"><header className="connected-header"><Link to="/clubs"><span className="brand-mark">CL</span> Meus clubes</Link>
+  return <div className="connected-shell"><header className="connected-header"><Link to="/app"><span className="brand-mark">CL</span> Voltar ao aplicativo</Link>
     <div><span>{user?.displayName || user?.email}</span><Button variant="ghost" onClick={() => void signOut().catch((err) => setError(readableError(err)))}>Sair</Button></div></header>
     <main className="connected-content">{error && <p role="alert">{error}</p>}{children}</main></div>
 }
-function ClubList() {
+export function ClubList() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [session, setSession] = useState<Session | null>(null)
@@ -51,7 +51,7 @@ function ClubList() {
   </Shell>
 }
 
-function InvitePage() {
+export function InvitePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -70,7 +70,7 @@ function InvitePage() {
     <Link to="/clubs">Voltar para meus clubes</Link></Card></Shell>
 }
 
-function ClubPage() {
+export function ClubPage() {
   const { user } = useAuth()
   const { clubId } = useParams()
   const [details, setDetails] = useState<ClubDetails | null>(null)
@@ -132,7 +132,7 @@ function ClubPage() {
         const available = !invite.revokedAt && new Date(invite.expiresAt).getTime() > Date.now() && invite.uses < invite.maxUses
         return <li key={invite.id}><div><strong>{invite.email || 'Convite para o grupo'}</strong><small>{invite.uses}/{invite.maxUses} usos · {invite.revokedAt ? 'Revogado' : new Date(invite.expiresAt).getTime() <= Date.now() ? 'Expirado' : `Válido até ${new Date(invite.expiresAt).toLocaleDateString('pt-BR')}`}</small></div>{available && <Button disabled={busy} variant="ghost" onClick={() => action(async () => { await apiRequest(user!, `/clubs/${clubId}/invites/${invite.id}`, 'DELETE'); setInviteLink(''); setMessage('Convite revogado.') })}>Revogar</Button>}</li>
       })}</ul></Card></>}
-      <Card><h2>Próximos capítulos</h2><p>Biblioteca, leitor, agenda e fórum serão disponibilizados nas próximas etapas. A gestão de acesso e participantes já está disponível aqui.</p></Card>
+      <Card><h2>O espaço do seu clube</h2><p>Acesse a biblioteca compartilhada, as leituras, os encontros, as conversas e as indicações deste grupo.</p><Link className="button-link" to={`/space/${clubId}`}>Abrir aplicativo neste clube →</Link></Card>
     </>}
   </Shell>
 }

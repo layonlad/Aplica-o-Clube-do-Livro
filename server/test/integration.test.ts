@@ -6,6 +6,7 @@ import { hashToken } from '../src/service.js'
 import { migrate } from '../src/migrations.js'
 import { testDatabase } from './database.js'
 import type { Club, CreatedInvite, Session } from '../src/contracts.js'
+import type { WorkspaceSnapshot } from '../src/workspace-model.js'
 
 let db: Awaited<ReturnType<typeof testDatabase>>
 let app: Awaited<ReturnType<typeof buildApp>>
@@ -122,5 +123,40 @@ describe('API com PostgreSQL real', () => {
       await limited.inject({ url: '/v1/me', headers: headers() })
       expect((await limited.inject({ url: '/v1/me', headers: headers() })).statusCode).toBe(429)
     } finally { await limited.close() }
+  })
+  it('persiste o acervo do clube, limita a administração e mantém progresso privado por membro', async () => {
+    const url=`/v1/clubs/${club.id}/workspace`
+    let state=(await app.inject({url,headers:headers()})).json<WorkspaceSnapshot>()
+    const added=await app.inject({method:'POST',url,headers:headers(),payload:{version:state.version,action:{type:'book.add',title:'Livro real',author:'Autora',category:'Romance',content:'Conteúdo original.'}}})
+    expect(added.statusCode).toBe(200);state=added.json()
+    const bookId=state.state.books[0].id
+    expect((await app.inject({url,headers:headers('outsider')})).statusCode).toBe(403)
+    expect((await app.inject({method:'POST',url,headers:headers('member'),payload:{version:state.version,action:{type:'book.remove',id:bookId}}})).statusCode).toBe(403)
+    const progress=await app.inject({method:'POST',url,headers:headers('member'),payload:{version:state.version,action:{type:'reading.update',id:bookId,percent:100,rating:5}}})
+    expect(progress.statusCode).toBe(200)
+    expect(progress.json<WorkspaceSnapshot>().reading[bookId].finishedAt).toBeTruthy()
+    expect((await app.inject({url,headers:headers()})).json<WorkspaceSnapshot>().reading[bookId]).toBeUndefined()
+    expect((await app.inject({url,headers:headers('member')})).json<WorkspaceSnapshot>().reading[bookId].rating).toBe(5)
+  })
+  it('mantém o espaço pessoal separado dos outros usuários e clubes', async () => {
+    const url='/v1/me/workspace'
+    const state=(await app.inject({url,headers:headers('individual')})).json<WorkspaceSnapshot>()
+    const result=await app.inject({method:'POST',url,headers:headers('individual'),payload:{version:state.version,action:{type:'topic.add',title:'Minha nota',body:'Só eu posso ver',spoiler:false}}})
+    expect(result.statusCode).toBe(200)
+    expect((await app.inject({url,headers:headers('other-individual')})).json<WorkspaceSnapshot>().state.topics).toEqual([])
+    expect((await app.inject({url:`/v1/clubs/${club.id}/workspace`,headers:headers()})).body).not.toContain('Só eu posso ver')
+    expect((await app.inject({url,headers:headers('individual')})).json<WorkspaceSnapshot>().state.topics[0].title).toBe('Minha nota')
+  })
+  it('registra uma única rodada de sorteio sob concorrência e recusa conteúdo administrativo forjado', async () => {
+    const url=`/v1/clubs/${club.id}/workspace`
+    let state=(await app.inject({url,headers:headers()})).json<WorkspaceSnapshot>()
+    state=(await app.inject({method:'POST',url,headers:headers('member'),payload:{version:state.version,action:{type:'nomination.add',title:'Uma indicação',author:'Autora'}}})).json()
+    expect((await app.inject({method:'POST',url,headers:headers('member'),payload:{version:state.version,action:{type:'draw'}}})).statusCode).toBe(403)
+    expect((await app.inject({method:'POST',url,headers:headers('member'),payload:{version:state.version,action:{type:'topic.add',title:'Título',body:'Texto',spoiler:false,by:'owner'}}})).statusCode).toBe(400)
+    const results=await Promise.all([1,2].map(()=>app.inject({method:'POST',url,headers:headers(),payload:{version:state.version,action:{type:'draw'}}})))
+    expect(results.map(r=>r.statusCode).sort()).toEqual([200,409])
+    const saved=(await app.inject({url,headers:headers()})).json<WorkspaceSnapshot>()
+    expect(saved.state.draws).toHaveLength(1);expect(saved.state.nominations).toEqual([])
+    expect((await db.pool.query("SELECT count(*)::int AS count FROM audit_logs WHERE club_id=$1 AND action='draw'",[club.id])).rows[0].count).toBe(1)
   })
 })

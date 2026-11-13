@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { ConnectedApp } from '../connected/ConnectedApp'
+import { WorkspaceApp } from '../workspace/WorkspaceApp'
 import { MobileShell } from '../components/MobileShell'
 import { AdminPage } from '../pages/AdminPage'
 import { CalendarPage } from '../pages/CalendarPage'
@@ -14,7 +14,7 @@ import { ReaderPage } from '../pages/ReaderPage'
 import { ThemePage } from '../pages/ThemePage'
 
 export function App() {
-  if (import.meta.env.VITE_APP_MODE === 'connected') return <ConnectedApp />
+  if (import.meta.env.VITE_APP_MODE === 'connected') return <WorkspaceApp />
   if (import.meta.env.VITE_APP_MODE && import.meta.env.VITE_APP_MODE !== 'demo') return <main><h1>Configuração inválida</h1></main>
   return (
     <Routes>

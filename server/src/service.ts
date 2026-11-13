@@ -13,7 +13,7 @@ async function audit(client: PoolClient, clubId: string, actor: string, action: 
 }
 // All membership-sensitive operations lock the club first, in the same order.
 // Removal and invite redemption cannot race past a stale permission check.
-async function authorize(client: PoolClient, clubId: string, userId: string, ownerOnly = false): Promise<Club> {
+export async function authorize(client: PoolClient, clubId: string, userId: string, ownerOnly = false): Promise<Club> {
   await client.query('SELECT id FROM clubs WHERE id = $1 FOR UPDATE', [clubId])
   const { rows } = await client.query<Club>(`SELECT c.id, c.name, c.timezone, m.role FROM clubs c
     JOIN club_memberships m ON m.club_id = c.id WHERE c.id = $1 AND m.user_id = $2 AND m.status = 'active'`, [clubId, userId])
