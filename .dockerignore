@@ -1,0 +1,14 @@
+.git
+node_modules
+**/node_modules
+dist
+**/dist
+.local-data
+.firebase
+.env
+.env.*
+**/.env
+**/.env.*
+*-debug.log*
+coverage
+*.tsbuildinfo

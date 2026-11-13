@@ -29,6 +29,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - name: Validar imagem da API
+        run: docker build -t clube-api:check .
       - name: Compilar modo conectado
         run: npm run build
         env:
