@@ -1,4 +1,7 @@
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
+import { WorkspaceService } from '../src/workspace-service.js'
+import { emptyWorkspace } from '../src/workspace-model.js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { buildApp } from '../src/app.js'
 import { HttpError } from '../src/errors.js'
@@ -41,6 +44,37 @@ beforeAll(async () => {
 afterAll(async () => { await app?.close(); await db?.close() })
 
 describe('API com PostgreSQL real', () => {
+  it('migra a base 001/002 com conteúdo legado sem perder dados e sem reaplicar mudanças', async () => {
+    const legacy = await testDatabase(false)
+    try {
+      await legacy.pool.query('CREATE TABLE schema_migrations (name text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())')
+      const markers = []
+      for (const name of ['001_identity_and_clubs.sql', '002_complete_workspace.sql']) {
+        const sql = await readFile(new URL('../migrations/' + name, import.meta.url), 'utf8')
+        const checksum = createHash('sha256').update(sql).digest('hex')
+        await legacy.pool.query(sql)
+        await legacy.pool.query('INSERT INTO schema_migrations(name,checksum) VALUES($1,$2)', [name, checksum])
+        markers.push({name, checksum})
+      }
+      const {rows:[user]} = await legacy.pool.query("INSERT INTO users(firebase_uid,email,name) VALUES('migration-fixture','migration-fixture@example.com','Leitor') RETURNING id,email,name")
+      const state = emptyWorkspace(), bookId = randomUUID()
+      state.books.push({id:bookId,title:'Livro anterior',author:'Autora',category:'',content:'Texto original preservado.',createdBy:user.id,createdAt:new Date().toISOString()})
+      const reading = {[bookId]:{percent:40,page:2,bookmark:1,rating:4,finishedAt:null}}
+      await legacy.pool.query('INSERT INTO personal_workspaces(user_id,state,reading,version) VALUES($1,$2,$3,7)', [user.id,state,reading])
+      await migrate(legacy.pool)
+      await migrate(legacy.pool)
+      const workspace = new WorkspaceService(legacy.pool), snapshot = await workspace.get(user)
+      expect(snapshot.state).toEqual(state)
+      expect(snapshot.reading).toEqual(reading)
+      expect(snapshot.version).toBe(7)
+      const next = await workspace.act(user,{type:'reading.update',id:bookId,favorite:true,expectedRevision:0},snapshot.version)
+      expect(next.reading[bookId]).toMatchObject({...reading[bookId],favorite:true,revision:1})
+      expect(next.state).toEqual(state)
+      expect((await legacy.pool.query('SELECT name,checksum FROM schema_migrations WHERE name=ANY($1::text[]) ORDER BY name',[markers.map(m=>m.name)])).rows).toEqual(markers)
+      expect((await legacy.pool.query('SELECT count(*)::int AS count FROM private_book_files')).rows[0].count).toBe(0)
+    } finally { await legacy.close() }
+  })
+
   it('recusa acesso anônimo, token inválido e e-mail não confirmado', async () => {
     expect((await app.inject({ url: '/v1/me' })).statusCode).toBe(401)
     expect((await app.inject({ url: '/v1/me', headers: headers('invalid') })).statusCode).toBe(401)

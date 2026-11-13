@@ -42,16 +42,18 @@ A disponibilidade e as cotas gratuitas foram verificadas em [Neon Pricing](https
 
 As duas migrações foram aplicadas apenas nos bancos locais temporários dos testes. A base de produção conserva 001/002.
 
+Também foi feito um ensaio com 56 definições de objetos exportadas dos catálogos do PostgreSQL de produção (tabelas, constraints, índices, funções e triggers), sem copiar linhas de usuários. A estrutura foi restaurada em PostgreSQL local isolado; os checksums 001/002 foram conferidos, uma fixture sintética legada foi inserida e 003/004 foram executadas duas vezes. O conteúdo e os registros anteriores foram preservados e a nova ação de progresso funcionou. Foi usado PostgreSQL embarcado 18 no ensaio; o CI cobre PostgreSQL 17, a versão de produção. Este ensaio não valida ACLs do papel restrito nem transferência real no bucket. Não foi criada uma branch Neon com cópia de dados. Um teste de regressão com base 001/002 e conteúdo legado reproduz a preservação em cada execução do CI.
+
 ## Verificação
 
-- 14 testes de interface/importação/layout de leitura, 24 unitários da API, 16 integrações PostgreSQL e uma integração Auth Emulator/PostgreSQL passaram.
+- 14 testes de interface/importação/layout de leitura, 24 unitários da API, 17 integrações PostgreSQL e uma integração Auth Emulator/PostgreSQL passaram.
 - Build de demonstração, build conectado e compilação da API concluídos.
 - Prévia no navegador: cadastro com metadados, abertura do leitor, mudança para sépia, avanço de página, retomada após reload e seleção/salvamento de destaque privado. Console sem erros observados.
 - O teste de arquivos usou um adapter de memória e PG local, incluindo acesso cruzado negado, deduplicação, falha de exclusão, revogação de download e limpeza posterior. Não valida uma transferência real no storage de produção.
 
 ## Operação e próxima publicação
 
-Publicar somente após revisão e autorização específica para esta entrega. Ordem: ensaio de migrações em ambiente isolado, concessão de SELECT/INSERT/UPDATE em `private_book_files` à identidade de execução, migrações 003/004, configuração dos cinco envs de storage no servidor, deploy da API, verificações e depois frontend. Nunca enviar esses envs em variáveis `VITE_`. A aplicação publicada atual fica preservada até esse aceite.
+Publicar somente após revisão e autorização específica para esta entrega. Ordem: revisar o ensaio de migrações concluído em ambiente isolado, executar migrações 003/004, conceder SELECT/INSERT/UPDATE em `private_book_files` à identidade de execução, configuração dos cinco envs de storage no servidor, deploy da API, verificações e depois frontend. Nunca enviar esses envs em variáveis `VITE_`. A aplicação publicada atual fica preservada até esse aceite.
 
 Configuração de servidor: `MEDIA_BUCKET`, `AWS_ENDPOINT_URL_S3`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Sem configuração, a API responde `STORAGE_UNAVAILABLE`; não recorre a storage público ou disco temporário.
 
