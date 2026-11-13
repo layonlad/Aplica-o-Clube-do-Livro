@@ -17,7 +17,7 @@ export function Protected({ children }: { children: ReactNode }) {
 function Shell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth()
   const [error, setError] = useState('')
-  return <div className="connected-shell"><header className="connected-header"><Link to="/app"><span className="brand-mark">CL</span> Voltar ao aplicativo</Link>
+  return <div className="connected-shell" data-space="club"><header className="connected-header"><Link to="/app"><span className="brand-mark">CL</span> Voltar ao aplicativo</Link>
     <div><span>{user?.displayName || user?.email}</span><Button variant="ghost" onClick={() => void signOut().catch((err) => setError(readableError(err)))}>Sair</Button></div></header>
     <main className="connected-content">{error && <p role="alert">{error}</p>}{children}</main></div>
 }
