@@ -5,7 +5,7 @@ services:
     plan: free
     region: virginia
     repo: https://github.com/layonlad/Aplica-o-Clube-do-Livro
-    branch: codex/backend-auth-convites
+    branch: main
     dockerfilePath: ./Dockerfile
     dockerContext: .
     autoDeployTrigger: "off"

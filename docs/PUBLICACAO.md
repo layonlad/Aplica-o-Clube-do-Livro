@@ -24,7 +24,7 @@ O modo publicado abre o aplicativo completo em `/app` **sem cadastro**. Visitant
 | Render | `Layon's workspace`, ID `tea-dbril3bm8hqs73d5n5ig` |
 | API | `clube-livro-api`, ID `srv-dbrjddl9fdbs73eikb0g`, Docker, **Free**, região Virginia, uma instância, sem disco |
 | Deploy atual da API | `dep-dbrk18bm8hqs73d9176g`, estado `live`, commit `482b29d2f2ef5611323feeaca331893ee1bbff0a` |
-| Branch da API | `codex/backend-auth-convites`; publicação automática desligada |
+| Branch da API | `main`; publicação automática desligada |
 | Neon | Projeto **Free** `wandering-block-99253816`, região `aws-us-east-1`, PostgreSQL 17 |
 | Banco | `clube_do_livro`; branch `production`, ID `br-super-term-bco4myiu` |
 | Identidades PostgreSQL | `clube_migrator` para migrations; `clube_runtime` para execução restrita da API |
