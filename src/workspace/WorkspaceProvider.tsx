@@ -12,7 +12,8 @@ interface ContextValue {
 const Context=createContext<ContextValue|null>(null)
 export function WorkspaceProvider({children}:{children:ReactNode}) {
   const {user}=useAuth()
-  const [scope,setScope]=useState('personal')
+  const [scope,setScope]=useState(()=>{if(!user?.emailVerified)return 'personal';try{const saved=sessionStorage.getItem(`clube-livro-scope:${user.uid}`);return saved&&/^[0-9a-f-]{36}$/i.test(saved)?saved:'personal'}catch{return 'personal'}})
+  useEffect(()=>{if(user?.emailVerified)try{sessionStorage.setItem(`clube-livro-scope:${user.uid}`,scope)}catch{/* Storage preferences must not prevent reading. */}},[user?.uid,user?.emailVerified,scope])
   const [snapshot,setSnapshot]=useState<WorkspaceSnapshot|null>(null)
   const [clubs,setClubs]=useState<Club[]>([])
   const [loading,setLoading]=useState(true)

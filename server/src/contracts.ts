@@ -1,4 +1,4 @@
-export type Role = 'owner' | 'member'
+export type Role = 'owner' | 'admin' | 'moderator' | 'member'
 export interface UserProfile { id: string; email: string; name: string }
 export interface Club { id: string; name: string; timezone: string; role: Role }
 export interface Session { user: UserProfile; clubs: Club[] }
@@ -8,5 +8,5 @@ export interface Invite {
   expiresAt: string; revokedAt: string | null; createdAt: string
 }
 export interface CreatedInvite extends Invite { token: string }
-export interface ClubDetails { club: Club; members: Member[] }
+export interface ClubDetails { club: Club; members: Member[];membersNextCursor?:string|null;memberCount?:number }
 export interface ApiErrorBody { error: { code: string; message: string } }

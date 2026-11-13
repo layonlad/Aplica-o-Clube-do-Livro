@@ -1,3 +1,4 @@
+import type { Role } from './contracts.js'
 import { z } from 'zod'
 
 const id = z.uuid()
@@ -26,7 +27,7 @@ export const workspaceSchema = z.object({
 }).strict()
 export type WorkspaceState = z.infer<typeof workspaceSchema>
 export type ReadingState = z.infer<typeof readingSchema>
-export interface WorkspaceSnapshot { state: WorkspaceState; reading: ReadingState; preferences?:ReadingPreferences; version: number; role: 'owner' | 'member'; actorId: string }
+export interface WorkspaceSnapshot { state: WorkspaceState; reading: ReadingState; preferences?:ReadingPreferences; version: number; role: Role; actorId: string }
 export const emptyWorkspace = (): WorkspaceState => ({ books: [], currentBookId: null, events: [], topics: [], nominations: [], draws: [] })
 
 export const actionSchema = z.discriminatedUnion('type', [
@@ -61,7 +62,7 @@ export function applyWorkspaceAction(snapshot: WorkspaceSnapshot, action: Worksp
   let state = structuredClone(snapshot.state)
   let reading = structuredClone(snapshot.reading)
   let preferences=preferencesSchema.parse(snapshot.preferences)
-  const owner = snapshot.role === 'owner'
+  const owner = ['owner','admin'].includes(snapshot.role)
   const requireOwner = () => { if (!owner) throw new WorkspaceError('FORBIDDEN', 'Somente o responsável pode fazer essa alteração no clube.') }
   const missing = () => new WorkspaceError('NOT_FOUND', 'Este item não está mais disponível.')
   const book = 'id' in action ? state.books.find(b => b.id === action.id) : undefined
@@ -105,7 +106,7 @@ export function applyWorkspaceAction(snapshot: WorkspaceSnapshot, action: Worksp
     case 'topic.add': state.topics.unshift({ id: options.id, title: action.title, body: action.body, spoiler: action.spoiler, by: actor.id, name: actor.name, at: options.now, replies: [], likedBy: [] }); break
     case 'topic.reply': if (!topic) throw missing(); topic.replies.push({ id: options.id, body: action.body, by: actor.id, name: actor.name, at: options.now }); break
     case 'topic.like': if (!topic) throw missing(); topic.likedBy = topic.likedBy.includes(actor.id) ? topic.likedBy.filter(id => id !== actor.id) : [...topic.likedBy, actor.id]; break
-    case 'topic.remove': if (!topic) throw missing(); if (!owner && topic.by !== actor.id) throw new WorkspaceError('FORBIDDEN', 'Você só pode excluir suas próprias conversas.'); state.topics = state.topics.filter(t => t.id !== action.id); break
+    case 'topic.remove': if (!topic) throw missing(); if (!owner && snapshot.role!=='moderator' && topic.by !== actor.id) throw new WorkspaceError('FORBIDDEN', 'Você só pode excluir suas próprias conversas.'); state.topics = state.topics.filter(t => t.id !== action.id); break
     case 'nomination.add':
       if (!options.personal && state.nominations.some(n => n.by === actor.id)) throw new WorkspaceError('LIMIT', 'Você já indicou um livro nesta rodada.')
       state.nominations.push({ id: options.id, title: action.title, author: action.author, by: actor.id, name: actor.name }); break

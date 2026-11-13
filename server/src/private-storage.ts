@@ -2,7 +2,7 @@ import { S3Client,PutObjectCommand,GetObjectCommand,DeleteObjectCommand } from '
 import { Unzip,UnzipInflate,strFromU8 } from 'fflate'
 import { HttpError } from './errors.js'
 export interface PrivateStorage {
-  put(key:string,bytes:Buffer):Promise<void>
+  put(key:string,bytes:Buffer,contentType?:string):Promise<void>
   get(key:string):Promise<Uint8Array>
   remove(key:string):Promise<void>
 }
@@ -14,7 +14,7 @@ export function createPrivateStorage(env:NodeJS.ProcessEnv=process.env):PrivateS
   const s3=new S3Client({endpoint:endpoint.origin,region:env.AWS_REGION,forcePathStyle:true,maxAttempts:1,credentials:{accessKeyId:env.AWS_ACCESS_KEY_ID!,secretAccessKey:env.AWS_SECRET_ACCESS_KEY!}})
   const bucket=env.MEDIA_BUCKET
   return {
-    async put(key,bytes){await s3.send(new PutObjectCommand({Bucket:bucket,Key:key,Body:bytes,ContentType:'application/epub+zip',CacheControl:'private, no-store',ContentDisposition:'attachment'}),{abortSignal:AbortSignal.timeout(20000)})},
+    async put(key,bytes,contentType='application/epub+zip'){await s3.send(new PutObjectCommand({Bucket:bucket,Key:key,Body:bytes,ContentType:contentType,CacheControl:'private, no-store',ContentDisposition:'attachment'}),{abortSignal:AbortSignal.timeout(20000)})},
     async get(key){const object=await s3.send(new GetObjectCommand({Bucket:bucket,Key:key}),{abortSignal:AbortSignal.timeout(20000)});if(!object.Body||!object.ContentLength||object.ContentLength>10000000)throw Error('Arquivo indisponível ou maior que o limite');return object.Body.transformToByteArray()},
     async remove(key){await s3.send(new DeleteObjectCommand({Bucket:bucket,Key:key}),{abortSignal:AbortSignal.timeout(20000)})},
   }

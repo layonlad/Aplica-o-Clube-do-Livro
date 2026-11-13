@@ -1,3 +1,6 @@
+import {registerCommunityRoutes} from './community-routes.js'
+import {ClubManagement} from './club-management.js'
+import {pageInput} from './pagination.js'
 import Fastify, { LogController } from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
@@ -40,6 +43,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
   const service = new ClubService(options.pool)
   const workspace = new WorkspaceService(options.pool)
   const files=new PrivateFiles(options.pool,options.storage)
+  const management=new ClubManagement(options.pool)
   await app.register(cors, { origin: options.origin, methods: ['GET', 'POST', 'DELETE'], allowedHeaders: ['Authorization', 'Content-Type'] })
   await app.register(helmet)
   await app.register(rateLimit, { max: options.rateMax ?? 120, timeWindow: '1 minute' })
@@ -66,6 +70,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     const {q}=z.object({q:z.string().trim().min(2).max(100)}).strict().parse(request.query)
     return {items:await (options.catalogSearch??searchCatalog)(q)}
   })
+  app.get('/v1/discover/clubs',request=>management.discover(pageInput.extend({q:z.string().trim().min(2).max(100).optional()}).strict().parse(request.query)))
   await app.register(async (api) => {
     api.addHook('onRequest', async (request) => {
       const match = /^Bearer ([^\s]+)$/.exec(request.headers.authorization ?? '')
@@ -74,6 +79,14 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
       if (!identity.emailVerified || !identity.email) throw new HttpError(403, 'EMAIL_NOT_VERIFIED', 'Confirme seu e-mail para acessar o clube.')
       request.user = await service.syncUser(identity)
     })
+    await registerCommunityRoutes(api,options.pool,options.storage)
+    api.get('/clubs/:clubId/settings',request=>management.settings(request.user,clubParams.parse(request.params).clubId))
+    api.post('/clubs/:clubId/settings',request=>management.updateSettings(request.user,clubParams.parse(request.params).clubId,z.object({name:z.string().trim().min(2).max(80),description:z.string().max(2000),visibility:z.enum(['private','discoverable','public']),accent:z.string().regex(/^#[0-9a-fA-F]{6}$/),version:z.number().int().min(0)}).strict().parse(request.body)))
+    api.post('/clubs/:clubId/members/:userId/role',async(request,reply)=>{const {clubId,userId}=clubParams.extend({userId:z.uuid()}).parse(request.params);await management.setRole(request.user,clubId,userId,z.object({role:z.enum(['admin','moderator','member'])}).strict().parse(request.body).role);return reply.code(204).send()})
+    api.post('/clubs/:clubId/leave',async(request,reply)=>{await management.leave(request.user,clubParams.parse(request.params).clubId);return reply.code(204).send()})
+    api.post('/clubs/:clubId/join-requests',{config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(request,reply)=>reply.code(201).send(await management.requestJoin(request.user,clubParams.parse(request.params).clubId,z.object({message:z.string().trim().max(1000).default('')}).strict().parse(request.body).message)))
+    api.get('/clubs/:clubId/join-requests',request=>management.requests(request.user,clubParams.parse(request.params).clubId,pageInput.strict().parse(request.query)))
+    api.post('/clubs/:clubId/join-requests/:id/review',request=>{const {clubId,id}=clubParams.extend({id:z.uuid()}).parse(request.params);return management.review(request.user,clubId,id,z.object({decision:z.enum(['approved','rejected'])}).strict().parse(request.body).decision)})
     api.get('/me', (request) => service.session(request.user))
     const fileParams=z.object({bookId:z.uuid()})
     api.get('/me/book-files/:bookId',request=>files.list(request.user.id,fileParams.parse(request.params).bookId))
@@ -97,6 +110,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
       return reply.code(201).send(club)
     })
     api.get('/clubs/:clubId', (request) => service.details(request.user, clubParams.parse(request.params).clubId))
+    api.get('/clubs/:clubId/members',request=>service.members(request.user,clubParams.parse(request.params).clubId,pageInput.extend({q:z.string().trim().min(2).max(100).optional()}).strict().parse(request.query)))
     api.get('/clubs/:clubId/invites', (request) => service.listInvites(request.user, clubParams.parse(request.params).clubId))
     api.post('/clubs/:clubId/invites', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (request, reply) => {
       return reply.code(201).send(await service.createInvite(request.user, clubParams.parse(request.params).clubId, inviteInput.parse(request.body)))

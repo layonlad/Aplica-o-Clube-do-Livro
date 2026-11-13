@@ -39,3 +39,11 @@ export function readableError(error: unknown): string {
   }
   return code && messages[code] ? messages[code] : 'Não foi possível concluir. Verifique sua conexão e tente novamente.'
 }
+
+export async function publicRequest<T>(path:string):Promise<T>{
+  const base=import.meta.env.VITE_API_URL
+  if(!base)throw new ApiError(503,'API_UNAVAILABLE','A descoberta precisa de uma conexão com o serviço. Sua biblioteca local continua disponível.')
+  const response=await fetch(`${base.replace(/\/$/,'')}/v1${path}`,{cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(75000)})
+  if(!response.ok){const payload=await response.json().catch(()=>null) as ApiErrorBody|null;throw new ApiError(response.status,payload?.error?.code??'API_ERROR',payload?.error?.message??'Não foi possível consultar o serviço.')}
+  return response.json() as Promise<T>
+}
