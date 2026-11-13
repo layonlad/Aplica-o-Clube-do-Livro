@@ -3,7 +3,7 @@ import { Button, Card, DemoBadge } from '../components/ui'
 import { defaultTheme, useTheme } from '../app/ThemeProvider'
 
 const presets = [
-  { name: 'Aurora', primary: '#5b3a73', accent: '#d7a85c', surface: '#f8f4ef' },
+  { name: 'Aurora', primary: '#462b70', accent: '#fc7667', surface: '#fbf4e8' },
   { name: 'Bosque', primary: '#265c4b', accent: '#d79a55', surface: '#f3f1e8' },
   { name: 'Oceano', primary: '#235b78', accent: '#e08e6d', surface: '#f3f6f7' },
   { name: 'Terracota', primary: '#984f45', accent: '#e2b05f', surface: '#faf3eb' },
