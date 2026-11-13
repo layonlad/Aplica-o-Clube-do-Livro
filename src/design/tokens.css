@@ -1,0 +1,239 @@
+/*
+ * Clube do Livro — Design tokens ("Lombadas")
+ * Fonte única de verdade para cor, tipografia, espaço, forma, profundidade e movimento.
+ * Documentação: DESIGN_SYSTEM.md. Não use valores soltos nos componentes; use estes tokens.
+ */
+
+:root {
+  /* ── Paleta base (não use direto em componentes; use os tokens semânticos abaixo) ── */
+  --plum-950: #1b1229;
+  --plum-900: #26183d;
+  --plum-800: #341f55;
+  --plum-700: #462b70;   /* Roxo profundo — marca */
+  --plum-600: #5a3b8c;
+  --plum-500: #7656a8;
+  --plum-300: #b9a6d9;
+  --plum-200: #dcd0ee;
+  --plum-100: #efe9f7;
+
+  --coral-700: #a8362a;
+  --coral-600: #b83c30;  /* coral para texto sobre claro (AA ≥ 4.7) */
+  --coral-500: #fc7667;  /* Coral vibrante — preenchimentos */
+  --coral-300: #fdac9f;
+  --coral-100: #ffe8e3;
+
+  --cream-50: #fffbf4;
+  --cream-100: #fbf4e8;
+  --cream-200: #f7ebd8;  /* Creme */
+  --cream-300: #ecdcc3;
+  --cream-400: #d9c4a3;
+
+  --mint-800: #1f5c3f;
+  --mint-700: #2b7552;   /* menta para texto (AA) */
+  --mint-300: #b9e6c9;   /* Verde-menta */
+  --mint-100: #e4f5ea;
+
+  --honey-700: #7d5300;
+  --honey-500: #f4b942;  /* Amarelo quente */
+  --honey-100: #fdf0cf;
+
+  --blue-700: #2546a8;
+  --blue-500: #3d6be0;   /* Azul intenso */
+  --blue-100: #e3eafc;
+
+  --rose-300: #f5b6c6;
+  --rose-100: #fde9ee;
+
+  --ink-900: #22192e;
+  --ink-700: #4a4056;
+  --ink-600: #5f5569;
+  --ink-400: #776c80;
+
+  /* ── Semânticos: tema claro ── */
+  --bg: var(--cream-100);
+  --bg-sunken: var(--cream-200);
+  --surface: var(--cream-50);
+  --surface-raised: #ffffff;
+  --surface-tint: color-mix(in srgb, var(--brand) 6%, var(--surface));
+  --surface-inverse: var(--plum-800);
+
+  --text: var(--ink-900);
+  --text-muted: var(--ink-600);
+  --text-subtle: var(--ink-400);
+  --text-inverse: var(--cream-50);
+  --text-on-brand: #ffffff;
+  --text-on-accent: var(--plum-950);
+
+  --border: color-mix(in srgb, var(--cream-400) 55%, transparent);
+  --border-strong: var(--cream-400);
+  --divider: color-mix(in srgb, var(--plum-700) 9%, transparent);
+
+  --brand: var(--plum-700);
+  --brand-hover: var(--plum-600);
+  --brand-soft: var(--plum-100);
+  --brand-ink: var(--plum-700);
+  --accent: var(--coral-500);
+  --accent-soft: var(--coral-100);
+  --accent-ink: var(--coral-600);
+  --highlight: var(--honey-500);
+
+  --success: var(--mint-700);
+  --success-soft: var(--mint-100);
+  --warning: var(--honey-700);
+  --warning-soft: var(--honey-100);
+  --danger: #a8302e;
+  --danger-soft: #fdebe8;
+  --info: var(--blue-700);
+  --info-soft: var(--blue-100);
+
+  --focus-ring: 0 0 0 3px var(--bg), 0 0 0 5px var(--blue-500);
+  --overlay: rgba(27, 18, 41, 0.52);
+
+  /* Ambiente atual (muda com data-space no shell) */
+  --space-accent: var(--accent);
+  --space-accent-soft: var(--accent-soft);
+  --space-accent-ink: var(--accent-ink);
+
+  /* Assinatura visual: faixa de lombadas */
+  --spines: linear-gradient(90deg,
+    var(--plum-700) 0 22%, var(--coral-500) 22% 38%, var(--honey-500) 38% 50%,
+    var(--mint-300) 50% 66%, var(--blue-500) 66% 78%, var(--rose-300) 78% 90%, var(--plum-500) 90% 100%);
+
+  /* ── Tipografia ── */
+  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-reading: 'Fraunces Variable', Georgia, 'Iowan Old Style', serif;
+
+  --text-display: clamp(2.5rem, 1.55rem + 4.2vw, 4.5rem);
+  --text-h1: clamp(2rem, 1.45rem + 2.3vw, 3.1rem);
+  --text-h2: clamp(1.45rem, 1.2rem + 1.1vw, 2rem);
+  --text-h3: 1.25rem;
+  --text-h4: 1.0625rem;
+  --text-subtitle: 1.0625rem;
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  --text-caption: 0.75rem;
+  --text-button: 0.9375rem;
+  --text-overline: 0.6875rem;
+
+  --leading-tight: 1.05;
+  --leading-snug: 1.25;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+  --tracking-tight: -0.02em;
+  --tracking-overline: 0.14em;
+
+  /* ── Espaço (base 4px) ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --content-max: 1040px;
+  --reading-max: 66ch;
+
+  /* ── Forma ── */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+  --radius-book: 3px 10px 10px 3px;
+  --radius-card: var(--radius-lg);
+
+  /* ── Profundidade (sombras quentes, tingidas de roxo) ── */
+  --shadow-1: 0 1px 2px rgba(52, 31, 85, 0.06), 0 2px 8px rgba(52, 31, 85, 0.05);
+  --shadow-2: 0 2px 4px rgba(52, 31, 85, 0.06), 0 10px 28px rgba(52, 31, 85, 0.09);
+  --shadow-3: 0 8px 18px rgba(52, 31, 85, 0.10), 0 24px 60px rgba(52, 31, 85, 0.16);
+  --shadow-book: 1px 1px 0 rgba(255, 255, 255, 0.25) inset, 6px 10px 22px rgba(38, 24, 61, 0.22);
+
+  /* ── Movimento ── */
+  --dur-instant: 120ms;
+  --dur-fast: 180ms;
+  --dur-base: 260ms;
+  --dur-slow: 380ms;
+  --dur-page: 420ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-page: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ── Camadas ── */
+  --z-header: 20;
+  --z-nav: 30;
+  --z-drawer: 100;
+  --z-toast: 200;
+
+  /* ── Compatibilidade: nomes antigos usados por telas existentes ── */
+  --color-primary: var(--brand);
+  --color-primary-ink: var(--brand-ink);
+  --color-accent: var(--accent);
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-border: var(--border-strong);
+  --color-soft: var(--brand-soft);
+  --font-body: var(--font-ui);
+  --shadow-soft: var(--shadow-1);
+
+  color-scheme: light;
+}
+
+/* ── Tema escuro ── */
+:root[data-theme='dark'] {
+  --bg: #17111f;
+  --bg-sunken: #120d19;
+  --surface: #211a2c;
+  --surface-raised: #2a2237;
+  --surface-inverse: var(--cream-100);
+
+  --text: #f6efe4;
+  --text-muted: #c4b8cc;
+  --text-subtle: #8e8299;
+  --text-inverse: var(--ink-900);
+
+  --border: rgba(246, 239, 228, 0.09);
+  --border-strong: rgba(246, 239, 228, 0.18);
+  --divider: rgba(246, 239, 228, 0.08);
+
+  --brand: var(--plum-300);
+  --brand-hover: var(--plum-200);
+  --brand-soft: rgba(185, 166, 217, 0.14);
+  --brand-ink: var(--plum-300);
+  --text-on-brand: var(--plum-950);
+  --accent: var(--coral-500);
+  --accent-soft: rgba(252, 118, 103, 0.16);
+  --accent-ink: var(--coral-300);
+
+  --success: var(--mint-300);
+  --success-soft: rgba(185, 230, 201, 0.12);
+  --warning: var(--honey-500);
+  --warning-soft: rgba(244, 185, 66, 0.14);
+  --danger: #ff9a8f;
+  --danger-soft: rgba(255, 154, 143, 0.12);
+  --info: #9db6ff;
+  --info-soft: rgba(157, 182, 255, 0.12);
+
+  --focus-ring: 0 0 0 3px var(--bg), 0 0 0 5px #9db6ff;
+  --overlay: rgba(6, 3, 10, 0.66);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 10px 28px rgba(0, 0, 0, 0.35);
+  --shadow-3: 0 24px 60px rgba(0, 0, 0, 0.5);
+
+  color-scheme: dark;
+}
+
+/* ── Ambientes: cada área tem um acento próprio, sobre a mesma base ── */
+[data-space='personal'] { --space-accent: var(--coral-500); --space-accent-soft: var(--accent-soft); --space-accent-ink: var(--accent-ink); }
+[data-space='library'] { --space-accent: var(--plum-700); --space-accent-soft: var(--brand-soft); --space-accent-ink: var(--brand-ink); }
+[data-space='club'] { --space-accent: var(--mint-300); --space-accent-soft: var(--success-soft); --space-accent-ink: var(--success); }
+[data-space='community'] { --space-accent: var(--honey-500); --space-accent-soft: var(--warning-soft); --space-accent-ink: var(--warning); }

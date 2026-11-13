@@ -32,6 +32,8 @@
     "test:e2e": "firebase emulators:exec --only auth --project demo-clube-do-livro 'npm run test:auth --workspace server'"
   },
   "dependencies": {
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "fflate": "^0.8.3",
     "firebase": "^13.3.0",
     "lucide-react": "^0.468.0",
