@@ -1,0 +1,32 @@
+{
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Clube do Livro",
+        "supportEmail": "negocio.layon@gmail.com",
+        "authorizedRedirectUris": [
+          "https://project-acb850f4-4bb8-45de-a84.firebaseapp.com/__/auth/handler",
+          "https://project-acb850f4-4bb8-45de-a84.web.app/__/auth/handler"
+        ]
+      }
+    }
+  },
+  "hosting": {
+    "predeploy": ["npm run build:production"],
+    "public": "dist",
+    "ignore": ["firebase.production.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [{ "source": "**", "destination": "/index.html" }],
+    "headers": [
+      { "source": "**", "headers": [
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Frame-Options", "value": "DENY" }
+      ]},
+      { "source": "/assets/**", "headers": [
+        { "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }
+      ]}
+    ]
+  }
+}

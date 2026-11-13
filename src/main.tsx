@@ -14,5 +14,11 @@ createRoot(document.getElementById('root')!).render(
 )
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`))
+  if (import.meta.env.VITE_APP_MODE === 'connected') {
+    const scope = new URL(import.meta.env.BASE_URL, window.location.href).href
+    void navigator.serviceWorker.getRegistrations().then((items) => Promise.all(items.filter((item) => item.scope === scope).map((item) => item.unregister())))
+    if ('caches' in window) void caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith('clube-aurora-')).map((key) => caches.delete(key))))
+  } else {
+    window.addEventListener('load', () => { void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {}) })
+  }
 }

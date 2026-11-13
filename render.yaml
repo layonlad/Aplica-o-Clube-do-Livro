@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: clube-livro-api
+    runtime: docker
+    plan: free
+    region: virginia
+    repo: https://github.com/layonlad/Aplica-o-Clube-do-Livro
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: "off"
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: "8080"
+      - key: FIREBASE_PROJECT_ID
+        value: project-acb850f4-4bb8-45de-a84
+      - key: FRONTEND_ORIGIN
+        value: https://project-acb850f4-4bb8-45de-a84.web.app
+      - key: FIREBASE_WEB_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false

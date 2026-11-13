@@ -73,5 +73,7 @@ Frontend React + TypeScript + Vite + PWA, interface mobile e design tokens; leit
 ## CRITÉRIOS DE ACEITAÇÃO
 Responsivo e instalável; acesso privado por convite; exclusão revoga acesso; EPUB retoma posição; progresso individual persistente; histórico vinculado ao responsável pela escolha; sorteio auditável e não duplicado; fotos na data correta; tema personalizável persistente; dados estruturados fora do Firebase; nenhuma mistura com outros projetos.
 
-## INSTRUÇÃO INICIAL AO CODEX
+## INSTRUÇÃO INICIAL AO CODEX (REGISTRO HISTÓRICO DA FASE 2)
+
+Atualização: a versão 0.2 avança, por solicitação posterior do proprietário, nas fundações do backend, autenticação e convites. O escopo implementado e as pendências de infraestrutura estão em [`BACKEND.md`](BACKEND.md). O texto abaixo documenta apenas a instrução da primeira entrega.
 Ler este documento antes de qualquer código. Verificar a estrutura do repositório e propor árvore de arquivos, arquitetura da API, fluxos de permissão, migrations, backlog e wireframes. Construir **somente a fase 2** como protótipo mobile-first com mocks locais explicitamente identificados, sem conectar Firebase, sem criar contas de serviço, sem banco real, sem deploy e sem acessar qualquer outro repositório. Commitar apenas neste repositório em branch de trabalho, mostrar relatório de arquivos alterados e testes. Se houver dúvida sobre infraestrutura, documentar a decisão e continuar sem provisionar recursos.

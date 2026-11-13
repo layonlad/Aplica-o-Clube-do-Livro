@@ -1,0 +1,44 @@
+name: Validar aplicação e API
+on:
+  pull_request:
+  push:
+    branches-ignore: [gh-pages]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: clube_test
+          POSTGRES_PASSWORD: ci-test-only
+          POSTGRES_DB: clube_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://clube_test:ci-test-only@127.0.0.1:5432/clube_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Validar imagem da API
+        run: docker build -t clube-api:check .
+      - name: Compilar modo conectado
+        run: npm run build
+        env:
+          VITE_APP_MODE: connected
+          VITE_API_URL: https://api.example.invalid
+          VITE_FIREBASE_API_KEY: build-validation-only
+          VITE_FIREBASE_PROJECT_ID: build-validation-only
+          VITE_FIREBASE_AUTH_DOMAIN: build-validation-only.firebaseapp.com
+      - run: npm run test:integration
+      - run: npm run test:e2e
+      - run: npm audit --audit-level=high

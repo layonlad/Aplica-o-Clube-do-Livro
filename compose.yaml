@@ -1,0 +1,19 @@
+name: clube-do-livro
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: clube_do_livro
+      POSTGRES_USER: clube
+      POSTGRES_PASSWORD: local-development-only
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - clube_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clube -d clube_do_livro"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  clube_postgres:
