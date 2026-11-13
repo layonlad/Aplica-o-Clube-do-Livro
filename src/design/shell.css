@@ -27,7 +27,7 @@
 .app-header.is-scrolled::after { opacity: .9; }
 .app-header > .icon-button:last-child { margin-left: auto; }
 
-.brand-lockup { display: flex; align-items: center; gap: var(--space-3); min-width: 0; cursor: pointer; }
+.brand-lockup { display: flex; flex: 0 1 auto; align-items: center; gap: var(--space-3); min-width: 0; cursor: pointer; }
 .brand-lockup > div, .brand-lockup .brand-text { display: flex; flex-direction: column; min-width: 0; }
 .brand-lockup small { color: var(--text-muted); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
 .brand-lockup strong { max-width: 245px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; }
@@ -216,6 +216,9 @@
   .mobile-only { display: none !important; }
   .app-header { position: static; min-height: 0; padding: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; border: 0; flex-wrap: wrap; }
   .app-header::after { display: none; }
+  .app-header { align-items: flex-start; }
+  .app-header .brand-lockup { flex: 1 1 0; }
+  .app-header .brand-lockup strong { max-width: none; white-space: normal; overflow: visible; line-height: 1.15; }
   .app-header .space-switch { flex-basis: 100%; margin-top: var(--space-5); padding: var(--space-3) var(--space-4); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); transition: border-color var(--dur-fast) var(--ease-out); }
   .app-header .space-switch:hover, .app-header .space-switch:focus-within { border-color: var(--brand); }
   .app-header .space-switch select { font-size: 1rem; }
