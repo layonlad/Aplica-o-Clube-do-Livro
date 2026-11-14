@@ -114,3 +114,20 @@
 /* Notificações: foto de quem gerou o aviso ao lado do texto */
 .notification-list button:has(> .user-avatar) { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--space-3); align-items: start; }
 .notification-list button > .user-avatar { grid-row: span 2; }
+
+/* ── Capa do perfil: envio e enquadramento ── */
+.profile-identity__cover { margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid var(--divider); }
+.cover-uploader h2 { margin: 0 0 var(--space-2); font-size: var(--text-h3); }
+.cover-uploader > p { margin: 0 0 var(--space-4); color: var(--text-muted); max-width: 60ch; }
+.cover-uploader .file-button::before { content: none; }
+.cover-uploader__current { margin-bottom: var(--space-4); overflow: hidden; border-radius: var(--radius-lg); aspect-ratio: 16 / 5; background: var(--bg-sunken); }
+.cover-uploader__current .private-media { height: 100%; aspect-ratio: auto !important; }
+.cover-uploader__current img { width: 100%; height: 100%; object-fit: cover; }
+.cover-uploader__empty { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--plum-700) 0 34px, var(--coral-500) 34px 58px, var(--honey-500) 58px 78px, var(--mint-300) 78px 110px, var(--blue-500) 110px 128px, var(--rose-300) 128px 156px, var(--cream-200) 156px 172px); opacity: .55; }
+.cover-cropper { display: grid; gap: var(--space-4); }
+.cover-cropper__stage { position: relative; width: 100%; aspect-ratio: 16 / 5; overflow: hidden; border-radius: var(--radius-lg); background: var(--bg-sunken); cursor: ns-resize; touch-action: none; user-select: none; box-shadow: inset 0 0 0 1px var(--border-strong); }
+.cover-cropper__stage.is-gif { cursor: default; }
+.cover-cropper__stage:focus-visible { box-shadow: var(--focus-ring); }
+.cover-cropper__stage img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.cover-cropper__position { width: min(100%, 320px); }
+.profile-header__cover img { object-fit: cover; }

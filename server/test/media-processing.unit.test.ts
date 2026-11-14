@@ -79,3 +79,23 @@ it.skipIf(process.env.RUN_VIDEO_TESTS !== '1')(
   },
   30000,
 )
+it('aceita GIF animado e o converte em WebP animado com miniatura estática', async () => {
+  const frame = (color: string) =>
+    sharp({ create: { width: 1200, height: 600, channels: 3, background: color } }).png().toBuffer()
+  const gif = await sharp([await frame('#462b70'), await frame('#fc7667')], { join: { animated: true } })
+    .gif({ delay: [200, 200], loop: 0 })
+    .toBuffer()
+  expect(gif.toString('ascii', 0, 4)).toBe('GIF8')
+  const result = await processMedia(gif, 'image')
+  expect(result.mimeType).toBe('image/webp')
+  expect(result.width).toBe(960)
+  expect(result.height).toBe(480)
+  const animated = await sharp(result.bytes, { animated: true }).metadata(),
+    thumb = await sharp(result.thumbnail, { animated: true }).metadata()
+  expect(animated.format).toBe('webp')
+  expect(animated.pages).toBe(2)
+  expect(thumb.pages ?? 1).toBe(1)
+  // GIF acima de 8 MB é recusado antes de qualquer processamento.
+  const huge = Buffer.concat([Buffer.from('GIF89a'), Buffer.alloc(8000001)])
+  await expect(processMedia(huge, 'image')).rejects.toMatchObject({ statusCode: 400 })
+})

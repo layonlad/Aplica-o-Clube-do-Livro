@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { z } from 'zod'
 import { PostService } from './post-service.js'
 import { ProfileService } from './profile-service.js'
+import type { UserProfile } from './contracts.js'
 import { ModerationService } from './moderation-service.js'
 import { MediaService } from './media-service.js'
 import type { PrivateStorage } from './private-storage.js'
@@ -119,38 +120,47 @@ export async function registerPublicMutations(
   const appearance = new AppearanceService(pool)
   api.get('/me/profile', (request) => profiles.mine(request.user))
   // Foto de perfil: disponível para toda conta confirmada, mesmo com perfil público desativado.
-  api.post(
-    '/me/avatar',
-    { bodyLimit: 15000000, config: { rateLimit: { max: 5, timeWindow: '1 minute' } } },
-    async (request, reply) => {
-      const input = z
-        .object({
-          data: z
-            .string()
-            .min(4)
-            .max(6666668)
-            .regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/),
-        })
-        .strict()
-        .parse(request.body)
-      const uploaded = await media.upload(
-        request.user.id,
-        null,
-        'image',
-        Buffer.from(input.data, 'base64'),
-        { profilePhoto: true },
-      )
-      const result = await profiles.setAvatar(request.user, uploaded.id)
-      // A foto anterior já foi revogada na transação; tenta apenas concluir a limpeza física.
+  // Foto e capa do perfil: disponíveis para toda conta confirmada, mesmo com perfil público desativado.
+  // JPEG/PNG/WebP até 5 MB e GIF (animado) até 8 MB; base64 de 8 MB ≈ 10,7 milhões de caracteres.
+  const profileImage = z
+    .object({
+      data: z
+        .string()
+        .min(4)
+        .max(10666668)
+        .regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/),
+    })
+    .strict()
+  for (const slot of ['avatar', 'cover'] as const) {
+    const set = (user: UserProfile, id: string | null) =>
+      slot === 'avatar'
+        ? profiles.setAvatar(user, id).then((r) => ({ id: r.avatarId, previous: r.previous }))
+        : profiles.setCover(user, id).then((r) => ({ id: r.coverId, previous: r.previous }))
+    const key = slot === 'avatar' ? 'avatarId' : 'coverId'
+    api.post(
+      `/me/${slot}`,
+      { bodyLimit: 15000000, config: { rateLimit: { max: 5, timeWindow: '1 minute' } } },
+      async (request, reply) => {
+        const input = profileImage.parse(request.body)
+        const uploaded = await media.upload(
+          request.user.id,
+          null,
+          'image',
+          Buffer.from(input.data, 'base64'),
+          { profilePhoto: true },
+        )
+        const result = await set(request.user, uploaded.id)
+        // A imagem anterior já foi revogada na transação; tenta apenas concluir a limpeza física.
+        if (result.previous) await media.remove(request.user.id, result.previous).catch(() => undefined)
+        return reply.code(201).send({ [key]: result.id })
+      },
+    )
+    api.delete(`/me/${slot}`, async (request) => {
+      const result = await set(request.user, null)
       if (result.previous) await media.remove(request.user.id, result.previous).catch(() => undefined)
-      return reply.code(201).send({ avatarId: result.avatarId })
-    },
-  )
-  api.delete('/me/avatar', async (request) => {
-    const result = await profiles.setAvatar(request.user, null)
-    if (result.previous) await media.remove(request.user.id, result.previous).catch(() => undefined)
-    return { avatarId: null }
-  })
+      return { [key]: null }
+    })
+  }
   api.get('/me/appearance', (request) => appearance.get(request.user))
   api.post('/me/appearance', (request) =>
     appearance.save(

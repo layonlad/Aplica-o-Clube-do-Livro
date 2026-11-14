@@ -398,3 +398,53 @@ it('mostra a foto atual de quem gerou a notificação', async () => {
   expect(fromMaria?.actorName).toBe('maria')
   expect(JSON.stringify(notices)).not.toMatch(/@example.com|object_key/)
 })
+
+it('salva a capa na hora, aceita GIF animado e só a mostra com perfil público', async () => {
+  const frame = (color: string) =>
+    sharp({ create: { width: 800, height: 250, channels: 3, background: color } }).png().toBuffer()
+  const gif = await sharp([await frame('#462b70'), await frame('#b9e6c9')], { join: { animated: true } })
+    .gif({ delay: [150, 150] })
+    .toBuffer()
+  await db.pool.query('UPDATE profiles SET is_public=false,suspended=false WHERE user_id=$1', [ids.joao])
+  const first = await app.inject({
+    remoteAddress: '127.0.0.' + ++avatarRequest,
+    url: '/v1/me/cover',
+    method: 'POST',
+    headers: headers('joao'),
+    payload: { data: (await frame('#fc7667')).toString('base64') },
+  })
+  expect(first.statusCode, first.body).toBe(201)
+  const firstId = first.json<{ coverId: string }>().coverId
+  expect((await app.inject({ url: '/v1/me/profile', headers: headers('joao') })).json().coverId).toBe(firstId)
+  // Perfil privado: a capa fica guardada, mas não é entregue a quem não é o dono.
+  expect((await avatarContent(firstId, 'joao')).statusCode).toBe(200)
+  expect((await avatarContent(firstId, 'estranho')).statusCode).toBe(404)
+
+  const animated = await app.inject({
+    remoteAddress: '127.0.0.' + ++avatarRequest,
+    url: '/v1/me/cover',
+    method: 'POST',
+    headers: headers('joao'),
+    payload: { data: gif.toString('base64') },
+  })
+  expect(animated.statusCode, animated.body).toBe(201)
+  const gifId = animated.json<{ coverId: string }>().coverId
+  expect((await avatarContent(firstId, 'joao')).statusCode).toBe(404)
+  const profile = (await app.inject({ url: '/v1/me/profile', headers: headers('joao') })).json()
+  expect(profile.coverId).toBe(gifId)
+
+  // Salvar o restante do perfil depois de trocar a capa não pode dar conflito de versão.
+  const { id: _id, suspended: _s, ...input } = profile
+  const saved = await app.inject({
+    url: '/v1/me/profile',
+    method: 'POST',
+    headers: headers('joao'),
+    payload: { ...input, isPublic: true },
+  })
+  expect(saved.statusCode, saved.body).toBe(200)
+  expect((await avatarContent(gifId, 'estranho')).statusCode).toBe(200)
+
+  const removed = await app.inject({ url: '/v1/me/cover', method: 'DELETE', headers: headers('joao') })
+  expect(removed.json()).toEqual({ coverId: null })
+  expect((await avatarContent(gifId, 'estranho')).statusCode).toBe(404)
+})

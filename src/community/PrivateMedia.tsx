@@ -2,7 +2,7 @@ import { mediaBase } from './social-api'
 import { useEffect, useRef, useState } from 'react'
 import { Play, X } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
-import { apiRequest, ApiError, readableError } from '../auth/api'
+import { apiRequest, ApiError, messageFor, readableError } from '../auth/api'
 import type { PostMedia, Page } from '../../server/src/community-contracts'
 import { Button } from '../components/ui'
 export async function uploadMediaFile(
@@ -11,11 +11,14 @@ export async function uploadMediaFile(
   file: File,
 ): Promise<PostMedia> {
   const kind = file.type.startsWith('video/') ? 'video' : 'image'
+  const limit = kind === 'video' ? 10000000 : file.type === 'image/gif' ? 8000000 : 5000000
   if (
-    !['image/jpeg', 'image/png', 'image/webp', 'video/mp4'].includes(file.type) ||
-    file.size > (kind === 'image' ? 5000000 : 10000000)
+    !['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4'].includes(file.type) ||
+    file.size > limit
   )
-    throw Error('Use uma foto JPEG, PNG ou WebP de até 5 MB, ou um MP4 de até 10 MB e 30 segundos.')
+    throw Error(
+      'Use uma foto JPEG, PNG ou WebP de até 5 MB, um GIF de até 8 MB ou um MP4 de até 10 MB e 30 segundos.',
+    )
   const bytes = new Uint8Array(await file.arrayBuffer())
   let binary = ''
   for (let index = 0; index < bytes.length; index += 16384)
@@ -83,7 +86,7 @@ export function MediaPicker({
         onChange([...selected])
       }
     } catch (err) {
-      setError(readableError(err))
+      setError(messageFor(err))
     } finally {
       setBusy(false)
       onBusy?.(false)
@@ -112,8 +115,8 @@ export function MediaPicker({
           type="file"
           accept={
             imagesOnly
-              ? 'image/jpeg,image/png,image/webp'
-              : 'image/jpeg,image/png,image/webp,video/mp4'
+              ? 'image/jpeg,image/png,image/webp,image/gif'
+              : 'image/jpeg,image/png,image/webp,image/gif,video/mp4'
           }
           multiple
           disabled={busy || value.length >= 4}

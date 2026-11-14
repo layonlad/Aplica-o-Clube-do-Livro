@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { Camera, Trash2 } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
-import { apiRequest, readableError } from '../auth/api'
+import { apiRequest, messageFor, readableError } from '../auth/api'
 import { Button } from './ui'
 import { AVATAR_EVENT, UserAvatar, forgetAvatar } from './UserAvatar'
 
-const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp']
+const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_INPUT = 15_000_000
 const OUTPUT = 512
 const VIEW = 240
@@ -14,9 +14,19 @@ export { AVATAR_EVENT }
 
 /** Valida o arquivo escolhido antes de qualquer leitura. Exportado para testes. */
 export function avatarFileError(file: Pick<File, 'type' | 'size'>) {
-  if (!ACCEPTED.includes(file.type)) return 'Escolha uma foto JPG, PNG ou WebP.'
+  if (!ACCEPTED.includes(file.type)) return 'Escolha uma foto JPG, PNG, WebP ou GIF.'
+  if (file.type === 'image/gif' && file.size > 8_000_000) return 'O GIF passa de 8 MB. Escolha um arquivo menor.'
   if (file.size > MAX_INPUT) return 'A foto escolhida passa de 15 MB. Escolha uma imagem menor.'
   return ''
+}
+
+/** Converte um arquivo/blob em base64 sem estourar a pilha em arquivos grandes. */
+export async function fileToBase64(blob: Blob) {
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  let binary = ''
+  for (let index = 0; index < bytes.length; index += 16384)
+    binary += String.fromCharCode(...bytes.subarray(index, index + 16384))
+  return btoa(binary)
 }
 
 type Crop = { zoom: number; x: number; y: number }
@@ -47,11 +57,7 @@ async function exportCrop(image: HTMLImageElement, crop: Crop) {
       ? blob
       : await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.88))
   if (!final) throw Error('Seu navegador não conseguiu comprimir a foto.')
-  const bytes = new Uint8Array(await final.arrayBuffer())
-  let binary = ''
-  for (let index = 0; index < bytes.length; index += 16384)
-    binary += String.fromCharCode(...bytes.subarray(index, index + 16384))
-  return { data: btoa(binary), preview: URL.createObjectURL(final) }
+  return { data: await fileToBase64(final), preview: URL.createObjectURL(final) }
 }
 
 /**
@@ -75,6 +81,7 @@ export function AvatarUploader({
   const [error, setError] = useState('')
   const [confirmRemove, setConfirmRemove] = useState(false)
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null)
+  const [gifFile, setGifFile] = useState<File | null>(null)
   const image = useRef<HTMLImageElement>(null)
   const input = useRef<HTMLInputElement>(null)
   const drag = useRef<{ x: number; y: number; crop: Crop } | null>(null)
@@ -92,6 +99,8 @@ export function AvatarUploader({
     }
     setCrop({ zoom: 1, x: 0, y: 0 })
     setNatural(null)
+    // GIF vai sem recorte para manter a animação; o círculo mostra o centro da imagem.
+    setGifFile(file.type === 'image/gif' ? file : null)
     setSource(URL.createObjectURL(file))
   }
 
@@ -135,13 +144,18 @@ export function AvatarUploader({
   }
 
   async function save() {
-    if (!user || !image.current) return
+    if (!user || (!image.current && !gifFile)) return
     setBusy(true)
     setError('')
     setMessage('')
     try {
-      const { data, preview } = await exportCrop(image.current, crop)
-      URL.revokeObjectURL(preview)
+      let data: string
+      if (gifFile) data = await fileToBase64(gifFile)
+      else {
+        const exported = await exportCrop(image.current!, crop)
+        URL.revokeObjectURL(exported.preview)
+        data = exported.data
+      }
       const result = await apiRequest<{ avatarId: string }>(user, '/me/avatar', 'POST', { data })
       forgetAvatar(avatarId)
       onChange(result.avatarId)
@@ -149,7 +163,7 @@ export function AvatarUploader({
       setSource(null)
       setMessage('Foto atualizada. Ela já aparece nas suas publicações e comentários.')
     } catch (err) {
-      setError(err instanceof Error && !('status' in err) ? err.message : readableError(err))
+      setError(messageFor(err))
     } finally {
       setBusy(false)
     }
@@ -220,7 +234,23 @@ export function AvatarUploader({
               ))}
           </div>
         )}
-        {source && (
+        {source && gifFile && (
+          <div className="avatar-cropper">
+            <span className="user-avatar user-avatar--xl has-photo" aria-hidden="true">
+              <img src={source} alt="" />
+            </span>
+            <p className="t-caption">GIFs são enviados inteiros para manter a animação; o centro aparece no círculo.</p>
+            <div className="workspace-actions">
+              <Button disabled={busy} onClick={() => void save()}>
+                {busy ? 'Enviando foto…' : 'Salvar foto'}
+              </Button>
+              <Button variant="ghost" disabled={busy} onClick={() => setSource(null)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+        {source && !gifFile && (
           <div className="avatar-cropper">
             <div
               className="avatar-cropper__stage"

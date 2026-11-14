@@ -9,9 +9,10 @@
     "fase": "Publicado; ajuste de permissões pendente",
     "tom": "aguardando",
     "resumo": "A plataforma social está em produção desde 14/11/2026: API e site usam o código de b64835d, incluindo os PRs 5, 6 e 7. Banco, mídia privada e moderação foram configurados; os testes reais e a limpeza sintética foram concluídos. A revisão do mapa identificou permissões SQL legadas que precisam ser removidas.",
-    "proximoPasso": "Revisar este PR do mapa e da correção de permissões. A aplicação do script SQL revisado no banco depende de autorização explícita. Não há deploy da API/Firebase nem aplicação de SQL nesta etapa; o merge atualiza a demonstração e o mapa no Pages.",
+    "proximoPasso": "Os PRs 9 (mapa e permissões) e 10 (capa do perfil e GIFs) estão em main. Próximos passos, cada um só com autorização: aplicar a revogação de permissões SQL; publicar a API no Render e depois o site no Firebase para levar a correção da capa à produção (sem migration).",
     "pendencias": [
       "Aplicar, após autorização, a revogação dos privilégios legados em server/ops/runtime-grants.sql. Em produção ainda existem DELETE em tabelas da implantação inicial e UPDATE em aceites; o script anterior só acrescentava grants.",
+      "Publicar a correção da capa do perfil e dos GIFs (PR 10): primeiro a API no Render, depois o site no Firebase. Até lá, a produção continua recusando GIF e escondendo a capa de perfis privados.",
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
       "Leitor de tela real e recorte de foto pela câmera do celular ainda não foram testados. A persistência foi validada por novo login, sem segundo aparelho físico.",
       "Modo conectado sem cache offline por service worker; notificações são internas ao app, sem e-mail ou push.",
@@ -123,7 +124,7 @@
       "plano": "Free · limites de uso também impostos pelo app",
       "coluna": 4,
       "cor": "rose",
-      "guarda": ["Fotos de perfil e capas", "Fotos e vídeos de publicações e álbuns", "EPUBs originais guardados na conta", "Arquivos EPUB do acervo dos clubes"],
+      "guarda": ["Fotos e capas de perfil (GIF animado vira WebP animado)", "Fotos e vídeos de publicações e álbuns", "EPUBs originais guardados na conta", "Arquivos EPUB do acervo dos clubes"],
       "detalhe": "Acesso direto anônimo ao bucket é negado. A API entrega conteúdo público quando explicitamente permitido e conteúdo privado somente a quem tem acesso; fotos privadas do perfil exigem titular ou colega ativo em comum, respeitando bloqueios. As cotas de mídia por conta, EPUBs pessoais e EPUBs por clube são separadas. Gravação, leitura e remoção reais foram validadas na liberação.",
       "link": ""
     },
@@ -172,7 +173,7 @@
     { "o_que": "Mural, fórum, encontros e álbuns dos clubes", "onde": "banco", "privacidade": "Só membros ativos", "copia": "Banco" },
     { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Públicos enquanto perfil e conteúdo estiverem disponíveis; bloqueios e moderação são revalidados", "copia": "Banco" },
     { "o_que": "Notificações", "onde": "banco", "privacidade": "Privado do destinatário", "copia": "Rotina habilitada remove itens com mais de 90 dias em lotes, enquanto a API está acordada" },
-    { "o_que": "Fotos de perfil", "onde": "midia", "privacidade": "Titular; público por escolha do perfil ou colegas ativos em comum, respeitando bloqueios", "copia": "Persistência no bucket privado; troca ou remoção revoga imediatamente o arquivo anterior" },
+    { "o_que": "Fotos e capas de perfil", "onde": "midia", "privacidade": "Titular; foto pública por escolha do perfil ou para colegas ativos em comum, respeitando bloqueios; capa só com perfil público", "copia": "Persistência no bucket privado; troca ou remoção revoga imediatamente o arquivo anterior" },
     { "o_que": "Fotos e vídeos de publicações e álbuns", "onde": "midia", "privacidade": "Permissões da publicação ou álbum; copiar foto de clube para a comunidade exige autorização explícita", "copia": "Persistência no bucket; arquivos não entram no backup JSON" },
     { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Não entram no backup JSON; baixe o original separadamente. O envio de acervo ao clube exige origem e autorização." },
     { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" },
@@ -246,6 +247,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-14",
+      "autor": "Claude Code",
+      "titulo": "Capa do perfil e GIFs corrigidos",
+      "resumo": "A capa agora salva na hora (em Meu perfil e no Perfil social), funciona mesmo com perfil privado e aceita GIF animado; a foto também aceita GIF. Arquivo inválido deixou de mostrar 'verifique sua conexão'. Em main; falta publicar API e site.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/10"
+    },
     {
       "data": "2026-11-14",
       "autor": "Codex",
