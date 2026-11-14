@@ -1,0 +1,199 @@
+/* Abertura: livro que abre e folheia. Só transform/opacity; ~2,6 s; pulável. */
+
+.book-intro {
+  --w: clamp(120px, 30vw, 196px);
+  --h: calc(var(--w) * 1.42);
+  --cloth: #462b70;
+  --cloth-dark: #341f55;
+  --paper: #fbf4e8;
+  --paper-shade: #ecdcc3;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(60% 50% at 50% 55%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    var(--bg);
+  cursor: pointer;
+  animation: intro-out 500ms var(--ease-in-out) 2100ms both;
+}
+.book-intro.is-leaving { animation: intro-out 260ms var(--ease-out) both; }
+
+.book-intro__stage { perspective: 1800px; perspective-origin: 50% 40%; }
+.book-intro__book {
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  transform-style: preserve-3d;
+  transform: rotateX(10deg);
+  animation:
+    intro-book-in 380ms var(--ease-out) both,
+    intro-book-center 700ms var(--ease-in-out) 350ms both,
+    intro-book-exit 520ms var(--ease-in-out) 2080ms forwards;
+}
+
+/* Páginas fixas (miolo) */
+.book-intro__page { position: absolute; top: 0; width: 100%; height: 100%; background: var(--paper); }
+.book-intro__page--right {
+  left: 0;
+  border-radius: 2px 6px 6px 2px;
+  /* Espessura do bloco de páginas, como a borda creme do livro fechado */
+  box-shadow: 1px 1px 0 var(--paper-shade), 2px 2px 0 var(--paper), 3px 3px 0 var(--paper-shade), 4px 4px 0 var(--paper), 5px 6px 0 var(--paper-shade), 10px 18px 30px rgba(38, 24, 61, 0.28);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.08), transparent 12%), var(--paper);
+}
+.book-intro__page--left {
+  right: 100%;
+  border-radius: 6px 2px 2px 6px;
+  background: linear-gradient(270deg, rgba(0, 0, 0, 0.1), transparent 14%), var(--paper);
+  box-shadow: -1px 1px 0 var(--paper-shade), -2px 2px 0 var(--paper), -3px 3px 0 var(--paper-shade), -10px 18px 30px rgba(38, 24, 61, 0.22);
+  opacity: 0;
+  animation: fade-in 1ms linear 700ms both;
+}
+.book-intro__lines {
+  position: absolute;
+  inset: 18% 16% 22% 14%;
+  background: repeating-linear-gradient(180deg, transparent 0 10px, rgba(70, 43, 112, 0.12) 10px 11px);
+}
+
+/* Título revelado na página da direita */
+.book-intro__title {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 12%;
+  color: #26183d;
+  text-align: center;
+  opacity: 0;
+  animation: intro-title 520ms var(--ease-out) 1380ms both;
+}
+.book-intro__mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--paper);
+  background: var(--cloth);
+  border-radius: 10px 10px 10px 3px;
+  font: 700 0.9rem var(--font-display);
+}
+.book-intro__title strong { font: 600 clamp(1.05rem, 3.4vw, 1.45rem)/1.05 var(--font-display); letter-spacing: -0.02em; }
+.book-intro__title em { font: italic 400 clamp(0.7rem, 2vw, 0.85rem) var(--font-display); color: #5f5569; }
+.book-intro__spines { display: block; width: 70%; height: 4px; margin-top: 6px; border-radius: 4px; background: var(--spines); }
+
+/* Folhas que viram */
+.book-intro__leaf {
+  position: absolute;
+  inset: 1.5% 0 1.5% 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  border-radius: 2px 6px 6px 2px;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.1), transparent 18%, transparent 80%, rgba(0, 0, 0, 0.05)),
+    repeating-linear-gradient(180deg, transparent 0 10px, rgba(70, 43, 112, 0.08) 10px 11px) 14% 18% / 70% 60% no-repeat,
+    var(--paper);
+  backface-visibility: visible;
+  animation: intro-flip 480ms cubic-bezier(0.45, 0.05, 0.35, 1) both;
+}
+.book-intro__leaf--1 { animation-delay: 760ms; }
+.book-intro__leaf--2 { animation-delay: 880ms; }
+.book-intro__leaf--3 { animation-delay: 1000ms; }
+
+/* Capa de tecido roxo */
+.book-intro__cover {
+  position: absolute;
+  inset: -2% -3% -2% 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  animation: intro-cover 760ms cubic-bezier(0.55, 0.05, 0.3, 1) 330ms both;
+}
+.book-intro__cover-front,
+.book-intro__cover-back { position: absolute; inset: 0; border-radius: 3px 8px 8px 3px; backface-visibility: hidden; }
+.book-intro__cover-front {
+  background:
+    radial-gradient(120% 90% at 30% 20%, rgba(255, 255, 255, 0.1), transparent 55%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 4px),
+    linear-gradient(90deg, var(--cloth-dark) 0 7%, var(--cloth) 9%);
+  box-shadow: inset -2px 0 0 rgba(0, 0, 0, 0.15), 10px 18px 30px rgba(38, 24, 61, 0.3);
+}
+.book-intro__cover-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(270deg, rgba(0, 0, 0, 0.18), transparent 16%), #ead8c0;
+}
+.book-intro__ribbon { position: absolute; top: -2%; right: 22%; width: 10px; height: 26%; background: var(--coral-500, #fc7667); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 86%, 0 100%); }
+.book-intro__emboss {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  color: rgba(251, 244, 232, 0.86);
+  font: 600 clamp(1.4rem, 5vw, 2rem) var(--font-display);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* Páginas que voam como pássaros (referência visual), na saída */
+.book-intro__bird {
+  position: absolute;
+  top: 18%;
+  left: 60%;
+  width: 26px;
+  height: 18px;
+  background: var(--paper);
+  clip-path: polygon(0 60%, 50% 20%, 100% 0, 60% 50%, 50% 100%);
+  opacity: 0;
+  animation: intro-bird 900ms var(--ease-out) both;
+}
+.book-intro__bird--1 { animation-delay: 1700ms; }
+.book-intro__bird--2 { animation-delay: 1820ms; --dx: 90px; --dy: -150px; }
+.book-intro__bird--3 { animation-delay: 1940ms; --dx: 150px; --dy: -110px; }
+
+.book-intro__skip {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  min-height: 44px;
+  padding: 10px 18px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface-raised) 88%, transparent);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  font: 700 var(--text-small) var(--font-ui);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  animation: fade-in 300ms var(--ease-out) 200ms both;
+}
+.book-intro__skip:hover { border-color: var(--brand); }
+
+@keyframes intro-out { to { opacity: 0; visibility: hidden; } }
+@keyframes intro-book-in { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+@keyframes intro-book-center { from { transform: rotateX(10deg); } to { transform: translateX(50%) rotateX(4deg); } }
+@keyframes intro-book-exit { from { transform: translateX(50%) rotateX(4deg); } to { transform: translateX(50%) rotateX(0deg); scale: 1.08; } }
+@keyframes intro-cover { from { transform: rotateY(0deg); } to { transform: rotateY(-178deg); } }
+@keyframes intro-flip {
+  0% { transform: rotateY(0deg); filter: brightness(1); }
+  50% { filter: brightness(0.92); }
+  100% { transform: rotateY(-176deg); filter: brightness(1); }
+}
+@keyframes intro-title { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
+@keyframes intro-bird {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(1); }
+  20% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(var(--dx, 120px), var(--dy, -130px)) rotate(-24deg) scale(0.45); }
+}
+
+/* Versão leve (aparelhos modestos ou economia de dados): só a capa abre. */
+.book-intro--lite { animation-delay: 1050ms; animation-duration: 420ms; }
+.book-intro--lite .book-intro__book { animation: intro-book-in 300ms var(--ease-out) both, intro-book-center 560ms var(--ease-in-out) 200ms both; }
+.book-intro--lite .book-intro__cover { animation-delay: 200ms; animation-duration: 560ms; }
+.book-intro--lite .book-intro__page--left { animation-delay: 480ms; }
+.book-intro--lite .book-intro__title { animation-delay: 650ms; }
+
+/* Movimento reduzido: livro já aberto, só um esmaecimento curto. */
+.book-intro--still { animation: intro-out 300ms linear 380ms both; }
+.book-intro--still .book-intro__book { animation: none; transform: translateX(50%); }
+.book-intro--still .book-intro__cover { animation: none; transform: rotateY(-178deg); }
+.book-intro--still .book-intro__page--left, .book-intro--still .book-intro__title { animation: none; opacity: 1; }

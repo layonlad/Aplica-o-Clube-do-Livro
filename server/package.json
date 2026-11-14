@@ -10,17 +10,21 @@
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.tools.json",
     "start": "node --env-file-if-exists=.env dist/index.js",
     "migrate": "tsx --env-file-if-exists=.env src/migrate.ts",
+    "media:cleanup": "tsx --env-file-if-exists=.env src/cleanup-media.ts",
     "test": "vitest run --config vitest.config.ts",
     "test:integration": "tsx test/run-postgres.ts integration",
     "test:auth": "tsx test/run-postgres.ts auth"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1168.0",
     "@fastify/cors": "^11.4.2",
     "@fastify/helmet": "^13.2.0",
     "@fastify/rate-limit": "^11.2.2",
     "fastify": "^5.12.8",
+    "fflate": "^0.8.3",
     "firebase-admin": "^14.5.1",
     "pg": "^8.23.1",
+    "sharp": "^0.35.5",
     "zod": "^4.6.7"
   },
   "devDependencies": {

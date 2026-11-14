@@ -1,0 +1,176 @@
+.reading-room {
+  display: grid;
+  gap: 24px;
+  padding: 24px 18px;
+  border-radius: 20px;
+  background: #fff;
+  color: #2b2626;
+}
+.reading-room--dark {
+  background: #1e1d21;
+  color: #ede7df;
+}
+.reading-room--sepia {
+  background: #f1e5cf;
+  color: #42362a;
+}
+.reading-room-title h1 {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+.reading-room-title p {
+  opacity: 0.7;
+}
+.reader-prose {
+  white-space: pre-wrap;
+  line-height: 1.95;
+  overflow-wrap: anywhere;
+  min-height: 320px;
+  margin: auto;
+  width: 100%;
+  max-width: 70ch;
+}
+.reading-room--comfortable .reader-prose {
+  padding: 0 3%;
+}
+.reading-room--wide .reader-prose {
+  padding: 0 10%;
+}
+.reader-prose mark {
+  background: #f3db83;
+  color: #2b2626;
+  border-radius: 3px;
+}
+.reader-settings {
+  padding: 16px;
+  border-block: 1px solid #98867555;
+}
+.reader-settings summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.reader-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+.reader-settings-grid label {
+  font-size: 0.8rem;
+}
+.reader-settings-grid select,
+.reader-settings-grid input {
+  width: 100%;
+}
+.reader-search-results {
+  display: grid;
+  gap: 8px;
+  max-height: 300px;
+  overflow: auto;
+}
+.reader-search-results button {
+  text-align: left;
+  padding: 12px;
+  border: 1px solid #bbb7;
+  background: #f4eee6;
+  color: #322b28;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.reader-chapter-label {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+.reading-room blockquote {
+  margin-left: 0;
+  padding-left: 16px;
+  border-left: 3px solid #b68b50;
+  white-space: pre-wrap;
+}
+.reading-room .card {
+  background: transparent;
+  border: 1px solid #aaa6;
+  color: inherit;
+}
+.reading-room a {
+  color: inherit;
+}
+@media (max-width: 480px) {
+  .reading-room {
+    padding: 18px 12px;
+  }
+  .reader-settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .reading-room--wide .reader-prose {
+    padding: 0 5%;
+  }
+}
+
+.epub-prose {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.epub-prose img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.5em auto;
+  max-height: 70vh;
+  object-fit: contain;
+}
+.epub-prose p {
+  margin-block: 1em;
+}
+.epub-prose table {
+  max-width: 100%;
+  display: block;
+  overflow-x: auto;
+}
+.epub-prose pre {
+  white-space: pre-wrap;
+}
+.epub-prose mark {
+  background: #f6d574;
+  color: #322320;
+}
+.epub-prose :is(h1, h2, h3) {
+  line-height: 1.3;
+  margin-block: 1.3em 0.5em;
+}
+
+.reading-room :is(input:not([type='checkbox']):not([type='file']), select, textarea) {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 12px);
+  font: inherit;
+  color: inherit;
+  background: var(--reader-surface, var(--surface));
+}
+.reading-room :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.reader-settings-grid {
+  min-width: 0;
+}
+.reader-settings-grid label {
+  min-width: 0;
+}
+
+/* Modo de leitura: controle segmentado */
+.reader-mode { display: inline-grid; grid-auto-flow: column; width: fit-content; max-width: 100%; padding: 4px; gap: 2px; background: color-mix(in srgb, currentColor 7%, transparent); border-radius: var(--radius-pill); }
+.reader-mode button { min-height: 40px; padding: 8px 16px; color: inherit; background: transparent; border: 0; border-radius: var(--radius-pill); cursor: pointer; font: inherit; font-size: var(--text-small); font-weight: 700; opacity: .7; transition: background-color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
+.reader-mode button[aria-pressed='true'] { opacity: 1; color: var(--text-on-brand); background: var(--brand); }
+.reading-room--dark .reader-mode button[aria-pressed='true'] { color: #1e1d21; background: #ede7df; }
+.reading-room-back { width: fit-content; color: inherit; font-size: var(--text-small); font-weight: 700; opacity: .75; }
+.reading-room-back:hover { opacity: 1; }
+.reading-room-title h1 { font-family: var(--font-display); font-size: clamp(1.8rem, 1.4rem + 1.6vw, 2.6rem); }
+.reader-file { padding-block: var(--space-3); border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent); }
+.reader-file p { margin: var(--space-2) 0 var(--space-3); font-size: var(--text-small); opacity: .75; }
+@media (max-width: 559px) {
+  .reader-toolbar-grid { grid-template-columns: 1fr; }
+  .reading-room { padding-inline: 14px; }
+}

@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { emptyWorkspace, readingSchema, workspaceSchema, type WorkspaceSnapshot } from '../../server/src/workspace-model'
+import { emptyWorkspace, preferencesSchema,readingSchema, workspaceSchema, type WorkspaceSnapshot } from '../../server/src/workspace-model'
 
-export const backupSchema = z.object({ format: z.literal('clube-livro-v1'), state: workspaceSchema, reading: readingSchema })
+export const backupSchema = z.object({ format: z.literal('clube-livro-v1'), state: workspaceSchema, reading: readingSchema,preferences:preferencesSchema.optional() })
 const key = 'clube-livro-personal-v1'
 async function database() {
   return new Promise<IDBDatabase>((resolve,reject) => {
@@ -20,10 +20,10 @@ async function storedValue() {
 export async function loadPersonal(): Promise<WorkspaceSnapshot> {
   const stored=await storedValue()
   const parsed=stored?backupSchema.parse(JSON.parse(stored)):null
-  return { state:parsed?.state??emptyWorkspace(),reading:parsed?.reading??{},version:0,role:'owner',actorId:'visitor' }
+  return { state:parsed?.state??emptyWorkspace(),reading:parsed?.reading??{},preferences:preferencesSchema.parse(parsed?.preferences),version:0,role:'owner',actorId:'visitor' }
 }
 export async function savePersonal(snapshot: WorkspaceSnapshot) {
-  const value=JSON.stringify({format:'clube-livro-v1',state:snapshot.state,reading:snapshot.reading})
+  const value=JSON.stringify({format:'clube-livro-v1',state:snapshot.state,reading:snapshot.reading,preferences:snapshot.preferences})
   if (!('indexedDB' in globalThis)) { localStorage.setItem(key,value); return }
   const db=await database()
   try { await new Promise<void>((resolve,reject)=>{const tx=db.transaction('personal','readwrite');tx.objectStore('personal').put(value,key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)}) }

@@ -14,6 +14,8 @@ it('importa EPUB na ordem da publicação e remove código ativo',async()=>{
   expect(result).toMatchObject({title:'Minha obra',author:'Autora'})
   expect(result.content).toBe('Primeira parte.\n\nTexto inicial.\n\nSegunda parte.')
   expect(result.content).not.toContain('CODIGO')
+  expect(result.chapters?.map(chapter=>chapter.title)).toEqual(['Primeira parte.','Capítulo 2'])
+  for(const chapter of result.chapters??[])expect(result.content.slice(chapter.start,chapter.end).length).toBeGreaterThan(0)
 })
 it('recusa arquivos excessivos antes de descompactar',async()=>{
   await expect(importBook({name:'large.epub',size:10000001} as File)).rejects.toThrow('10 MB')

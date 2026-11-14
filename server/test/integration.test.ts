@@ -1,4 +1,7 @@
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
+import { WorkspaceService } from '../src/workspace-service.js'
+import { emptyWorkspace } from '../src/workspace-model.js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { buildApp } from '../src/app.js'
 import { HttpError } from '../src/errors.js'
@@ -7,6 +10,8 @@ import { migrate } from '../src/migrations.js'
 import { testDatabase } from './database.js'
 import type { Club, CreatedInvite, Session } from '../src/contracts.js'
 import type { WorkspaceSnapshot } from '../src/workspace-model.js'
+import {strToU8,zipSync} from 'fflate'
+import {PrivateFiles} from '../src/private-files.js'
 
 let db: Awaited<ReturnType<typeof testDatabase>>
 let app: Awaited<ReturnType<typeof buildApp>>
@@ -39,6 +44,117 @@ beforeAll(async () => {
 afterAll(async () => { await app?.close(); await db?.close() })
 
 describe('API com PostgreSQL real', () => {
+  it('isola capacidades de proprietário, administrador, moderador e membro', async () => {
+    const actorIds:Record<string,string>={}
+    for(const uid of ['roles-owner','roles-admin','roles-peer','roles-moderator','roles-member']) actorIds[uid]=(await app.inject({url:'/v1/me',headers:headers(uid)})).json<Session>().user.id
+    const privateClub=(await app.inject({url:'/v1/clubs',method:'POST',headers:headers('roles-owner'),payload:{name:'Papéis privados'}})).json<Club>()
+    for(const uid of ['roles-admin','roles-peer','roles-moderator','roles-member'])await db.pool.query("INSERT INTO club_memberships(club_id,user_id,role) VALUES($1,$2,'member')",[privateClub.id,actorIds[uid]])
+    const role=(actor:string,target:string,value:string)=>app.inject({url:`/v1/clubs/${privateClub.id}/members/${actorIds[target]}/role`,method:'POST',headers:headers(actor),payload:{role:value}})
+    expect((await role('roles-owner','roles-admin','admin')).statusCode).toBe(204)
+    expect((await role('roles-owner','roles-peer','admin')).statusCode).toBe(204)
+    expect((await role('roles-owner','roles-moderator','moderator')).statusCode).toBe(204)
+    expect((await role('roles-admin','roles-member','admin')).statusCode).toBe(403)
+    expect((await role('roles-member','roles-member','owner')).statusCode).toBe(400)
+    expect((await role('roles-owner','roles-owner','member')).statusCode).toBe(409)
+    const invite=(uid:string)=>app.inject({url:`/v1/clubs/${privateClub.id}/invites`,method:'POST',headers:headers(uid),payload:{}})
+    expect((await invite('roles-admin')).statusCode).toBe(201)
+    expect((await invite('roles-moderator')).statusCode).toBe(403)
+    expect((await app.inject({url:`/v1/clubs/${privateClub.id}/members/${actorIds['roles-peer']}`,method:'DELETE',headers:headers('roles-admin')})).statusCode).toBe(409)
+    const workspaceUrl=`/v1/clubs/${privateClub.id}/workspace`
+    const state=(await app.inject({url:workspaceUrl,headers:headers('roles-admin')})).json<WorkspaceSnapshot>()
+    const book=await app.inject({url:workspaceUrl,method:'POST',headers:headers('roles-admin'),payload:{version:state.version,action:{type:'book.add',title:'Referência autorizada',author:'Autora',category:'',content:''}}})
+    expect(book.statusCode).toBe(200)
+    expect((await app.inject({url:workspaceUrl,method:'POST',headers:headers('roles-moderator'),payload:{version:book.json().version,action:{type:'book.add',title:'Sem permissão',author:'Autor',category:'',content:''}}})).statusCode).toBe(403)
+    const topic=await app.inject({url:workspaceUrl,method:'POST',headers:headers('roles-member'),payload:{version:book.json().version,action:{type:'topic.add',title:'Discussão',body:'Texto',spoiler:false}}})
+    expect(topic.statusCode).toBe(200)
+    expect((await app.inject({url:workspaceUrl,method:'POST',headers:headers('roles-moderator'),payload:{version:topic.json().version,action:{type:'topic.remove',id:topic.json().state.topics[0].id}}})).statusCode).toBe(200)
+    expect((await app.inject({url:`/v1/clubs/${privateClub.id}/leave`,method:'POST',headers:headers('roles-owner')})).statusCode).toBe(409)
+    expect((await app.inject({url:`/v1/clubs/${privateClub.id}/leave`,method:'POST',headers:headers('roles-member')})).statusCode).toBe(204)
+    expect((await app.inject({url:workspaceUrl,headers:headers('roles-member')})).statusCode).toBe(403)
+    const actions=(await db.pool.query("SELECT action FROM audit_logs WHERE club_id=$1 ORDER BY id",[privateClub.id])).rows.map(row=>row.action)
+    expect(actions).toContain('member.role.admin');expect(actions).toContain('member.left')
+  })
+  it('descobre somente clubes opt-in e aprova solicitações com isolamento, versão e paginação', async () => {
+    await app.inject({url:'/v1/me',headers:headers('discover-owner')})
+    const publicClubs:Club[]=[]
+    for(let i=0;i<3;i++){
+      const value=(await app.inject({url:'/v1/clubs',method:'POST',headers:headers('discover-owner'),payload:{name:`Descoberta única ${i}`}})).json<Club>();publicClubs.push(value)
+      const settings=(await app.inject({url:`/v1/clubs/${value.id}/settings`,headers:headers('discover-owner')})).json()
+      expect(settings.visibility).toBe('private')
+      if(i<2)expect((await app.inject({url:`/v1/clubs/${value.id}/settings`,method:'POST',headers:headers('discover-owner'),payload:{...settings,visibility:'discoverable',description:'Conheça nosso grupo.'}})).statusCode).toBe(200)
+      if(i===0)expect((await app.inject({url:`/v1/clubs/${value.id}/settings`,method:'POST',headers:headers('discover-owner'),payload:{...settings,visibility:'public'}})).statusCode).toBe(409)
+    }
+    await db.pool.query('UPDATE clubs SET created_at=$2 WHERE id=ANY($1::uuid[])',[publicClubs.map(club=>club.id),'2026-11-13T13:30:01.123456Z'])
+    const first=await app.inject({url:'/v1/discover/clubs?q=Descoberta&limit=1'})
+    expect(first.statusCode).toBe(200);expect(first.json().items).toHaveLength(1);expect(first.json().nextCursor).toBeTruthy()
+    expect(first.body).not.toMatch(/email|owner_user_id|firebase_uid/)
+    const second=(await app.inject({url:`/v1/discover/clubs?q=Descoberta&limit=1&cursor=${first.json().nextCursor}`})).json()
+    expect(second.items).toHaveLength(1);expect(second.items[0].id).not.toBe(first.json().items[0].id);expect(second.nextCursor).toBeNull()
+    expect([first.json().items[0].id,second.items[0].id]).not.toContain(publicClubs[2].id)
+    expect((await app.inject({url:'/v1/discover/clubs?cursor=invalid'})).statusCode).toBe(400)
+    const target=publicClubs[0].id
+    expect((await app.inject({url:`/v1/clubs/${target}/workspace`,headers:headers('discover-reader')})).statusCode).toBe(403)
+    expect((await app.inject({url:`/v1/clubs/${publicClubs[2].id}/join-requests`,method:'POST',headers:headers('discover-reader'),payload:{}})).statusCode).toBe(404)
+    const request=await app.inject({url:`/v1/clubs/${target}/join-requests`,method:'POST',headers:headers('discover-reader'),payload:{message:'Gostaria de participar.'}})
+    expect(request.statusCode).toBe(201)
+    expect((await app.inject({url:`/v1/clubs/${target}/join-requests`,method:'POST',headers:headers('discover-reader'),payload:{}})).statusCode).toBe(409)
+    expect((await app.inject({url:`/v1/clubs/${target}/join-requests`,headers:headers('discover-reader')})).statusCode).toBe(403)
+    const queue=(await app.inject({url:`/v1/clubs/${target}/join-requests`,headers:headers('discover-owner')})).json()
+    expect(queue.items[0]).toMatchObject({id:request.json().id,message:'Gostaria de participar.'})
+    expect(JSON.stringify(queue)).not.toContain('@example.com')
+    expect((await app.inject({url:`/v1/clubs/${publicClubs[1].id}/join-requests/${request.json().id}/review`,method:'POST',headers:headers('discover-owner'),payload:{decision:'approved'}})).statusCode).toBe(404)
+    const results=await Promise.all([1,2].map(()=>app.inject({url:`/v1/clubs/${target}/join-requests/${request.json().id}/review`,method:'POST',headers:headers('discover-owner'),payload:{decision:'approved'}})))
+    expect(results.map(result=>result.statusCode).sort()).toEqual([200,404])
+    expect((await app.inject({url:`/v1/clubs/${target}/workspace`,headers:headers('discover-reader')})).statusCode).toBe(200)
+    expect((await db.pool.query('SELECT count(*)::int AS count FROM club_memberships WHERE club_id=$1',[target])).rows[0].count).toBe(2)
+  })
+
+  it('migra a base 001/002 com conteúdo legado sem perder dados e sem reaplicar mudanças', async () => {
+    const legacy = await testDatabase(false)
+    try {
+      await legacy.pool.query('CREATE TABLE schema_migrations (name text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())')
+      const markers = []
+      for (const name of ['001_identity_and_clubs.sql', '002_complete_workspace.sql']) {
+        const sql = await readFile(new URL('../migrations/' + name, import.meta.url), 'utf8')
+        const checksum = createHash('sha256').update(sql).digest('hex')
+        await legacy.pool.query(sql)
+        await legacy.pool.query('INSERT INTO schema_migrations(name,checksum) VALUES($1,$2)', [name, checksum])
+        markers.push({name, checksum})
+      }
+      const {rows:[user]} = await legacy.pool.query("INSERT INTO users(firebase_uid,email,name) VALUES('migration-fixture','migration-fixture@example.com','Leitor') RETURNING id,email,name")
+      const state = emptyWorkspace(), bookId = randomUUID()
+      state.books.push({id:bookId,title:'Livro anterior',author:'Autora',category:'',content:'Texto original preservado.',createdBy:user.id,createdAt:new Date().toISOString()})
+      state.topics.push({id:randomUUID(),title:'Nota pessoal anterior',body:'Permanece privada e fora dos clubes.',by:'visitor',name:'Você',at:'2026-11-13T11:00:00.000Z',spoiler:false,likedBy:[],replies:[]})
+      const reading = {[bookId]:{percent:40,page:2,bookmark:1,rating:4,finishedAt:null}}
+      await legacy.pool.query('INSERT INTO personal_workspaces(user_id,state,reading,version) VALUES($1,$2,$3,7)', [user.id,state,reading])
+      const {rows:[legacyClub]}=await legacy.pool.query("WITH c AS(INSERT INTO clubs(name,owner_user_id) VALUES('Clube legado',$1) RETURNING id) INSERT INTO club_memberships(club_id,user_id,role) SELECT id,$1,'owner' FROM c RETURNING club_id",[user.id])
+      const topicId=randomUUID(),replyId=randomUUID(),legacyState=emptyWorkspace()
+      legacyState.topics.push({id:topicId,title:'Conversa anterior',body:'Corpo original preservado.',by:user.id,name:user.name,at:'2026-11-13T12:00:00.000Z',spoiler:false,likedBy:[user.id],replies:[{id:replyId,body:'Resposta original.',by:user.id,name:user.name,at:'2026-11-13T13:00:00.000Z'}]})
+      await legacy.pool.query('INSERT INTO club_workspaces(club_id,state) VALUES($1,$2)',[legacyClub.club_id,legacyState])
+      await migrate(legacy.pool)
+      await migrate(legacy.pool)
+      expect((await legacy.pool.query('SELECT body FROM forum_topics WHERE id=$1',[topicId])).rows[0].body).toBe('Corpo original preservado.')
+      expect((await legacy.pool.query('SELECT body FROM forum_replies WHERE id=$1',[replyId])).rows[0].body).toBe('Resposta original.')
+      expect((await legacy.pool.query('SELECT count(*)::int AS count FROM forum_topic_likes WHERE topic_id=$1',[topicId])).rows[0].count).toBe(1)
+      expect((await legacy.pool.query('SELECT state FROM club_workspaces WHERE club_id=$1',[legacyClub.club_id])).rows[0].state).toEqual(legacyState)
+      const migratedWorkspace=new WorkspaceService(legacy.pool)
+      expect((await migratedWorkspace.get(user,legacyClub.club_id,false)).state.topics).toEqual([])
+      expect((await migratedWorkspace.get(user,legacyClub.club_id,false)).forumCount).toBe(1)
+      const compatible=await migratedWorkspace.get(user,legacyClub.club_id)
+      expect(compatible.state.topics[0]).toMatchObject({id:topicId,body:'Corpo original preservado.',likedBy:[user.id],replies:[{id:replyId,body:'Resposta original.'}]})
+
+      const workspace = new WorkspaceService(legacy.pool), snapshot = await workspace.get(user)
+      expect(snapshot.state).toEqual(state)
+      expect(snapshot.reading).toEqual(reading)
+      expect(snapshot.version).toBe(7)
+      const next = await workspace.act(user,{type:'reading.update',id:bookId,favorite:true,expectedRevision:0},snapshot.version)
+      expect(next.reading[bookId]).toMatchObject({...reading[bookId],favorite:true,revision:1})
+      expect(next.state).toEqual(state)
+      expect((await legacy.pool.query('SELECT name,checksum FROM schema_migrations WHERE name=ANY($1::text[]) ORDER BY name',[markers.map(m=>m.name)])).rows).toEqual(markers)
+      expect((await legacy.pool.query('SELECT count(*)::int AS count FROM private_book_files')).rows[0].count).toBe(0)
+    } finally { await legacy.close() }
+  })
+
   it('recusa acesso anônimo, token inválido e e-mail não confirmado', async () => {
     expect((await app.inject({ url: '/v1/me' })).statusCode).toBe(401)
     expect((await app.inject({ url: '/v1/me', headers: headers('invalid') })).statusCode).toBe(401)
@@ -158,5 +274,51 @@ describe('API com PostgreSQL real', () => {
     const saved=(await app.inject({url,headers:headers()})).json<WorkspaceSnapshot>()
     expect(saved.state.draws).toHaveLength(1);expect(saved.state.nominations).toEqual([])
     expect((await db.pool.query("SELECT count(*)::int AS count FROM audit_logs WHERE club_id=$1 AND action='draw'",[club.id])).rows[0].count).toBe(1)
+  })
+  it('isola estantes, preferências e anotações de membros no mesmo clube',async()=>{
+    const url=`/v1/clubs/${club.id}/workspace`
+    const state=(await app.inject({url,headers:headers('member')})).json<WorkspaceSnapshot>()
+    const book=state.state.books[0]
+    const send=(action:unknown)=>app.inject({url,method:'POST',headers:headers('member'),payload:{version:state.version,action}})
+    expect((await send({type:'shelf.add',name:'Minha estante privada'})).statusCode).toBe(200)
+    expect((await send({type:'reading.annotate',id:book.id,start:0,end:8,quote:'Conteúdo',note:'Nota que não compartilhei'})).statusCode).toBe(200)
+    const mine=(await app.inject({url,headers:headers('member')})).json<WorkspaceSnapshot>()
+    const other=await app.inject({url,headers:headers()})
+    expect(mine.preferences?.shelves).toContain('Minha estante privada')
+    expect(mine.reading[book.id].annotations?.[0].note).toBe('Nota que não compartilhei')
+    expect(other.body).not.toContain('Minha estante privada');expect(other.body).not.toContain('Nota que não compartilhei')
+    const rejected=await send({type:'reading.update',id:book.id,percent:3,expectedRevision:0})
+    expect(rejected.statusCode).toBe(409);expect(rejected.json().error.code).toBe('READING_CHANGED')
+  })
+  it('armazena e entrega EPUB original somente ao titular, sem expor chave de storage',async()=>{
+    const objects=new Map<string,Buffer>();let failDelete=false;const storage={put:async(key:string,bytes:Buffer)=>{objects.set(key,bytes)},get:async(key:string)=>objects.get(key)!,remove:async(key:string)=>{if(failDelete)throw Error('temporary storage outage');objects.delete(key)}}
+    const filesApp=await buildApp({pool:db.pool,origin:'https://club.example',verifyToken:async(token)=>identity(token),storage,rateMax:1000})
+    try{
+      const initial=(await filesApp.inject({url:'/v1/me/workspace',headers:headers('file-owner')})).json<WorkspaceSnapshot>()
+      const created=(await filesApp.inject({url:'/v1/me/workspace',method:'POST',headers:headers('file-owner'),payload:{version:initial.version,action:{type:'book.add',title:'Meu arquivo',author:'Autora',category:'',content:'Texto próprio.'}}})).json<WorkspaceSnapshot>()
+      const bookId=created.state.books[0].id
+      const bytes=Buffer.from(zipSync({'mimetype':strToU8('application/epub+zip'),'META-INF/container.xml':strToU8('<rootfile full-path="book.opf"/>'),'book.opf':strToU8('<package/>')}))
+      const payload={filename:'minha-leitura.epub',data:bytes.toString('base64')}
+      const uploaded=await filesApp.inject({url:`/v1/me/book-files/${bookId}`,method:'POST',headers:headers('file-owner'),payload})
+      expect(uploaded.statusCode).toBe(201);expect(uploaded.body).not.toContain('object_key');expect(uploaded.body).not.toContain('private-epub')
+      const id=uploaded.json().id
+      expect((await filesApp.inject({url:`/v1/me/book-files/${bookId}`,method:'POST',headers:headers('file-owner'),payload})).statusCode).toBe(409)
+      expect((await filesApp.inject({url:`/v1/me/files/${id}/content`,headers:headers('outsider')})).statusCode).toBe(404)
+      const downloaded=await filesApp.inject({url:`/v1/me/files/${id}/content`,headers:headers('file-owner')})
+      expect(downloaded.statusCode).toBe(200);expect(downloaded.rawPayload.equals(bytes)).toBe(true);expect(downloaded.headers['cache-control']).toBe('no-store')
+      expect((await filesApp.inject({url:`/v1/me/files/${id}`,method:'DELETE',headers:headers('outsider')})).statusCode).toBe(404)
+      failDelete=true
+      expect((await filesApp.inject({url:`/v1/me/files/${id}`,method:'DELETE',headers:headers('file-owner')})).statusCode).toBe(202)
+      expect((await filesApp.inject({url:`/v1/me/files/${id}/content`,headers:headers('file-owner')})).statusCode).toBe(404);expect(objects.size).toBe(1)
+      failDelete=false
+      expect(await new PrivateFiles(db.pool,storage).cleanup()).toEqual({purged:1,failed:0});expect(objects.size).toBe(0)
+      const replacement=await filesApp.inject({url:`/v1/me/book-files/${bookId}`,method:'POST',headers:headers('file-owner'),payload})
+      expect(replacement.statusCode).toBe(201)
+      const removed=await filesApp.inject({url:'/v1/me/workspace',method:'POST',headers:headers('file-owner'),payload:{version:created.version,action:{type:'book.remove',id:bookId}}})
+      expect(removed.statusCode).toBe(200)
+      expect((await filesApp.inject({url:`/v1/me/files/${replacement.json().id}/content`,headers:headers('file-owner')})).statusCode).toBe(404)
+      expect(await new PrivateFiles(db.pool,storage).cleanup()).toEqual({purged:1,failed:0});expect(objects.size).toBe(0)
+      expect((await filesApp.inject({url:`/v1/me/book-files/${bookId}`,method:'POST',payload:{data:'not base64'}})).statusCode).toBe(401)
+    }finally{await filesApp.close()}
   })
 })

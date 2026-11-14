@@ -1,3 +1,4 @@
+import {localStorage} from './local-storage.js'
 import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
 import { buildApp } from '../src/app.js'
@@ -10,7 +11,7 @@ const config = readConfig()
 if (config.FIREBASE_PROJECT_ID !== 'demo-clube-do-livro' || !config.FIREBASE_AUTH_EMULATOR_HOST) throw new Error('Este comando é exclusivo do ambiente local.')
 const pool = createPool(config.DATABASE_URL)
 await migrate(pool)
-const app = await buildApp({ pool, verifyToken: createFirebaseVerifier(config.FIREBASE_PROJECT_ID), origin: config.FRONTEND_ORIGIN })
+const app = await buildApp({ pool, verifyToken: createFirebaseVerifier(config.FIREBASE_PROJECT_ID), origin: config.FRONTEND_ORIGIN,moderatorUids:config.PLATFORM_MODERATOR_UIDS,storage:localStorage(fileURLToPath(new URL('../../.local-data/media-private/',import.meta.url))) })
 const vite = await createServer({ root: fileURLToPath(new URL('../../', import.meta.url)), server: { host: '127.0.0.1', port: 5173, strictPort: true } })
 async function close() { await vite.close(); await app.close(); await pool.end() }
 for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => { void close() })
