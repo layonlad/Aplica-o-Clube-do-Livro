@@ -59,12 +59,7 @@
       "plano": "—",
       "coluna": 1,
       "cor": "coral",
-      "guarda": [
-        "Biblioteca e leituras do visitante (sem conta)",
-        "EPUB original no IndexedDB",
-        "Aparência escolhida",
-        "Sessão de login"
-      ],
+      "guarda": ["Biblioteca e leituras do visitante (sem conta)", "EPUB original no IndexedDB", "Aparência escolhida", "Sessão de login"],
       "detalhe": "Sem conta, tudo fica só neste navegador. Apagar os dados do navegador apaga essas leituras; o Perfil permite exportar um backup.",
       "link": ""
     },
@@ -75,9 +70,7 @@
       "plano": "Gratuito",
       "coluna": 2,
       "cor": "plum",
-      "guarda": [
-        "Arquivos do app (HTML, CSS, JavaScript, fontes)"
-      ],
+      "guarda": ["Arquivos do app (HTML, CSS, JavaScript, fontes)"],
       "detalhe": "Só entrega o app pronto. Não guarda dados de ninguém. Publicado manualmente com o comando de deploy do Firebase.",
       "link": "https://project-acb850f4-4bb8-45de-a84.web.app"
     },
@@ -88,11 +81,7 @@
       "plano": "Gratuito",
       "coluna": 2,
       "cor": "honey",
-      "guarda": [
-        "E-mail e senha (protegida pelo Google)",
-        "Login com Google",
-        "Confirmação de e-mail"
-      ],
+      "guarda": ["E-mail e senha (protegida pelo Google)", "Login com Google", "Confirmação de e-mail"],
       "detalhe": "O app nunca vê nem guarda senhas. A API confere o token de login a cada pedido.",
       "link": "https://console.firebase.google.com/project/project-acb850f4-4bb8-45de-a84/authentication"
     },
@@ -103,9 +92,7 @@
       "plano": "Free · pode dormir após 15 min sem uso",
       "coluna": 3,
       "cor": "blue",
-      "guarda": [
-        "Nada permanente: só regras e permissões"
-      ],
+      "guarda": ["Nada permanente: só regras e permissões"],
       "detalhe": "Recebe os pedidos do app, confere quem é a pessoa e o que ela pode ver, e lê ou grava no banco e no armazenamento. Publicação automática desligada.",
       "link": "https://clube-livro-api.onrender.com/health"
     },
@@ -116,13 +103,7 @@
       "plano": "Free · região us-east-1",
       "coluna": 4,
       "cor": "mint",
-      "guarda": [
-        "Perfis, clubes e membros",
-        "Publicações, comentários e curtidas",
-        "Fórum, encontros e álbuns",
-        "Leituras sincronizadas e preferências",
-        "Notificações, denúncias e moderação"
-      ],
+      "guarda": ["Perfis, clubes e membros", "Publicações, comentários e curtidas", "Fórum, encontros e álbuns", "Leituras sincronizadas e preferências", "Notificações, denúncias e moderação"],
       "detalhe": "Fonte da verdade dos dados das contas. A API usa uma identidade restrita (clube_runtime) que não altera a estrutura nem apaga usuários.",
       "link": "https://console.neon.tech/app/projects/wandering-block-99253816"
     },
@@ -133,12 +114,7 @@
       "plano": "Free · cota de 50 MB de mídia por conta",
       "coluna": 4,
       "cor": "rose",
-      "guarda": [
-        "Fotos e capas de perfil (GIF animado vira WebP animado)",
-        "Fotos e vídeos de publicações e álbuns",
-        "EPUBs originais guardados na conta",
-        "Arquivos EPUB do acervo dos clubes"
-      ],
+      "guarda": ["Fotos e capas de perfil (GIF animado vira WebP animado)", "Fotos e vídeos de publicações e álbuns", "EPUBs originais guardados na conta", "Arquivos EPUB do acervo dos clubes"],
       "detalhe": "Bucket privado: nada tem link público. A API confere a permissão a cada download.",
       "link": ""
     },
@@ -149,265 +125,80 @@
       "plano": "Gratuito",
       "coluna": 0,
       "cor": "ink",
-      "guarda": [
-        "Todo o código e a documentação",
-        "Pull requests e revisões",
-        "Testes automáticos (CI)",
-        "Prévia pública e este mapa (GitHub Pages)"
-      ],
+      "guarda": ["Todo o código e a documentação", "Pull requests e revisões", "Testes automáticos (CI)", "Prévia pública e este mapa (GitHub Pages)"],
       "detalhe": "Repositório público: nunca guardar senhas, chaves ou dados de usuários aqui.",
       "link": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
     }
   ],
   "ligacoes": [
-    {
-      "de": "pessoa",
-      "para": "site",
-      "texto": "abre o app"
-    },
-    {
-      "de": "pessoa",
-      "para": "auth",
-      "texto": "entra na conta (opcional)"
-    },
-    {
-      "de": "site",
-      "para": "api",
-      "texto": "pedidos com o token de login"
-    },
-    {
-      "de": "api",
-      "para": "auth",
-      "texto": "confere o token"
-    },
-    {
-      "de": "api",
-      "para": "banco",
-      "texto": "lê e grava dados"
-    },
-    {
-      "de": "api",
-      "para": "midia",
-      "texto": "guarda e entrega arquivos"
-    }
+    { "de": "pessoa", "para": "site", "texto": "abre o app" },
+    { "de": "pessoa", "para": "auth", "texto": "entra na conta (opcional)" },
+    { "de": "site", "para": "api", "texto": "pedidos com o token de login" },
+    { "de": "api", "para": "auth", "texto": "confere o token" },
+    { "de": "api", "para": "banco", "texto": "lê e grava dados" },
+    { "de": "api", "para": "midia", "texto": "guarda e entrega arquivos" }
   ],
   "dados": [
-    {
-      "o_que": "Leituras de quem usa sem conta",
-      "onde": "pessoa",
-      "privacidade": "Só no aparelho",
-      "copia": "Backup JSON exportado pelo Perfil"
-    },
-    {
-      "o_que": "E-mail, senha e login com Google",
-      "onde": "auth",
-      "privacidade": "Privado",
-      "copia": "Gerenciado pelo Google"
-    },
-    {
-      "o_que": "Nome, @usuário, biografia e privacidade do perfil",
-      "onde": "banco",
-      "privacidade": "Público só se a pessoa ativar",
-      "copia": "Cópia de recuperação no Neon (na liberação)"
-    },
-    {
-      "o_que": "Biblioteca, progresso, marcadores e notas da conta",
-      "onde": "banco",
-      "privacidade": "Privado do titular",
-      "copia": "Backup JSON + banco"
-    },
-    {
-      "o_que": "Aparência (tema, fontes, modo)",
-      "onde": "banco",
-      "privacidade": "Privado do titular",
-      "copia": "Também no navegador"
-    },
-    {
-      "o_que": "Clubes, membros, convites e papéis",
-      "onde": "banco",
-      "privacidade": "Só membros",
-      "copia": "Banco"
-    },
-    {
-      "o_que": "Mural, fórum, encontros e álbuns dos clubes",
-      "onde": "banco",
-      "privacidade": "Só membros ativos",
-      "copia": "Banco"
-    },
-    {
-      "o_que": "Publicações e comentários da comunidade",
-      "onde": "banco",
-      "privacidade": "Público",
-      "copia": "Banco"
-    },
-    {
-      "o_que": "Notificações",
-      "onde": "banco",
-      "privacidade": "Privado do destinatário",
-      "copia": "Apagadas após 90 dias"
-    },
-    {
-      "o_que": "Fotos e capas de perfil",
-      "onde": "midia",
-      "privacidade": "Capa: só com perfil público. Foto: pública com perfil público; senão, só colegas de clube",
-      "copia": "Bucket privado"
-    },
-    {
-      "o_que": "Fotos e vídeos de publicações e álbuns",
-      "onde": "midia",
-      "privacidade": "Segue a publicação ou o álbum",
-      "copia": "Bucket privado"
-    },
-    {
-      "o_que": "EPUBs originais",
-      "onde": "midia",
-      "privacidade": "Privado do titular ou do clube",
-      "copia": "Não entram no backup JSON"
-    },
-    {
-      "o_que": "Código, documentação e este mapa",
-      "onde": "github",
-      "privacidade": "Público",
-      "copia": "Histórico do Git"
-    }
+    { "o_que": "Leituras de quem usa sem conta", "onde": "pessoa", "privacidade": "Só no aparelho", "copia": "Backup JSON exportado pelo Perfil" },
+    { "o_que": "E-mail, senha e login com Google", "onde": "auth", "privacidade": "Privado", "copia": "Gerenciado pelo Google" },
+    { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Público só se a pessoa ativar", "copia": "Cópia de recuperação no Neon (na liberação)" },
+    { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON + banco" },
+    { "o_que": "Aparência (tema, fontes, modo)", "onde": "banco", "privacidade": "Privado do titular", "copia": "Também no navegador" },
+    { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Só membros", "copia": "Banco" },
+    { "o_que": "Mural, fórum, encontros e álbuns dos clubes", "onde": "banco", "privacidade": "Só membros ativos", "copia": "Banco" },
+    { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Público", "copia": "Banco" },
+    { "o_que": "Notificações", "onde": "banco", "privacidade": "Privado do destinatário", "copia": "Apagadas após 90 dias" },
+    { "o_que": "Fotos e capas de perfil", "onde": "midia", "privacidade": "Capa: só com perfil público. Foto: pública com perfil público; senão, só colegas de clube", "copia": "Bucket privado" },
+    { "o_que": "Fotos e vídeos de publicações e álbuns", "onde": "midia", "privacidade": "Segue a publicação ou o álbum", "copia": "Bucket privado" },
+    { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Não entram no backup JSON" },
+    { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" }
   ],
   "fluxoPublicacao": [
-    {
-      "titulo": "Você pede uma mudança",
-      "onde": "Conversa com Claude ou Codex",
-      "texto": "Claude cuida de visual e telas; Codex de backend, banco e regras.",
-      "modo": "voce"
-    },
-    {
-      "titulo": "Agente trabalha na própria branch",
-      "onde": "Pasta separada (worktree) no seu computador",
-      "texto": "Cada um em sua branch, para não sobrescrever o trabalho do outro.",
-      "modo": "auto"
-    },
-    {
-      "titulo": "Testes locais",
-      "onde": "Computador",
-      "texto": "Testes do app, da API e do banco, além de conferência visual no navegador.",
-      "modo": "auto"
-    },
-    {
-      "titulo": "Pull request",
-      "onde": "GitHub",
-      "texto": "A mudança vira um PR com descrição do que mudou e do que não foi testado.",
-      "modo": "auto"
-    },
-    {
-      "titulo": "CI valida",
-      "onde": "GitHub Actions — Validar aplicação e API",
-      "texto": "Roda todos os testes, builds, imagem Docker e auditoria de segurança.",
-      "modo": "auto"
-    },
-    {
-      "titulo": "Você aprova o merge",
-      "onde": "GitHub",
-      "texto": "Nada entra em main sem o seu sim.",
-      "modo": "voce"
-    },
-    {
-      "titulo": "Prévia e mapa atualizam",
-      "onde": "GitHub Pages",
-      "texto": "Cada push em main republica a prévia (demonstração) e este mapa.",
-      "modo": "auto"
-    },
-    {
-      "titulo": "Liberação em produção",
-      "onde": "Render (API) e Firebase Hosting (site)",
-      "texto": "Manual e só com a sua autorização: primeiro migrations e API, depois o site.",
-      "modo": "aprovacao"
-    }
+    { "titulo": "Você pede uma mudança", "onde": "Conversa com Claude ou Codex", "texto": "Claude cuida de visual e telas; Codex de backend, banco e regras.", "modo": "voce" },
+    { "titulo": "Agente trabalha na própria branch", "onde": "Pasta separada (worktree) no seu computador", "texto": "Cada um em sua branch, para não sobrescrever o trabalho do outro.", "modo": "auto" },
+    { "titulo": "Testes locais", "onde": "Computador", "texto": "Testes do app, da API e do banco, além de conferência visual no navegador.", "modo": "auto" },
+    { "titulo": "Pull request", "onde": "GitHub", "texto": "A mudança vira um PR com descrição do que mudou e do que não foi testado.", "modo": "auto" },
+    { "titulo": "CI valida", "onde": "GitHub Actions — Validar aplicação e API", "texto": "Roda todos os testes, builds, imagem Docker e auditoria de segurança.", "modo": "auto" },
+    { "titulo": "Você aprova o merge", "onde": "GitHub", "texto": "Nada entra em main sem o seu sim.", "modo": "voce" },
+    { "titulo": "Prévia e mapa atualizam", "onde": "GitHub Pages", "texto": "Cada push em main republica a prévia (demonstração) e este mapa.", "modo": "auto" },
+    { "titulo": "Liberação em produção", "onde": "Render (API) e Firebase Hosting (site)", "texto": "Manual e só com a sua autorização: primeiro migrations e API, depois o site.", "modo": "aprovacao" }
   ],
   "jornadas": [
     {
       "titulo": "Abrir o app sem conta",
       "passos": [
-        {
-          "camada": "pessoa",
-          "texto": "Abre o endereço do app"
-        },
-        {
-          "camada": "site",
-          "texto": "Firebase entrega o app"
-        },
-        {
-          "camada": "pessoa",
-          "texto": "Animação de abertura (uma vez por sessão)"
-        },
-        {
-          "camada": "pessoa",
-          "texto": "Biblioteca e leituras ficam no navegador"
-        }
+        { "camada": "pessoa", "texto": "Abre o endereço do app" },
+        { "camada": "site", "texto": "Firebase entrega o app" },
+        { "camada": "pessoa", "texto": "Animação de abertura (uma vez por sessão)" },
+        { "camada": "pessoa", "texto": "Biblioteca e leituras ficam no navegador" }
       ]
     },
     {
       "titulo": "Publicar uma foto no mural do clube",
       "passos": [
-        {
-          "camada": "pessoa",
-          "texto": "Escolhe a foto e escreve"
-        },
-        {
-          "camada": "auth",
-          "texto": "Token de login acompanha o envio"
-        },
-        {
-          "camada": "api",
-          "texto": "Confere se é membro ativo e processa a foto"
-        },
-        {
-          "camada": "midia",
-          "texto": "Foto vai para o bucket privado"
-        },
-        {
-          "camada": "banco",
-          "texto": "Publicação gravada no mural"
-        }
+        { "camada": "pessoa", "texto": "Escolhe a foto e escreve" },
+        { "camada": "auth", "texto": "Token de login acompanha o envio" },
+        { "camada": "api", "texto": "Confere se é membro ativo e processa a foto" },
+        { "camada": "midia", "texto": "Foto vai para o bucket privado" },
+        { "camada": "banco", "texto": "Publicação gravada no mural" }
       ]
     },
     {
       "titulo": "Visitar o perfil de outro leitor",
       "passos": [
-        {
-          "camada": "pessoa",
-          "texto": "Clica no nome ou na foto"
-        },
-        {
-          "camada": "api",
-          "texto": "Junta perfil público e clubes em comum"
-        },
-        {
-          "camada": "banco",
-          "texto": "Busca só posts de clubes que os dois frequentam"
-        },
-        {
-          "camada": "midia",
-          "texto": "Foto entregue só a quem pode vê-la"
-        }
+        { "camada": "pessoa", "texto": "Clica no nome ou na foto" },
+        { "camada": "api", "texto": "Junta perfil público e clubes em comum" },
+        { "camada": "banco", "texto": "Busca só posts de clubes que os dois frequentam" },
+        { "camada": "midia", "texto": "Foto entregue só a quem pode vê-la" }
       ]
     },
     {
       "titulo": "Personalizar a aparência",
       "passos": [
-        {
-          "camada": "pessoa",
-          "texto": "Escolhe tema, modo e fontes com prévia ao vivo"
-        },
-        {
-          "camada": "pessoa",
-          "texto": "Fica salva neste navegador"
-        },
-        {
-          "camada": "api",
-          "texto": "Com conta, envia para a API"
-        },
-        {
-          "camada": "banco",
-          "texto": "Gravada nas preferências e recuperada em outro aparelho"
-        }
+        { "camada": "pessoa", "texto": "Escolhe tema, modo e fontes com prévia ao vivo" },
+        { "camada": "pessoa", "texto": "Fica salva neste navegador" },
+        { "camada": "api", "texto": "Com conta, envia para a API" },
+        { "camada": "banco", "texto": "Gravada nas preferências e recuperada em outro aparelho" }
       ]
     }
   ],
