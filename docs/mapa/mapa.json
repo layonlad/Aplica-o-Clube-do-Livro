@@ -6,12 +6,13 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "No ar",
-    "tom": "ok",
-    "resumo": "Desde 14/11 a produção roda a versão com comunidade, clubes privados, perfis com foto, abertura animada, aparência e o novo visual (liberação feita pelo Codex com autorização do dono). Uma correção da capa do perfil e de GIFs está pronta e aguarda merge e publicação.",
-    "proximoPasso": "Mesclar a correção da capa do perfil e de GIFs e pedir ao Codex para publicar a API (Render) e depois o site (Firebase) com ela.",
+    "fase": "Pronto para liberação",
+    "tom": "aguardando",
+    "resumo": "Todo o trabalho de Claude e Codex está em main (PR 2 mesclado em 14/11). A prévia pública já mostra o novo visual. A produção ainda roda a versão de 13/11 e só muda com a sua autorização.",
+    "proximoPasso": "Você decide se autoriza as operações de produção descritas em docs/LIBERACAO_PLATAFORMA_SOCIAL.md. Com o sim, o Codex publica a API (Render) e depois o site (Firebase).",
     "pendencias": [
-      "Publicar em produção a correção da capa do perfil e do envio de GIFs (precisa de deploy da API e do site).",
+      "Autorização do dono para a liberação em produção (cópia do banco, migrations 003–015, permissões, segredos, deploy da API e do site, teste final).",
+      "Testar a integração real com o bucket privado de mídia durante a liberação.",
       "Exclusão integral automática de conta Firebase não existe; há exclusão de conteúdo e desativação do perfil.",
       "Leitor de tela real e recorte de foto pela câmera do celular ainda não foram testados."
     ]
@@ -21,9 +22,9 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "Versão de 14/11 (commit b64835d): API no Render e site no Firebase",
+      "versao": "Versão de 13/11 (commit 482b29d)",
       "atualizacao": "Manual, só com autorização do dono",
-      "tom": "ok"
+      "tom": "aguardando"
     },
     {
       "id": "previa",
@@ -432,15 +433,8 @@
       "data": "2026-11-14",
       "autor": "Claude Code",
       "titulo": "Capa do perfil e GIFs corrigidos",
-      "resumo": "A capa agora salva na hora (em Meu perfil e no Perfil social), funciona mesmo com perfil privado e aceita GIF animado; a foto também aceita GIF. Mensagens de erro deixaram de dizer 'verifique sua conexão' para arquivo inválido. Aguarda merge e deploy.",
-      "pr": ""
-    },
-    {
-      "data": "2026-11-14",
-      "autor": "Codex",
-      "titulo": "Liberação em produção",
-      "resumo": "Cópia de recuperação do banco, migrations 003–015, permissões e segredos aplicados; API publicada no Render e site no Firebase com o commit b64835d. Testes reais concluídos e dados de teste removidos. (Registrado pelo Claude a partir do relatório do Codex.)",
-      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/2"
+      "resumo": "A capa agora salva na hora (em Meu perfil e no Perfil social), funciona mesmo com perfil privado e aceita GIF animado; a foto também aceita GIF. Arquivo inválido deixou de mostrar 'verifique sua conexão'. Precisa de deploy da API e do site para chegar à produção.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/10"
     },
     {
       "data": "2026-11-14",
