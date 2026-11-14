@@ -6,15 +6,16 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Pronto para liberação",
+    "fase": "Publicado; ajuste de permissões pendente",
     "tom": "aguardando",
-    "resumo": "Todo o trabalho de Claude e Codex está em main (PR 2 mesclado em 14/11). A prévia pública já mostra o novo visual. A produção ainda roda a versão de 13/11 e só muda com a sua autorização.",
-    "proximoPasso": "Você decide se autoriza as operações de produção descritas em docs/LIBERACAO_PLATAFORMA_SOCIAL.md. Com o sim, o Codex publica a API (Render) e depois o site (Firebase).",
+    "resumo": "A plataforma social está em produção desde 14/11/2026: API e site usam o código de b64835d, incluindo os PRs 5, 6 e 7. Banco, mídia privada e moderação foram configurados; os testes reais e a limpeza sintética foram concluídos. A revisão do mapa identificou permissões SQL legadas que precisam ser removidas.",
+    "proximoPasso": "Revisar este PR do mapa e da correção de permissões. A aplicação do script SQL revisado no banco depende de autorização explícita. Não há deploy da API/Firebase nem aplicação de SQL nesta etapa; o merge atualiza a demonstração e o mapa no Pages.",
     "pendencias": [
-      "Autorização do dono para a liberação em produção (cópia do banco, migrations 003–015, permissões, segredos, deploy da API e do site, teste final).",
-      "Testar a integração real com o bucket privado de mídia durante a liberação.",
-      "Exclusão integral automática de conta Firebase não existe; há exclusão de conteúdo e desativação do perfil.",
-      "Leitor de tela real e recorte de foto pela câmera do celular ainda não foram testados."
+      "Aplicar, após autorização, a revogação dos privilégios legados em server/ops/runtime-grants.sql. Em produção ainda existem DELETE em tabelas da implantação inicial e UPDATE em aceites; o script anterior só acrescentava grants.",
+      "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
+      "Leitor de tela real e recorte de foto pela câmera do celular ainda não foram testados. A persistência foi validada por novo login, sem segundo aparelho físico.",
+      "Modo conectado sem cache offline por service worker; notificações são internas ao app, sem e-mail ou push.",
+      "A cópia privada de recuperação é anterior à liberação de 14/11; não representa cópia contínua nem inclui gravações posteriores."
     ]
   },
   "ambientes": [
@@ -22,9 +23,17 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "Versão de 13/11 (commit 482b29d)",
-      "atualizacao": "Manual, só com autorização do dono",
-      "tom": "aguardando"
+      "versao": "Código de b64835d · publicado em 14/11/2026 no Firebase Hosting",
+      "atualizacao": "Manual, com autorização do dono; merge em main não publica o Firebase",
+      "tom": "ok"
+    },
+    {
+      "id": "api-producao",
+      "nome": "API de produção",
+      "url": "https://clube-livro-api.onrender.com/health",
+      "versao": "b64835d · Docker no Render · publicado em 14/11/2026",
+      "atualizacao": "Deploy manual do commit aprovado; autodeploy desligado",
+      "tom": "ok"
     },
     {
       "id": "previa",
@@ -46,7 +55,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Pastas clube-do-livro (main), worktrees do Claude e /private/tmp/clube-livro-social (Codex)",
+      "versao": "Cada worktree pode estar em um commit diferente; confira a branch e o mapa antes de trabalhar.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     }
@@ -55,12 +64,12 @@
     {
       "id": "pessoa",
       "titulo": "Pessoa usando o app",
-      "servico": "Navegador ou app instalado (PWA)",
+      "servico": "Navegador; manifesto de instalação disponível",
       "plano": "—",
       "coluna": 1,
       "cor": "coral",
       "guarda": ["Biblioteca e leituras do visitante (sem conta)", "EPUB original no IndexedDB", "Aparência escolhida", "Sessão de login"],
-      "detalhe": "Sem conta, tudo fica só neste navegador. Apagar os dados do navegador apaga essas leituras; o Perfil permite exportar um backup.",
+      "detalhe": "Sem conta, biblioteca e leitura ficam neste navegador. EPUBs originais usam IndexedDB separado por visitante/conta. Apagar os dados do navegador pode apagar essas cópias. O modo conectado não registra cache offline por service worker.",
       "link": ""
     },
     {
@@ -71,7 +80,7 @@
       "coluna": 2,
       "cor": "plum",
       "guarda": ["Arquivos do app (HTML, CSS, JavaScript, fontes)"],
-      "detalhe": "Só entrega o app pronto. Não guarda dados de ninguém. Publicado manualmente com o comando de deploy do Firebase.",
+      "detalhe": "Entrega os arquivos do app conectado. Bibliotecas e conteúdo dos usuários ficam no navegador, banco e bucket, não no Hosting. O deploy manual valida a API antes de publicar.",
       "link": "https://project-acb850f4-4bb8-45de-a84.web.app"
     },
     {
@@ -81,8 +90,8 @@
       "plano": "Gratuito",
       "coluna": 2,
       "cor": "honey",
-      "guarda": ["E-mail e senha (protegida pelo Google)", "Login com Google", "Confirmação de e-mail"],
-      "detalhe": "O app nunca vê nem guarda senhas. A API confere o token de login a cada pedido.",
+      "guarda": ["Identidade da conta e credencial de acesso", "Login com Google", "Estado de confirmação e revogação da conta"],
+      "detalhe": "E-mail/senha e Google estão habilitados. O formulário envia a senha ao Firebase; a API do app não a recebe nem armazena. A API valida a identidade e consulta a conta para recusar sessões revogadas ou desativadas, sem chave de service account.",
       "link": "https://console.firebase.google.com/project/project-acb850f4-4bb8-45de-a84/authentication"
     },
     {
@@ -92,8 +101,8 @@
       "plano": "Free · pode dormir após 15 min sem uso",
       "coluna": 3,
       "cor": "blue",
-      "guarda": ["Nada permanente: só regras e permissões"],
-      "detalhe": "Recebe os pedidos do app, confere quem é a pessoa e o que ela pode ver, e lê ou grava no banco e no armazenamento. Publicação automática desligada.",
+      "guarda": ["Regras e permissões em execução", "Configuração privada em segredos do Render; sem arquivos permanentes de usuários no disco"],
+      "detalhe": "Valida autenticação, associação ativa, bloqueios e moderação antes de acessar banco ou arquivos. Segredos ficam somente no servidor. A manutenção em lotes está habilitada enquanto a API está acordada; não há cron pago. Autodeploy desligado.",
       "link": "https://clube-livro-api.onrender.com/health"
     },
     {
@@ -103,19 +112,19 @@
       "plano": "Free · região us-east-1",
       "coluna": 4,
       "cor": "mint",
-      "guarda": ["Perfis, clubes e membros", "Publicações, comentários e curtidas", "Fórum, encontros e álbuns", "Leituras sincronizadas e preferências", "Notificações, denúncias e moderação"],
-      "detalhe": "Fonte da verdade dos dados das contas. A API usa uma identidade restrita (clube_runtime) que não altera a estrutura nem apaga usuários.",
+      "guarda": ["Perfis, clubes e membros", "Publicações, comentários e curtidas", "Fórum, encontros e álbuns", "Leituras sincronizadas e preferências", "Notificações, denúncias e moderação", "Histórico de auditoria e aceites de convites"],
+      "detalhe": "Migrations da versão publicada aplicadas e conferidas em 14/11. A API usa clube_runtime; migrations e concessões usam uma identidade separada. DDL, leitura de migrations e alteração da auditoria estão negados. A revisão encontrou permissões legadas de exclusão e alteração de aceites ainda presentes em produção; a correção preparada neste PR aguarda aplicação autorizada.",
       "link": "https://console.neon.tech/app/projects/wandering-block-99253816"
     },
     {
       "id": "midia",
       "titulo": "Fotos, vídeos e EPUBs",
       "servico": "Neon Object Storage — bucket privado clube-livro-media",
-      "plano": "Free · cota de 50 MB de mídia por conta",
+      "plano": "Free · limites de uso também impostos pelo app",
       "coluna": 4,
       "cor": "rose",
       "guarda": ["Fotos de perfil e capas", "Fotos e vídeos de publicações e álbuns", "EPUBs originais guardados na conta", "Arquivos EPUB do acervo dos clubes"],
-      "detalhe": "Bucket privado: nada tem link público. A API confere a permissão a cada download.",
+      "detalhe": "Acesso direto anônimo ao bucket é negado. A API entrega conteúdo público quando explicitamente permitido e conteúdo privado somente a quem tem acesso; fotos privadas do perfil exigem titular ou colega ativo em comum, respeitando bloqueios. As cotas de mídia por conta, EPUBs pessoais e EPUBs por clube são separadas. Gravação, leitura e remoção reais foram validadas na liberação.",
       "link": ""
     },
     {
@@ -128,40 +137,57 @@
       "guarda": ["Todo o código e a documentação", "Pull requests e revisões", "Testes automáticos (CI)", "Prévia pública e este mapa (GitHub Pages)"],
       "detalhe": "Repositório público: nunca guardar senhas, chaves ou dados de usuários aqui.",
       "link": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
+    },
+    {
+      "id": "recuperacao",
+      "titulo": "Recuperação pré-liberação",
+      "servico": "Branch privada no Neon, criada em 14/11/2026",
+      "plano": "Na franquia Free · sem compute próprio",
+      "coluna": 4,
+      "cor": "honey",
+      "guarda": ["Ponto de recuperação do banco antes da liberação social"],
+      "detalhe": "Cópia preservada e pronta. Não inclui gravações posteriores à sua criação e não substitui uma política periódica de backup. Restaurar sobre dados atuais ou excluir essa cópia exige autorização específica.",
+      "link": "https://console.neon.tech/app/projects/wandering-block-99253816"
     }
   ],
   "ligacoes": [
     { "de": "pessoa", "para": "site", "texto": "abre o app" },
     { "de": "pessoa", "para": "auth", "texto": "entra na conta (opcional)" },
-    { "de": "site", "para": "api", "texto": "pedidos com o token de login" },
-    { "de": "api", "para": "auth", "texto": "confere o token" },
+    { "de": "site", "para": "api", "texto": "consulta pública sem conta; operações privadas com sessão confirmada" },
+    { "de": "api", "para": "auth", "texto": "valida identidade e estado atual da conta" },
     { "de": "api", "para": "banco", "texto": "lê e grava dados" },
-    { "de": "api", "para": "midia", "texto": "guarda e entrega arquivos" }
+    { "de": "api", "para": "midia", "texto": "processa e entrega arquivos conforme autorização" },
+    { "de": "banco", "para": "recuperacao", "texto": "cópia isolada anterior à liberação" },
+    { "de": "github", "para": "site", "texto": "código aprovado; publicação manual no Firebase" },
+    { "de": "github", "para": "api", "texto": "commit aprovado; deploy manual no Render" }
   ],
   "dados": [
-    { "o_que": "Leituras de quem usa sem conta", "onde": "pessoa", "privacidade": "Só no aparelho", "copia": "Backup JSON exportado pelo Perfil" },
+    { "o_que": "Leituras de quem usa sem conta", "onde": "pessoa", "privacidade": "Só no aparelho", "copia": "Backup JSON exportado pelo Perfil; originais e mídias baixados separadamente" },
+    { "o_que": "EPUB original e capa guardados neste navegador", "onde": "pessoa", "privacidade": "Cópias locais separadas por visitante ou conta", "copia": "IndexedDB; guardar no navegador não equivale a enviar o arquivo para a nuvem" },
     { "o_que": "E-mail, senha e login com Google", "onde": "auth", "privacidade": "Privado", "copia": "Gerenciado pelo Google" },
-    { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Público só se a pessoa ativar", "copia": "Cópia de recuperação no Neon (na liberação)" },
-    { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON + banco" },
-    { "o_que": "Aparência (tema, fontes, modo)", "onde": "banco", "privacidade": "Privado do titular", "copia": "Também no navegador" },
-    { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Só membros", "copia": "Banco" },
+    { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Perfil público por escolha; colega ativo em comum pode ver somente cartão mínimo e clubes compartilhados", "copia": "Persistência no banco; a cópia pré-liberação não cobre mudanças posteriores" },
+    { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON pessoal e persistência no banco; arquivos originais não entram no JSON" },
+    { "o_que": "Aparência (tema, fontes, modo)", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "No navegador e, com conta confirmada, nas preferências do banco" },
+    { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Metadados de descoberta por escolha do clube; membros e gestão conforme papel; convites restritos aos autorizados", "copia": "Banco" },
     { "o_que": "Mural, fórum, encontros e álbuns dos clubes", "onde": "banco", "privacidade": "Só membros ativos", "copia": "Banco" },
-    { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Público", "copia": "Banco" },
-    { "o_que": "Notificações", "onde": "banco", "privacidade": "Privado do destinatário", "copia": "Apagadas após 90 dias" },
-    { "o_que": "Fotos de perfil", "onde": "midia", "privacidade": "Públicas só com perfil público; senão, só colegas de clube", "copia": "Bucket privado" },
-    { "o_que": "Fotos e vídeos de publicações e álbuns", "onde": "midia", "privacidade": "Segue a publicação ou o álbum", "copia": "Bucket privado" },
-    { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Não entram no backup JSON" },
-    { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" }
+    { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Públicos enquanto perfil e conteúdo estiverem disponíveis; bloqueios e moderação são revalidados", "copia": "Banco" },
+    { "o_que": "Notificações", "onde": "banco", "privacidade": "Privado do destinatário", "copia": "Rotina habilitada remove itens com mais de 90 dias em lotes, enquanto a API está acordada" },
+    { "o_que": "Fotos de perfil", "onde": "midia", "privacidade": "Titular; público por escolha do perfil ou colegas ativos em comum, respeitando bloqueios", "copia": "Persistência no bucket privado; troca ou remoção revoga imediatamente o arquivo anterior" },
+    { "o_que": "Fotos e vídeos de publicações e álbuns", "onde": "midia", "privacidade": "Permissões da publicação ou álbum; copiar foto de clube para a comunidade exige autorização explícita", "copia": "Persistência no bucket; arquivos não entram no backup JSON" },
+    { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Não entram no backup JSON; baixe o original separadamente. O envio de acervo ao clube exige origem e autorização." },
+    { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" },
+    { "o_que": "Ponto de recuperação anterior à liberação", "onde": "recuperacao", "privacidade": "Privado no mesmo projeto Neon", "copia": "Cópia de 14/11/2026, sem escritas posteriores; mantida até decisão do dono" }
   ],
   "fluxoPublicacao": [
     { "titulo": "Você pede uma mudança", "onde": "Conversa com Claude ou Codex", "texto": "Claude cuida de visual e telas; Codex de backend, banco e regras.", "modo": "voce" },
-    { "titulo": "Agente trabalha na própria branch", "onde": "Pasta separada (worktree) no seu computador", "texto": "Cada um em sua branch, para não sobrescrever o trabalho do outro.", "modo": "auto" },
+    { "titulo": "Agente trabalha na própria branch", "onde": "Pasta separada (worktree) no seu computador", "texto": "Leia primeiro docs/mapa/mapa.json. Cada agente usa sua branch/worktree e confere mudanças remotas antes de editar arquivos compartilhados.", "modo": "auto" },
     { "titulo": "Testes locais", "onde": "Computador", "texto": "Testes do app, da API e do banco, além de conferência visual no navegador.", "modo": "auto" },
-    { "titulo": "Pull request", "onde": "GitHub", "texto": "A mudança vira um PR com descrição do que mudou e do que não foi testado.", "modo": "auto" },
+    { "titulo": "Pull request", "onde": "GitHub", "texto": "Inclua a atualização do mapa no mesmo PR, valide e gere a página. Descreva alterações, testes, limites e operações que precisarão de autorização.", "modo": "auto" },
     { "titulo": "CI valida", "onde": "GitHub Actions — Validar aplicação e API", "texto": "Roda todos os testes, builds, imagem Docker e auditoria de segurança.", "modo": "auto" },
-    { "titulo": "Você aprova o merge", "onde": "GitHub", "texto": "Nada entra em main sem o seu sim.", "modo": "voce" },
+    { "titulo": "Você aprova o merge", "onde": "Conversa ou GitHub", "texto": "O agente incorpora o PR após o seu sim. Uma autorização já concedida não precisa ser pedida novamente para a mesma ação.", "modo": "voce" },
     { "titulo": "Prévia e mapa atualizam", "onde": "GitHub Pages", "texto": "Cada push em main republica a prévia (demonstração) e este mapa.", "modo": "auto" },
-    { "titulo": "Liberação em produção", "onde": "Render (API) e Firebase Hosting (site)", "texto": "Manual e só com a sua autorização: primeiro migrations e API, depois o site.", "modo": "aprovacao" }
+    { "titulo": "Liberação em produção", "onde": "Render (API) e Firebase Hosting (site)", "texto": "Com autorização: conferir o commit e CI; criar a cópia de recuperação; aplicar migrations e grants como proprietário; configurar segredos; publicar e testar API; só depois publicar o site conectado. Não fazer downgrade cego do banco.", "modo": "aprovacao" },
+    { "titulo": "Validar e registrar o que foi publicado", "onde": "API, Firebase Hosting e mapa", "texto": "Testar acesso e arquivos, limpar somente dados sintéticos autorizados e preservar a auditoria. Atualizar no mapa as versões realmente publicadas e o histórico; mudanças futuras aguardam nova aprovação.", "modo": "auto" }
   ],
   "jornadas": [
     {
@@ -222,16 +248,23 @@
   "atualizacoes": [
     {
       "data": "2026-11-14",
+      "autor": "Codex",
+      "titulo": "Mapa de infraestrutura reconciliado com a produção",
+      "resumo": "Versões de API/site e liberação verificadas, dados locais e nuvem distinguidos, recuperação e retenção esclarecidas. Grants legados excedentes confirmados; revogação e teste de regressão preparados no PR, sem aplicação em produção.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/9"
+    },
+    {
+      "data": "2026-11-14",
       "autor": "Claude Code",
       "titulo": "Mapa do projeto criado",
       "resumo": "Este mapa passa a ser o cérebro do projeto: estrutura, publicação, onde ficam os dados e histórico. É republicado automaticamente a cada push em main.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/8"
     },
     {
       "data": "2026-11-14",
       "autor": "Codex",
-      "titulo": "Plataforma social mesclada em main (PR 2)",
-      "resumo": "Comunidade, clubes privados, fórum, encontros, leitor EPUB, notificações, moderação e as entregas do Claude chegaram a main. Produção ainda não foi atualizada.",
+      "titulo": "Plataforma social liberada em produção (PR 2)",
+      "resumo": "Após autorização do dono, b64835d foi publicado na API e no Firebase. Migrations, mídia privada e moderação configuradas, testes reais concluídos e dados sintéticos removidos. Cópia de recuperação preservada; a revisão posterior do mapa identificou grants legados a corrigir.",
       "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/2"
     },
     {

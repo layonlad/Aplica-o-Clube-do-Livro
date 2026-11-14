@@ -1,6 +1,10 @@
-# Liberação da plataforma social — revisão para autorização
+# Liberação da plataforma social — plano e registro
 
-Estado: implementação e ensaios locais validados, ainda não autorizada para produção. Código na branch `codex/plataforma-social`, [PR #2](https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/2). Usar o hash exibido no cabeçalho do PR e conferir o CI desse mesmo hash antes da liberação.
+Estado atual: a liberação foi autorizada e executada em 14/11/2026. O [PR #2](https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/2) foi incorporado, incluindo os PRs #5–#7. API no Render e frontend no Firebase Hosting usam o código de `b64835d`; o CI desse commit passou. O plano abaixo registra a revisão anterior à publicação e serve de checklist para futuras liberações.
+
+A cópia privada de recuperação foi preservada, as migrations 003–015 foram aplicadas, e Storage e manutenção foram configurados. Testes reais validaram acesso, fotos, aparência em nova sessão e EPUB privado; fixtures e contas sintéticas foram removidas. A validação entre sessões não representa teste em dois aparelhos físicos.
+
+**Pendência identificada na revisão do mapa:** os grants legados da primeira implantação ainda permitem DELETE em tabelas antigas e UPDATE em aceites em produção. A checagem anterior do papel em banco novo não reproduzia esse estado. A revisão atual adiciona revogações explícitas a `server/ops/runtime-grants.sql` e cobre esse cenário no teste local. A aplicação do script revisado exige autorização específica; não foi aplicada nesta etapa. Não é necessário redeploy da API para aplicar esses grants. O estado e as versões conferidas estão em [docs/mapa/mapa.json](mapa/mapa.json).
 
 ## Escopo público da liberação
 
@@ -18,7 +22,7 @@ Infraestrutura existente:
 | Object Storage | bucket privado `clube-livro-media`, credencial com acesso somente a Storage no projeto/branch |
 | Moderação pública | conta escolhida: `negocio.layon@gmail.com`; UID verificado, somente no segredo do servidor |
 
-## Operações que dependem da aprovação
+## Checklist de operações com aprovação (liberação de 14/11 executada)
 
 1. Criar uma cópia privada de recuperação do banco no mesmo projeto Neon, dentro da franquia gratuita. Nenhum dump de registros reais será colocado no Git ou usado em testes locais. Manter a cópia para recuperação até uma decisão posterior; sua exclusão não é autorizada implicitamente por esta liberação.
 2. Revalidar o estado atual e aplicar **003–015** em uma transação com lock de migração, conferindo os checksums de 001/002. A cópia da estrutura de produção já foi ensaiada apenas localmente, sem linhas de usuários. A versão anterior continua compatível durante a troca da API.
