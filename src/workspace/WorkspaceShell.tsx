@@ -1,12 +1,13 @@
 import { Suspense, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import { Bell, BookOpen, CalendarDays, ChevronRight, History, Home, Camera, Compass, LogIn, Menu, MessagesSquare, NotebookPen, Palette, Sparkles, UserRound, UsersRound, X, type LucideIcon } from 'lucide-react'
+import { Bell, BookOpen, CalendarDays, ChevronRight, History, Home, Camera, Compass, Download, LogIn, Menu, MessagesSquare, NotebookPen, Palette, ShieldCheck, Sparkles, UserRound, UsersRound, X, type LucideIcon } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import { useTheme } from '../app/ThemeProvider'
 import { SkeletonPage } from '../components/ui'
 import { useWorkspace } from './WorkspaceProvider'
 
 type NavItem = { to: string; name: string; icon: LucideIcon; hint?: string }
+type NavGroup = { label: string; items: NavItem[] }
 
 const DISMISS_KEY = 'clube-livro-visitor-note-dismissed'
 
@@ -50,21 +51,30 @@ export function WorkspaceShell() {
 
     { to: '/app/profile', name: 'Perfil', icon: UserRound },
   ]
-  const extra: NavItem[] = [
-    {to:'/app/notifications',name:'Notificações',icon:Bell},
-    ...(publicModerator?[{to:'/app/moderation',name:'Moderação pública',icon:MessagesSquare}]:[]),
-    {to:'/app/downloads',name:'Leituras autorizadas',icon:BookOpen},
-    {to:'/app/reader',name:'Minha leitura',icon:BookOpen},
-    {to:'/app/social-profile',name:'Meu perfil social',icon:UserRound},
-    {to:'/app/calendar',name:'Agenda e encontros',icon:CalendarDays},
-    {to:'/app/forum',name:personal?'Caderno pessoal':'Fórum do clube',icon:personal?NotebookPen:MessagesSquare},
-    {to:'/app/wall',name:'Mural do clube',icon:MessagesSquare,hint:'Conversas do seu grupo'},
-    {to:'/app/gallery',name:'Galeria de encontros',icon:Camera,hint:'Memórias compartilhadas'},
-    {to:'/app/explore',name:'Explorar',icon:Compass,hint:'Encontre novas leituras'},
-    { to: '/app/nominations', name: 'Indicações e sorteio', icon: Sparkles, hint: 'Escolha a próxima leitura' },
-    { to: '/app/history', name: 'Histórico de leitura', icon: History, hint: 'Tudo o que você já leu' },
-    { to: '/clubs', name: 'Clubes e convites', icon: UsersRound, hint: 'Leia em grupo' },
-    { to: '/app/theme', name: 'Aparência', icon: Palette, hint: 'Cores, fonte e modo escuro' },
+  /** Menu secundário em grupos curtos: leitura pessoal, vida social e, dentro de um clube, o espaço do grupo. */
+  const groups: NavGroup[] = [
+    { label: 'Sua leitura', items: [
+      { to: '/app/reader', name: 'Minha leitura', icon: BookOpen, hint: 'Continue de onde parou' },
+      { to: '/app/calendar', name: personal ? 'Agenda' : 'Encontros', icon: CalendarDays, hint: 'Sessões e encontros' },
+      { to: '/app/forum', name: personal ? 'Caderno pessoal' : 'Fórum do clube', icon: personal ? NotebookPen : MessagesSquare, hint: personal ? 'Notas e trechos' : 'Conversas do grupo' },
+      { to: '/app/nominations', name: 'Indicações e sorteio', icon: Sparkles, hint: 'Escolha a próxima leitura' },
+      { to: '/app/history', name: 'Histórico', icon: History, hint: 'Tudo o que você já leu' },
+      { to: '/app/downloads', name: 'Leituras autorizadas', icon: Download, hint: 'Arquivos com permissão de uso' },
+    ] },
+    { label: 'Comunidade', items: [
+      { to: '/app/explore', name: 'Explorar', icon: Compass, hint: 'Leitores, livros e clubes' },
+      { to: '/app/notifications', name: 'Notificações', icon: Bell, hint: 'Respostas, convites e avisos' },
+      { to: '/app/social-profile', name: 'Perfil social', icon: UserRound, hint: 'Como os outros leitores veem você' },
+      ...(publicModerator ? [{ to: '/app/moderation', name: 'Moderação pública', icon: ShieldCheck }] : []),
+    ] },
+    ...(!personal ? [{ label: 'Neste clube', items: [
+      { to: '/app/wall', name: 'Mural', icon: MessagesSquare, hint: 'Conversas do seu grupo' },
+      { to: '/app/gallery', name: 'Galeria de encontros', icon: Camera, hint: 'Memórias compartilhadas' },
+    ] }] : []),
+    { label: 'Ajustes', items: [
+      { to: '/app/theme', name: 'Aparência', icon: Palette, hint: 'Cores, fonte e modo escuro' },
+      ...(user ? [] : [{ to: '/account', name: 'Entrar ou criar conta', icon: LogIn, hint: 'Sincronize e participe de clubes' }]),
+    ] },
   ]
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'auto' }) }, [pathname])
@@ -98,7 +108,8 @@ export function WorkspaceShell() {
 
   const showVisitorNote = !user?.emailVerified && !dismissed && pathname === '/app'
 
-  return <div className="app-frame workspace-app" data-space={globalPage?'community':spaceFor(pathname, scope)}>
+  const reading = /^\/app\/reader\/[^/]+/.test(pathname)
+  return <div className={`app-frame workspace-app ${reading ? 'is-reading' : ''}`} data-space={globalPage?'community':spaceFor(pathname, scope)}>
     <a className="skip-link" href="#conteudo" onClick={skip}>Pular para o conteúdo</a>
     <aside className="app-rail">
       <header className={`app-header ${scrolled ? 'is-scrolled' : ''}`}>
@@ -111,8 +122,10 @@ export function WorkspaceShell() {
         {nav.map(({ to, name, icon: Icon }) => <NavLink key={to} to={to} end={to === '/app'} className={({ isActive }) => isActive ? 'active' : ''}><Icon size={21} strokeWidth={1.9} aria-hidden="true" /><span>{name}</span></NavLink>)}
       </nav>
       <nav className="rail-more rail-only" aria-label="Mais do aplicativo">
-        <p className="rail-section-label">Explorar</p>
-        {extra.map(({ to, name, icon: Icon }) => <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''}><Icon size={19} strokeWidth={1.9} aria-hidden="true" /><span>{name}</span></NavLink>)}
+        {groups.map(group => <div className="rail-group" key={group.label}>
+          <p className="rail-section-label">{group.label}</p>
+          {group.items.map(({ to, name, icon: Icon }) => <NavLink key={to} to={to} end={to === '/app/reader'} className={({ isActive }) => isActive ? 'active' : ''}><Icon size={19} strokeWidth={1.9} aria-hidden="true" /><span>{name}</span></NavLink>)}
+        </div>)}
       </nav>
       <div className="rail-foot rail-only">
         {user
@@ -134,7 +147,10 @@ export function WorkspaceShell() {
       <aside ref={drawerRef} className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" onMouseDown={e => e.stopPropagation()}>
         <div className="drawer-header"><div><span className="eyebrow">Clube do Livro</span><h2 id="drawer-title">Seu universo de leitura</h2></div><button ref={closeRef} className="icon-button" aria-label="Fechar menu" onClick={() => setMenu(false)}><X /></button></div>
         <nav className="drawer-nav" aria-label="Menu do aplicativo">
-          {[...extra, ...(user ? [] : [{ to: '/account', name: 'Entrar ou criar conta', icon: LogIn, hint: 'Sincronize e participe de clubes' }])].map(({ to, name, icon: Icon, hint }) => <NavLink key={to} to={to} onClick={() => setMenu(false)}><span className="nav-icon"><Icon size={20} aria-hidden="true" /></span><span>{name}{hint && <small>{hint}</small>}</span><ChevronRight size={18} aria-hidden="true" /></NavLink>)}
+          {groups.map(group => <div className="drawer-group" key={group.label} role="group" aria-label={group.label}>
+            <p className="rail-section-label">{group.label}</p>
+            {group.items.map(({ to, name, icon: Icon, hint }) => <NavLink key={to} to={to} end={to === '/app/reader'} onClick={() => setMenu(false)}><span className="nav-icon"><Icon size={20} aria-hidden="true" /></span><span>{name}{hint && <small>{hint}</small>}</span><ChevronRight size={18} aria-hidden="true" /></NavLink>)}
+          </div>)}
         </nav>
         <p className="drawer-note">Você pode usar seu espaço pessoal sem participar de nenhum clube.</p>
       </aside>

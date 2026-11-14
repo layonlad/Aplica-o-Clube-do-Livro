@@ -260,3 +260,25 @@
 @media (min-width: 1440px) {
   .app-frame { grid-template-columns: 296px minmax(0, 1fr); }
 }
+
+/* ── Grupos do menu secundário ── */
+.rail-group { display: grid; gap: 2px; }
+.rail-group + .rail-group { margin-top: var(--space-4); }
+.drawer-group { display: grid; gap: 4px; }
+.drawer-group + .drawer-group { margin-top: var(--space-4); }
+.drawer-group .rail-section-label { margin: 0 0 var(--space-1) var(--space-2); color: var(--text-subtle); font-size: var(--text-overline); font-weight: 800; letter-spacing: var(--tracking-overline); text-transform: uppercase; }
+
+/* Rótulos da navegação inferior cabem em telas de 360–400px */
+@media (max-width: 419px) {
+  .bottom-nav a { font-size: 0.62rem; letter-spacing: -0.01em; }
+  .bottom-nav a span { text-overflow: clip; }
+}
+
+/* ── Leitura imersiva: no leitor de um livro, a navegação do app sai de cena ── */
+.app-frame.is-reading .bottom-nav { display: none; }
+.app-frame.is-reading .page-content { padding-bottom: calc(var(--space-10) + env(safe-area-inset-bottom)); }
+@media (min-width: 1024px) {
+  .app-frame.is-reading { grid-template-columns: minmax(0, 1fr); }
+  .app-frame.is-reading .app-rail { display: none; }
+  .app-frame.is-reading .page-content { max-width: 920px; padding-top: var(--space-6); }
+}

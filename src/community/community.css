@@ -540,3 +540,21 @@
   flex: 1;
   min-width: min(100%, 12rem);
 }
+
+/* Coluna de leitura do feed: publicações não esticam até 900px+ no desktop */
+.social-room .social-feed,
+.social-room .wall-filters,
+.social-room .post-composer { max-width: 680px; }
+
+/* Pessoas no Explorar: cartão com avatar */
+.profile-discovery article {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-1);
+  transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+}
+.profile-discovery article:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+.profile-discovery article h3 { margin: 2px 0 6px; font-size: 1.15rem; }
+.profile-discovery article p { margin: 0 0 6px; color: var(--text-muted); }
+.person-card .avatar { margin-bottom: var(--space-3); }

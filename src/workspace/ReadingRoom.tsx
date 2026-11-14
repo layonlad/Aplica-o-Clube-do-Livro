@@ -148,7 +148,7 @@ export function ReadingRoom() {
     <div
       className={`reading-room reading-room--${preferences.theme} reading-room--${preferences.margin}`}
     >
-      <Link to="/app/library">← Minha biblioteca</Link>
+      <Link className="reading-room-back" to="/app/library">← Minha biblioteca</Link>
       <header className="reading-room-title">
         <span className="eyebrow">MEU ESPAÇO DE LEITURA</span>
         <h1>{book.title}</h1>
@@ -229,13 +229,13 @@ export function ReadingRoom() {
         </div>
       </details>
       {scope === 'personal' && (
-        <div className="workspace-actions">
-          <Button variant={original ? 'secondary' : 'primary'} onClick={() => setOriginal(false)}>
-            Leitura em texto
-          </Button>
-          <Button variant={original ? 'primary' : 'secondary'} onClick={() => setOriginal(true)}>
-            Leitura EPUB original
-          </Button>
+        <div className="reader-mode" role="group" aria-label="Modo de leitura">
+          <button type="button" aria-pressed={!original} onClick={() => setOriginal(false)}>
+            Texto simples
+          </button>
+          <button type="button" aria-pressed={original} onClick={() => setOriginal(true)}>
+            EPUB original
+          </button>
         </div>
       )}
       {original && scope === 'personal' ? (

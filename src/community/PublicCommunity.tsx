@@ -92,24 +92,26 @@ export function PublicCommunity() {
               </p>
             </div>
           )}
-          <div className="workspace-actions" role="group" aria-label="Filtrar comunidade">
-            {[
-              ['all', 'Toda a comunidade'],
-              ['following', 'Seguindo'],
-              ['saved', 'Salvos'],
-            ]
-              .filter(([value]) => value === 'all' || user?.emailVerified)
-              .map(([value, label]) => (
-                <Button
+          {/* Sem conta só existe "Toda a comunidade": um filtro de uma opção não é mostrado. */}
+          {user?.emailVerified && (
+            <div className="filter-pills" role="group" aria-label="Filtrar comunidade">
+              {[
+                ['all', 'Toda a comunidade'],
+                ['following', 'Seguindo'],
+                ['saved', 'Salvos'],
+              ].map(([value, label]) => (
+                <button
+                  type="button"
                   key={value}
-                  variant={tab === value ? 'primary' : 'secondary'}
+                  className={tab === value ? 'active' : ''}
                   aria-pressed={tab === value}
                   onClick={() => setTab(value)}
                 >
                   {label}
-                </Button>
+                </button>
               ))}
-          </div>
+            </div>
+          )}
           <div className="wall-filters">
             <form
               className="workspace-actions"
@@ -120,7 +122,7 @@ export function PublicCommunity() {
             >
               <input
                 aria-label="Pesquisar na comunidade"
-                placeholder="Livro, autor, assunto ou #hashtag"
+                placeholder="Buscar na comunidade"
                 minLength={2}
                 maxLength={100}
                 value={query}
