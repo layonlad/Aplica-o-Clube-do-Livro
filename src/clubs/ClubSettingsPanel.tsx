@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
 import { Button, Card } from '../components/ui'
 import { UserIdentity } from '../components/UserAvatar'
+import './clubs.css'
 type Request = { id: string; userId: string; name: string; avatarId?: string | null; message: string; createdAt: string }
 type Page = { items: Request[]; nextCursor: string | null }
 export function ClubSettingsPanel({

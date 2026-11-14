@@ -4,10 +4,8 @@ import { Bell, BookOpen, CalendarDays, ChevronRight, History, Home, Camera, Comp
 import { useAuth } from '../auth/AuthProvider'
 import { useTheme } from '../app/ThemeProvider'
 import { SkeletonPage } from '../components/ui'
-import { UserAvatar } from '../components/UserAvatar'
-import { AVATAR_EVENT } from '../components/AvatarUploader'
+import { UserAvatar, useOwnAvatar } from '../components/UserAvatar'
 import { AppearanceSync } from '../app/AppearanceSettings'
-import { apiRequest } from '../auth/api'
 import { useWorkspace } from './WorkspaceProvider'
 
 type NavItem = { to: string; name: string; icon: LucideIcon; hint?: string }
@@ -111,15 +109,7 @@ export function WorkspaceShell() {
   function dismiss() { setDismissed(true); try { localStorage.setItem(DISMISS_KEY, '1') } catch { /* sem armazenamento */ } }
 
   // Foto da própria conta no trilho; atualiza na hora quando a foto muda em "Meu perfil".
-  const [ownAvatar, setOwnAvatar] = useState<string | null>(null)
-  useEffect(() => {
-    if (!user?.emailVerified) { setOwnAvatar(null); return }
-    let live = true
-    apiRequest<{ avatarId: string | null }>(user, '/me/profile').then((value) => live && setOwnAvatar(value.avatarId)).catch(() => undefined)
-    const onChange = (event: Event) => setOwnAvatar((event as CustomEvent<string | null>).detail)
-    window.addEventListener(AVATAR_EVENT, onChange)
-    return () => { live = false; window.removeEventListener(AVATAR_EVENT, onChange) }
-  }, [user?.uid, user?.emailVerified])
+  const ownAvatar = useOwnAvatar()
 
   const showVisitorNote = !user?.emailVerified && !dismissed && pathname === '/app'
 

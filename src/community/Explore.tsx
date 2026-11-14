@@ -10,6 +10,7 @@ import { socialRead } from './social-api'
 import type { Page } from '../../server/src/community-contracts'
 import type { CatalogEntry } from '../../server/src/catalog'
 import type { SocialProfileDto } from './SocialProfile'
+import './community.css'
 type Discovery = {
   books: { title: string; author: string; posts: number }[]
   sections: Record<

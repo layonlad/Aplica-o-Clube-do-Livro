@@ -373,3 +373,28 @@ it('aplica a cota ao avatar e não reativa perfil suspenso', async () => {
     ])
   }
 })
+
+it('mostra a foto atual de quem gerou a notificação', async () => {
+  const uploaded = await app.inject({
+    remoteAddress: '127.0.0.' + ++avatarRequest,
+    url: '/v1/me/avatar',
+    method: 'POST',
+    headers: headers('maria'),
+    payload: { data: await photo('#2b7552') },
+  })
+  const { avatarId } = uploaded.json<{ avatarId: string }>()
+  const id = await post('joao', clubA, 'Alguém quer trocar impressões sobre o final?')
+  const comment = await app.inject({
+    url: `/v1/clubs/${clubA.id}/posts/${id}/comments`,
+    method: 'POST',
+    headers: headers('maria'),
+    payload: { body: 'Eu quero! Amanhã?' },
+  })
+  expect(comment.statusCode, comment.body).toBe(201)
+  const notices = (
+    await app.inject({ url: '/v1/me/notifications', headers: headers('joao') })
+  ).json<Page<{ actorName: string; actorAvatarId: string | null }>>()
+  const fromMaria = notices.items.find((item) => item.actorAvatarId === avatarId)
+  expect(fromMaria?.actorName).toBe('maria')
+  expect(JSON.stringify(notices)).not.toMatch(/@example.com|object_key/)
+})

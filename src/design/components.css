@@ -417,3 +417,13 @@ input[type='color'] { width: 56px; height: 40px; padding: 2px; border: 1px solid
 @media (max-width: 559px) {
   .avatar-uploader { grid-template-columns: 1fr; justify-items: start; }
 }
+
+/* ── Área de toque de links avulsos ──
+ * Links de texto fora de parágrafos ganham 44 px de altura útil (WCAG 2.2: mínimo 24 px; 44 px no toque).
+ * O texto não muda de tamanho; só a área clicável cresce. */
+:where(.workspace-app main, .connected-content) :is(.text-link, .workspace-actions > a, .library-empty > a, article > a, .card > a, .social-room > a, .social-heading > a, .library-heading a:not(.button-link), h3 > a, li > a) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.appearance-page .eyebrow a { display: inline-block; padding: 6px 0; }

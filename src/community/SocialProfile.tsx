@@ -12,6 +12,7 @@ import { socialRead } from './social-api'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
 import { ConfirmAction, PostCard } from './ClubWall'
 import { ReportAction } from './ReportAction'
+import './community.css'
 export interface SocialProfileDto {
   id: string
   handle: string
@@ -109,8 +110,8 @@ function ProfilePostList({
             {clubLabel && club && (
               <p className="profile-feed__club">
                 <span className="chip chip--success">{club.name}</span>
-                <Link className="text-link" to={`/space/${club.id}`}>
-                  Abrir o clube
+                <Link className="text-link" to={`/space/${club.id}?post=${post.id}`}>
+                  Ver no mural do clube
                 </Link>
               </p>
             )}

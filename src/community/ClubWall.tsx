@@ -10,7 +10,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
 import { Button } from '../components/ui'
-import { UserIdentity } from '../components/UserAvatar'
+import { UserAvatar, UserIdentity, useOwnAvatar } from '../components/UserAvatar'
 import { MediaPicker, PrivateMedia } from './PrivateMedia'
 import './community.css'
 export const kindLabels = {
@@ -201,6 +201,7 @@ export function PostComposer({
   clubId: string | null
   onPublished: () => void
 }) {
+  const ownAvatar = useOwnAvatar()
   const { user } = useAuth(),
     { snapshot } = useWorkspace(),
     [open, setOpen] = useState(false),
@@ -258,7 +259,7 @@ export function PostComposer({
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        <span className="social-initial">{user?.displayName?.[0] ?? 'L'}</span>
+        <UserAvatar name={user?.displayName || 'Leitor'} avatarId={ownAvatar} size="md" />
         <span>O que sua leitura despertou hoje?</span>
         <PenLine size={18} />
       </button>

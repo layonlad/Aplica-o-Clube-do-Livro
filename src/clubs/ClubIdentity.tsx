@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { apiRequest } from '../auth/api'
 import type { ClubSettings } from '../../server/src/club-management'
 import { PrivateMedia } from '../community/PrivateMedia'
+import './clubs.css'
 export function ClubIdentity({ clubId }: { clubId: string }) {
   const { user } = useAuth(),
     [settings, setSettings] = useState<ClubSettings | null>(null)

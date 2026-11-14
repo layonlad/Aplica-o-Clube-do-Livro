@@ -7,6 +7,8 @@ import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
 import { Button, SkeletonPage } from '../components/ui'
+import { UserAvatar } from '../components/UserAvatar'
+import './community.css'
 interface Notice {
   id: string
   kind: string
@@ -15,6 +17,8 @@ interface Notice {
   clubId: string | null
   clubName: string | null
   actorName: string
+  /** Referência à foto atual do autor; a entrega da imagem revalida quem pode vê-la. */
+  actorAvatarId?: string | null
   createdAt: string
   readAt: string | null
 }
@@ -192,6 +196,7 @@ export function Notifications() {
           {page.items.map((notice) => (
             <li key={notice.id} className={notice.readAt ? '' : 'is-unread'}>
               <button disabled={busy} onClick={() => void open(notice)}>
+                <UserAvatar name={notice.actorName} avatarId={notice.actorAvatarId} size="sm" />
                 <span>
                   <strong>{notice.actorName}</strong>{' '}
                   {labels[notice.kind] ?? 'compartilhou uma novidade'}

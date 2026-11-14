@@ -3,14 +3,14 @@ import { Camera, Trash2 } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
 import { Button } from './ui'
-import { UserAvatar, forgetAvatar } from './UserAvatar'
+import { AVATAR_EVENT, UserAvatar, forgetAvatar } from './UserAvatar'
 
 const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_INPUT = 15_000_000
 const OUTPUT = 512
 const VIEW = 240
 
-export const AVATAR_EVENT = 'clube:avatar-changed'
+export { AVATAR_EVENT }
 
 /** Valida o arquivo escolhido antes de qualquer leitura. Exportado para testes. */
 export function avatarFileError(file: Pick<File, 'type' | 'size'>) {
