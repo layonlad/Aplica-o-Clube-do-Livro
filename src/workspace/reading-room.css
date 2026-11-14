@@ -15,7 +15,7 @@
   color: #42362a;
 }
 .reading-room-title h1 {
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   letter-spacing: -0.025em;
 }
 .reading-room-title p {
@@ -158,4 +158,19 @@
 }
 .reader-settings-grid label {
   min-width: 0;
+}
+
+/* Modo de leitura: controle segmentado */
+.reader-mode { display: inline-grid; grid-auto-flow: column; width: fit-content; max-width: 100%; padding: 4px; gap: 2px; background: color-mix(in srgb, currentColor 7%, transparent); border-radius: var(--radius-pill); }
+.reader-mode button { min-height: 40px; padding: 8px 16px; color: inherit; background: transparent; border: 0; border-radius: var(--radius-pill); cursor: pointer; font: inherit; font-size: var(--text-small); font-weight: 700; opacity: .7; transition: background-color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); }
+.reader-mode button[aria-pressed='true'] { opacity: 1; color: var(--text-on-brand); background: var(--brand); }
+.reading-room--dark .reader-mode button[aria-pressed='true'] { color: #1e1d21; background: #ede7df; }
+.reading-room-back { width: fit-content; color: inherit; font-size: var(--text-small); font-weight: 700; opacity: .75; }
+.reading-room-back:hover { opacity: 1; }
+.reading-room-title h1 { font-family: var(--font-display); font-size: clamp(1.8rem, 1.4rem + 1.6vw, 2.6rem); }
+.reader-file { padding-block: var(--space-3); border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent); }
+.reader-file p { margin: var(--space-2) 0 var(--space-3); font-size: var(--text-small); opacity: .75; }
+@media (max-width: 559px) {
+  .reader-toolbar-grid { grid-template-columns: 1fr; }
+  .reading-room { padding-inline: 14px; }
 }

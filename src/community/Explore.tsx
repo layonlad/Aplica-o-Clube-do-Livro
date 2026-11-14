@@ -161,7 +161,10 @@ export function Explore() {
         <h2>Leitores para conhecer</h2>
         <div className="profile-discovery">
           {page.items.map((profile) => (
-            <article key={profile.id}>
+            <article key={profile.id} className="person-card">
+              <span className="avatar avatar--md" aria-hidden="true">
+                {profile.displayName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || '?'}
+              </span>
               <span className="eyebrow">@{profile.handle}</span>
               <h3>
                 <Link to={`/app/people/${profile.id}`}>{profile.displayName}</Link>
@@ -215,6 +218,12 @@ export function Explore() {
             <p className="t-caption">
               Referências em publicações visíveis da comunidade nos últimos 30 dias.
             </p>
+            {!discovery.books.length && (
+              <p className="empty-inline">
+                Nenhum livro foi citado na comunidade nos últimos 30 dias. Seja a primeira pessoa a
+                comentar uma leitura.
+              </p>
+            )}
             <div className="profile-discovery">
               {discovery.books.map((book, i) => (
                 <article key={i}>

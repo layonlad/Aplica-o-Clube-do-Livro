@@ -326,36 +326,41 @@ export function EpubReader({
           })
           .slice(0, 50)
       : []
+  const fileButton = (
+    <label className="file-button">
+      {archive ? 'Trocar EPUB deste leitor' : 'Abrir EPUB autorizado'}
+      <input
+        type="file"
+        accept=".epub"
+        disabled={busy || loading}
+        onChange={(event) => {
+          const file = event.target.files?.[0]
+          if (file) {
+            setLoading(true)
+            setError('')
+            void load(file, file.name)
+              .catch((err) => setError((err as Error).message))
+              .finally(() => setLoading(false))
+          }
+          event.target.value = ''
+        }}
+      />
+    </label>
+  )
   return (
     <section className="epub-original stack-lg">
-      <header>
-        <h2>Ler o EPUB original</h2>
-        <p>O arquivo é privado e fica separado das publicações.</p>
-      </header>
+      {!archive && (
+        <header>
+          <h2>Ler o EPUB original</h2>
+          <p>O arquivo é privado e fica separado das publicações.</p>
+        </header>
+      )}
       {loading && <p role="status">Abrindo o EPUB e suas ilustrações…</p>}
       {error && <p role="alert">{error}</p>}
-      <label className="file-button">
-        {archive ? 'Trocar EPUB deste leitor' : 'Abrir EPUB autorizado'}
-        <input
-          type="file"
-          accept=".epub"
-          disabled={busy || loading}
-          onChange={(event) => {
-            const file = event.target.files?.[0]
-            if (file) {
-              setLoading(true)
-              setError('')
-              void load(file, file.name)
-                .catch((err) => setError((err as Error).message))
-                .finally(() => setLoading(false))
-            }
-            event.target.value = ''
-          }}
-        />
-      </label>
+      {!archive && fileButton}
       {archive && (
         <>
-          <div className="reader-settings-grid">
+          <div className="reader-settings-grid reader-toolbar-grid">
             <label>
               Sumário EPUB
               <select
@@ -406,7 +411,7 @@ export function EpubReader({
             className="reader-prose epub-prose"
             style={{
               fontSize: prefs.size,
-              fontFamily: prefs.font === 'serif' ? 'Georgia, serif' : 'system-ui, sans-serif',
+              fontFamily: prefs.font === 'serif' ? 'var(--font-reading)' : 'var(--font-ui)',
             }}
             onMouseUp={select}
             onKeyUp={select}
@@ -506,6 +511,11 @@ export function EpubReader({
               </Button>
             )}
           </nav>
+          <details className="reader-file">
+            <summary>Arquivo deste leitor</summary>
+            <p>O arquivo é privado e fica separado das publicações.</p>
+            {fileButton}
+          </details>
           <h3>Destaques EPUB privados</h3>
           {marks.map((mark) => (
             <div className="card" key={mark.id}>
