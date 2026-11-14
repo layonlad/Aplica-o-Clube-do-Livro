@@ -9,7 +9,7 @@
     "fase": "Publicado; ajuste de permissões pendente",
     "tom": "aguardando",
     "resumo": "A plataforma social está em produção desde 14/11/2026: API e site usam o código de b64835d, incluindo os PRs 5, 6 e 7. Banco, mídia privada e moderação foram configurados; os testes reais e a limpeza sintética foram concluídos. A revisão do mapa identificou permissões SQL legadas que precisam ser removidas.",
-    "proximoPasso": "Revisar o PR dos ajustes sociais móveis. Depois de aprovado e autorizado: aplicar a revogação de grants pendente e a migration aditiva da capa dos álbuns; publicar API e depois Firebase, incluindo a correção de capa/GIF do PR 10. Produção permanece em b64835d nesta etapa.",
+    "proximoPasso": "Revisar o PR 11 dos ajustes sociais móveis. Depois de aprovado e autorizado: aplicar a revogação de grants pendente e a migration aditiva da capa dos álbuns; publicar API e depois Firebase, incluindo a correção de capa/GIF do PR 10. Produção permanece em b64835d nesta etapa.",
     "pendencias": [
       "Aplicar, após autorização, a revogação dos privilégios legados em server/ops/runtime-grants.sql. Em produção ainda existem DELETE em tabelas da implantação inicial e UPDATE em aceites; o script anterior só acrescentava grants.",
       "Aprovar os controles sociais móveis e aplicar a migration de seleção de capa dos álbuns antes de publicar a nova API; não foi aplicada em produção.",
@@ -253,7 +253,7 @@
       "autor": "Codex",
       "titulo": "Controles sociais e capas dos álbuns no celular",
       "resumo": "Seletor suspenso, ações compactas e comentários em painel com campo fixo. Álbuns mostram fotos empilhadas e permitem escolher a foto da frente, com privacidade e versão verificadas. Capa/GIF do PR 10 reaproveitados e testados no celular. Implementação em revisão; nenhuma publicação nesta etapa.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/11"
     },
     {
       "data": "2026-11-14",
