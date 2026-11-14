@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Mapa do Projeto · Clube do Livro</title>
+<meta name="description" content="Estrutura, publicação, dados e histórico do Clube do Livro, gerados a partir do código." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --plum:#462b70;--plum-soft:#efe9f7;--coral:#fc7667;--coral-ink:#b83c30;--honey:#f4b942;--honey-ink:#7d5300;--mint:#b9e6c9;--mint-ink:#1f5c3f;--blue:#3d6be0;--blue-ink:#2546a8;--rose:#f5b6c6;--rose-ink:#8e2d4c;
+  --bg:#fbf4e8;--surface:#fffbf4;--raised:#fff;--sunken:#f7ebd8;--text:#22192e;--muted:#5f5569;--subtle:#776c80;--border:#e6d7bf;--divider:rgba(70,43,112,.1);
+  --shadow:0 1px 2px rgba(52,31,85,.06),0 10px 28px rgba(52,31,85,.08);--radius:20px;
+  --display:'Fraunces',Georgia,serif;--ui:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --spines:linear-gradient(90deg,#462b70 0 22%,#fc7667 22% 38%,#f4b942 38% 50%,#b9e6c9 50% 66%,#3d6be0 66% 78%,#f5b6c6 78% 90%,#7656a8 90%);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --plum-soft:rgba(185,166,217,.14);--coral-ink:#fdac9f;--honey-ink:#f4b942;--mint-ink:#b9e6c9;--blue-ink:#9db6ff;--rose-ink:#f5b6c6;
+  --bg:#17111f;--surface:#211a2c;--raised:#2a2237;--sunken:#120d19;--text:#f6efe4;--muted:#c4b8cc;--subtle:#a094ab;--border:rgba(246,239,228,.12);--divider:rgba(246,239,228,.08);
+  --shadow:0 10px 28px rgba(0,0,0,.35);color-scheme:dark;--plum:#b9a6d9}}
+:root[data-theme=dark]{--plum-soft:rgba(185,166,217,.14);--coral-ink:#fdac9f;--honey-ink:#f4b942;--mint-ink:#b9e6c9;--blue-ink:#9db6ff;--rose-ink:#f5b6c6;--bg:#17111f;--surface:#211a2c;--raised:#2a2237;--sunken:#120d19;--text:#f6efe4;--muted:#c4b8cc;--subtle:#a094ab;--border:rgba(246,239,228,.12);--divider:rgba(246,239,228,.08);--shadow:0 10px 28px rgba(0,0,0,.35);color-scheme:dark;--plum:#b9a6d9}
+*{box-sizing:border-box}
+html{background:var(--bg);color:var(--text);font-family:var(--ui);line-height:1.55;-webkit-font-smoothing:antialiased;scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;min-width:320px;overflow-x:hidden}
+a{color:var(--blue-ink)}
+h1,h2,h3{font-family:var(--display);font-weight:600;letter-spacing:-.02em;line-height:1.1;margin:0}
+h2{font-size:clamp(1.5rem,1.2rem + 1.4vw,2.2rem)}
+h3{font-size:1.15rem}
+p{margin:0}
+.wrap{width:min(100% - 32px,1180px);margin:0 auto}
+.eyebrow{display:block;font-size:.7rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--coral-ink);margin-bottom:8px}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:700;background:var(--plum-soft);color:var(--plum);white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:var(--subtle)}
+.tom-ok .dot,.dot.ok{background:#2b7552}.tom-aguardando .dot,.dot.aguardando{background:var(--honey)}.tom-alerta .dot,.dot.alerta{background:var(--coral)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card,.estado>*,.col,.col>*,.passos>*,.dados>*{min-width:0;overflow-wrap:break-word}
+.card p,.card li,.card h3{overflow-wrap:anywhere}
+
+/* Topo */
+.hero{position:relative;padding:40px 0 28px;overflow:hidden}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--spines)}
+.hero h1{font-size:clamp(2.4rem,1.6rem + 4vw,4.2rem);line-height:.98}
+.hero .resumo{max-width:62ch;margin-top:12px;font-size:1.05rem;color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:18px}
+.meta .chip{background:var(--surface);border:1px solid var(--border);color:var(--text);font-weight:600}
+.status{background:var(--honey);color:#26183d}
+.status.tom-ok{background:#b9e6c9;color:#1f5c3f}
+.aviso{margin-top:16px;padding:12px 16px;border-radius:14px;background:rgba(244,185,66,.18);color:var(--honey-ink);font-weight:600;font-size:.9rem}
+.toolbar{display:flex;gap:8px;margin-left:auto}
+.toolbar button{min-height:36px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text);font:inherit;font-size:.8rem;font-weight:700;cursor:pointer}
+
+/* Índice */
+.toc{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--divider)}
+.toc .wrap{display:flex;gap:6px;overflow-x:auto;padding:10px 0;scrollbar-width:none}
+.toc .wrap::-webkit-scrollbar{display:none}
+.toc a{flex:0 0 auto;min-height:40px;display:inline-flex;align-items:center;padding:6px 14px;border-radius:999px;color:var(--muted);text-decoration:none;font-weight:700;font-size:.85rem}
+.toc a:hover,.toc a.ativo{background:var(--plum);color:#fff}
+:root[data-theme=dark] .toc a:hover,:root[data-theme=dark] .toc a.ativo{color:#1b1229}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .toc a:hover,:root:not([data-theme=light]) .toc a.ativo{color:#1b1229}}
+
+section{padding:44px 0}
+section+section{border-top:1px solid var(--divider)}
+.sec-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px;margin-bottom:22px}
+.sec-head p{max-width:60ch;margin-top:8px}
+
+/* Estado */
+.estado{display:grid;gap:16px}
+@media(min-width:900px){.estado{grid-template-columns:1.3fr 1fr}}
+.estado .card{padding:22px}
+.proximo{margin-top:16px;padding:16px;border-radius:14px;background:var(--plum-soft)}
+.proximo strong{display:block;margin-bottom:4px;color:var(--plum)}
+ul.lista{margin:12px 0 0;padding-left:20px}ul.lista li+li{margin-top:6px}
+.ambientes{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));margin-top:16px}
+.amb{padding:16px;display:grid;gap:6px}
+.amb a{word-break:break-all;font-size:.82rem}
+
+/* Arquitetura */
+.arq{display:grid;gap:14px;align-items:stretch}
+@media(min-width:1000px){.arq{grid-template-columns:1fr 40px 1fr 40px 1fr 40px 1fr}}
+.col{display:grid;gap:14px;align-content:start}
+.seta{display:grid;place-items:center;color:var(--subtle);font-size:1.6rem;font-weight:700}
+.seta::before{content:"↓"}
+@media(min-width:1000px){.seta::before{content:"→"}}
+.no{position:relative;padding:18px 18px 16px;overflow:hidden}
+.no::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--cor,var(--plum))}
+.no h3{margin:2px 0 4px}
+.no .serv{font-size:.82rem;font-weight:700;color:var(--muted)}
+.no .plano{margin-top:6px;white-space:normal;text-align:left;line-height:1.3}
+.dado .chip,.amb .chip{white-space:normal;line-height:1.3}
+.no ul{margin:10px 0 0;padding-left:18px;font-size:.88rem}
+.no details{margin-top:10px;font-size:.88rem}
+.no summary{cursor:pointer;font-weight:700;color:var(--blue-ink);min-height:32px;display:flex;align-items:center}
+.ligacoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.lig{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px dashed var(--border);font-size:.82rem;background:var(--surface)}
+.cor-coral{--cor:var(--coral)}.cor-plum{--cor:#462b70}.cor-honey{--cor:var(--honey)}.cor-blue{--cor:var(--blue)}.cor-mint{--cor:#5fb486}.cor-rose{--cor:#e58aa4}.cor-ink{--cor:#5f5569}
+
+/* Publicação */
+.passos{position:relative;display:grid;gap:14px;counter-reset:passo;padding-left:0;list-style:none;margin:0}
+@media(min-width:900px){.passos{grid-template-columns:repeat(4,1fr)}}
+.passo{position:relative;padding:18px;counter-increment:passo}
+.passo::before{content:counter(passo);display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--plum);color:#fff;font-weight:800;margin-bottom:10px}
+:root[data-theme=dark] .passo::before{color:#1b1229}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .passo::before{color:#1b1229}}
+.passo h3{font-size:1.05rem}
+.passo .onde{font-size:.8rem;font-weight:700;color:var(--muted);margin:4px 0 8px}
+.modo{margin-top:10px}
+.modo-voce{background:var(--plum-soft);color:var(--plum)}
+.modo-auto{background:rgba(185,230,201,.45);color:var(--mint-ink)}
+.modo-aprovacao{background:rgba(244,185,66,.25);color:var(--honey-ink)}
+
+/* Dados */
+.busca{width:min(100%,360px);min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--raised);color:var(--text);font:inherit}
+.dados{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
+.dados .card{padding:18px;position:relative;overflow:hidden}
+.dados .card::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:var(--cor)}
+.dado{padding:10px 0;border-top:1px solid var(--divider)}
+.dado:first-of-type{border-top:0}
+.dado strong{display:block;font-size:.92rem}
+.dado .linha{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+
+/* Caminhos */
+.jornadas{display:grid;gap:14px}
+.jornada{padding:18px}
+.trilha{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+.etapa{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:var(--raised);border:1px solid var(--border);font-size:.85rem}
+.etapa i{width:10px;height:10px;border-radius:3px;background:var(--cor);flex:0 0 auto}
+.etapa+.etapa::before{content:"→";margin:0 4px 0 -2px;color:var(--subtle);font-weight:700}
+
+/* O que existe */
+.tiles{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-bottom:18px}
+.tile{padding:16px}
+.tile strong{display:block;font-family:var(--display);font-size:2.2rem;line-height:1;color:var(--plum)}
+.tile span{font-size:.8rem;color:var(--muted);font-weight:600}
+.blocos{display:grid;gap:12px}
+.blocos details{padding:4px 18px}
+.blocos summary{cursor:pointer;min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:700}
+.blocos summary::-webkit-details-marker{display:none}
+.blocos summary::after{content:"+";font-size:1.3rem;color:var(--subtle)}
+.blocos details[open] summary::after{content:"–"}
+.tabela{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:16px}
+.tabela th,.tabela td{text-align:left;padding:8px 6px;border-top:1px solid var(--divider);vertical-align:top}
+.tabela th{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--subtle)}
+.tabela code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.8rem;word-break:break-word}
+.metodo{font-weight:800;font-size:.7rem;padding:2px 6px;border-radius:6px;background:var(--plum-soft);color:var(--plum)}
+.metodo.POST{background:rgba(185,230,201,.45);color:var(--mint-ink)}.metodo.DELETE{background:rgba(252,118,103,.18);color:var(--coral-ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 16px}
+.scroll-x{overflow-x:auto}
+
+/* Linha do tempo */
+.tempo{position:relative;display:grid;gap:14px;padding-left:26px;list-style:none;margin:0}
+.tempo::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,var(--coral),var(--plum) 60%,transparent)}
+.evento{position:relative;padding:16px 18px}
+.evento::before{content:"";position:absolute;left:-24px;top:22px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:3px solid var(--coral)}
+.evento .topo{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
+.autor-claude{background:rgba(252,118,103,.18);color:var(--coral-ink)}
+.autor-codex{background:rgba(185,230,201,.45);color:var(--mint-ink)}
+.autor-voce{background:var(--plum-soft);color:var(--plum)}
+
+/* Pessoas */
+.agentes{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+.agente{padding:18px}
+.regras{margin-top:18px;padding:18px}
+
+footer{padding:32px 0 48px;color:var(--muted);font-size:.85rem;border-top:1px solid var(--divider)}
+@media (prefers-reduced-motion:no-preference){.card{transition:transform .2s ease,box-shadow .2s ease}.no:hover,.tile:hover{transform:translateY(-2px)}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap" id="topo"></div></header>
+<nav class="toc" aria-label="Seções do mapa"><div class="wrap" id="indice"></div></nav>
+<main id="conteudo"></main>
+<footer><div class="wrap" id="rodape"></div></footer>
+<script id="dados" type="application/json">/*__DADOS__*/null</script>
+<script>
+(function(){
+  const raw = document.getElementById('dados').textContent.trim()
+  const { mapa, automatico } = JSON.parse(raw === '/*__DADOS__*/null' ? '{"mapa":null}' : raw) || {}
+  if (!mapa) { document.getElementById('conteudo').innerHTML = '<div class="wrap"><p>Gere a página com <code>npm run mapa</code>.</p></div>'; return }
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+  const camadas = Object.fromEntries(mapa.camadas.map((c) => [c.id, c]))
+  const data = (iso) => new Date(iso + (iso.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  const dataHora = (iso) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+  const repo = mapa.projeto.repositorio
+  const autorClasse = (a) => /claude/i.test(a) ? 'autor-claude' : /codex/i.test(a) ? 'autor-codex' : 'autor-voce'
+  const link = (url, texto) => url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(texto ?? url)}</a>` : ''
+
+  // Topo
+  const total = Object.values(automatico.testes).reduce((a, b) => a + b, 0)
+  document.getElementById('topo').innerHTML = `
+    <span class="eyebrow">Mapa do projeto · o cérebro de Claude e Codex</span>
+    <h1>${esc(mapa.projeto.nome)}</h1>
+    <p class="resumo">${esc(mapa.projeto.resumo)}</p>
+    <div class="meta">
+      <span class="chip status tom-${esc(mapa.estado.tom)}"><span class="dot ${esc(mapa.estado.tom)}"></span>${esc(mapa.estado.fase)}</span>
+      <span class="chip">Branch ${esc(automatico.branch)} · ${esc(automatico.commit)}</span>
+      <span class="chip">Gerado em ${esc(dataHora(automatico.geradoEm))}</span>
+      <span class="toolbar"><button type="button" id="tema">Alternar claro/escuro</button></span>
+    </div>
+    ${automatico.commitsDepois > 0 ? `<p class="aviso" role="status">Há ${automatico.commitsDepois} commit(s) depois da última atualização registrada no mapa (${esc(data(mapa.atualizacoes[0].data))}). Peça ao agente responsável para registrar a atualização.</p>` : ''}`
+  document.getElementById('tema').addEventListener('click', () => {
+    const root = document.documentElement
+    const escuro = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+    root.dataset.theme = escuro ? 'light' : 'dark'
+    try { localStorage.setItem('mapa-tema', root.dataset.theme) } catch {}
+  })
+  try { const t = localStorage.getItem('mapa-tema'); if (t) document.documentElement.dataset.theme = t } catch {}
+
+  const secoes = [
+    ['estado', 'Estado agora'], ['arquitetura', 'Como funciona no ar'], ['publicacao', 'Do pedido ao ar'],
+    ['dados', 'Onde ficam os dados'], ['caminhos', 'Caminhos'], ['codigo', 'O que existe'],
+    ['historico', 'Histórico'], ['pessoas', 'Quem faz o quê'],
+  ]
+  document.getElementById('indice').innerHTML = secoes.map(([id, t]) => `<a href="#${id}">${t}</a>`).join('')
+
+  const html = []
+  // Estado
+  html.push(`<section id="estado"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Onde estamos</span><h2>Estado agora</h2></div></div>
+    <div class="estado">
+      <div class="card"><p>${esc(mapa.estado.resumo)}</p>
+        <div class="proximo"><strong>Próximo passo</strong>${esc(mapa.estado.proximoPasso)}</div>
+        <h3 style="margin-top:18px">Pendências</h3><ul class="lista">${mapa.estado.pendencias.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+      </div>
+      <div class="card"><h3>Ambientes</h3><div class="ambientes">${mapa.ambientes.map((a) => `
+        <div class="amb card tom-${esc(a.tom)}"><span class="chip"><span class="dot ${esc(a.tom)}"></span>${esc(a.nome)}</span>
+          <span class="small">${esc(a.versao)}</span><span class="small muted">${esc(a.atualizacao)}</span>${link(a.url)}</div>`).join('')}</div></div>
+    </div></div></section>`)
+
+  // Arquitetura
+  const colunas = [1, 2, 3, 4].map((n) => mapa.camadas.filter((c) => c.coluna === n))
+  const noHtml = (c) => `<article class="card no cor-${esc(c.cor)}" id="camada-${esc(c.id)}">
+      <span class="serv">${esc(c.servico)}</span><h3>${esc(c.titulo)}</h3>
+      ${c.plano && c.plano !== '—' ? `<span class="chip plano">${esc(c.plano)}</span>` : ''}
+      <ul>${c.guarda.map((g) => `<li>${esc(g)}</li>`).join('')}</ul>
+      <details><summary>Detalhes</summary><p class="small">${esc(c.detalhe)}</p>${c.link ? `<p class="small" style="margin-top:6px">${link(c.link, 'Abrir painel')}</p>` : ''}</details>
+    </article>`
+  html.push(`<section id="arquitetura"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Arquitetura</span><h2>Como o app funciona no ar</h2>
+      <p class="muted">Da pessoa até onde as informações ficam guardadas. Cada bloco é um serviço; as setas mostram quem conversa com quem.</p></div></div>
+    <div class="arq">${colunas.map((col, i) => `${i ? '<div class="seta" aria-hidden="true"></div>' : ''}<div class="col">${col.map(noHtml).join('')}</div>`).join('')}</div>
+    <div class="ligacoes" aria-label="Conexões">${mapa.ligacoes.map((l) => `<span class="lig"><strong>${esc(camadas[l.de].titulo)}</strong> → <strong>${esc(camadas[l.para].titulo)}</strong><span class="muted">${esc(l.texto)}</span></span>`).join('')}</div>
+  </div></section>`)
+
+  // Publicação
+  const modos = { voce: ['Você', 'modo-voce'], auto: ['Automático', 'modo-auto'], aprovacao: ['Precisa da sua aprovação', 'modo-aprovacao'] }
+  const gh = camadas.github
+  html.push(`<section id="publicacao"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Publicação</span><h2>Do seu pedido até o ar</h2>
+      <p class="muted">Como uma mudança sai da conversa com um agente e chega às pessoas. ${gh ? esc(gh.detalhe) : ''}</p></div></div>
+    <ol class="passos">${mapa.fluxoPublicacao.map((p) => `<li class="card passo"><h3>${esc(p.titulo)}</h3><p class="onde">${esc(p.onde)}</p><p class="small">${esc(p.texto)}</p><span class="chip modo ${modos[p.modo]?.[1] ?? ''}">${modos[p.modo]?.[0] ?? esc(p.modo)}</span></li>`).join('')}</ol>
+  </div></section>`)
+
+  // Dados
+  const porCamada = mapa.camadas.map((c) => [c, mapa.dados.filter((d) => d.onde === c.id)]).filter(([, ds]) => ds.length)
+  html.push(`<section id="dados"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Informações dos usuários</span><h2>Onde fica cada informação</h2>
+      <p class="muted">Quem pode ver e onde existe cópia. Use a busca para achar um tipo de dado.</p></div>
+      <input class="busca" type="search" id="busca" placeholder="Buscar: foto, senha, fórum…" aria-label="Buscar um tipo de dado" /></div>
+    <div class="dados">${porCamada.map(([c, ds]) => `<div class="card cor-${esc(c.cor)}"><span class="serv small muted">${esc(c.servico)}</span><h3 style="margin:2px 0 8px">${esc(c.titulo)}</h3>
+      ${ds.map((d) => `<div class="dado" data-busca="${esc((d.o_que + ' ' + d.privacidade + ' ' + c.titulo).toLowerCase())}"><strong>${esc(d.o_que)}</strong><div class="linha"><span class="chip">${esc(d.privacidade)}</span><span class="small muted">Cópia: ${esc(d.copia)}</span></div></div>`).join('')}</div>`).join('')}</div>
+  </div></section>`)
+
+  // Caminhos
+  html.push(`<section id="caminhos"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Na prática</span><h2>Caminho de algumas ações</h2>
+      <p class="muted">Por onde passa uma ação, do toque na tela até ser guardada.</p></div></div>
+    <div class="jornadas">${mapa.jornadas.map((j) => `<div class="card jornada"><h3>${esc(j.titulo)}</h3><div class="trilha">${j.passos.map((p) => `<span class="etapa cor-${esc(camadas[p.camada].cor)}"><i aria-hidden="true"></i><span><strong>${esc(camadas[p.camada].titulo)}:</strong> ${esc(p.texto)}</span></span>`).join('')}</div></div>`).join('')}</div>
+  </div></section>`)
+
+  // O que existe (automático)
+  const grupos = {}
+  for (const r of automatico.rotasApi) (grupos[r.grupo] ??= []).push(r)
+  html.push(`<section id="codigo"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Lido automaticamente do código</span><h2>O que existe hoje</h2>
+      <p class="muted">Esta parte é gerada a cada publicação. Ninguém precisa atualizar à mão.</p></div></div>
+    <div class="tiles">
+      <div class="card tile"><strong>${automatico.telas.length}</strong><span>telas</span></div>
+      <div class="card tile"><strong>${automatico.rotasApi.length}</strong><span>rotas da API</span></div>
+      <div class="card tile"><strong>${automatico.tabelas.length}</strong><span>tabelas no banco</span></div>
+      <div class="card tile"><strong>${automatico.migrations.length}</strong><span>migrations</span></div>
+      <div class="card tile"><strong>${total}</strong><span>testes declarados no código</span></div>
+      <div class="card tile"><strong>${automatico.workflows.length}</strong><span>automações no GitHub</span></div>
+    </div>
+    <div class="blocos">
+      <details class="card"><summary>Telas do app (${automatico.telas.length})</summary><div class="chips">${automatico.telas.map((t) => `<span class="chip mono">${esc(t.caminho)}</span>`).join('')}</div></details>
+      <details class="card"><summary>Rotas da API (${automatico.rotasApi.length})</summary><div class="scroll-x">${Object.entries(grupos).sort().map(([g, rs]) => `<table class="tabela"><thead><tr><th colspan="2">${esc(g)} · ${rs.length}</th></tr></thead><tbody>${rs.map((r) => `<tr><td><span class="metodo ${esc(r.metodo)}">${esc(r.metodo)}</span></td><td><code>${esc(r.caminho)}</code></td></tr>`).join('')}</tbody></table>`).join('')}</div></details>
+      <details class="card"><summary>Tabelas por migration (${automatico.tabelas.length})</summary>${automatico.migrations.map((m) => `<p class="small" style="margin-top:8px"><strong class="mono">${esc(m.arquivo)}</strong></p><div class="chips">${m.tabelas.length ? m.tabelas.map((t) => `<span class="chip mono">${esc(t)}</span>`).join('') : '<span class="small muted">altera tabelas existentes</span>'}</div>`).join('')}</details>
+      <details class="card"><summary>Testes declarados no código (${total})</summary><table class="tabela"><tbody>
+        <tr><td>App (telas e componentes)</td><td><strong>${automatico.testes.frontend}</strong></td></tr>
+        <tr><td>API — unitários</td><td><strong>${automatico.testes.apiUnitarios}</strong></td></tr>
+        <tr><td>API + banco PostgreSQL</td><td><strong>${automatico.testes.apiIntegracao}</strong></td></tr>
+        <tr><td>Login (Auth Emulator)</td><td><strong>${automatico.testes.autenticacao}</strong></td></tr></tbody></table></details>
+      <details class="card"><summary>Automações do GitHub (${automatico.workflows.length})</summary><table class="tabela"><tbody>${automatico.workflows.map((w) => `<tr><td><strong>${esc(w.nome)}</strong><br><span class="small muted mono">${esc(w.arquivo)}</span></td><td>${w.gatilhos.map((g) => `<span class="chip">${esc(g)}</span>`).join(' ')}</td></tr>`).join('')}</tbody></table></details>
+      <details class="card"><summary>Configurações e segredos (só os nomes)</summary><p class="small muted" style="margin:4px 0 8px">Valores ficam no Render, no Firebase ou em arquivos locais ignorados pelo Git. Nunca no repositório.</p><p class="small"><strong>API</strong></p><div class="chips">${automatico.configuracoes.map((c) => `<span class="chip mono">${esc(c)}</span>`).join('')}</div><p class="small"><strong>App (públicas, VITE_)</strong></p><div class="chips">${automatico.configuracoesFront.map((c) => `<span class="chip mono">${esc(c)}</span>`).join('')}</div></details>
+      <details class="card"><summary>Tecnologias principais</summary><div class="chips">${automatico.pacotes.map((p) => `<span class="chip">${esc(p.nome)} <span class="mono">${esc(p.versao)}</span></span>`).join('')}</div></details>
+      <details class="card"><summary>Documentos do projeto (${automatico.documentos.length})</summary><div class="chips">${automatico.documentos.map((d) => `<a class="chip" href="${esc(repo)}/blob/${esc(automatico.branch)}/docs/${esc(d)}" target="_blank" rel="noopener">${esc(d)}</a>`).join('')}</div></details>
+    </div>
+  </div></section>`)
+
+  // Histórico
+  html.push(`<section id="historico"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Memória do projeto</span><h2>Últimas atualizações</h2>
+      <p class="muted">Registradas por Claude e Codex ao fim de cada tarefa. Os commits abaixo vêm direto do Git.</p></div></div>
+    <ol class="tempo">${mapa.atualizacoes.map((a) => `<li class="card evento"><div class="topo"><span class="chip ${autorClasse(a.autor)}">${esc(a.autor)}</span><span class="small muted">${esc(data(a.data))}</span>${a.pr ? link(a.pr, 'Ver PR') : ''}</div><h3>${esc(a.titulo)}</h3><p class="small muted" style="margin-top:4px">${esc(a.resumo)}</p></li>`).join('')}</ol>
+    <div class="blocos" style="margin-top:18px"><details class="card"><summary>Commits recentes em ${esc(automatico.branch)} (${automatico.commits.length})</summary><table class="tabela"><tbody>${automatico.commits.map((c) => `<tr><td class="mono"><a href="${esc(repo)}/commit/${esc(c.hash)}" target="_blank" rel="noopener">${esc(c.hash)}</a></td><td class="small">${esc(dataHora(c.data))}</td><td class="small">${esc(c.assunto)}</td></tr>`).join('')}</tbody></table></details></div>
+  </div></section>`)
+
+  // Pessoas
+  html.push(`<section id="pessoas"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Responsabilidades</span><h2>Quem faz o quê</h2></div></div>
+    <div class="agentes">${mapa.agentes.map((g) => `<div class="card agente"><span class="chip ${autorClasse(g.nome)}">${esc(g.nome)}</span><p style="margin-top:10px">${esc(g.papel)}</p><p class="small muted" style="margin-top:8px">${esc(g.onde)}</p></div>`).join('')}</div>
+    <div class="card regras"><h3>Regras deste mapa</h3><ul class="lista">${mapa.regras.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></div>
+  </div></section>`)
+
+  document.getElementById('conteudo').innerHTML = html.join('')
+  document.getElementById('rodape').innerHTML = `Gerado de <a href="${esc(repo)}/blob/${esc(automatico.branch)}/docs/mapa/mapa.json" target="_blank" rel="noopener">docs/mapa/mapa.json</a> e do código em <strong>${esc(automatico.branch)}</strong> (${esc(automatico.commit)}). Para atualizar: edite o JSON e rode <code>npm run mapa</code>; a cada push em main ele é republicado sozinho.`
+
+  // Busca nos dados
+  document.getElementById('busca').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase()
+    document.querySelectorAll('.dado').forEach((el) => { el.hidden = q && !el.dataset.busca.includes(q) })
+    document.querySelectorAll('.dados > .card').forEach((card) => { card.hidden = q && !card.querySelector('.dado:not([hidden])') })
+  })
+  // Seção ativa no índice
+  const links = [...document.querySelectorAll('.toc a')]
+  const obs = new IntersectionObserver((entries) => entries.forEach((en) => {
+    if (en.isIntersecting) links.forEach((a) => a.classList.toggle('ativo', a.getAttribute('href') === '#' + en.target.id))
+  }), { rootMargin: '-40% 0px -55% 0px' })
+  document.querySelectorAll('main section').forEach((s) => obs.observe(s))
+})()
+</script>
+</body>
+</html>
