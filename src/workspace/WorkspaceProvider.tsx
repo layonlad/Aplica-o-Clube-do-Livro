@@ -8,7 +8,7 @@ import { loadPersonal, savePersonal, secureIndex } from './storage'
 interface ContextValue {
   publicModerator:boolean; snapshot: WorkspaceSnapshot|null; clubs: Club[]; scope: string; scopeName: string; loading: boolean; busy:boolean; error:string;errorCode:string
   addToPersonal:(book:{title:string;author:string;category?:string;metadata?:import('../../server/src/workspace-model').WorkspaceState['books'][number]['metadata']})=>Promise<boolean>
-  setScope:(scope:string)=>void; refresh:()=>Promise<void>; act:(action:WorkspaceAction)=>Promise<boolean>
+  setScope:(scope:string)=>void; refresh:()=>Promise<void>; act:(action:WorkspaceAction,onSaved?:(snapshot:WorkspaceSnapshot)=>void)=>Promise<boolean>
 }
 const Context=createContext<ContextValue|null>(null)
 export function WorkspaceProvider({children}:{children:ReactNode}) {
@@ -48,7 +48,7 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
     finally {if(ticket===generation.current)setLoading(false)}
   },[identity?.uid,scope])
   useEffect(()=>{void refresh();return()=>{generation.current++}},[refresh])
-  async function act(action:WorkspaceAction) {
+  async function act(action:WorkspaceAction,onSaved?:(snapshot:WorkspaceSnapshot)=>void) {
     if(lock.current||!current.current)return false
     const ticket=generation.current;const source=current.current
     lock.current=true;setBusy(true);setError('');setErrorCode('')
@@ -59,7 +59,7 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
         next=applyWorkspaceAction(source,action,{id:'visitor',name:localStorage.getItem('clube-livro-name')?.trim().slice(0,100)||'Você'},{id:crypto.randomUUID(),now:new Date().toISOString(),personal:true,...(action.type==='draw'&&source.state.nominations.length?{drawIndex:secureIndex(source.state.nominations.length)}:{})})
         await savePersonal(next)
       }
-      if(ticket===generation.current&&identityRef.current?.uid===identity?.uid&&scopeRef.current===scope){current.current=next;setSnapshot(next)}
+      if(ticket===generation.current&&identityRef.current?.uid===identity?.uid&&scopeRef.current===scope){current.current=next;setSnapshot(next);onSaved?.(next)}
       return true
     }catch(err){if(ticket===generation.current){setErrorCode(err instanceof ApiError?(err.status===401?'AUTH_REQUIRED':err.code):'');setError(err instanceof WorkspaceError?err.message:readableError(err)); if(err instanceof ApiError&&['WORKSPACE_CHANGED','READING_CHANGED'].includes(err.code)){void refresh().then(()=>{if(identityRef.current?.uid===identity?.uid&&scopeRef.current===scope)setError(err.message)})}}return false}
     finally{lock.current=false;setBusy(false)}

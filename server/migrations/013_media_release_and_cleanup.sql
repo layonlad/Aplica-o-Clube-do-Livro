@@ -1,0 +1,10 @@
+ALTER TABLE club_albums ADD COLUMN allow_public_share boolean NOT NULL DEFAULT false;
+ALTER TABLE media_objects ADD COLUMN purge_after timestamptz NOT NULL DEFAULT now(),ADD COLUMN last_purge_at timestamptz;
+ALTER TABLE private_book_files ADD COLUMN purge_after timestamptz NOT NULL DEFAULT now(),ADD COLUMN last_purge_at timestamptz;
+ALTER TABLE club_book_files ADD COLUMN purge_after timestamptz NOT NULL DEFAULT now(),ADD COLUMN last_purge_at timestamptz;
+CREATE INDEX social_delayed_cleanup ON media_objects(purge_after,created_at) WHERE state='deleted';
+CREATE INDEX private_delayed_cleanup ON private_book_files(purge_after,created_at) WHERE state='deleted';
+CREATE INDEX club_delayed_cleanup ON club_book_files(purge_after,created_at) WHERE state='deleted';
+CREATE INDEX social_late_upload_sweep ON media_objects(last_purge_at,id) WHERE state='purged';
+CREATE INDEX private_late_upload_sweep ON private_book_files(last_purge_at,id) WHERE state='purged';
+CREATE INDEX club_late_upload_sweep ON club_book_files(last_purge_at,id) WHERE state='purged';

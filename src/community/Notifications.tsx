@@ -1,19 +1,248 @@
-import {useEffect,useState} from 'react'
-import {Link,useNavigate} from 'react-router-dom'
-import {Bell} from 'lucide-react'
-import type {Page} from '../../server/src/community-contracts'
-import type {NotificationPreferences} from '../../server/src/notification-service'
-import {useAuth} from '../auth/AuthProvider'
-import {apiRequest,readableError} from '../auth/api'
-import {useWorkspace} from '../workspace/WorkspaceProvider'
-import {Button,SkeletonPage} from '../components/ui'
-interface Notice {id:string;kind:string;targetType:string;targetId:string;clubId:string|null;clubName:string|null;actorName:string;createdAt:string;readAt:string|null}
-const labels:Record<string,string>={like:'curtiu sua publicação',comment:'comentou sua publicação',reply:'respondeu à conversa',mention:'mencionou você',follow:'começou a seguir você',invitation:'convidou você para um clube',join_request:'solicitou participação no clube',join_approved:'aprovou sua participação',topic:'iniciou uma discussão',event:'agendou um encontro',reading:'atualizou a leitura coletiva',book:'adicionou um livro ao clube'}
-export function Notifications(){
- const {user}=useAuth(),{setScope,refresh}=useWorkspace(),navigate=useNavigate(),[page,setPage]=useState<Page<Notice>>({items:[],nextCursor:null}),[preferences,setPreferences]=useState<NotificationPreferences|null>(null),[loading,setLoading]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[revision,setRevision]=useState(0)
- useEffect(()=>{if(!user?.emailVerified)return;let live=true;setLoading(true);setPage({items:[],nextCursor:null});Promise.all([apiRequest<Page<Notice>>(user,'/me/notifications'),apiRequest<NotificationPreferences>(user,'/me/notification-preferences')]).then(([page,prefs])=>{if(live){setPage(page);setPreferences(prefs)}}).catch(err=>live&&setError(readableError(err))).finally(()=>live&&setLoading(false));return()=>{live=false}},[user?.uid,user?.emailVerified,revision])
- async function open(notice:Notice){if(!user)return;setBusy(true);setError('');try{await apiRequest(user,'/me/notifications/read','POST',{id:notice.id});if(notice.clubId&&!['invitation','join_request'].includes(notice.kind))setScope(notice.clubId);if(notice.targetType==='post')navigate(notice.clubId?`/app/wall?post=${notice.targetId}`:`/app/community?post=${notice.targetId}`);else if(notice.targetType==='topic')navigate('/app/forum?topic='+notice.targetId);else if(notice.targetType==='profile')navigate('/app/people/'+notice.targetId);else if(notice.targetType==='request')navigate(notice.kind==='join_request'?'/clubs/'+notice.clubId:'/app');else if(notice.targetType==='invite')navigate('/clubs');else navigate(notice.targetType==='event'?'/app/calendar':'/app/library')}catch(err){setError(readableError(err))}finally{setBusy(false)}}
- async function more(){if(!user)return;setBusy(true);try{const next=await apiRequest<Page<Notice>>(user,'/me/notifications?cursor='+encodeURIComponent(page.nextCursor!));setPage(value=>({items:[...value.items,...next.items],nextCursor:next.nextCursor}))}catch(err){setError(readableError(err))}finally{setBusy(false)}}
- if(!user?.emailVerified)return <div className="library-empty"><Bell size={36}/><h1>Suas conversas, perto de você</h1><p>Entre quando quiser acompanhar interações, convites e novidades dos seus clubes.</p><Link to="/account">Entrar na conta →</Link></div>
- return <div className="social-room stack-lg"><header className="social-heading"><span className="eyebrow">ACOMPANHE OS ENCONTROS</span><h1>Notificações</h1><p>As novidades que ainda fazem parte do seu espaço. Guardamos aqui os últimos 90 dias.</p><div className="workspace-actions"><Button variant="secondary" disabled={busy||loading} onClick={()=>setRevision(n=>n+1)}>Atualizar</Button><Button variant="ghost" disabled={busy} onClick={()=>{setBusy(true);void apiRequest(user,'/me/notifications/read','POST',{}).then(()=>setRevision(n=>n+1)).catch(err=>setError(readableError(err))).finally(()=>setBusy(false))}}>Marcar todas como lidas</Button></div></header>{preferences&&<details className="card"><summary>Escolher o que acompanhar</summary><form className="workspace-form" onSubmit={event=>{event.preventDefault();setBusy(true);void apiRequest(user,'/me/notification-preferences','POST',preferences).then(()=>{setMessage('Preferências salvas.');setRevision(n=>n+1)}).catch(err=>setError(readableError(err))).finally(()=>setBusy(false))}}>{Object.entries({interactions:'Curtidas, comentários, respostas e seguidores',mentions:'Menções',clubs:'Convites, solicitações e discussões dos clubes',events:'Encontros',readings:'Livros e leituras coletivas'}).map(([key,label])=><label className="workspace-check" key={key}><input type="checkbox" checked={preferences[key as keyof NotificationPreferences]} onChange={event=>setPreferences({...preferences,[key]:event.target.checked})}/>{label}</label>)}<Button disabled={busy}>Salvar preferências</Button></form></details>}{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}{loading?<SkeletonPage label="Abrindo notificações…"/>:<ol className="notification-list">{page.items.map(notice=><li key={notice.id} className={notice.readAt?'':'is-unread'}><button disabled={busy} onClick={()=>void open(notice)}><span><strong>{notice.actorName}</strong> {labels[notice.kind]??'compartilhou uma novidade'}{notice.clubName?` · ${notice.clubName}`:''}</span><small>{new Date(notice.createdAt).toLocaleString('pt-BR')}{notice.readAt?'':' · Não lida'}</small></button>{notice.targetType==='invite'&&<Button variant="secondary" disabled={busy} onClick={()=>{setBusy(true);setError('');void apiRequest<{id:string}>(user,`/me/invitations/${notice.targetId}/accept`,'POST',{}).then(async club=>{await refresh();setScope(club.id);navigate('/app')}).catch(err=>setError(readableError(err))).finally(()=>setBusy(false))}}>Aceitar convite e entrar no clube</Button>}</li>)}</ol>}{!loading&&!error&&!page.items.length&&<div className="library-empty"><Bell size={36}/><h2>Uma pausa tranquila</h2><p>As próximas novidades aparecerão aqui.</p></div>}{page.nextCursor&&<Button variant="secondary" disabled={busy} onClick={()=>void more()}>Notificações anteriores</Button>}</div>
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Bell } from 'lucide-react'
+import type { Page } from '../../server/src/community-contracts'
+import type { NotificationPreferences } from '../../server/src/notification-service'
+import { useAuth } from '../auth/AuthProvider'
+import { apiRequest, readableError } from '../auth/api'
+import { useWorkspace } from '../workspace/WorkspaceProvider'
+import { Button, SkeletonPage } from '../components/ui'
+interface Notice {
+  id: string
+  kind: string
+  targetType: string
+  targetId: string
+  clubId: string | null
+  clubName: string | null
+  actorName: string
+  createdAt: string
+  readAt: string | null
+}
+const labels: Record<string, string> = {
+  like: 'curtiu sua publicação',
+  comment: 'comentou sua publicação',
+  reply: 'respondeu à conversa',
+  mention: 'mencionou você',
+  follow: 'começou a seguir você',
+  invitation: 'convidou você para um clube',
+  join_request: 'solicitou participação no clube',
+  join_approved: 'aprovou sua participação',
+  topic: 'iniciou uma discussão',
+  event: 'agendou ou atualizou um encontro',
+  event_reminder: 'tem um encontro com você nas próximas 24 horas',
+  reading: 'atualizou a leitura coletiva',
+  book: 'adicionou um livro ao clube',
+}
+export function Notifications() {
+  const { user } = useAuth(),
+    { setScope, refresh } = useWorkspace(),
+    navigate = useNavigate(),
+    [page, setPage] = useState<Page<Notice>>({ items: [], nextCursor: null }),
+    [preferences, setPreferences] = useState<NotificationPreferences | null>(null),
+    [loading, setLoading] = useState(false),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(''),
+    [message, setMessage] = useState(''),
+    [revision, setRevision] = useState(0)
+  useEffect(() => {
+    if (!user?.emailVerified) return
+    let live = true
+    setLoading(true)
+    setPage({ items: [], nextCursor: null })
+    Promise.all([
+      apiRequest<Page<Notice>>(user, '/me/notifications'),
+      apiRequest<NotificationPreferences>(user, '/me/notification-preferences'),
+    ])
+      .then(([page, prefs]) => {
+        if (live) {
+          setPage(page)
+          setPreferences(prefs)
+        }
+      })
+      .catch((err) => live && setError(readableError(err)))
+      .finally(() => live && setLoading(false))
+    return () => {
+      live = false
+    }
+  }, [user?.uid, user?.emailVerified, revision])
+  async function open(notice: Notice) {
+    if (!user) return
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest(user, '/me/notifications/read', 'POST', { id: notice.id })
+      if (notice.clubId && !['invitation', 'join_request'].includes(notice.kind))
+        setScope(notice.clubId)
+      if (notice.targetType === 'post')
+        navigate(
+          notice.clubId
+            ? `/app/wall?post=${notice.targetId}`
+            : `/app/community?post=${notice.targetId}`,
+        )
+      else if (notice.targetType === 'topic') navigate('/app/forum?topic=' + notice.targetId)
+      else if (notice.targetType === 'profile') navigate('/app/people/' + notice.targetId)
+      else if (notice.targetType === 'request')
+        navigate(notice.kind === 'join_request' ? '/clubs/' + notice.clubId : '/app')
+      else if (notice.targetType === 'invite') navigate('/clubs')
+      else navigate(notice.targetType === 'event' ? '/app/calendar' : '/app/library')
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function more() {
+    if (!user) return
+    setBusy(true)
+    try {
+      const next = await apiRequest<Page<Notice>>(
+        user,
+        '/me/notifications?cursor=' + encodeURIComponent(page.nextCursor!),
+      )
+      setPage((value) => ({ items: [...value.items, ...next.items], nextCursor: next.nextCursor }))
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  if (!user?.emailVerified)
+    return (
+      <div className="library-empty">
+        <Bell size={36} />
+        <h1>Suas conversas, perto de você</h1>
+        <p>Entre quando quiser acompanhar interações, convites e novidades dos seus clubes.</p>
+        <Link to="/account">Entrar na conta →</Link>
+      </div>
+    )
+  return (
+    <div className="social-room stack-lg">
+      <header className="social-heading">
+        <span className="eyebrow">ACOMPANHE OS ENCONTROS</span>
+        <h1>Notificações</h1>
+        <p>As novidades que ainda fazem parte do seu espaço. Guardamos aqui os últimos 90 dias.</p>
+        <div className="workspace-actions">
+          <Button
+            variant="secondary"
+            disabled={busy || loading}
+            onClick={() => setRevision((n) => n + 1)}
+          >
+            Atualizar
+          </Button>
+          <Button
+            variant="ghost"
+            disabled={busy}
+            onClick={() => {
+              setBusy(true)
+              void apiRequest(user, '/me/notifications/read', 'POST', {})
+                .then(() => setRevision((n) => n + 1))
+                .catch((err) => setError(readableError(err)))
+                .finally(() => setBusy(false))
+            }}
+          >
+            Marcar todas como lidas
+          </Button>
+        </div>
+      </header>
+      {preferences && (
+        <details className="card">
+          <summary>Escolher o que acompanhar</summary>
+          <form
+            className="workspace-form"
+            onSubmit={(event) => {
+              event.preventDefault()
+              setBusy(true)
+              void apiRequest(user, '/me/notification-preferences', 'POST', preferences)
+                .then(() => {
+                  setMessage('Preferências salvas.')
+                  setRevision((n) => n + 1)
+                })
+                .catch((err) => setError(readableError(err)))
+                .finally(() => setBusy(false))
+            }}
+          >
+            {Object.entries({
+              interactions: 'Curtidas, comentários, respostas e seguidores',
+              mentions: 'Menções',
+              clubs: 'Convites, solicitações e discussões dos clubes',
+              events: 'Encontros',
+              readings: 'Livros e leituras coletivas',
+            }).map(([key, label]) => (
+              <label className="workspace-check" key={key}>
+                <input
+                  type="checkbox"
+                  checked={preferences[key as keyof NotificationPreferences]}
+                  onChange={(event) =>
+                    setPreferences({ ...preferences, [key]: event.target.checked })
+                  }
+                />
+                {label}
+              </label>
+            ))}
+            <Button disabled={busy}>Salvar preferências</Button>
+          </form>
+        </details>
+      )}
+      {error && <p role="alert">{error}</p>}
+      {message && <p role="status">{message}</p>}
+      {loading ? (
+        <SkeletonPage label="Abrindo notificações…" />
+      ) : (
+        <ol className="notification-list">
+          {page.items.map((notice) => (
+            <li key={notice.id} className={notice.readAt ? '' : 'is-unread'}>
+              <button disabled={busy} onClick={() => void open(notice)}>
+                <span>
+                  <strong>{notice.actorName}</strong>{' '}
+                  {labels[notice.kind] ?? 'compartilhou uma novidade'}
+                  {notice.clubName ? ` · ${notice.clubName}` : ''}
+                </span>
+                <small>
+                  {new Date(notice.createdAt).toLocaleString('pt-BR')}
+                  {notice.readAt ? '' : ' · Não lida'}
+                </small>
+              </button>
+              {notice.targetType === 'invite' && (
+                <Button
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() => {
+                    setBusy(true)
+                    setError('')
+                    void apiRequest<{ id: string }>(
+                      user,
+                      `/me/invitations/${notice.targetId}/accept`,
+                      'POST',
+                      {},
+                    )
+                      .then(async (club) => {
+                        await refresh()
+                        setScope(club.id)
+                        navigate('/app')
+                      })
+                      .catch((err) => setError(readableError(err)))
+                      .finally(() => setBusy(false))
+                  }}
+                >
+                  Aceitar convite e entrar no clube
+                </Button>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+      {!loading && !error && !page.items.length && (
+        <div className="library-empty">
+          <Bell size={36} />
+          <h2>Uma pausa tranquila</h2>
+          <p>As próximas novidades aparecerão aqui.</p>
+        </div>
+      )}
+      {page.nextCursor && (
+        <Button variant="secondary" disabled={busy} onClick={() => void more()}>
+          Notificações anteriores
+        </Button>
+      )}
+    </div>
+  )
 }

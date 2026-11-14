@@ -34,10 +34,12 @@ export function WorkspaceShell() {
   const [params] = useSearchParams()
   const { pathname } = useLocation()
   const mainRef = useRef<HTMLElement>(null)
+  const drawerRef=useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const unread = params.get('notice')
   const personal = scope === 'personal'
+  const globalPage=['/app/community','/app/explore','/app/people/','/app/social-profile','/app/notifications','/app/downloads','/app/moderation'].some(path=>pathname.startsWith(path))
   const monogram = theme.monogram === 'CA' ? 'CL' : theme.monogram
 
   const nav: NavItem[] = [
@@ -51,6 +53,7 @@ export function WorkspaceShell() {
   const extra: NavItem[] = [
     {to:'/app/notifications',name:'Notificações',icon:Bell},
     ...(publicModerator?[{to:'/app/moderation',name:'Moderação pública',icon:MessagesSquare}]:[]),
+    {to:'/app/downloads',name:'Leituras autorizadas',icon:BookOpen},
     {to:'/app/reader',name:'Minha leitura',icon:BookOpen},
     {to:'/app/social-profile',name:'Meu perfil social',icon:UserRound},
     {to:'/app/calendar',name:'Agenda e encontros',icon:CalendarDays},
@@ -76,7 +79,14 @@ export function WorkspaceShell() {
   useEffect(() => {
     if (!menu) return
     closeRef.current?.focus()
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setMenu(false) }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenu(false)
+      if(event.key==='Tab'){
+        const controls=Array.from(drawerRef.current?.querySelectorAll<HTMLElement>('a[href],button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]')??[]).filter(item=>item.getClientRects().length)
+        const first=controls[0],last=controls.at(-1)
+        if(first&&(event.shiftKey?document.activeElement===first:document.activeElement===last)){event.preventDefault();(event.shiftKey?last:first)?.focus()}
+      }
+    }
     document.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     const trigger = menuButtonRef.current
@@ -88,12 +98,12 @@ export function WorkspaceShell() {
 
   const showVisitorNote = !user?.emailVerified && !dismissed && pathname === '/app'
 
-  return <div className="app-frame workspace-app" data-space={spaceFor(pathname, scope)}>
+  return <div className="app-frame workspace-app" data-space={globalPage?'community':spaceFor(pathname, scope)}>
     <a className="skip-link" href="#conteudo" onClick={skip}>Pular para o conteúdo</a>
     <aside className="app-rail">
       <header className={`app-header ${scrolled ? 'is-scrolled' : ''}`}>
         <Link className="brand-lockup" to="/app" aria-label="Clube do Livro, início"><span className="brand-mark">{monogram}</span><span className="rail-brand-name rail-only"><strong>Clube do Livro</strong><small>Leituras que aproximam</small></span></Link>
-        <label className="space-switch"><small>Você está em</small><select aria-label="Espaço de leitura" disabled={busy} value={scope} onChange={e => setScope(e.target.value)}><option value="personal">Meu espaço pessoal</option>{clubs.map(club => <option key={club.id} value={club.id}>{club.name}</option>)}</select></label>
+        <label className="space-switch"><small>{globalPage?'Espaço para suas leituras':'Você está em'}</small><select aria-label="Espaço de leitura" disabled={busy} value={scope} onChange={e => {setScope(e.target.value);if(globalPage)navigate('/app')}}><option value="personal">Meu espaço pessoal</option>{clubs.map(club => <option key={club.id} value={club.id}>{club.name}</option>)}</select></label>
         {!user && <Link className="header-chip mobile-only" to="/account">Entrar</Link>}
         <button ref={menuButtonRef} className="icon-button mobile-only" aria-label="Abrir menu" aria-expanded={menu} onClick={() => setMenu(true)}><Menu /></button>
       </header>
@@ -112,16 +122,16 @@ export function WorkspaceShell() {
     </aside>
 
     <main id="conteudo" ref={mainRef} tabIndex={-1} className="page-content">
-      {!personal&&<nav className="club-subnav" aria-label="Navegação do clube">{[['/app','Visão geral'],['/app/wall','Mural'],['/app/forum','Fórum'],['/app/library','Leituras'],['/app/calendar','Encontros'],['/app/gallery','Galeria'],[`/clubs/${scope}`,['owner','admin'].includes(snapshot?.role??'member')?'Membros e administração':'Membros']].map(([to,label])=><NavLink key={to} to={to} end={to==='/app'}>{label}</NavLink>)}{['owner','admin','moderator'].includes(snapshot?.role??'member')&&<NavLink to={`/app/moderation?club=${scope}`}>Moderação</NavLink>}</nav>}
+      {!personal&&!globalPage&&<nav className="club-subnav" aria-label="Navegação do clube">{[['/app','Visão geral'],['/app/wall','Mural'],['/app/forum','Fórum'],['/app/library','Leituras'],['/app/calendar','Encontros'],['/app/gallery','Galeria'],[`/clubs/${scope}`,['owner','admin'].includes(snapshot?.role??'member')?'Membros e administração':'Membros']].map(([to,label])=><NavLink key={to} to={to} end={to==='/app'}>{label}</NavLink>)}{['owner','admin','moderator'].includes(snapshot?.role??'member')&&<NavLink to={`/app/moderation?club=${scope}`}>Moderação</NavLink>}</nav>}
       {showVisitorNote && <div className="notice visitor-note"><span><strong>Entre, fique à vontade.</strong><span>Use sem cadastro. Seus dados ficam neste navegador; exporte um backup no Perfil. Para sincronizar ou participar de um clube, <Link to="/account">entre na sua conta</Link>.</span></span><button type="button" className="icon-button" aria-label="Dispensar aviso" onClick={dismiss}><X size={18} /></button></div>}
       {unread && <p className="toast-status" role="status">{unread}</p>}
       {error && <div role="alert" className="access-error">{error} {['AUTH_REQUIRED','EMAIL_NOT_VERIFIED'].includes(errorCode)?<button type="button" onClick={()=>void reenter()}>Entrar novamente</button>:<button type="button" onClick={() => void refresh()}>Recarregar</button>}</div>}
       {accountError&&<p role="alert">{accountError}</p>}
-      {loading ? <SkeletonPage label="Abrindo seu espaço…" /> : snapshot ? <div key={pathname} className="route-view"><Suspense fallback={<SkeletonPage label="Abrindo esta página…"/>}><Outlet /></Suspense></div> : !error ? <p role="status">Escolha seu espaço para começar.</p> : null}
+      {loading&&!globalPage ? <SkeletonPage label="Abrindo seu espaço…" /> : snapshot||globalPage ? <div key={pathname} className="route-view"><Suspense fallback={<SkeletonPage label="Abrindo esta página…"/>}><Outlet /></Suspense></div> : !error ? <p role="status">Escolha seu espaço para começar.</p> : null}
     </main>
 
     {menu && <div className="drawer-layer" onMouseDown={() => setMenu(false)}>
-      <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" onMouseDown={e => e.stopPropagation()}>
+      <aside ref={drawerRef} className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" onMouseDown={e => e.stopPropagation()}>
         <div className="drawer-header"><div><span className="eyebrow">Clube do Livro</span><h2 id="drawer-title">Seu universo de leitura</h2></div><button ref={closeRef} className="icon-button" aria-label="Fechar menu" onClick={() => setMenu(false)}><X /></button></div>
         <nav className="drawer-nav" aria-label="Menu do aplicativo">
           {[...extra, ...(user ? [] : [{ to: '/account', name: 'Entrar ou criar conta', icon: LogIn, hint: 'Sincronize e participe de clubes' }])].map(({ to, name, icon: Icon, hint }) => <NavLink key={to} to={to} onClick={() => setMenu(false)}><span className="nav-icon"><Icon size={20} aria-hidden="true" /></span><span>{name}{hint && <small>{hint}</small>}</span><ChevronRight size={18} aria-hidden="true" /></NavLink>)}

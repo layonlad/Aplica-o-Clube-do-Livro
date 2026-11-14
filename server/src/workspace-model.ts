@@ -7,15 +7,18 @@ const text = z.string().trim().min(1).max(5000)
 const date = z.iso.datetime({ offset: true })
 const photo = z.string().max(220000).regex(/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/)
 const annotationSchema = z.object({ id, start: z.number().int().min(0).max(600000), end: z.number().int().min(1).max(600000), quote: z.string().min(1).max(280), note: z.string().max(2000), at: date }).strict()
+const epubLocator=z.object({hash:z.string().regex(/^[0-9a-f]{64}$/),chapter:z.number().int().min(0).max(999),offset:z.number().int().min(0).max(3000000)}).strict()
+const epubAnnotation=z.object({id,hash:z.string().regex(/^[0-9a-f]{64}$/),chapter:z.number().int().min(0).max(999),start:z.number().int().min(0).max(3000000),end:z.number().int().min(1).max(3000000),quote:z.string().min(1).max(280),note:z.string().max(2000),at:date}).strict().refine(item=>item.end>item.start&&item.end-item.start===item.quote.length)
 export const preferencesSchema = z.object({
   shelves: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
   reader: z.object({ size: z.number().int().min(16).max(32), font: z.enum(['serif','sans']), theme: z.enum(['light','dark','sepia']), margin: z.enum(['compact','comfortable','wide']) }).default({size:20,font:'serif',theme:'light',margin:'comfortable'}),
 }).default({shelves:[],reader:{size:20,font:'serif',theme:'light',margin:'comfortable'}})
 export type ReadingPreferences = z.infer<typeof preferencesSchema>
 export const readingSchema = z.record(id, z.object({ percent: z.number().int().min(0).max(100), page: z.number().int().min(0).max(10000), bookmark: z.number().int().min(0).max(10000).nullable(), rating: z.number().int().min(0).max(5), finishedAt: date.nullable(),
+  epubLocator:epubLocator.optional(),epubBookmark:epubLocator.nullable().optional(),epubAnnotations:z.array(epubAnnotation).max(200).optional(),
   status:z.enum(['want','reading','finished','paused','abandoned']).optional(), favorite:z.boolean().optional(), shelf:z.string().max(60).optional(), locator:z.number().int().min(0).max(600000).optional(), revision:z.number().int().min(0).optional(),annotations:z.array(annotationSchema).max(200).optional(),
 }).strict()).refine(value => Object.keys(value).length <= 100)
-export const bookMetadataSchema = z.object({isbn:z.string().max(32).optional(),synopsis:z.string().max(3000).optional(),publisher:z.string().max(150).optional(),language:z.string().max(50).optional(),year:z.string().max(20).optional(),pages:z.number().int().min(1).max(100000).optional(),source:z.string().max(500).optional(),license:z.string().max(500).optional(),cover:z.string().regex(/^https:\/\/covers\.openlibrary\.org\/b\/id\/\d+-M\.jpg$/).optional()}).strict()
+export const bookMetadataSchema = z.object({ratingAverage:z.number().min(0).max(5).optional(),ratingCount:z.number().int().min(0).max(100000000).optional(),isbn:z.string().max(32).optional(),synopsis:z.string().max(3000).optional(),publisher:z.string().max(150).optional(),language:z.string().max(50).optional(),year:z.string().max(20).optional(),pages:z.number().int().min(1).max(100000).optional(),source:z.string().max(500).optional(),license:z.string().max(500).optional(),cover:z.string().regex(/^https:\/\/covers\.openlibrary\.org\/b\/id\/\d+-M\.jpg$/).optional()}).strict()
 export const chapterSchema = z.object({title:z.string().max(200),start:z.number().int().min(0).max(600000),end:z.number().int().min(1).max(600000)}).strict()
 export const workspaceSchema = z.object({
   books: z.array(z.object({ id, title, author: title, category: z.string().max(80), content: z.string().max(600000), createdBy: z.string(), createdAt: date, metadata:bookMetadataSchema.optional(), chapters:z.array(chapterSchema).max(1000).optional() })).max(100),
@@ -36,8 +39,10 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type:z.literal('book.metadata'),id,title,author:title,category:z.string().max(80),metadata:bookMetadataSchema }).strict(),
   z.object({ type: z.literal('book.remove'), id }).strict(),
   z.object({ type: z.literal('book.current'), id: id.nullable() }).strict(),
-  z.object({ type: z.literal('reading.update'), id, percent: z.number().int().min(0).max(100).optional(), page: z.number().int().min(0).max(10000).optional(), bookmark: z.number().int().min(0).max(10000).nullable().optional(), rating: z.number().int().min(0).max(5).optional(),status:z.enum(['want','reading','finished','paused','abandoned']).optional(),favorite:z.boolean().optional(),shelf:z.string().max(60).optional(),locator:z.number().int().min(0).max(600000).optional(),expectedRevision:z.number().int().min(0).optional() }).strict(),
+  z.object({ type: z.literal('reading.update'), id, percent: z.number().int().min(0).max(100).optional(), page: z.number().int().min(0).max(10000).optional(), bookmark: z.number().int().min(0).max(10000).nullable().optional(), rating: z.number().int().min(0).max(5).optional(),status:z.enum(['want','reading','finished','paused','abandoned']).optional(),favorite:z.boolean().optional(),shelf:z.string().max(60).optional(),epubLocator:epubLocator.optional(),epubBookmark:epubLocator.nullable().optional(),locator:z.number().int().min(0).max(600000).optional(),expectedRevision:z.number().int().min(0).optional() }).strict(),
   z.object({type:z.literal('reading.annotate'),id,start:z.number().int().min(0),end:z.number().int().min(1),quote:z.string().min(1).max(280),note:z.string().max(2000)}).strict(),
+  z.object({type:z.literal('reading.epub.annotate'),id,locator:epubLocator,start:z.number().int().min(0).max(3000000),end:z.number().int().min(1).max(3000000),quote:z.string().min(1).max(280),note:z.string().max(2000)}).strict(),
+  z.object({type:z.literal('reading.epub.annotation.remove'),id,annotationId:id}).strict(),
   z.object({type:z.literal('reading.annotation.remove'),id,annotationId:id}).strict(),
   z.object({type:z.literal('shelf.add'),name:z.string().trim().min(1).max(60)}).strict(),
   z.object({type:z.literal('shelf.remove'),name:z.string().trim().min(1).max(60)}).strict(),
@@ -88,6 +93,16 @@ export function applyWorkspaceAction(snapshot: WorkspaceSnapshot, action: Worksp
       next.finishedAt = next.percent === 100 ? previous.finishedAt ?? options.now : null
       reading[action.id] = next
       break
+    }
+    case 'reading.epub.annotate':{
+      if(!book)throw missing()
+      if(action.end<=action.start||action.end-action.start!==action.quote.length)throw new WorkspaceError('LIMIT','Selecione um trecho válido de até 280 caracteres.')
+      const entry=reading[action.id]??{percent:0,page:0,bookmark:null,rating:0,finishedAt:null}
+      if((entry.epubAnnotations?.length??0)>=200)throw new WorkspaceError('LIMIT','Este livro já tem 200 destaques EPUB.')
+      entry.epubAnnotations=[...entry.epubAnnotations??[],{id:options.id,hash:action.locator.hash,chapter:action.locator.chapter,start:action.start,end:action.end,quote:action.quote,note:action.note,at:options.now}];entry.revision=(entry.revision??0)+1;reading[action.id]=entry;break
+    }
+    case 'reading.epub.annotation.remove':{
+      if(!book)throw missing();const entry=reading[action.id];if(entry){entry.epubAnnotations=(entry.epubAnnotations??[]).filter(mark=>mark.id!==action.annotationId);entry.revision=(entry.revision??0)+1}break
     }
     case 'reading.annotate':{
       if(!book)throw missing()

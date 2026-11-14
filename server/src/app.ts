@@ -1,3 +1,5 @@
+import {ClubFiles} from './club-files.js'
+import {registerEventRoutes} from './event-routes.js'
 import {ModerationService} from './moderation-service.js'
 import {NotificationService} from './notification-service.js'
 import {registerPublicReads,registerPublicMutations} from './public-routes.js'
@@ -46,6 +48,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
   })
   const service = new ClubService(options.pool)
   const workspace = new WorkspaceService(options.pool)
+  const clubFiles=new ClubFiles(options.pool,options.storage)
   const files=new PrivateFiles(options.pool,options.storage)
   const management=new ClubManagement(options.pool)
   const notifications=new NotificationService(options.pool)
@@ -72,8 +75,9 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     catch { throw new HttpError(503, 'DATABASE_UNAVAILABLE', 'Banco temporariamente indisponível.') }
   })
   app.get('/v1/catalog',{config:{rateLimit:{max:30,timeWindow:'1 minute'}}},async request=>{
-    const {q}=z.object({q:z.string().trim().min(2).max(100)}).strict().parse(request.query)
-    return {items:await (options.catalogSearch??searchCatalog)(q)}
+    const input=z.object({q:z.string().trim().min(2).max(100).optional(),author:z.string().trim().min(2).max(100).optional(),genre:z.string().trim().min(2).max(80).optional()}).strict().refine(value=>!!value.q||!!value.author||!!value.genre).parse(request.query)
+    const query=[input.q,input.author?'author:'+JSON.stringify(input.author):'',input.genre?'subject:'+JSON.stringify(input.genre):''].filter(Boolean).join(' ')
+    return {items:await (options.catalogSearch??searchCatalog)(query)}
   })
   app.get('/v1/discover/clubs',request=>management.discover(pageInput.extend({q:z.string().trim().min(2).max(100).optional()}).strict().parse(request.query)))
   const authenticate=async (request:import('fastify').FastifyRequest) => {
@@ -94,8 +98,9 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     api.post('/me/notification-preferences',request=>notifications.setPreferences(request.user,z.object({interactions:z.boolean(),mentions:z.boolean(),clubs:z.boolean(),events:z.boolean(),readings:z.boolean()}).strict().parse(request.body)))
     await registerCommunityRoutes(api,options.pool,options.storage)
     await registerForumRoutes(api,options.pool)
+    await registerEventRoutes(api,options.pool)
     api.get('/clubs/:clubId/settings',request=>management.settings(request.user,clubParams.parse(request.params).clubId))
-    api.post('/clubs/:clubId/settings',request=>management.updateSettings(request.user,clubParams.parse(request.params).clubId,z.object({name:z.string().trim().min(2).max(80),description:z.string().max(2000),visibility:z.enum(['private','discoverable','public']),accent:z.string().regex(/^#[0-9a-fA-F]{6}$/),version:z.number().int().min(0)}).strict().parse(request.body)))
+    api.post('/clubs/:clubId/settings',request=>management.updateSettings(request.user,clubParams.parse(request.params).clubId,z.object({name:z.string().trim().min(2).max(80),description:z.string().max(2000),visibility:z.enum(['private','discoverable','public']),accent:z.string().regex(/^#[0-9a-fA-F]{6}$/),coverMediaId:z.uuid().nullable().optional(),coverIsPublic:z.boolean().optional(),version:z.number().int().min(0)}).strict().parse(request.body)))
     api.post('/clubs/:clubId/members/:userId/role',async(request,reply)=>{const {clubId,userId}=clubParams.extend({userId:z.uuid()}).parse(request.params);await management.setRole(request.user,clubId,userId,z.object({role:z.enum(['admin','moderator','member'])}).strict().parse(request.body).role);return reply.code(204).send()})
     api.post('/clubs/:clubId/leave',async(request,reply)=>{await management.leave(request.user,clubParams.parse(request.params).clubId);return reply.code(204).send()})
     api.post('/clubs/:clubId/join-requests',{config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(request,reply)=>reply.code(201).send(await management.requestJoin(request.user,clubParams.parse(request.params).clubId,z.object({message:z.string().trim().max(1000).default('')}).strict().parse(request.body).message)))
@@ -104,6 +109,14 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     api.get('/me', async request => ({...await service.session(request.user),...await new ModerationService(options.pool,options.moderatorUids).permissions(request.user)}))
     api.post('/me/invitations/:id/accept',{config:{rateLimit:{max:10,timeWindow:'1 minute'}}},request=>service.acceptInvite(request.user,z.object({id:z.uuid()}).parse(request.params).id,true))
     const fileParams=z.object({bookId:z.uuid()})
+    api.get('/clubs/:clubId/book-files/:bookId',request=>{const {clubId,bookId}=clubParams.extend({bookId:z.uuid()}).parse(request.params);return clubFiles.list(request.user,clubId,bookId)})
+    api.post('/clubs/:clubId/book-files/:bookId',{bodyLimit:15000000,config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(request,reply)=>{
+      const {clubId,bookId}=clubParams.extend({bookId:z.uuid()}).parse(request.params)
+      const input=z.object({filename:z.string().min(1).max(150).regex(/^[^\p{C}]+\.epub$/iu),source:z.string().trim().min(3).max(500),license:z.string().trim().min(5).max(1000),authorized:z.literal(true),data:z.string().min(4).max(13333336).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/)}).strict().parse(request.body)
+      return reply.code(201).send(await clubFiles.upload(request.user,clubId,bookId,input,Buffer.from(input.data,'base64')))
+    })
+    api.get('/club-files/:id/content',async(request,reply)=>{const value=await clubFiles.download(request.user,z.object({id:z.uuid()}).parse(request.params).id);return reply.type('application/epub+zip').header('Content-Disposition',`attachment; filename="book.epub"; filename*=UTF-8''${encodeURIComponent(value.filename)}`).send(Buffer.from(value.bytes))})
+    api.delete('/club-files/:id',async(request,reply)=>{const value=await clubFiles.remove(request.user,z.object({id:z.uuid()}).parse(request.params).id);return reply.code(value.purged?200:202).send(value)})
     api.get('/me/book-files/:bookId',request=>files.list(request.user.id,fileParams.parse(request.params).bookId))
     api.post('/me/book-files/:bookId',{bodyLimit:15000000,config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(request,reply)=>{
       const input=z.object({filename:z.string().min(1).max(150).regex(/^[^\p{C}]+\.epub$/iu),data:z.string().min(4).max(13333336).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/)}).strict().parse(request.body)

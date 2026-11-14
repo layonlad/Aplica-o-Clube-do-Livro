@@ -49,10 +49,10 @@ export async function importBook(file:File):Promise<ImportedBook> {
     const text=(blocks.length?blocks.map(node=>node.textContent?.trim()).filter(Boolean).join('\n\n'):doc.documentElement.textContent??'').trim()
     if(text){if(chapters.length)offset+=2;outline.push({title:doc.querySelector('h1,h2,h3')?.textContent?.trim().slice(0,200)||`Capítulo ${outline.length+1}`,start:offset,end:offset+text.length});chapters.push(text);offset+=text.length}
   }
-  const content=chapters.filter(Boolean).join('\n\n')
-  if(!content||content.length>600000)throw Error('O EPUB deve conter texto legível de até 600 mil caracteres.')
+  const fullContent=chapters.filter(Boolean).join('\n\n'),content=fullContent.slice(0,600000)
+  if(!content)throw Error('O EPUB deve conter texto legível.')
   const meta=(name:string)=>opf.getElementsByTagNameNS('*',name)[0]?.textContent?.trim()
-  return {title:meta('title')||file.name.replace(/\.epub$/i,''),author:meta('creator')||'Autoria não informada',content,chapters:outline,metadata:{synopsis:meta('description')?.slice(0,3000),publisher:meta('publisher')?.slice(0,150),language:meta('language')?.slice(0,50),year:meta('date')?.slice(0,20),isbn:meta('identifier')?.slice(0,32),license:meta('rights')?.slice(0,500)}}
+  return {title:meta('title')||file.name.replace(/\.epub$/i,''),author:meta('creator')||'Autoria não informada',content,chapters:outline.filter(item=>item.start<600000).map(item=>({...item,end:Math.min(item.end,600000)})),metadata:{source:fullContent.length>600000?'EPUB importado. Texto simplificado limitado a 600 mil caracteres; abra o EPUB original para ler a edição completa.':'EPUB importado',synopsis:meta('description')?.slice(0,3000),publisher:meta('publisher')?.slice(0,150),language:meta('language')?.slice(0,50),year:meta('date')?.slice(0,20),isbn:Array.from(opf.getElementsByTagNameNS('*','identifier')).map(node=>(node.textContent??'').trim().replace(/^urn:isbn:/i,'').replace(/[-\s]/g,'')).find(value=>/^(?:[0-9]{9}[0-9Xx]|[0-9]{13})$/.test(value)),license:meta('rights')?.slice(0,500)}}
 }
 
 export async function importPhoto(file:File):Promise<string> {

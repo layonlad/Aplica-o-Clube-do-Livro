@@ -14,7 +14,7 @@ export async function apiRequest<T>(user: User, path: string, method = 'GET', bo
     credentials: 'omit',
     referrerPolicy: 'no-referrer',
     // Allow the free API host to wake up after an idle period; never retry mutations.
-    signal: AbortSignal.timeout(75000),
+    signal: AbortSignal.timeout(method==='GET'?75000:180000),
   })
   if (!response.ok) {
     const payload = await response.json().catch(() => null) as ApiErrorBody | null

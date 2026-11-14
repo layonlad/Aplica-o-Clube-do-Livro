@@ -1,11 +1,112 @@
-import {z} from 'zod'
-import {pageInput} from './pagination.js'
-export const postKinds=['reflection','review','quote','question','poll','meeting','recommendation','achievement','announcement'] as const
-export const postInput=z.object({kind:z.enum(postKinds),body:z.string().trim().max(5000),bookTitle:z.string().trim().max(150).default(''),bookAuthor:z.string().trim().max(150).default(''),quote:z.string().trim().max(280).default(''),source:z.string().trim().max(500).default(''),mediaIds:z.array(z.uuid()).max(4).default([]).refine(ids=>new Set(ids).size===ids.length),options:z.array(z.string().trim().min(1).max(100)).max(6).default([])}).strict().refine(data=>data.body.length>0||data.quote.length>0,'Escreva uma mensagem ou citação.')
-export const postQuery=pageInput.extend({q:z.string().trim().min(2).max(100).optional(),kind:z.enum(postKinds).optional(),from:z.iso.datetime().optional(),until:z.iso.datetime().optional()}).strict()
-export interface PostMedia {id:string;kind:'image'|'video';width:number;height:number;duration:number|null}
-export interface PostDto {id:string;kind:typeof postKinds[number];body:string;bookTitle:string;bookAuthor:string;quote:string;source:string;version:number;createdAt:string;updatedAt:string;author:{id:string;name:string;avatarId?:string|null};sharedPostId?:string|null;likes:number;comments:number;liked:boolean;saved:boolean;media:PostMedia[];options:{id:string;label:string;votes:number;selected:boolean}[];canEdit:boolean;canDelete:boolean}
-export interface CommentDto {id:string;parentId:string|null;body:string;version:number;createdAt:string;deleted:boolean;author:{id:string;name:string}|null;likes:number;liked:boolean;canDelete:boolean}
-export interface Page<T>{items:T[];nextCursor:string|null}
-export interface AlbumDto {id:string;title:string;description:string;eventId:string|null;eventDate:string;allowMemberUpload:boolean;allowDownload:boolean;version:number;createdAt:string;photoCount:number;canManage:boolean;canUpload:boolean}
-export interface AlbumPhoto extends PostMedia {caption:string;postId:string;addedBy:{id:string;name:string};createdAt:string;likes:number;liked:boolean;canRemove:boolean;tags:{id:string;name:string}[];myPendingTag:boolean}
+import { z } from 'zod'
+import { pageInput } from './pagination.js'
+export const postKinds = [
+  'reflection',
+  'review',
+  'quote',
+  'question',
+  'poll',
+  'meeting',
+  'recommendation',
+  'achievement',
+  'announcement',
+] as const
+export const postInput = z
+  .object({
+    kind: z.enum(postKinds),
+    body: z.string().trim().max(5000),
+    bookTitle: z.string().trim().max(150).default(''),
+    bookAuthor: z.string().trim().max(150).default(''),
+    quote: z.string().trim().max(280).default(''),
+    source: z.string().trim().max(500).default(''),
+    mediaIds: z
+      .array(z.uuid())
+      .max(4)
+      .default([])
+      .refine((ids) => new Set(ids).size === ids.length),
+    options: z.array(z.string().trim().min(1).max(100)).max(6).default([]),
+  })
+  .strict()
+  .refine(
+    (data) => data.body.length > 0 || data.quote.length > 0,
+    'Escreva uma mensagem ou citação.',
+  )
+export const postQuery = pageInput
+  .extend({
+    q: z.string().trim().min(2).max(100).optional(),
+    kind: z.enum(postKinds).optional(),
+    from: z.iso.datetime().optional(),
+    until: z.iso.datetime().optional(),
+  })
+  .strict()
+export interface PostMedia {
+  id: string
+  kind: 'image' | 'video'
+  width: number
+  height: number
+  duration: number | null
+}
+export interface PostDto {
+  id: string
+  kind: (typeof postKinds)[number]
+  body: string
+  bookTitle: string
+  bookAuthor: string
+  quote: string
+  source: string
+  version: number
+  createdAt: string
+  updatedAt: string
+  author: { id: string; name: string; avatarId?: string | null }
+  sharedPostId?: string | null
+  likes: number
+  comments: number
+  liked: boolean
+  saved: boolean
+  media: PostMedia[]
+  options: { id: string; label: string; votes: number; selected: boolean }[]
+  canEdit: boolean
+  canDelete: boolean
+}
+export interface CommentDto {
+  id: string
+  parentId: string | null
+  body: string
+  version: number
+  createdAt: string
+  deleted: boolean
+  author: { id: string; name: string } | null
+  likes: number
+  liked: boolean
+  canDelete: boolean
+}
+export interface Page<T> {
+  items: T[]
+  nextCursor: string | null
+}
+export interface AlbumDto {
+  id: string
+  title: string
+  description: string
+  eventId: string | null
+  eventDate: string
+  allowMemberUpload: boolean
+  allowDownload: boolean
+  allowPublicShare?: boolean
+  version: number
+  createdAt: string
+  photoCount: number
+  canManage: boolean
+  canUpload: boolean
+}
+export interface AlbumPhoto extends PostMedia {
+  caption: string
+  postId: string
+  addedBy: { id: string; name: string }
+  createdAt: string
+  likes: number
+  liked: boolean
+  canRemove: boolean
+  tags: { id: string; name: string }[]
+  myPendingTag: boolean
+}

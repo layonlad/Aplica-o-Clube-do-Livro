@@ -1,3 +1,4 @@
+import {EventService} from './event-service.js'
 import {ForumService} from './forum-service.js'
 import { randomInt, randomUUID } from 'node:crypto'
 import type { Pool, PoolClient } from 'pg'
@@ -25,12 +26,14 @@ export class WorkspaceService {
   }
   private async present(client:PoolClient,value:WorkspaceSnapshot,user:UserProfile,clubId?:string,legacyForum=true):Promise<WorkspaceSnapshot>{
     if(!clubId)return value
+    const events=await new EventService(this.pool).legacyEvents(client,clubId,legacyForum)
     const topics=await this.forum.legacyTopics(client,clubId,user.id,legacyForum)
     const {rows:[count]}=await client.query('SELECT count(*)::int AS count FROM forum_topics WHERE club_id=$1 AND deleted_at IS NULL',[clubId])
-    return {...value,state:{...value.state,topics},forumCount:count.count}
+    return {...value,state:{...value.state,topics,events},forumCount:count.count}
   }
   get(user: UserProfile, clubId?: string,legacyForum=true):Promise<WorkspaceSnapshot> { return transaction(this.pool, async client => this.present(client,await this.load(client,user,clubId),user,clubId,legacyForum)) }
   async act(user: UserProfile, action: WorkspaceAction, version: number, clubId?: string,legacyForum=true):Promise<WorkspaceSnapshot> {
+    if(clubId&&action.type.startsWith('event.')){await new EventService(this.pool).legacyAction(user,clubId,action,version);return this.get(user,clubId,legacyForum)}
     if(clubId&&(action.type==='topic.add'||action.type==='topic.reply'||action.type==='topic.like'||action.type==='topic.remove')){await this.forum.legacyAction(user,clubId,action,version);return this.get(user,clubId,legacyForum)}
     return transaction(this.pool, async client => {
       const current = await this.load(client,user,clubId)
@@ -43,11 +46,14 @@ export class WorkspaceService {
         if (isPersonalAction(action)) await client.query('UPDATE club_reading_states SET reading=$3,preferences=$4,updated_at=now() WHERE club_id=$1 AND user_id=$2',[clubId,user.id,next.reading,next.preferences])
         else {
           await client.query('UPDATE club_workspaces SET state=$2,version=$3,updated_at=now() WHERE club_id=$1',[clubId,next.state,next.version])
+          if(action.type==='book.remove')await client.query("UPDATE club_book_files SET purge_after=CASE WHEN state='pending' THEN now()+interval '30 minutes' ELSE purge_after END,state='deleted',deleted_at=now() WHERE club_id=$1 AND book_id=$2 AND state IN ('pending','active')",[clubId,action.id])
           await client.query('INSERT INTO audit_logs(club_id,actor_user_id,action,entity_id) VALUES($1,$2,$3,$4)',[clubId,user.id,action.type,entityId])
+          const notifiedBook=action.type==='book.add'?entityId:((action.type==='book.current'||action.type==='draw')?next.state.currentBookId:null)
+          if(notifiedBook)await client.query(`SELECT emit_notification(m.user_id,$2,m.club_id,$4,'book',$3,NULL,'readings',$5) FROM club_memberships m WHERE m.club_id=$1 AND m.status='active'`,[clubId,user.id,notifiedBook,action.type==='book.add'?'book':'reading',action.type+':'+notifiedBook+':'+next.version])
         }
       } else {
         await client.query('UPDATE personal_workspaces SET state=$2,reading=$3,version=$4,preferences=$5,updated_at=now() WHERE user_id=$1',[user.id,next.state,next.reading,next.version,next.preferences])
-        if(action.type==='book.remove'||action.type==='workspace.import')await client.query("UPDATE private_book_files SET state='deleted',deleted_at=now() WHERE owner_user_id=$1 AND state IN ('active','pending') AND NOT(book_id=ANY($2::uuid[]))",[user.id,next.state.books.map(book=>book.id)])
+        if(action.type==='book.remove'||action.type==='workspace.import')await client.query("UPDATE private_book_files SET purge_after=CASE WHEN state='pending' THEN now()+interval '30 minutes' ELSE purge_after END,state='deleted',deleted_at=now() WHERE owner_user_id=$1 AND state IN ('active','pending') AND NOT(book_id=ANY($2::uuid[]))",[user.id,next.state.books.map(book=>book.id)])
       }
       return this.present(client,next,user,clubId,legacyForum)
     })
