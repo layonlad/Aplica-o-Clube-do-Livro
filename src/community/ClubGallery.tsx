@@ -1,7 +1,19 @@
+import { Sheet } from '../components/Sheet'
+import { ShareAction } from '../components/ShareAction'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import type { ClubEvent } from '../clubs/ClubCalendar'
-import { Camera, Heart } from 'lucide-react'
+import {
+  Camera,
+  Heart,
+  MessageCircle,
+  Download,
+  MoreHorizontal,
+  UserRoundPlus,
+  Image,
+  Globe,
+  Check,
+} from 'lucide-react'
 import type {
   AlbumDto,
   AlbumPhoto,
@@ -262,26 +274,31 @@ function GalleryRoom({ clubId }: { clubId: string }) {
       )}
       <div className="album-list">
         {page.items.map((item) => (
-          <button
-            key={item.id}
-            className="album-entry"
-            onClick={() => setParams({ album: item.id })}
-          >
-            <span className="album-illustration" aria-hidden="true">
-              <Camera size={30} />
-              <span>
-                {new Date(item.eventDate + 'T12:00:00').toLocaleDateString('pt-BR', {
-                  day: '2-digit',
-                  month: 'short',
-                })}
+          <Link key={item.id} className="album-entry" to={`/app/gallery?album=${item.id}`}>
+            {(item.covers?.length ?? 0) > 0 ? (
+              <span className="album-cover-stack" aria-hidden="true">
+                {[...item.covers!].reverse().map((cover, index) => (
+                  <span
+                    className="album-cover-photo"
+                    key={cover.id}
+                    style={{ '--card-index': index } as import('react').CSSProperties}
+                  >
+                    <PrivateMedia previewOnly media={cover} alt="" />
+                  </span>
+                ))}
               </span>
-            </span>
+            ) : (
+              <span className="album-illustration" aria-hidden="true">
+                <Camera size={26} />
+                <small>Sem fotos</small>
+              </span>
+            )}
             <span>
               <strong>{item.title}</strong>
               <span>{item.description}</span>
               <small>{item.photoCount} registro(s) · Abrir álbum →</small>
             </span>
-          </button>
+          </Link>
         ))}
       </div>
       {!busy && !error && !page.items.length && (
@@ -363,6 +380,19 @@ function AlbumRoom({
         path + `/photos?cursor=${encodeURIComponent(page.nextCursor!)}`,
       )
       setPage((value) => ({ items: [...value.items, ...next.items], nextCursor: next.nextCursor }))
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function chooseCover(mediaId: string) {
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest(user!, path + '/cover', 'POST', { mediaId, version: album.version })
+      setAlbum(await apiRequest<AlbumDto>(user!, path))
+      setPolicyMessage('Foto escolhida para a frente da capa do álbum.')
     } catch (err) {
       setError(readableError(err))
     } finally {
@@ -466,18 +496,23 @@ function AlbumRoom({
             clubId={clubId}
             album={album}
             photo={photo}
+            onCover={chooseCover}
+            coverBusy={busy}
             onChange={(value) =>
               setPage((page) => ({
                 ...page,
                 items: page.items.map((item) => (item.id === value.id ? value : item)),
               }))
             }
-            onRemoved={() =>
+            onRemoved={() => {
               setPage((page) => ({
                 ...page,
                 items: page.items.filter((item) => item.id !== photo.id),
               }))
-            }
+              void apiRequest<AlbumDto>(user!, path)
+                .then(setAlbum)
+                .catch((err) => setError(readableError(err)))
+            }}
           />
         ))}
       </div>
@@ -505,11 +540,15 @@ function PhotoCard({
   photo,
   onChange,
   onRemoved,
+  onCover,
+  coverBusy,
 }: {
   clubId: string
   album: AlbumDto
   photo: AlbumPhoto
   onChange: (photo: AlbumPhoto) => void
+  onCover: (mediaId: string) => Promise<void>
+  coverBusy: boolean
   onRemoved: () => void
 }) {
   const { user } = useAuth(),
@@ -631,7 +670,26 @@ function PhotoCard({
   }
   return (
     <article className="gallery-photo">
-      <PrivateMedia media={photo} alt={photo.caption || album.title} />
+      <div className="gallery-photo-frame">
+        <PrivateMedia media={photo} alt={photo.caption || album.title} />
+        {album.canManage && photo.kind === 'image' && (
+          <button
+            type="button"
+            className="social-action gallery-cover-pick"
+            disabled={busy || coverBusy || album.coverMediaId === photo.id}
+            aria-label={
+              album.coverMediaId === photo.id
+                ? 'Foto principal da capa'
+                : 'Usar foto na frente da capa'
+            }
+            aria-pressed={album.coverMediaId === photo.id}
+            onClick={() => void onCover(photo.id)}
+          >
+            {album.coverMediaId === photo.id ? <Check size={20} /> : <Image size={20} />}
+            <span>Capa</span>
+          </button>
+        )}
+      </div>
       <div className="gallery-photo-content">
         <p className="preserve-text">{photo.caption}</p>
         <UserIdentity
@@ -658,29 +716,64 @@ function PhotoCard({
             Remover minha identificação
           </Button>
         )}
-        <div className="workspace-actions">
-          <Button
-            variant="ghost"
-            disabled={busy}
+        <div className="social-actions photo-actions">
+          <button
+            type="button"
+            className={`social-action ${photo.liked ? 'is-liked' : ''}`}
+            title="Curtir"
+            aria-label="Curtir registro"
             aria-pressed={photo.liked}
+            disabled={busy}
             onClick={() => void like()}
           >
-            <Heart size={18} fill={photo.liked ? 'currentColor' : 'none'} />
-            {photo.likes}
-          </Button>
-          <Button variant="ghost" onClick={() => setComments(!comments)}>
-            Conversar sobre este registro
-          </Button>
-          <Button variant="ghost" onClick={() => void openTags()}>
-            Identificar participante
-          </Button>
-          {album.allowDownload && (
-            <Button variant="ghost" disabled={busy} onClick={() => void download()}>
-              Baixar registro
-            </Button>
+            <Heart size={22} fill={photo.liked ? 'currentColor' : 'none'} />
+            <span>{photo.likes}</span>
+          </button>
+          <button
+            type="button"
+            className="social-action"
+            title="Comentários"
+            aria-label="Comentários do registro"
+            aria-expanded={comments}
+            onClick={() => setComments(true)}
+          >
+            <MessageCircle size={22} />
+            <span>{photo.comments ?? 0}</span>
+          </button>
+          <ShareAction privateContent path={`/space/${clubId}?post=${photo.postId}`} />
+          {(album.allowDownload || photo.addedBy.id === snapshot?.actorId) && (
+            <button
+              type="button"
+              className="social-action"
+              title="Baixar registro"
+              aria-label="Baixar registro"
+              disabled={busy}
+              onClick={() => void download()}
+            >
+              <Download size={22} />
+            </button>
           )}
+          <details className="social-more">
+            <summary className="social-action" aria-label="Mais opções do registro">
+              <MoreHorizontal size={22} />
+            </summary>
+            <div className="social-menu">
+              <Button variant="ghost" onClick={() => void openTags()}>
+                <UserRoundPlus size={18} />
+                Identificar participante
+              </Button>
+
+              {album.allowPublicShare && <PublicPhotoShare path={path} />}
+              {photo.canRemove && (
+                <ConfirmAction
+                  label="Retirar registro do álbum"
+                  disabled={busy}
+                  onConfirm={remove}
+                />
+              )}
+            </div>
+          </details>
         </div>
-        {album.allowPublicShare && <PublicPhotoShare path={path} />}{' '}
         {tagging && (
           <form className="workspace-form" onSubmit={tag}>
             <label>
@@ -708,10 +801,14 @@ function PhotoCard({
           </form>
         )}
         {error && <p role="alert">{error}</p>}
-        {photo.canRemove && (
-          <ConfirmAction label="Retirar registro do álbum" disabled={busy} onConfirm={remove} />
-        )}{' '}
-        {comments && <PostComments clubId={clubId} postId={photo.postId} />}
+        {comments && (
+          <PostComments
+            clubId={clubId}
+            postId={photo.postId}
+            onClose={() => setComments(false)}
+            onCountChanged={() => void refresh()}
+          />
+        )}
       </div>
     </article>
   )
@@ -728,53 +825,55 @@ function PublicPhotoShare({ path }: { path: string }) {
   return (
     <div>
       <Button variant="secondary" onClick={() => setOpen(!open)}>
-        Compartilhar este registro na comunidade
+        <Globe size={18} /> Publicar cópia na comunidade
       </Button>
       {open && (
-        <form
-          className="workspace-form"
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (!user || !authorized) return
-            setBusy(true)
-            setError('')
-            void apiRequest<{ id: string }>(user, path + '/publish-public', 'POST', {
-              body,
-              authorized,
-            })
-              .then((value) => {
-                setPostId(value.id)
-                setOpen(false)
+        <Sheet title="Publicar cópia na comunidade" onClose={() => setOpen(false)}>
+          <form
+            className="workspace-form sheet-body"
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (!user || !authorized) return
+              setBusy(true)
+              setError('')
+              void apiRequest<{ id: string }>(user, path + '/publish-public', 'POST', {
+                body,
+                authorized,
               })
-              .catch((err) => setError(readableError(err)))
-              .finally(() => setBusy(false))
-          }}
-        >
-          <p>
-            Uma cópia desta foto ou vídeo ficará pública. O álbum continua privado e as
-            identificações de participantes não serão copiadas.
-          </p>
-          <label>
-            Legenda da publicação pública
-            <textarea
-              required
-              maxLength={5000}
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-            />
-          </label>
-          <label className="workspace-check">
-            <input
-              required
-              type="checkbox"
-              checked={authorized}
-              onChange={(event) => setAuthorized(event.target.checked)}
-            />
-            Confirmo que posso publicar este registro e que tenho os direitos e consentimentos
-            necessários.
-          </label>
-          <Button disabled={busy || !authorized}>Confirmar publicação pública do registro</Button>
-        </form>
+                .then((value) => {
+                  setPostId(value.id)
+                  setOpen(false)
+                })
+                .catch((err) => setError(readableError(err)))
+                .finally(() => setBusy(false))
+            }}
+          >
+            <p>
+              Uma cópia desta foto ou vídeo ficará pública. O álbum continua privado e as
+              identificações de participantes não serão copiadas.
+            </p>
+            <label>
+              Legenda da publicação pública
+              <textarea
+                required
+                maxLength={5000}
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+              />
+            </label>
+            <label className="workspace-check">
+              <input
+                required
+                type="checkbox"
+                checked={authorized}
+                onChange={(event) => setAuthorized(event.target.checked)}
+              />
+              Confirmo que posso publicar este registro e que tenho os direitos e consentimentos
+              necessários.
+            </label>
+            <Button disabled={busy || !authorized}>Confirmar publicação pública do registro</Button>
+          </form>
+        </Sheet>
       )}
       {error && <p role="alert">{error}</p>}
       {postId && (

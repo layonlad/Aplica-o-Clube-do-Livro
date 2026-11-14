@@ -22,6 +22,8 @@ export interface AlbumInput {
 const missing = () => new HttpError(404, 'ALBUM_NOT_FOUND', 'Este álbum não está disponível.')
 const denied = () =>
   new HttpError(403, 'ACCESS_DENIED', 'Você não tem permissão para alterar este álbum.')
+const coverColumns = `CASE WHEN EXISTS(SELECT 1 FROM album_media am JOIN media_objects m ON m.id=am.media_id WHERE am.album_id=a.id AND m.id=a.cover_media_id AND m.kind='image' AND m.state='active') THEN a.cover_media_id ELSE NULL END AS "coverMediaId",
+ COALESCE((SELECT jsonb_agg(jsonb_build_object('id',images.id,'kind',images.kind,'width',images.width,'height',images.height,'duration',images.duration) ORDER BY images.front DESC,images.added DESC,images.id DESC) FROM (SELECT m.id,m.kind,m.width,m.height,m.duration,(m.id IS NOT DISTINCT FROM a.cover_media_id) AS front,am.created_at AS added FROM album_media am JOIN media_objects m ON m.id=am.media_id WHERE am.album_id=a.id AND m.kind='image' AND m.state='active' ORDER BY front DESC,am.created_at DESC,m.id DESC LIMIT 3) images),'[]') AS covers`
 export class AlbumService {
   constructor(
     private pool: Pool,
@@ -60,7 +62,7 @@ export class AlbumService {
       const club = await this.access(client, user, clubId, true),
         cursor = decodeCursor(input.cursor)
       const { rows } = await client.query(
-        `SELECT a.id,a.title,a.description,a.event_id AS "eventId",a.event_date::text AS "eventDate",a.allow_member_upload AS "allowMemberUpload",a.allow_download AS "allowDownload",a.allow_public_share AS "allowPublicShare",a.version,a.created_at AS "createdAt",a.created_at::text AS "sortTime",
+        `SELECT ${coverColumns},a.id,a.title,a.description,a.event_id AS "eventId",a.event_date::text AS "eventDate",a.allow_member_upload AS "allowMemberUpload",a.allow_download AS "allowDownload",a.allow_public_share AS "allowPublicShare",a.version,a.created_at AS "createdAt",a.created_at::text AS "sortTime",
       (SELECT count(*)::int FROM album_media am JOIN media_objects m ON m.id=am.media_id WHERE am.album_id=a.id AND m.state='active') AS "photoCount",$5::boolean AS "canManage",(a.allow_member_upload OR $5::boolean) AS "canUpload"
       FROM club_albums a WHERE a.club_id=$1 AND a.deleted_at IS NULL AND ($6::uuid IS NULL OR a.event_id=$6) AND ($2::timestamptz IS NULL OR (a.created_at,a.id)<($2,$3::uuid)) ORDER BY a.created_at DESC,a.id DESC LIMIT $4`,
         [
@@ -81,7 +83,7 @@ export class AlbumService {
       const {
         rows: [album],
       } = await client.query(
-        `SELECT a.id,a.title,a.description,a.event_id AS "eventId",a.event_date::text AS "eventDate",a.allow_member_upload AS "allowMemberUpload",a.allow_download AS "allowDownload",a.allow_public_share AS "allowPublicShare",a.version,a.created_at AS "createdAt",
+        `SELECT ${coverColumns},a.id,a.title,a.description,a.event_id AS "eventId",a.event_date::text AS "eventDate",a.allow_member_upload AS "allowMemberUpload",a.allow_download AS "allowDownload",a.allow_public_share AS "allowPublicShare",a.version,a.created_at AS "createdAt",
       (SELECT count(*)::int FROM album_media am JOIN media_objects m ON m.id=am.media_id WHERE am.album_id=a.id AND m.state='active') AS "photoCount",$3::boolean AS "canManage",(a.allow_member_upload OR $3::boolean) AS "canUpload" FROM club_albums a WHERE a.club_id=$1 AND a.id=$2 AND a.deleted_at IS NULL`,
         [clubId, id, can(club.role, 'manageEvents')],
       )
@@ -153,6 +155,39 @@ export class AlbumService {
       return { updated: true }
     })
   }
+  setCover(user: UserProfile, clubId: string, id: string, mediaId: string | null, version: number) {
+    return transaction(this.pool, async (client) => {
+      const club = await this.access(client, user, clubId)
+      if (!can(club.role, 'manageEvents')) throw denied()
+      const album = await this.album(client, clubId, id)
+      if (album.version !== version)
+        throw new HttpError(
+          409,
+          'ALBUM_CHANGED',
+          'O álbum mudou. Atualize antes de escolher a capa.',
+        )
+      // Club lock serializes album link changes; lock media without requesting UPDATE on album_media.
+      if (
+        mediaId &&
+        !(
+          await client.query(
+            "SELECT 1 FROM album_media am JOIN media_objects m ON m.id=am.media_id WHERE am.album_id=$1 AND am.media_id=$2 AND m.kind='image' AND m.state='active' FOR SHARE OF m",
+            [id, mediaId],
+          )
+        ).rowCount
+      )
+        throw new HttpError(400, 'INVALID_ALBUM_COVER', 'Escolha uma foto disponível neste álbum.')
+      await client.query('UPDATE club_albums SET cover_media_id=$2,version=version+1 WHERE id=$1', [
+        id,
+        mediaId,
+      ])
+      await client.query(
+        "INSERT INTO audit_logs(club_id,actor_user_id,action,entity_id) VALUES($1,$2,'album.cover-changed',$3)",
+        [clubId, user.id, id],
+      )
+      return { updated: true }
+    })
+  }
   async publishPublic(
     user: UserProfile,
     clubId: string,
@@ -161,13 +196,14 @@ export class AlbumService {
     body: string,
   ) {
     const mediaService = new MediaService(this.pool, this.storage)
+    // Club/album/media locks preserve authorization without requiring UPDATE on association rows.
     const checkClient = async (client: PoolClient) => {
       await this.access(client, user, clubId, true)
       await requirePublicProfile(client, user.id)
       const {
         rows: [row],
       } = await client.query(
-        "SELECT m.kind FROM album_media am JOIN club_albums a ON a.id=am.album_id JOIN media_objects m ON m.id=am.media_id WHERE a.id=$1 AND a.club_id=$2 AND am.media_id=$3 AND a.deleted_at IS NULL AND a.allow_public_share AND m.state='active' FOR SHARE OF a,m,am",
+        "SELECT m.kind FROM album_media am JOIN club_albums a ON a.id=am.album_id JOIN media_objects m ON m.id=am.media_id WHERE a.id=$1 AND a.club_id=$2 AND am.media_id=$3 AND a.deleted_at IS NULL AND a.allow_public_share AND m.state='active' FOR SHARE OF a,m",
         [albumId, clubId, mediaId],
       )
       if (!row)
@@ -217,7 +253,7 @@ export class AlbumService {
       const cursor = decodeCursor(input.cursor)
       const { rows } = await client.query(
         `SELECT m.id,m.kind,m.width,m.height,m.duration,am.caption,am.post_id AS "postId",jsonb_build_object('id',u.id,'name',u.name,'avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) AS "addedBy",am.created_at AS "createdAt",am.created_at::text AS "sortTime",
-      (am.added_by=$2 OR $6::boolean) AS "canRemove",(SELECT count(*)::int FROM post_likes l WHERE l.post_id=am.post_id) AS likes,EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id=am.post_id AND l.user_id=$2) AS liked,
+      (SELECT count(*)::int FROM post_comments pc WHERE pc.post_id=am.post_id AND pc.deleted_at IS NULL) AS comments,(am.added_by=$2 OR $6::boolean) AS "canRemove",(SELECT count(*)::int FROM post_likes l WHERE l.post_id=am.post_id) AS likes,EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id=am.post_id AND l.user_id=$2) AS liked,
       COALESCE((SELECT jsonb_agg(jsonb_build_object('id',tagged.id,'name',tagged.name)) FROM album_participant_tags t JOIN users tagged ON tagged.id=t.user_id JOIN club_memberships cm ON cm.club_id=$7 AND cm.user_id=t.user_id AND cm.status='active' WHERE t.album_id=am.album_id AND t.media_id=m.id AND t.status='accepted'),'[]') AS tags,
       EXISTS(SELECT 1 FROM album_participant_tags t WHERE t.album_id=am.album_id AND t.media_id=m.id AND t.user_id=$2 AND t.status='pending') AS "myPendingTag"
       FROM album_media am JOIN media_objects m ON m.id=am.media_id AND m.state='active' JOIN users u ON u.id=am.added_by WHERE am.album_id=$1 AND ($8::uuid IS NULL OR m.id=$8) AND ($3::timestamptz IS NULL OR (am.created_at,m.id)<($3,$4::uuid)) ORDER BY am.created_at DESC,m.id DESC LIMIT $5`,
@@ -310,6 +346,10 @@ export class AlbumService {
         id,
         mediaId,
       ])
+      await client.query(
+        'UPDATE club_albums SET cover_media_id=NULL,version=version+1 WHERE id=$1 AND cover_media_id=$2',
+        [id, mediaId],
+      )
       await client.query('DELETE FROM album_media WHERE album_id=$1 AND media_id=$2', [id, mediaId])
       await client.query(
         "UPDATE social_posts SET deleted_at=now(),body='Registro retirado do álbum',version=version+1 WHERE id=$1",

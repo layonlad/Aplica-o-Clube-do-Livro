@@ -427,3 +427,9 @@ input[type='color'] { width: 56px; height: 40px; padding: 2px; border: 1px solid
   min-height: 44px;
 }
 .appearance-page .eyebrow a { display: inline-block; padding: 6px 0; }
+
+/* Long labels stay inside their action row, including at enlarged text sizes. */
+.button { max-width:100%; min-width:0; white-space:normal; overflow-wrap:anywhere; }
+.button > svg { flex-shrink:0; }
+.workspace-actions { min-width:0; row-gap:8px; column-gap:8px; }
+@media(max-width:600px) { .workspace-actions > .button { font-size:.85rem; padding:10px 14px; } }

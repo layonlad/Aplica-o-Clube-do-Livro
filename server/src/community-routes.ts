@@ -220,6 +220,11 @@ export async function registerCommunityRoutes(
     const { clubId, albumId } = albumParams.parse(request.params)
     return albums.get(request.user, clubId, albumId)
   })
+  api.post('/clubs/:clubId/albums/:albumId/cover', (request) => {
+    const {clubId,albumId} = albumParams.parse(request.params)
+    const input = z.object({mediaId:z.uuid().nullable(),version:z.number().int().min(0)}).strict().parse(request.body)
+    return albums.setCover(request.user,clubId,albumId,input.mediaId,input.version)
+  })
   api.post('/clubs/:clubId/albums/:albumId/policy', (request) => {
     const { clubId, albumId } = albumParams.parse(request.params)
     return albums.updatePolicy(

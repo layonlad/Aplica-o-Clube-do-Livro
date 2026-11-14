@@ -58,7 +58,7 @@ describe('comunidade sem cadastro', () => {
     )
     await screen.findByText('Uma reflexão pública')
     expect(screen.getByRole('button', { name: 'Curtir publicação' })).toBeDisabled()
-    fireEvent.click(screen.getByRole('button', { name: '0 comentário(s)' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Comentários da publicação' }))
     await waitFor(() => expect(mocks.public).toHaveBeenCalledWith('/public/posts/one/comments'))
     expect(screen.queryByRole('button', { name: 'Comentar' })).not.toBeInTheDocument()
     expect(mocks.private).not.toHaveBeenCalled()

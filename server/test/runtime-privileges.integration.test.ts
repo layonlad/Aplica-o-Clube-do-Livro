@@ -10,6 +10,7 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
     role = 'clube_runtime_test_' + randomUUID().replaceAll('-', ''),
     schema = (await db.pool.query('SELECT current_schema() AS name')).rows[0].name
   let runtime: Pool | undefined, app: Awaited<ReturnType<typeof buildApp>> | undefined
+  const objects = new Map<string, Buffer>()
   try {
     await db.pool.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT`)
     // Reproduz os grants CRUD herdados da primeira publicação, antes da matriz restrita.
@@ -27,9 +28,16 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
     app = await buildApp({
       pool: runtime,
       storage: {
-        put: async () => {},
-        get: async () => Buffer.from('synthetic'),
-        remove: async () => {},
+        put: async (key, bytes) => {
+          objects.set(key, bytes)
+        },
+        get: async (key) => {
+          if (!objects.has(key)) throw Error('missing')
+          return objects.get(key)!
+        },
+        remove: async (key) => {
+          objects.delete(key)
+        },
       },
       origin: 'https://club.example',
       verifyToken: async (uid) => ({
@@ -104,6 +112,42 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
     expect(shared.json().items.map((item: { id: string }) => item.id)).toContain(post.json().id)
     expect((await call('/me/avatar', 'DELETE')).json()).toEqual({ avatarId: null })
     expect((await call(`/people/${session.json().user.id}`)).json().avatarId).toBeNull()
+    const album = await call(`/clubs/${club.json().id}/albums`, 'POST', {
+      title: 'Capa restrita',
+      eventDate: '2026-11-14',
+      allowPublicShare: true,
+    })
+    expect(album.statusCode, album.body).toBe(201)
+    const media = await call(`/clubs/${club.json().id}/media`, 'POST', {
+      kind: 'image',
+      data: image,
+    })
+    expect(media.statusCode, media.body).toBe(201)
+    const added = await call(`/clubs/${club.json().id}/albums/${album.json().id}/photos`, 'POST', {
+      mediaIds: [media.json().id],
+      caption: 'Capa local',
+    })
+    expect(added.statusCode, added.body).toBe(201)
+    const cover = await call(`/clubs/${club.json().id}/albums/${album.json().id}/cover`, 'POST', {
+      mediaId: media.json().id,
+      version: 0,
+    })
+    expect(cover.statusCode, cover.body).toBe(200)
+    const albumRead = await call(`/clubs/${club.json().id}/albums/${album.json().id}`)
+    expect(albumRead.json().coverMediaId).toBe(media.json().id)
+    expect(albumRead.json().covers[0].id).toBe(media.json().id)
+    const { id: profileId, suspended, ...publicSettings } = (await call('/me/profile')).json()
+    const madePublic = await call('/me/profile', 'POST', { ...publicSettings, isPublic: true })
+    expect(madePublic.statusCode, madePublic.body).toBe(200)
+    const sharedCopy = await call(
+      `/clubs/${club.json().id}/albums/${album.json().id}/photos/${media.json().id}/publish-public`,
+      'POST',
+      { body: 'Cópia sintética autorizada', authorized: true },
+    )
+    expect(sharedCopy.statusCode, sharedCopy.body).toBe(201)
+    expect((await call(`/public/posts/${sharedCopy.json().id}`)).json().media[0].id).not.toBe(
+      media.json().id,
+    )
     await expect(runtime.query('SELECT * FROM schema_migrations')).rejects.toThrow(
       'permission denied',
     )

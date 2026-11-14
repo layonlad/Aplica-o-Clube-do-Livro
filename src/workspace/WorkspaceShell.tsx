@@ -1,3 +1,4 @@
+import { SpaceSwitcher } from '../components/SpaceSwitcher'
 import { Suspense, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { Bell, BookOpen, CalendarDays, ChevronRight, History, Home, Camera, Compass, Download, LogIn, Menu, MessagesSquare, NotebookPen, Palette, ShieldCheck, Sparkles, UserRound, UsersRound, X, type LucideIcon } from 'lucide-react'
@@ -120,7 +121,7 @@ export function WorkspaceShell() {
     <aside className="app-rail">
       <header className={`app-header ${scrolled ? 'is-scrolled' : ''}`}>
         <Link className="brand-lockup" to="/app" aria-label="Clube do Livro, início"><span className="brand-mark">{monogram}</span><span className="rail-brand-name rail-only"><strong>Clube do Livro</strong><small>Leituras que aproximam</small></span></Link>
-        <label className="space-switch"><small>{globalPage?'Espaço para suas leituras':'Você está em'}</small><select aria-label="Espaço de leitura" disabled={busy} value={scope} onChange={e => {setScope(e.target.value);if(globalPage)navigate('/app')}}><option value="personal">Meu espaço pessoal</option>{clubs.map(club => <option key={club.id} value={club.id}>{club.name}</option>)}</select></label>
+        <SpaceSwitcher label={globalPage?'Espaço para suas leituras':'Você está em'} disabled={busy} value={scope} options={[{id:'personal',name:'Meu espaço pessoal'},...clubs]} onChange={value => {setScope(value);if(globalPage)navigate('/app')}}/>
         {!user && <Link className="header-chip mobile-only" to="/account">Entrar</Link>}
         <button ref={menuButtonRef} className="icon-button mobile-only" aria-label="Abrir menu" aria-expanded={menu} onClick={() => setMenu(true)}><Menu /></button>
       </header>

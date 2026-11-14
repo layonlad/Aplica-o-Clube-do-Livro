@@ -676,3 +676,77 @@ it('revoga novas consultas após remoção do membro e limpa falhas de exclusão
     (await db.pool.query('SELECT state FROM media_objects WHERE id=$1', [id])).rows[0].state,
   ).toBe('purged')
 })
+
+it('mantém capas de álbuns privadas, valida escopo e versão e troca a capa quando a foto é retirada', async () => {
+  const coverMember = (
+    await app.inject({ url: '/v1/me', headers: headers('album-cover-member') })
+  ).json<Session>().user
+  await db.pool.query("INSERT INTO club_memberships(club_id,user_id,role) VALUES($1,$2,'member')", [
+    club.id,
+    coverMember.id,
+  ])
+  const album = await createAlbum(),
+    secondAlbum = await createAlbum()
+  const owner = (
+    await db.pool.query('SELECT id,email,name FROM users WHERE id=$1', [ids['social-owner']])
+  ).rows[0]
+  const bytes = await sharp({
+    create: { width: 30, height: 20, channels: 3, background: '#462b70' },
+  })
+    .png()
+    .toBuffer()
+  const image1 = (
+    await new MediaService(db.pool, storage).upload(owner.id, club.id, 'image', bytes)
+  ).id
+  const image2 = (
+    await new MediaService(db.pool, storage).upload(owner.id, club.id, 'image', bytes)
+  ).id
+  const add = await app.inject({
+    url: base() + `/albums/${album}/photos`,
+    method: 'POST',
+    headers: headers(),
+    payload: { mediaIds: [image1, image2], caption: 'Fotos para a capa' },
+  })
+  expect(add.statusCode, add.body).toBe(201)
+  const detail = async () =>
+    (await app.inject({ url: base() + `/albums/${album}`, headers: headers() })).json()
+  const before = await detail()
+  expect(before.covers.map((m: { id: string }) => m.id).sort()).toEqual([image1, image2].sort())
+  const choose = (uid: string, mediaId: string, version = before.version) =>
+    app.inject({
+      url: base() + `/albums/${album}/cover`,
+      method: 'POST',
+      headers: headers(uid),
+      payload: { mediaId, version },
+    })
+  expect((await choose('album-cover-member', image1)).statusCode).toBe(403)
+  expect((await choose('social-outsider', image1)).statusCode).toBe(404)
+  expect((await choose('social-owner', image1)).statusCode).toBe(200)
+  const after = await detail()
+  expect(after.coverMediaId).toBe(image1)
+  expect(after.covers[0].id).toBe(image1)
+  expect((await choose('social-owner', image2)).statusCode).toBe(409)
+  const wrong = await app.inject({
+    url: base() + `/albums/${secondAlbum}/cover`,
+    method: 'POST',
+    headers: headers(),
+    payload: { mediaId: image1, version: 0 },
+  })
+  expect(wrong.statusCode).toBe(400)
+  await expect(
+    db.pool.query('UPDATE club_albums SET cover_media_id=$2 WHERE id=$1', [secondAlbum, image1]),
+  ).rejects.toMatchObject({ code: '23503' })
+  expect(
+    (await app.inject({ url: base() + `/albums/${album}`, headers: headers('social-other') }))
+      .statusCode,
+  ).toBe(404)
+  const removed = await app.inject({
+    url: base() + `/albums/${album}/photos/${image1}`,
+    method: 'DELETE',
+    headers: headers(),
+  })
+  expect(removed.statusCode, removed.body).toBe(204)
+  const fallback = await detail()
+  expect(fallback.coverMediaId).toBeNull()
+  expect(fallback.covers.map((m: { id: string }) => m.id)).toEqual([image2])
+})
