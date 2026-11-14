@@ -1,3 +1,6 @@
+import {ModerationService} from './moderation-service.js'
+import {NotificationService} from './notification-service.js'
+import {registerPublicReads,registerPublicMutations} from './public-routes.js'
 import {registerForumRoutes} from './forum-routes.js'
 import {registerCommunityRoutes} from './community-routes.js'
 import {ClubManagement} from './club-management.js'
@@ -33,7 +36,7 @@ const inviteInput = z.object({
   expiresInDays: z.number().int().min(1).max(30).default(7),
 }).strict().refine((data) => !data.email || data.maxUses === 1, 'Convites por e-mail devem ter um único uso.')
 
-export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage }) {
+export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage;moderatorUids?:string[] }) {
   const app = Fastify({
     logger: options.logger ? { redact: ['req.headers.authorization', 'req.body', 'res.headers'] } : false,
     logController: new LogController({ disableRequestLogging: true }),
@@ -45,6 +48,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
   const workspace = new WorkspaceService(options.pool)
   const files=new PrivateFiles(options.pool,options.storage)
   const management=new ClubManagement(options.pool)
+  const notifications=new NotificationService(options.pool)
   await app.register(cors, { origin: options.origin, methods: ['GET', 'POST', 'DELETE'], allowedHeaders: ['Authorization', 'Content-Type'] })
   await app.register(helmet)
   await app.register(rateLimit, { max: options.rateMax ?? 120, timeWindow: '1 minute' })
@@ -72,14 +76,22 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     return {items:await (options.catalogSearch??searchCatalog)(q)}
   })
   app.get('/v1/discover/clubs',request=>management.discover(pageInput.extend({q:z.string().trim().min(2).max(100).optional()}).strict().parse(request.query)))
-  await app.register(async (api) => {
-    api.addHook('onRequest', async (request) => {
+  const authenticate=async (request:import('fastify').FastifyRequest) => {
       const match = /^Bearer ([^\s]+)$/.exec(request.headers.authorization ?? '')
       if (!match || match[1].length > 8192) throw new HttpError(401, 'AUTH_REQUIRED', 'Entre na sua conta para continuar.')
       const identity = await options.verifyToken(match[1])
       if (!identity.emailVerified || !identity.email) throw new HttpError(403, 'EMAIL_NOT_VERIFIED', 'Confirme seu e-mail para acessar o clube.')
       request.user = await service.syncUser(identity)
-    })
+    }
+  await registerPublicReads(app,options.pool,async request=>{if(request.headers.authorization)await authenticate(request)},options.storage,options.moderatorUids)
+  await app.register(async (api) => {
+    api.addHook('onRequest',authenticate)
+    await registerPublicMutations(api,options.pool,options.storage,options.moderatorUids)
+    api.get('/me/notifications',request=>notifications.list(request.user,pageInput.strict().parse(request.query)))
+    api.get('/me/notifications/unread',request=>notifications.unread(request.user))
+    api.post('/me/notifications/read',request=>notifications.read(request.user,z.object({id:z.uuid().optional()}).strict().parse(request.body).id))
+    api.get('/me/notification-preferences',request=>notifications.preferences(request.user))
+    api.post('/me/notification-preferences',request=>notifications.setPreferences(request.user,z.object({interactions:z.boolean(),mentions:z.boolean(),clubs:z.boolean(),events:z.boolean(),readings:z.boolean()}).strict().parse(request.body)))
     await registerCommunityRoutes(api,options.pool,options.storage)
     await registerForumRoutes(api,options.pool)
     api.get('/clubs/:clubId/settings',request=>management.settings(request.user,clubParams.parse(request.params).clubId))
@@ -89,7 +101,8 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     api.post('/clubs/:clubId/join-requests',{config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(request,reply)=>reply.code(201).send(await management.requestJoin(request.user,clubParams.parse(request.params).clubId,z.object({message:z.string().trim().max(1000).default('')}).strict().parse(request.body).message)))
     api.get('/clubs/:clubId/join-requests',request=>management.requests(request.user,clubParams.parse(request.params).clubId,pageInput.strict().parse(request.query)))
     api.post('/clubs/:clubId/join-requests/:id/review',request=>{const {clubId,id}=clubParams.extend({id:z.uuid()}).parse(request.params);return management.review(request.user,clubId,id,z.object({decision:z.enum(['approved','rejected'])}).strict().parse(request.body).decision)})
-    api.get('/me', (request) => service.session(request.user))
+    api.get('/me', async request => ({...await service.session(request.user),...await new ModerationService(options.pool,options.moderatorUids).permissions(request.user)}))
+    api.post('/me/invitations/:id/accept',{config:{rateLimit:{max:10,timeWindow:'1 minute'}}},request=>service.acceptInvite(request.user,z.object({id:z.uuid()}).parse(request.params).id,true))
     const fileParams=z.object({bookId:z.uuid()})
     api.get('/me/book-files/:bookId',request=>files.list(request.user.id,fileParams.parse(request.params).bookId))
     api.post('/me/book-files/:bookId',{bodyLimit:15000000,config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(request,reply)=>{

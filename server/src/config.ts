@@ -7,6 +7,7 @@ const schema = z.object({
   FIREBASE_WEB_API_KEY: z.string().min(1).optional(),
   FIREBASE_AUTH_EMULATOR_HOST: z.string().optional(),
   FRONTEND_ORIGIN: z.string().url(),
+  PLATFORM_MODERATOR_UIDS: z.string().default('').transform(value=>value.split(',').map(id=>id.trim()).filter(Boolean)).refine(ids=>ids.length<=10&&ids.every(id=>/^[A-Za-z0-9_-]{1,128}$/.test(id))),
   HOST: z.string().default('127.0.0.1'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
 })

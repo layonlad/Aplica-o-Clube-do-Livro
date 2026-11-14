@@ -101,13 +101,15 @@ export class ClubService {
     })
   }
 
-  async acceptInvite(user: UserProfile, token: string): Promise<Club> {
+  async acceptInvite(user: UserProfile, token: string, addressed=false): Promise<Club> {
     return transaction(this.pool, async (client) => {
-      const found = await client.query('SELECT club_id FROM invites WHERE token_hash = $1', [hashToken(token)])
+      const predicate=addressed?'id=$1 AND email=$2':'token_hash=$1'
+      const params=addressed?[token,user.email.toLowerCase()]:[hashToken(token)]
+      const found = await client.query(`SELECT club_id FROM invites WHERE ${predicate}`,params)
       if (!found.rowCount) throw invalidInvite()
       const clubId = found.rows[0].club_id as string
       await client.query('SELECT id FROM clubs WHERE id = $1 FOR UPDATE', [clubId])
-      const { rows: [invite] } = await client.query(`SELECT *, expires_at <= clock_timestamp() AS expired FROM invites WHERE token_hash = $1 FOR UPDATE`, [hashToken(token)])
+      const { rows: [invite] } = await client.query(`SELECT *, expires_at <= clock_timestamp() AS expired FROM invites WHERE ${predicate} FOR UPDATE`, params)
       if (!invite || invite.revoked_at || invite.expired || (invite.email && invite.email !== user.email.toLowerCase())) throw invalidInvite()
       const { rows: [membership] } = await client.query('SELECT role, status FROM club_memberships WHERE club_id = $1 AND user_id = $2', [clubId, user.id])
       if (membership?.status === 'removed') throw new HttpError(403, 'MEMBERSHIP_REMOVED', 'Seu acesso foi removido. Peça ao responsável para reativá-lo.')

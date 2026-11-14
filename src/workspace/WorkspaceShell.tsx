@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import { BookOpen, CalendarDays, ChevronRight, History, Home, Camera, Compass, LogIn, Menu, MessagesSquare, NotebookPen, Palette, Sparkles, UserRound, UsersRound, X, type LucideIcon } from 'lucide-react'
+import { Bell, BookOpen, CalendarDays, ChevronRight, History, Home, Camera, Compass, LogIn, Menu, MessagesSquare, NotebookPen, Palette, Sparkles, UserRound, UsersRound, X, type LucideIcon } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import { useTheme } from '../app/ThemeProvider'
 import { SkeletonPage } from '../components/ui'
@@ -25,7 +25,7 @@ export function WorkspaceShell() {
   const [menu, setMenu] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [dismissed, setDismissed] = useState(readDismissed)
-  const { snapshot, scope, scopeName, clubs, setScope, loading, busy, error, errorCode, refresh } = useWorkspace()
+  const { publicModerator,snapshot, scope, scopeName, clubs, setScope, loading, busy, error, errorCode, refresh } = useWorkspace()
   const { user,signOut } = useAuth()
   const navigate=useNavigate()
   const [accountError,setAccountError]=useState('')
@@ -42,15 +42,22 @@ export function WorkspaceShell() {
 
   const nav: NavItem[] = [
     { to: '/app', name: 'Início', icon: Home },
+    { to: '/app/community', name: 'Comunidade', icon: MessagesSquare },
     { to: '/app/library', name: 'Biblioteca', icon: BookOpen },
-    { to: '/app/calendar', name: 'Agenda', icon: CalendarDays },
-    { to: '/app/forum', name: personal ? 'Caderno' : 'Conversas', icon: personal ? NotebookPen : MessagesSquare },
+    { to: '/clubs', name: 'Meus clubes', icon: UsersRound },
+
     { to: '/app/profile', name: 'Perfil', icon: UserRound },
   ]
   const extra: NavItem[] = [
+    {to:'/app/notifications',name:'Notificações',icon:Bell},
+    ...(publicModerator?[{to:'/app/moderation',name:'Moderação pública',icon:MessagesSquare}]:[]),
+    {to:'/app/reader',name:'Minha leitura',icon:BookOpen},
+    {to:'/app/social-profile',name:'Meu perfil social',icon:UserRound},
+    {to:'/app/calendar',name:'Agenda e encontros',icon:CalendarDays},
+    {to:'/app/forum',name:personal?'Caderno pessoal':'Fórum do clube',icon:personal?NotebookPen:MessagesSquare},
     {to:'/app/wall',name:'Mural do clube',icon:MessagesSquare,hint:'Conversas do seu grupo'},
     {to:'/app/gallery',name:'Galeria de encontros',icon:Camera,hint:'Memórias compartilhadas'},
-    {to:'/app/explore',name:'Explorar clubes',icon:Compass,hint:'Encontre novas leituras'},
+    {to:'/app/explore',name:'Explorar',icon:Compass,hint:'Encontre novas leituras'},
     { to: '/app/nominations', name: 'Indicações e sorteio', icon: Sparkles, hint: 'Escolha a próxima leitura' },
     { to: '/app/history', name: 'Histórico de leitura', icon: History, hint: 'Tudo o que você já leu' },
     { to: '/clubs', name: 'Clubes e convites', icon: UsersRound, hint: 'Leia em grupo' },
@@ -105,7 +112,7 @@ export function WorkspaceShell() {
     </aside>
 
     <main id="conteudo" ref={mainRef} tabIndex={-1} className="page-content">
-      {!personal&&<nav className="club-subnav" aria-label="Navegação do clube">{[['/app','Visão geral'],['/app/wall','Mural'],['/app/forum','Fórum'],['/app/library','Leituras'],['/app/calendar','Encontros'],['/app/gallery','Galeria'],[`/clubs/${scope}`,['owner','admin'].includes(snapshot?.role??'member')?'Membros e administração':'Membros']].map(([to,label])=><NavLink key={to} to={to} end={to==='/app'}>{label}</NavLink>)}</nav>}
+      {!personal&&<nav className="club-subnav" aria-label="Navegação do clube">{[['/app','Visão geral'],['/app/wall','Mural'],['/app/forum','Fórum'],['/app/library','Leituras'],['/app/calendar','Encontros'],['/app/gallery','Galeria'],[`/clubs/${scope}`,['owner','admin'].includes(snapshot?.role??'member')?'Membros e administração':'Membros']].map(([to,label])=><NavLink key={to} to={to} end={to==='/app'}>{label}</NavLink>)}{['owner','admin','moderator'].includes(snapshot?.role??'member')&&<NavLink to={`/app/moderation?club=${scope}`}>Moderação</NavLink>}</nav>}
       {showVisitorNote && <div className="notice visitor-note"><span><strong>Entre, fique à vontade.</strong><span>Use sem cadastro. Seus dados ficam neste navegador; exporte um backup no Perfil. Para sincronizar ou participar de um clube, <Link to="/account">entre na sua conta</Link>.</span></span><button type="button" className="icon-button" aria-label="Dispensar aviso" onClick={dismiss}><X size={18} /></button></div>}
       {unread && <p className="toast-status" role="status">{unread}</p>}
       {error && <div role="alert" className="access-error">{error} {['AUTH_REQUIRED','EMAIL_NOT_VERIFIED'].includes(errorCode)?<button type="button" onClick={()=>void reenter()}>Entrar novamente</button>:<button type="button" onClick={() => void refresh()}>Recarregar</button>}</div>}

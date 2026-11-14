@@ -217,6 +217,7 @@
   .app-header { position: static; min-height: 0; padding: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; border: 0; flex-wrap: wrap; }
   .app-header::after { display: none; }
   .app-header { align-items: flex-start; }
+  .app-rail > .app-header, .app-rail > nav, .app-rail > .rail-foot { flex-shrink: 0; }
   .app-header .brand-lockup { flex: 1 1 0; }
   .app-header .brand-lockup strong { max-width: none; white-space: normal; overflow: visible; line-height: 1.15; }
   .app-header .space-switch { flex-basis: 100%; margin-top: var(--space-5); padding: var(--space-3) var(--space-4); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); transition: border-color var(--dur-fast) var(--ease-out); }
