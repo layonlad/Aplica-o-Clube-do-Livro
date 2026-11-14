@@ -12,6 +12,10 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
   let runtime: Pool | undefined, app: Awaited<ReturnType<typeof buildApp>> | undefined
   try {
     await db.pool.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT`)
+    // Reproduz os grants CRUD herdados da primeira publicação, antes da matriz restrita.
+    await db.pool.query(
+      `GRANT SELECT,INSERT,UPDATE,DELETE ON users,clubs,club_memberships,invites,invite_acceptances,personal_workspaces,club_workspaces,club_reading_states TO ${role}`,
+    )
     const grants = (
       await readFile(new URL('../ops/runtime-grants.sql', import.meta.url), 'utf8')
     ).replaceAll('clube_runtime', role)
@@ -110,6 +114,22 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
       'permission denied',
     )
     await expect(runtime.query('DELETE FROM users')).rejects.toThrow('permission denied')
+    for (const table of [
+      'clubs',
+      'club_memberships',
+      'invites',
+      'invite_acceptances',
+      'personal_workspaces',
+      'club_workspaces',
+      'club_reading_states',
+    ])
+      await expect(runtime.query(`DELETE FROM ${table} WHERE false`)).rejects.toThrow(
+        'permission denied',
+      )
+    await expect(
+      runtime.query('UPDATE invite_acceptances SET accepted_at=now() WHERE false'),
+    ).rejects.toThrow('permission denied')
+    await expect(runtime.query('TRUNCATE users')).rejects.toThrow('permission denied')
   } finally {
     await app?.close()
     await runtime?.end()
