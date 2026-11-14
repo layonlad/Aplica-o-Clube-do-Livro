@@ -1,0 +1,293 @@
+{
+  "versao": 1,
+  "projeto": {
+    "nome": "Clube do Livro",
+    "resumo": "App de leitura mobile-first com três ambientes: biblioteca e leitor pessoais, comunidade pública de leitores e espaços privados de clubes.",
+    "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
+  },
+  "estado": {
+    "fase": "Pronto para liberação",
+    "tom": "aguardando",
+    "resumo": "Todo o trabalho de Claude e Codex está em main (PR 2 mesclado em 14/11). A prévia pública já mostra o novo visual. A produção ainda roda a versão de 13/11 e só muda com a sua autorização.",
+    "proximoPasso": "Você decide se autoriza as operações de produção descritas em docs/LIBERACAO_PLATAFORMA_SOCIAL.md. Com o sim, o Codex publica a API (Render) e depois o site (Firebase).",
+    "pendencias": [
+      "Autorização do dono para a liberação em produção (cópia do banco, migrations 003–015, permissões, segredos, deploy da API e do site, teste final).",
+      "Testar a integração real com o bucket privado de mídia durante a liberação.",
+      "Exclusão integral automática de conta Firebase não existe; há exclusão de conteúdo e desativação do perfil.",
+      "Leitor de tela real e recorte de foto pela câmera do celular ainda não foram testados."
+    ]
+  },
+  "ambientes": [
+    {
+      "id": "producao",
+      "nome": "Produção",
+      "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
+      "versao": "Versão de 13/11 (commit 482b29d)",
+      "atualizacao": "Manual, só com autorização do dono",
+      "tom": "aguardando"
+    },
+    {
+      "id": "previa",
+      "nome": "Prévia pública (demonstração)",
+      "url": "https://layonlad.github.io/Aplica-o-Clube-do-Livro/",
+      "versao": "Sempre o último commit de main (dados fictícios)",
+      "atualizacao": "Automática a cada push em main",
+      "tom": "ok"
+    },
+    {
+      "id": "mapa",
+      "nome": "Este mapa",
+      "url": "https://layonlad.github.io/Aplica-o-Clube-do-Livro/mapa/",
+      "versao": "Gerado a partir do código de main",
+      "atualizacao": "Automática a cada push em main",
+      "tom": "ok"
+    },
+    {
+      "id": "local",
+      "nome": "Local (computador do dono)",
+      "url": "",
+      "versao": "Pastas clube-do-livro (main), worktrees do Claude e /private/tmp/clube-livro-social (Codex)",
+      "atualizacao": "Cada agente trabalha na própria pasta e branch",
+      "tom": "neutro"
+    }
+  ],
+  "camadas": [
+    {
+      "id": "pessoa",
+      "titulo": "Pessoa usando o app",
+      "servico": "Navegador ou app instalado (PWA)",
+      "plano": "—",
+      "coluna": 1,
+      "cor": "coral",
+      "guarda": ["Biblioteca e leituras do visitante (sem conta)", "EPUB original no IndexedDB", "Aparência escolhida", "Sessão de login"],
+      "detalhe": "Sem conta, tudo fica só neste navegador. Apagar os dados do navegador apaga essas leituras; o Perfil permite exportar um backup.",
+      "link": ""
+    },
+    {
+      "id": "site",
+      "titulo": "Site do app",
+      "servico": "Firebase Hosting",
+      "plano": "Gratuito",
+      "coluna": 2,
+      "cor": "plum",
+      "guarda": ["Arquivos do app (HTML, CSS, JavaScript, fontes)"],
+      "detalhe": "Só entrega o app pronto. Não guarda dados de ninguém. Publicado manualmente com o comando de deploy do Firebase.",
+      "link": "https://project-acb850f4-4bb8-45de-a84.web.app"
+    },
+    {
+      "id": "auth",
+      "titulo": "Contas e login",
+      "servico": "Firebase Authentication",
+      "plano": "Gratuito",
+      "coluna": 2,
+      "cor": "honey",
+      "guarda": ["E-mail e senha (protegida pelo Google)", "Login com Google", "Confirmação de e-mail"],
+      "detalhe": "O app nunca vê nem guarda senhas. A API confere o token de login a cada pedido.",
+      "link": "https://console.firebase.google.com/project/project-acb850f4-4bb8-45de-a84/authentication"
+    },
+    {
+      "id": "api",
+      "titulo": "API (servidor)",
+      "servico": "Render — serviço clube-livro-api (Docker)",
+      "plano": "Free · pode dormir após 15 min sem uso",
+      "coluna": 3,
+      "cor": "blue",
+      "guarda": ["Nada permanente: só regras e permissões"],
+      "detalhe": "Recebe os pedidos do app, confere quem é a pessoa e o que ela pode ver, e lê ou grava no banco e no armazenamento. Publicação automática desligada.",
+      "link": "https://clube-livro-api.onrender.com/health"
+    },
+    {
+      "id": "banco",
+      "titulo": "Banco de dados",
+      "servico": "Neon PostgreSQL 17 — banco clube_do_livro",
+      "plano": "Free · região us-east-1",
+      "coluna": 4,
+      "cor": "mint",
+      "guarda": ["Perfis, clubes e membros", "Publicações, comentários e curtidas", "Fórum, encontros e álbuns", "Leituras sincronizadas e preferências", "Notificações, denúncias e moderação"],
+      "detalhe": "Fonte da verdade dos dados das contas. A API usa uma identidade restrita (clube_runtime) que não altera a estrutura nem apaga usuários.",
+      "link": "https://console.neon.tech/app/projects/wandering-block-99253816"
+    },
+    {
+      "id": "midia",
+      "titulo": "Fotos, vídeos e EPUBs",
+      "servico": "Neon Object Storage — bucket privado clube-livro-media",
+      "plano": "Free · cota de 50 MB de mídia por conta",
+      "coluna": 4,
+      "cor": "rose",
+      "guarda": ["Fotos de perfil e capas", "Fotos e vídeos de publicações e álbuns", "EPUBs originais guardados na conta", "Arquivos EPUB do acervo dos clubes"],
+      "detalhe": "Bucket privado: nada tem link público. A API confere a permissão a cada download.",
+      "link": ""
+    },
+    {
+      "id": "github",
+      "titulo": "Código e histórico",
+      "servico": "GitHub — layonlad/Aplica-o-Clube-do-Livro",
+      "plano": "Gratuito",
+      "coluna": 0,
+      "cor": "ink",
+      "guarda": ["Todo o código e a documentação", "Pull requests e revisões", "Testes automáticos (CI)", "Prévia pública e este mapa (GitHub Pages)"],
+      "detalhe": "Repositório público: nunca guardar senhas, chaves ou dados de usuários aqui.",
+      "link": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
+    }
+  ],
+  "ligacoes": [
+    { "de": "pessoa", "para": "site", "texto": "abre o app" },
+    { "de": "pessoa", "para": "auth", "texto": "entra na conta (opcional)" },
+    { "de": "site", "para": "api", "texto": "pedidos com o token de login" },
+    { "de": "api", "para": "auth", "texto": "confere o token" },
+    { "de": "api", "para": "banco", "texto": "lê e grava dados" },
+    { "de": "api", "para": "midia", "texto": "guarda e entrega arquivos" }
+  ],
+  "dados": [
+    { "o_que": "Leituras de quem usa sem conta", "onde": "pessoa", "privacidade": "Só no aparelho", "copia": "Backup JSON exportado pelo Perfil" },
+    { "o_que": "E-mail, senha e login com Google", "onde": "auth", "privacidade": "Privado", "copia": "Gerenciado pelo Google" },
+    { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Público só se a pessoa ativar", "copia": "Cópia de recuperação no Neon (na liberação)" },
+    { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON + banco" },
+    { "o_que": "Aparência (tema, fontes, modo)", "onde": "banco", "privacidade": "Privado do titular", "copia": "Também no navegador" },
+    { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Só membros", "copia": "Banco" },
+    { "o_que": "Mural, fórum, encontros e álbuns dos clubes", "onde": "banco", "privacidade": "Só membros ativos", "copia": "Banco" },
+    { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Público", "copia": "Banco" },
+    { "o_que": "Notificações", "onde": "banco", "privacidade": "Privado do destinatário", "copia": "Apagadas após 90 dias" },
+    { "o_que": "Fotos de perfil", "onde": "midia", "privacidade": "Públicas só com perfil público; senão, só colegas de clube", "copia": "Bucket privado" },
+    { "o_que": "Fotos e vídeos de publicações e álbuns", "onde": "midia", "privacidade": "Segue a publicação ou o álbum", "copia": "Bucket privado" },
+    { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Não entram no backup JSON" },
+    { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" }
+  ],
+  "fluxoPublicacao": [
+    { "titulo": "Você pede uma mudança", "onde": "Conversa com Claude ou Codex", "texto": "Claude cuida de visual e telas; Codex de backend, banco e regras.", "modo": "voce" },
+    { "titulo": "Agente trabalha na própria branch", "onde": "Pasta separada (worktree) no seu computador", "texto": "Cada um em sua branch, para não sobrescrever o trabalho do outro.", "modo": "auto" },
+    { "titulo": "Testes locais", "onde": "Computador", "texto": "Testes do app, da API e do banco, além de conferência visual no navegador.", "modo": "auto" },
+    { "titulo": "Pull request", "onde": "GitHub", "texto": "A mudança vira um PR com descrição do que mudou e do que não foi testado.", "modo": "auto" },
+    { "titulo": "CI valida", "onde": "GitHub Actions — Validar aplicação e API", "texto": "Roda todos os testes, builds, imagem Docker e auditoria de segurança.", "modo": "auto" },
+    { "titulo": "Você aprova o merge", "onde": "GitHub", "texto": "Nada entra em main sem o seu sim.", "modo": "voce" },
+    { "titulo": "Prévia e mapa atualizam", "onde": "GitHub Pages", "texto": "Cada push em main republica a prévia (demonstração) e este mapa.", "modo": "auto" },
+    { "titulo": "Liberação em produção", "onde": "Render (API) e Firebase Hosting (site)", "texto": "Manual e só com a sua autorização: primeiro migrations e API, depois o site.", "modo": "aprovacao" }
+  ],
+  "jornadas": [
+    {
+      "titulo": "Abrir o app sem conta",
+      "passos": [
+        { "camada": "pessoa", "texto": "Abre o endereço do app" },
+        { "camada": "site", "texto": "Firebase entrega o app" },
+        { "camada": "pessoa", "texto": "Animação de abertura (uma vez por sessão)" },
+        { "camada": "pessoa", "texto": "Biblioteca e leituras ficam no navegador" }
+      ]
+    },
+    {
+      "titulo": "Publicar uma foto no mural do clube",
+      "passos": [
+        { "camada": "pessoa", "texto": "Escolhe a foto e escreve" },
+        { "camada": "auth", "texto": "Token de login acompanha o envio" },
+        { "camada": "api", "texto": "Confere se é membro ativo e processa a foto" },
+        { "camada": "midia", "texto": "Foto vai para o bucket privado" },
+        { "camada": "banco", "texto": "Publicação gravada no mural" }
+      ]
+    },
+    {
+      "titulo": "Visitar o perfil de outro leitor",
+      "passos": [
+        { "camada": "pessoa", "texto": "Clica no nome ou na foto" },
+        { "camada": "api", "texto": "Junta perfil público e clubes em comum" },
+        { "camada": "banco", "texto": "Busca só posts de clubes que os dois frequentam" },
+        { "camada": "midia", "texto": "Foto entregue só a quem pode vê-la" }
+      ]
+    },
+    {
+      "titulo": "Personalizar a aparência",
+      "passos": [
+        { "camada": "pessoa", "texto": "Escolhe tema, modo e fontes com prévia ao vivo" },
+        { "camada": "pessoa", "texto": "Fica salva neste navegador" },
+        { "camada": "api", "texto": "Com conta, envia para a API" },
+        { "camada": "banco", "texto": "Gravada nas preferências e recuperada em outro aparelho" }
+      ]
+    }
+  ],
+  "agentes": [
+    {
+      "nome": "Claude Code",
+      "papel": "Frontend, design system, telas, animações, responsividade e acessibilidade. Ajustes pontuais no backend quando uma tela precisa.",
+      "onde": "Worktrees clube-do-livro-design e clube-do-livro-social-ui; branches claude/*"
+    },
+    {
+      "nome": "Codex",
+      "papel": "Backend, banco, API, autenticação, regras de negócio, segurança, infraestrutura e liberação em produção.",
+      "onde": "Worktree /private/tmp/clube-livro-social; branches codex/*"
+    },
+    {
+      "nome": "Você (dono)",
+      "papel": "Define prioridades, aprova merges e autoriza qualquer operação em produção ou que custe dinheiro.",
+      "onde": "Conversas com os agentes, GitHub e este mapa"
+    }
+  ],
+  "atualizacoes": [
+    {
+      "data": "2026-11-14",
+      "autor": "Claude Code",
+      "titulo": "Mapa do projeto criado",
+      "resumo": "Este mapa passa a ser o cérebro do projeto: estrutura, publicação, onde ficam os dados e histórico. É republicado automaticamente a cada push em main.",
+      "pr": ""
+    },
+    {
+      "data": "2026-11-14",
+      "autor": "Codex",
+      "titulo": "Plataforma social mesclada em main (PR 2)",
+      "resumo": "Comunidade, clubes privados, fórum, encontros, leitor EPUB, notificações, moderação e as entregas do Claude chegaram a main. Produção ainda não foi atualizada.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/2"
+    },
+    {
+      "data": "2026-11-14",
+      "autor": "Claude Code",
+      "titulo": "Pendências de perfis (PR 7)",
+      "resumo": "Foto nas notificações e no compositor, link direto para post de clube, alvos de toque de 44 px e telas que abriam sem estilo.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/7"
+    },
+    {
+      "data": "2026-11-14",
+      "autor": "Codex",
+      "titulo": "Revisão do backend do PR 6",
+      "resumo": "Revogação da foto antiga na mesma transação e aba de clubes exigindo autor e visitante ativos. Plano de liberação atualizado.",
+      "pr": ""
+    },
+    {
+      "data": "2026-11-14",
+      "autor": "Claude Code",
+      "titulo": "Fotos de perfil, perfis visitáveis, abertura e aparência (PR 6)",
+      "resumo": "Foto com recorte, perfis com publicações públicas e de clubes em comum, livro abrindo na entrada e personalização de cores e fontes.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/6"
+    },
+    {
+      "data": "2026-11-14",
+      "autor": "Claude Code",
+      "titulo": "Ajustes visuais nas telas sociais (PR 5)",
+      "resumo": "Leitor imersivo, menu em grupos, feed em coluna de leitura e acabamento de filtros e selects.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/5"
+    },
+    {
+      "data": "2026-11-14",
+      "autor": "Codex",
+      "titulo": "Entregas 01–06 da plataforma social",
+      "resumo": "Biblioteca e leitor evoluídos, mural e álbuns privados, fórum, comunidade pública opt-in, moderação, notificações, encontros e leitor EPUB original.",
+      "pr": ""
+    },
+    {
+      "data": "2026-11-13",
+      "autor": "Claude Code",
+      "titulo": "Design system Lombadas e redesign (PRs 3 e 4)",
+      "resumo": "Fraunces e Plus Jakarta Sans, paleta roxo/coral/creme/menta, navegação nova e telas principais redesenhadas.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/3"
+    },
+    {
+      "data": "2026-11-13",
+      "autor": "Codex",
+      "titulo": "Primeira publicação em produção (PR 1)",
+      "resumo": "App com entrada livre publicado no Firebase Hosting, API no Render Free e banco no Neon Free.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/1"
+    }
+  ],
+  "regras": [
+    "Ao terminar qualquer tarefa pedida pelo dono, adicionar uma entrada no topo de atualizacoes e revisar estado, ambientes, camadas e dados se algo mudou.",
+    "Nunca colocar senhas, chaves, tokens, e-mails ou dados de usuários neste arquivo: o repositório e o mapa são públicos.",
+    "O que pode ser lido do código (telas, rotas, tabelas, testes, workflows) é gerado automaticamente; não copie à mão.",
+    "Entregar ao dono, no fim de cada tarefa, o link do mapa: https://layonlad.github.io/Aplica-o-Clube-do-Livro/mapa/"
+  ]
+}

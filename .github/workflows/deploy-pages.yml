@@ -18,6 +18,9 @@ jobs:
     steps:
       - name: Baixar código
         uses: actions/checkout@v5
+        with:
+          # Histórico recente para o mapa do projeto mostrar os últimos commits.
+          fetch-depth: 50
 
       - name: Preparar Node.js
         uses: actions/setup-node@v5
@@ -35,6 +38,9 @@ jobs:
         run: npm run build
         env:
           VITE_APP_MODE: demo
+
+      - name: Gerar mapa do projeto
+        run: node scripts/mapa/build.mjs --out dist/mapa
 
       - name: Publicar branch do GitHub Pages
         uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4
