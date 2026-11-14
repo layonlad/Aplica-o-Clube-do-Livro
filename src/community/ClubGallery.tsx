@@ -14,6 +14,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
 import { Button } from '../components/ui'
+import { UserIdentity } from '../components/UserAvatar'
 import { MediaPicker, PrivateMedia } from './PrivateMedia'
 import { ConfirmAction, PostComments } from './ClubWall'
 import './community.css'
@@ -633,7 +634,13 @@ function PhotoCard({
       <PrivateMedia media={photo} alt={photo.caption || album.title} />
       <div className="gallery-photo-content">
         <p className="preserve-text">{photo.caption}</p>
-        <small>Registro de {photo.addedBy.name}</small>
+        <UserIdentity
+          size="xs"
+          id={photo.addedBy.id}
+          name={photo.addedBy.name}
+          avatarId={photo.addedBy.avatarId}
+          meta="Registro do encontro"
+        />
         {photo.tags.length > 0 && <p>Com {photo.tags.map((tag) => tag.name).join(', ')}</p>}
         {photo.myPendingTag && (
           <div className="tag-consent">

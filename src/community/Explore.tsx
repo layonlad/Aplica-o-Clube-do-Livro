@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { publicRequest, readableError } from '../auth/api'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
 import { Button, CoverArt } from '../components/ui'
+import { UserAvatar } from '../components/UserAvatar'
 import { DiscoverClubs } from '../clubs/DiscoverClubs'
 import { socialRead } from './social-api'
 import type { Page } from '../../server/src/community-contracts'
@@ -162,9 +163,7 @@ export function Explore() {
         <div className="profile-discovery">
           {page.items.map((profile) => (
             <article key={profile.id} className="person-card">
-              <span className="avatar avatar--md" aria-hidden="true">
-                {profile.displayName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || '?'}
-              </span>
+              <UserAvatar name={profile.displayName} avatarId={profile.avatarId} size="lg" />
               <span className="eyebrow">@{profile.handle}</span>
               <h3>
                 <Link to={`/app/people/${profile.id}`}>{profile.displayName}</Link>

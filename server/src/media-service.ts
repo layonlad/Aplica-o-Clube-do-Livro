@@ -39,9 +39,11 @@ export class MediaService {
     userId: string,
     clubId: string | null,
     read = false,
+    profilePhoto = false,
   ) {
     if (clubId === null) {
-      if (!read) await requirePublicProfile(client, userId)
+      // A foto do perfil pertence a toda conta confirmada; publicar na comunidade continua exigindo perfil público.
+      if (!read && !profilePhoto) await requirePublicProfile(client, userId)
       return { role: 'member' as const }
     }
     try {
@@ -51,15 +53,24 @@ export class MediaService {
       throw error
     }
   }
-  async upload(userId: string, clubId: string | null, kind: 'image' | 'video', bytes: Buffer) {
+  async upload(
+    userId: string,
+    clubId: string | null,
+    kind: 'image' | 'video',
+    bytes: Buffer,
+    options: { profilePhoto?: boolean } = {},
+  ) {
     if (!this.storage) throw unavailable()
-    await transaction(this.pool, (client) => this.membership(client, userId, clubId))
+    const profilePhoto = !!options.profilePhoto && clubId === null && kind === 'image'
+    await transaction(this.pool, (client) =>
+      this.membership(client, userId, clubId, false, profilePhoto),
+    )
     const processed = await processMedia(bytes, kind),
       id = randomUUID(),
       key = `club-media/${clubId}/${id}.${kind === 'image' ? 'webp' : 'mp4'}`,
       thumbnailKey = `club-media/${clubId}/${id}-thumb.webp`
     await transaction(this.pool, async (client) => {
-      await this.membership(client, userId, clubId)
+      await this.membership(client, userId, clubId, false, profilePhoto)
       await client.query('SELECT id FROM users WHERE id=$1 FOR UPDATE', [userId])
       const quota = await client.query(
         "SELECT COALESCE(sum(byte_size+thumbnail_size),0)::bigint AS bytes FROM media_objects WHERE owner_user_id=$1 AND state<>'purged'",
@@ -96,7 +107,7 @@ export class MediaService {
       await this.storage.put(key, processed.bytes, processed.mimeType)
       await this.storage.put(thumbnailKey, processed.thumbnail, 'image/webp')
       await transaction(this.pool, async (client) => {
-        await this.membership(client, userId, clubId)
+        await this.membership(client, userId, clubId, false, profilePhoto)
         const updated = await client.query(
           "UPDATE media_objects SET state='active' WHERE id=$1 AND state='pending'",
           [id],
@@ -201,7 +212,8 @@ export class MediaService {
     }
     if (file.owner_user_id === userId) return
     const visible = await client.query(
-      `SELECT 1 WHERE EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=$1 AND ${visiblePublicPost('p', '$2')}) OR EXISTS(SELECT 1 FROM profiles pr WHERE (pr.avatar_id=$1 OR pr.cover_id=$1) AND pr.is_public AND ${notBlocked('pr.user_id', '$2')})`,
+      `SELECT 1 WHERE EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=$1 AND ${visiblePublicPost('p', '$2')}) OR EXISTS(SELECT 1 FROM profiles pr WHERE (pr.avatar_id=$1 OR pr.cover_id=$1) AND pr.is_public AND ${notBlocked('pr.user_id', '$2')})
+      OR EXISTS(SELECT 1 FROM profiles pr WHERE pr.avatar_id=$1 AND $2::uuid IS NOT NULL AND ${notBlocked('pr.user_id', '$2')} AND EXISTS(SELECT 1 FROM club_memberships mine JOIN club_memberships theirs ON theirs.club_id=mine.club_id WHERE mine.user_id=$2 AND mine.status='active' AND theirs.user_id=pr.user_id AND theirs.status='active'))`,
       [file.id, userId],
     )
     if (!visible.rowCount) throw publicMissing()

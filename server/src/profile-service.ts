@@ -100,6 +100,62 @@ export class ProfileService {
       return { updated: true }
     })
   }
+  /**
+   * Troca a foto do perfil. A mídia precisa ser uma imagem ativa da própria conta, fora de clubes.
+   * Devolve a foto anterior para que o chamador revogue o arquivo depois do commit.
+   */
+  setAvatar(user: UserProfile, avatarId: string | null) {
+    return transaction(this.pool, async (client) => {
+      await client.query(
+        'INSERT INTO profiles(user_id,handle,display_name) VALUES($1,$2,$3) ON CONFLICT(user_id) DO NOTHING',
+        [user.id, 'leitor_' + user.id.replaceAll('-', '').slice(0, 20), 'Leitor'],
+      )
+      const {
+        rows: [profile],
+      } = await client.query('SELECT avatar_id FROM profiles WHERE user_id=$1 FOR UPDATE', [user.id])
+      if (
+        avatarId &&
+        !(
+          await client.query(
+            "SELECT 1 FROM media_objects WHERE id=$1 AND owner_user_id=$2 AND club_id IS NULL AND kind='image' AND state='active' FOR SHARE",
+            [avatarId, user.id],
+          )
+        ).rowCount
+      )
+        throw new HttpError(400, 'INVALID_MEDIA', 'Escolha uma foto sua preparada para o perfil.')
+      await client.query(
+        'UPDATE profiles SET avatar_id=$2,version=version+1,updated_at=now() WHERE user_id=$1',
+        [user.id, avatarId],
+      )
+      const previous: string | null = profile.avatar_id
+      return { avatarId, previous: previous && previous !== avatarId ? previous : null }
+    })
+  }
+  /**
+   * Cartão mínimo de outro leitor: visível se o perfil é público ou se os dois têm um clube ativo em comum.
+   * `sharedClubs` lista somente clubes em que o visitante também participa agora.
+   */
+  person(actor: UserProfile, id: string) {
+    return transaction(this.pool, async (client) => {
+      const {
+        rows: [person],
+      } = await client.query(
+        `SELECT u.id,COALESCE(CASE WHEN pr.is_public THEN pr.display_name END,u.name) AS name,pr.avatar_id AS "avatarId",COALESCE(pr.is_public,false) AS "isPublic",
+          COALESCE((SELECT jsonb_agg(jsonb_build_object('id',c.id,'name',c.name) ORDER BY c.name) FROM club_memberships mine JOIN club_memberships theirs ON theirs.club_id=mine.club_id AND theirs.user_id=u.id AND theirs.status='active' JOIN clubs c ON c.id=mine.club_id WHERE mine.user_id=$2 AND mine.status='active'),'[]') AS "sharedClubs"
+        FROM users u LEFT JOIN profiles pr ON pr.user_id=u.id WHERE u.id=$1 AND ${notBlocked('u.id', '$2')}`,
+        [id, actor.id],
+      )
+      if (!person || (person.id !== actor.id && !person.isPublic && !person.sharedClubs.length))
+        throw publicMissing()
+      return person as {
+        id: string
+        name: string
+        avatarId: string | null
+        isPublic: boolean
+        sharedClubs: { id: string; name: string }[]
+      }
+    })
+  }
   get(actor: UserProfile | null, id: string) {
     return transaction(this.pool, async (client) => {
       const {

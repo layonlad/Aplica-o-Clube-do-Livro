@@ -4,6 +4,10 @@ import { Bell, BookOpen, CalendarDays, ChevronRight, History, Home, Camera, Comp
 import { useAuth } from '../auth/AuthProvider'
 import { useTheme } from '../app/ThemeProvider'
 import { SkeletonPage } from '../components/ui'
+import { UserAvatar } from '../components/UserAvatar'
+import { AVATAR_EVENT } from '../components/AvatarUploader'
+import { AppearanceSync } from '../app/AppearanceSettings'
+import { apiRequest } from '../auth/api'
 import { useWorkspace } from './WorkspaceProvider'
 
 type NavItem = { to: string; name: string; icon: LucideIcon; hint?: string }
@@ -106,11 +110,23 @@ export function WorkspaceShell() {
   function skip(event: MouseEvent) { event.preventDefault(); mainRef.current?.focus() }
   function dismiss() { setDismissed(true); try { localStorage.setItem(DISMISS_KEY, '1') } catch { /* sem armazenamento */ } }
 
+  // Foto da própria conta no trilho; atualiza na hora quando a foto muda em "Meu perfil".
+  const [ownAvatar, setOwnAvatar] = useState<string | null>(null)
+  useEffect(() => {
+    if (!user?.emailVerified) { setOwnAvatar(null); return }
+    let live = true
+    apiRequest<{ avatarId: string | null }>(user, '/me/profile').then((value) => live && setOwnAvatar(value.avatarId)).catch(() => undefined)
+    const onChange = (event: Event) => setOwnAvatar((event as CustomEvent<string | null>).detail)
+    window.addEventListener(AVATAR_EVENT, onChange)
+    return () => { live = false; window.removeEventListener(AVATAR_EVENT, onChange) }
+  }, [user?.uid, user?.emailVerified])
+
   const showVisitorNote = !user?.emailVerified && !dismissed && pathname === '/app'
 
   const reading = /^\/app\/reader\/[^/]+/.test(pathname)
   return <div className={`app-frame workspace-app ${reading ? 'is-reading' : ''}`} data-space={globalPage?'community':spaceFor(pathname, scope)}>
     <a className="skip-link" href="#conteudo" onClick={skip}>Pular para o conteúdo</a>
+    <AppearanceSync />
     <aside className="app-rail">
       <header className={`app-header ${scrolled ? 'is-scrolled' : ''}`}>
         <Link className="brand-lockup" to="/app" aria-label="Clube do Livro, início"><span className="brand-mark">{monogram}</span><span className="rail-brand-name rail-only"><strong>Clube do Livro</strong><small>Leituras que aproximam</small></span></Link>
@@ -129,7 +145,7 @@ export function WorkspaceShell() {
       </nav>
       <div className="rail-foot rail-only">
         {user
-          ? <Link className="rail-account" to="/app/profile"><span className="avatar avatar--md" aria-hidden="true">{(user.displayName || user.email || '?').slice(0, 2).toUpperCase()}</span><span><strong>{user.displayName || 'Sua conta'}</strong><small>{user.email}</small></span></Link>
+          ? <Link className="rail-account" to="/app/profile"><UserAvatar name={user.displayName || user.email || '?'} avatarId={ownAvatar} size="md" /><span><strong>{user.displayName || 'Sua conta'}</strong><small>{user.email}</small></span></Link>
           : <Link className="rail-account" to="/account"><span className="avatar avatar--md" aria-hidden="true"><LogIn size={18} /></span><span><strong>Entrar ou criar conta</strong><small>Para sincronizar e ler em grupo</small></span></Link>}
       </div>
     </aside>

@@ -8,6 +8,18 @@
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>Clube do Livro</title>
+    <style>html{background:#fbf4e8}html[data-theme='dark']{background:#17111f}</style>
+    <script>
+      // Aplica o modo salvo antes do primeiro desenho, evitando o clarão do tema padrão.
+      ;(function () {
+        try {
+          var saved = JSON.parse(localStorage.getItem('clube-livro-appearance') || 'null')
+          var mode = saved && saved.mode
+          if (mode === 'system') mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          document.documentElement.dataset.theme = mode === 'dark' ? 'dark' : 'light'
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

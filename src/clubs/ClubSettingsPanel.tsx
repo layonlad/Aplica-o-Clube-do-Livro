@@ -5,7 +5,8 @@ import type { ClubSettings } from '../../server/src/club-management'
 import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
 import { Button, Card } from '../components/ui'
-type Request = { id: string; userId: string; name: string; message: string; createdAt: string }
+import { UserIdentity } from '../components/UserAvatar'
+type Request = { id: string; userId: string; name: string; avatarId?: string | null; message: string; createdAt: string }
 type Page = { items: Request[]; nextCursor: string | null }
 export function ClubSettingsPanel({
   clubId,
@@ -222,8 +223,12 @@ export function ClubSettingsPanel({
             {!requests.items.length && <p>Nenhuma solicitação pendente.</p>}
             {requests.items.map((request) => (
               <article className="club-request" key={request.id}>
-                <strong>{request.name}</strong>
-                <small>{new Date(request.createdAt).toLocaleDateString('pt-BR')}</small>
+                <UserIdentity
+                  link={false}
+                  name={request.name}
+                  avatarId={request.avatarId}
+                  meta={new Date(request.createdAt).toLocaleDateString('pt-BR')}
+                />
                 <p className="preserve-text">
                   {request.message || 'Quer participar das próximas leituras.'}
                 </p>

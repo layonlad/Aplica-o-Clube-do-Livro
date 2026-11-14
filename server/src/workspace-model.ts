@@ -1,4 +1,5 @@
 import type { Role } from './contracts.js'
+import { appearanceSchema } from './appearance-schema.js'
 import { z } from 'zod'
 
 const id = z.uuid()
@@ -12,6 +13,8 @@ const epubAnnotation=z.object({id,hash:z.string().regex(/^[0-9a-f]{64}$/),chapte
 export const preferencesSchema = z.object({
   shelves: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
   reader: z.object({ size: z.number().int().min(16).max(32), font: z.enum(['serif','sans']), theme: z.enum(['light','dark','sepia']), margin: z.enum(['compact','comfortable','wide']) }).default({size:20,font:'serif',theme:'light',margin:'comfortable'}),
+  // Aparência da conta (fontes, cores, modo). Gravada por /me/appearance; mantida aqui para não ser descartada nas ações do espaço.
+  appearance: appearanceSchema.optional().catch(undefined),
 }).default({shelves:[],reader:{size:20,font:'serif',theme:'light',margin:'comfortable'}})
 export type ReadingPreferences = z.infer<typeof preferencesSchema>
 export const readingSchema = z.record(id, z.object({ percent: z.number().int().min(0).max(100), page: z.number().int().min(0).max(10000), bookmark: z.number().int().min(0).max(10000).nullable(), rating: z.number().int().min(0).max(5), finishedAt: date.nullable(),

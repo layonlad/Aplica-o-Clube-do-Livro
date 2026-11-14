@@ -42,7 +42,7 @@ export interface PostQuery {
 }
 const missing = () => new HttpError(404, 'POST_NOT_FOUND', 'Esta publicação não está disponível.')
 const columns = `p.id,p.kind,p.body,p.book_title AS "bookTitle",p.book_author AS "bookAuthor",p.quote,p.source,p.version,p.created_at AS "createdAt",p.updated_at AS "updatedAt",p.created_at::text AS "sortTime",
-  jsonb_build_object('id',u.id,'name',CASE WHEN p.audience='public' THEN (SELECT display_name FROM profiles WHERE user_id=u.id) ELSE u.name END) || CASE WHEN p.audience='public' THEN jsonb_build_object('avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) ELSE '{}'::jsonb END AS author,
+  jsonb_build_object('id',u.id,'name',CASE WHEN p.audience='public' THEN (SELECT display_name FROM profiles WHERE user_id=u.id) ELSE u.name END,'avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) AS author,
   CASE WHEN EXISTS(SELECT 1 FROM social_posts original WHERE original.id=p.shared_post_id AND ${visiblePublicPost('original')}) THEN p.shared_post_id ELSE NULL END AS "sharedPostId",
   (SELECT count(*)::int FROM post_likes l WHERE l.post_id=p.id) AS likes,
   (SELECT count(*)::int FROM post_comments c WHERE c.post_id=p.id AND c.deleted_at IS NULL) AS comments,
@@ -155,6 +155,29 @@ export class PostService {
       )
       return pageOf(
         rows.map((row) => this.dto(row, user?.id ?? null, club.role, moderator)),
+        input.limit,
+      )
+    })
+  }
+  /**
+   * Publicações de mural feitas por `authorId` somente nos clubes em que o visitante tem associação ativa agora.
+   * A interseção é calculada no SQL: clubes que o visitante não frequenta nunca entram na consulta nem no DTO.
+   */
+  sharedClubPosts(viewer: UserProfile, authorId: string, input: { limit: number; cursor?: string }) {
+    return transaction(this.pool, async (client) => {
+      const cursor = decodeCursor(input.cursor)
+      const { rows } = await client.query(
+        `SELECT ${columns},jsonb_build_object('id',c.id,'name',c.name) AS club,(SELECT role FROM club_memberships vm WHERE vm.club_id=p.club_id AND vm.user_id=$2 AND vm.status='active') AS "viewerRole"
+        FROM social_posts p JOIN users u ON u.id=p.author_user_id JOIN clubs c ON c.id=p.club_id
+        WHERE p.author_user_id=$1 AND p.audience='club' AND p.club_id IS NOT NULL AND p.deleted_at IS NULL
+        AND EXISTS(SELECT 1 FROM club_memberships vm WHERE vm.club_id=p.club_id AND vm.user_id=$2 AND vm.status='active')
+        AND ${notBlocked('p.author_user_id', '$2')}
+        AND ($3::timestamptz IS NULL OR (p.created_at,p.id)<($3,$4::uuid))
+        ORDER BY p.created_at DESC,p.id DESC LIMIT $5`,
+        [authorId, viewer.id, cursor?.time ?? null, cursor?.id ?? null, input.limit + 1],
+      )
+      return pageOf(
+        rows.map(({ viewerRole, ...row }) => this.dto(row, viewer.id, viewerRole as Role)),
         input.limit,
       )
     })
@@ -363,7 +386,7 @@ export class PostService {
       const cursor = decodeCursor(input.cursor)
       const { rows } = await client.query(
         `SELECT c.id,c.parent_id AS "parentId",CASE WHEN c.deleted_at IS NULL THEN c.body ELSE '' END AS body,c.version,c.created_at AS "createdAt",c.created_at::text AS "sortTime",c.deleted_at IS NOT NULL AS deleted,
-      CASE WHEN c.deleted_at IS NULL THEN jsonb_build_object('id',u.id,'name',CASE WHEN $7::boolean THEN u.name ELSE (SELECT display_name FROM profiles WHERE user_id=u.id) END) ELSE NULL END AS author,
+      CASE WHEN c.deleted_at IS NULL THEN jsonb_build_object('id',u.id,'name',CASE WHEN $7::boolean THEN u.name ELSE (SELECT display_name FROM profiles WHERE user_id=u.id) END,'avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) ELSE NULL END AS author,
       (SELECT count(*)::int FROM comment_likes l WHERE l.comment_id=c.id) AS likes,EXISTS(SELECT 1 FROM comment_likes l WHERE l.comment_id=c.id AND l.user_id=$2) AS liked,
       (c.author_user_id=$2 OR $6::boolean) AND c.deleted_at IS NULL AS "canDelete"
       FROM post_comments c JOIN users u ON u.id=c.author_user_id WHERE c.post_id=$1 AND ($7::boolean OR (EXISTS(SELECT 1 FROM profiles pr WHERE pr.user_id=c.author_user_id AND pr.is_public) AND ${notBlocked('c.author_user_id', '$2')})) AND ($3::timestamptz IS NULL OR (c.created_at,c.id)<($3,$4::uuid)) ORDER BY c.created_at DESC,c.id DESC LIMIT $5`,

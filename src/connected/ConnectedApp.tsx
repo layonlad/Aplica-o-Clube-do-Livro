@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '../auth/AuthProvider'
 import { AuthScreen, VerifyEmailScreen } from '../auth/AuthScreen'
 import { ApiError, apiRequest, readableError } from '../auth/api'
 import { Button, Card } from '../components/ui'
+import { UserIdentity } from '../components/UserAvatar'
 import './connected.css'
 
 export function Protected({ children }: { children: ReactNode }) {
@@ -124,7 +125,7 @@ export function ClubPage() {
     {!details && !error && <p role="status">Abrindo o clube…</p>}
     {details && <><div className="page-intro"><div><p className="eyebrow">SEU CLUBE</p><h1>{details.club.name}</h1><p>{details.memberCount??details.members.filter((m) => m.status === 'active').length} participantes · {owner ? 'Você é responsável pelo clube' : 'Você participa deste clube'}</p></div></div>
       {message && <p role="status">{message}</p>}
-      <Card><h2>Participantes</h2><ul className="real-members">{details.members.map((member) => <li key={member.id}><div><strong>{member.name}</strong><small>{member.status === 'removed' ? 'Acesso removido' : roleLabels[member.role]}</small></div>
+      <Card><h2>Participantes</h2><ul className="real-members">{details.members.map((member) => <li key={member.id}><div><UserIdentity id={member.status==='active'?member.id:null} name={member.name} avatarId={member.avatarId}/><small>{member.status === 'removed' ? 'Acesso removido' : roleLabels[member.role]}</small></div>
         {owner && member.role !== 'owner' && member.status==='active' && <label>Papel<select className="member-role-select" aria-label={`Papel de ${member.name}`} disabled={busy} value={member.role} onChange={event=>void action(async()=>{await apiRequest(user!,`/clubs/${clubId}/members/${member.id}/role`,'POST',{role:event.target.value});setMessage('Papel atualizado.')})}><option value="member">Membro</option><option value="moderator">Moderador</option><option value="admin">Administrador</option></select></label>}{manager && member.role !== 'owner' && (owner||member.role!=='admin') && (member.status === 'removed' ? <Button disabled={busy} variant="secondary" onClick={() => action(async () => { await apiRequest(user!, `/clubs/${clubId}/members/${member.id}/restore`, 'POST'); setMessage('Acesso reativado.') })}>Reativar</Button> : removeId === member.id ? <div className="access-actions"><span>Remover o acesso de {member.name}?</span><Button disabled={busy} variant="danger" onClick={() => action(async () => { await apiRequest(user!, `/clubs/${clubId}/members/${member.id}`, 'DELETE'); setMessage('Acesso removido.'); setRemoveId(null) })}>Confirmar remoção</Button><Button disabled={busy} variant="ghost" onClick={() => setRemoveId(null)}>Cancelar</Button></div> : <Button disabled={busy} variant="ghost" onClick={() => setRemoveId(member.id)}>Remover</Button>)}</li>)}</ul>{details.membersNextCursor&&<Button disabled={busy} variant="secondary" onClick={()=>void moreMembers()}>Mais participantes</Button>}</Card>
       {manager && <><Card><h2>Convidar para o clube</h2><p>Compartilhe um convite com seu grupo ou reserve o acesso para uma pessoa.</p>
         <form className="access-form" onSubmit={createInvite}>

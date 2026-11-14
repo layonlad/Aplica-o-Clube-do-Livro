@@ -8,6 +8,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
 import { Button } from '../components/ui'
+import { UserIdentity } from '../components/UserAvatar'
 import { ConfirmAction } from '../community/ClubWall'
 import { MediaPicker, PrivateMedia } from '../community/PrivateMedia'
 import './forum.css'
@@ -209,9 +210,13 @@ function TopicRow({ topic, onOpen }: { topic: ForumTopic; onOpen: () => void }) 
           </p>
         )}
         <div className="forum-row-meta">
-          <span>
-            {topic.author.name} · {date(topic.createdAt)}
-          </span>
+          <UserIdentity
+            size="xs"
+            link={false}
+            name={topic.author.name}
+            avatarId={topic.author.avatarId}
+            meta={date(topic.createdAt)}
+          />
           <span>
             <MessageSquare size={14} />
             {topic.replies}
@@ -440,10 +445,17 @@ function TopicRoom({
           {topic.chapter ? ' · ' + topic.chapter : ''}
         </span>
         <h1>{topic.title}</h1>
-        <p>
-          {topic.author.name} · {date(topic.createdAt)}
-          {topic.version > 0 ? ' · Atualizada' : ''}
-        </p>
+        <UserIdentity
+          id={topic.author.id}
+          name={topic.author.name}
+          avatarId={topic.author.avatarId}
+          meta={
+            <>
+              {date(topic.createdAt)}
+              {topic.version > 0 ? ' · Atualizada' : ''}
+            </>
+          }
+        />
         <div className="workspace-actions">
           {topic.pinned && (
             <span className="chip">
@@ -667,8 +679,13 @@ function ReplyCard({
   return (
     <article className="forum-reply">
       <header>
-        <strong>{reply.author.name}</strong>
-        <small>{date(reply.createdAt)}</small>
+        <UserIdentity
+          size="sm"
+          id={reply.author.id}
+          name={reply.author.name}
+          avatarId={reply.author.avatarId}
+          meta={date(reply.createdAt)}
+        />
       </header>
       {revealed ? (
         <>

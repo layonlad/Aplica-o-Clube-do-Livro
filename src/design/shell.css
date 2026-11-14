@@ -282,3 +282,11 @@
   .app-frame.is-reading .app-rail { display: none; }
   .app-frame.is-reading .page-content { max-width: 920px; padding-top: var(--space-6); }
 }
+
+/* Navegação interna do clube: renderizada pelo shell, então o estilo precisa estar sempre carregado
+ * (antes ficava só em CSS de telas carregadas sob demanda e aparecia sem estilo ao abrir /app direto). */
+.club-subnav { display: flex; gap: var(--space-2); margin-bottom: var(--space-6); padding: var(--space-2) 0; overflow-x: auto; border-bottom: 1px solid var(--divider); scrollbar-width: none; }
+.club-subnav::-webkit-scrollbar { display: none; }
+.club-subnav a { flex: 0 0 auto; padding: var(--space-2) var(--space-1); color: var(--text-muted); border-bottom: 2px solid transparent; font-size: var(--text-small); font-weight: 600; white-space: nowrap; transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
+.club-subnav a:hover { color: var(--text); }
+.club-subnav a.active { color: var(--text); border-color: var(--space-accent); font-weight: 700; }

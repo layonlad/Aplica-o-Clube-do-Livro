@@ -40,7 +40,7 @@ export interface ForumTopic {
   version: number
   createdAt: string
   updatedAt: string
-  author: { id: string; name: string }
+  author: { id: string; name: string; avatarId?: string | null }
   replies: number
   likes: number
   liked: boolean
@@ -55,7 +55,7 @@ export interface ForumReply {
   spoiler: boolean
   version: number
   createdAt: string
-  author: { id: string; name: string }
+  author: { id: string; name: string; avatarId?: string | null }
   canDelete: boolean
   media: PostMedia[]
 }

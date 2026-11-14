@@ -10,6 +10,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
 import { Button } from '../components/ui'
+import { UserIdentity } from '../components/UserAvatar'
 import { MediaPicker, PrivateMedia } from './PrivateMedia'
 import './community.css'
 export const kindLabels = {
@@ -411,35 +412,18 @@ export function PostCard({
   return (
     <article className="social-post">
       <header className="post-heading">
-        <span className="social-initial">
-          {clubId === null && post.author.avatarId ? (
-            <PrivateMedia
-              publicMedia
-              media={{
-                id: post.author.avatarId,
-                kind: 'image',
-                width: 1,
-                height: 1,
-                duration: null,
-              }}
-              alt={post.author.name}
-            />
-          ) : (
-            post.author.name[0]
-          )}
-        </span>
         <div>
-          {clubId === null ? (
-            <Link to={`/app/people/${post.author.id}`}>
-              <strong>{post.author.name}</strong>
-            </Link>
-          ) : (
-            <strong>{post.author.name}</strong>
-          )}
-          <small>
-            {kindLabels[post.kind]} · {date(post.createdAt)}
-            {post.version > 0 ? ' · Editado' : ''}
-          </small>
+          <UserIdentity
+            id={post.author.id}
+            name={post.author.name}
+            avatarId={post.author.avatarId}
+            meta={
+              <>
+                {kindLabels[post.kind]} · {date(post.createdAt)}
+                {post.version > 0 ? ' · Editado' : ''}
+              </>
+            }
+          />
         </div>
         <details className="post-options">
           <summary aria-label="Opções da publicação">•••</summary>
@@ -721,11 +705,18 @@ export function PostComments({
             <p>Comentário excluído.</p>
           ) : (
             <>
-              <strong>{comment.author?.name}</strong>
-              <small>
-                {date(comment.createdAt)}
-                {comment.parentId ? ' · Resposta na conversa' : ''}
-              </small>
+              <UserIdentity
+                size="sm"
+                id={comment.author?.id}
+                name={comment.author?.name ?? 'Leitor'}
+                avatarId={comment.author?.avatarId}
+                meta={
+                  <>
+                    {date(comment.createdAt)}
+                    {comment.parentId ? ' · Resposta na conversa' : ''}
+                  </>
+                }
+              />
               <p className="preserve-text">{comment.body}</p>
               <div className="workspace-actions">
                 <Button

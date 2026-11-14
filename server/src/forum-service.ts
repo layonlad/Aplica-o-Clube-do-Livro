@@ -23,7 +23,7 @@ export interface ForumQuery {
 const missing = () => new HttpError(404, 'TOPIC_NOT_FOUND', 'Esta discussão não está disponível.')
 const denied = () =>
   new HttpError(403, 'ACCESS_DENIED', 'Você não tem permissão para alterar esta discussão.')
-const topicColumns = `t.id,t.title,t.body,t.spoiler,t.book_id AS "bookId",t.book_title AS "bookTitle",t.book_author AS "bookAuthor",t.chapter,t.pinned,t.closed,t.version,t.created_at AS "createdAt",t.updated_at AS "updatedAt",t.created_at::text AS "sortTime",jsonb_build_object('id',u.id,'name',u.name) AS author,
+const topicColumns = `t.id,t.title,t.body,t.spoiler,t.book_id AS "bookId",t.book_title AS "bookTitle",t.book_author AS "bookAuthor",t.chapter,t.pinned,t.closed,t.version,t.created_at AS "createdAt",t.updated_at AS "updatedAt",t.created_at::text AS "sortTime",jsonb_build_object('id',u.id,'name',u.name,'avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) AS author,
  (SELECT count(*)::int FROM forum_replies r WHERE r.topic_id=t.id AND r.deleted_at IS NULL) AS replies,
  (SELECT count(*)::int FROM forum_topic_likes l WHERE l.topic_id=t.id) AS likes,
  EXISTS(SELECT 1 FROM forum_topic_likes l WHERE l.topic_id=t.id AND l.user_id=$2) AS liked,
@@ -473,7 +473,7 @@ export class ForumService {
       if (!exists.rowCount) throw missing()
       const cursor = decodeCursor(input.cursor)
       const { rows } = await client.query(
-        `SELECT r.id,r.body,r.spoiler,r.version,r.created_at AS "createdAt",r.created_at::text AS "sortTime",jsonb_build_object('id',u.id,'name',u.name) AS author,(r.author_user_id=$2 OR $6::boolean) AS "canDelete",
+        `SELECT r.id,r.body,r.spoiler,r.version,r.created_at AS "createdAt",r.created_at::text AS "sortTime",jsonb_build_object('id',u.id,'name',u.name,'avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) AS author,(r.author_user_id=$2 OR $6::boolean) AS "canDelete",
       COALESCE((SELECT jsonb_agg(jsonb_build_object('id',m.id,'kind',m.kind,'width',m.width,'height',m.height,'duration',m.duration) ORDER BY fm.position) FROM forum_reply_media fm JOIN media_objects m ON m.id=fm.media_id WHERE fm.reply_id=r.id AND m.state='active'),'[]') AS media
       FROM forum_replies r JOIN users u ON u.id=r.author_user_id WHERE r.topic_id=$1 AND r.deleted_at IS NULL AND ($3::timestamptz IS NULL OR (r.created_at,r.id)<($3,$4::uuid)) ORDER BY r.created_at DESC,r.id DESC LIMIT $5`,
         [
