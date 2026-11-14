@@ -1,0 +1,780 @@
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import type { ClubEvent } from '../clubs/ClubCalendar'
+import { Camera, Heart } from 'lucide-react'
+import type {
+  AlbumDto,
+  AlbumPhoto,
+  Page,
+  PostDto,
+  PostMedia,
+} from '../../server/src/community-contracts'
+import type { ClubDetails } from '../../server/src/contracts'
+import { useAuth } from '../auth/AuthProvider'
+import { apiRequest, readableError } from '../auth/api'
+import { useWorkspace } from '../workspace/WorkspaceProvider'
+import { Button } from '../components/ui'
+import { MediaPicker, PrivateMedia } from './PrivateMedia'
+import { ConfirmAction, PostComments } from './ClubWall'
+import './community.css'
+export function ClubGallery() {
+  const { scope } = useWorkspace()
+  return scope === 'personal' ? (
+    <div className="library-empty">
+      <Camera size={36} />
+      <h1>Os encontros ficam na memória</h1>
+      <p>Escolha um clube para visitar seus álbuns privados.</p>
+      <Link to="/clubs">Meus clubes →</Link>
+    </div>
+  ) : (
+    <GalleryRoom key={scope} clubId={scope} />
+  )
+}
+function GalleryRoom({ clubId }: { clubId: string }) {
+  const { user } = useAuth(),
+    { snapshot } = useWorkspace(),
+    [params, setParams] = useSearchParams(),
+    selected = params.get('album'),
+    linkedEvent = params.get('event'),
+    [eventInfo, setEventInfo] = useState<ClubEvent | null>(null),
+    [album, setAlbum] = useState<AlbumDto | null>(null)
+  const [page, setPage] = useState<Page<AlbumDto>>({ items: [], nextCursor: null }),
+    [show, setShow] = useState(false),
+    [title, setTitle] = useState(''),
+    [description, setDescription] = useState(''),
+    [eventId, setEventId] = useState(linkedEvent ?? ''),
+    [eventDate, setEventDate] = useState(new Date().toLocaleDateString('en-CA')),
+    [allowMemberUpload, setAllowMemberUpload] = useState(true),
+    [allowDownload, setAllowDownload] = useState(false),
+    [allowPublicShare, setAllowPublicShare] = useState(false)
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState(''),
+    [revision, setRevision] = useState(0)
+  const filter = linkedEvent ? '?eventId=' + encodeURIComponent(linkedEvent) : ''
+  useEffect(() => {
+    if (!linkedEvent) return
+    let live = true
+    apiRequest<ClubEvent>(user!, `/clubs/${clubId}/events/${linkedEvent}`)
+      .then((value) => {
+        if (live) {
+          setEventInfo(value)
+          setEventId(value.id)
+          setEventDate(new Date(value.date).toLocaleDateString('en-CA'))
+          setTitle(value.title)
+        }
+      })
+      .catch((err) => live && setError(readableError(err)))
+    return () => {
+      live = false
+    }
+  }, [user?.uid, user?.emailVerified, clubId, linkedEvent])
+  const manager = ['owner', 'admin'].includes(snapshot?.role ?? 'member')
+  useEffect(() => {
+    let live = true
+    setBusy(true)
+    setError('')
+    setPage({ items: [], nextCursor: null })
+    setAlbum(null)
+    const request = selected
+      ? apiRequest<AlbumDto>(user!, `/clubs/${clubId}/albums/${selected}`).then((value) => ({
+          album: value,
+          page: null,
+        }))
+      : apiRequest<Page<AlbumDto>>(user!, `/clubs/${clubId}/albums${filter}`).then((value) => ({
+          album: null,
+          page: value,
+        }))
+    request
+      .then((value) => {
+        if (live) {
+          setAlbum(value.album)
+          if (value.page) setPage(value.page)
+        }
+      })
+      .catch((err) => live && setError(readableError(err)))
+      .finally(() => live && setBusy(false))
+    return () => {
+      live = false
+    }
+  }, [user?.uid, user?.emailVerified, clubId, selected, revision, filter])
+  async function create(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      const value = await apiRequest<{ id: string }>(user!, `/clubs/${clubId}/albums`, 'POST', {
+        title,
+        description,
+        eventId: eventId || null,
+        eventDate,
+        allowMemberUpload,
+        allowDownload,
+        allowPublicShare,
+      })
+      setTitle('')
+      setDescription('')
+      setShow(false)
+      setParams({ album: value.id })
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function more() {
+    setBusy(true)
+    try {
+      const next = await apiRequest<Page<AlbumDto>>(
+        user!,
+        `/clubs/${clubId}/albums${filter || '?'}${filter ? '&' : ''}cursor=${encodeURIComponent(page.nextCursor!)}`,
+      )
+      setPage((value) => ({ items: [...value.items, ...next.items], nextCursor: next.nextCursor }))
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  if (selected && album)
+    return <AlbumRoom key={album.id} clubId={clubId} album={album} onBack={() => setParams({})} />
+  return (
+    <div className="stack-lg gallery-room">
+      <header className="social-heading">
+        <span className="eyebrow">MEMÓRIAS DO CLUBE</span>
+        <h1>Histórias que vivemos juntos</h1>
+        <p>
+          {eventInfo
+            ? `Registros do encontro ${eventInfo.title}.`
+            : 'Álbuns privados dos nossos encontros, entre uma leitura e outra.'}
+        </p>
+        {linkedEvent && <Link to="/app/gallery">Ver todos os álbuns →</Link>}
+        {manager && (
+          <Button variant="secondary" onClick={() => setShow(!show)}>
+            Criar álbum
+          </Button>
+        )}
+      </header>
+      {error && (
+        <div role="alert">
+          {error}{' '}
+          <Button variant="ghost" onClick={() => setRevision((v) => v + 1)}>
+            Atualizar galeria
+          </Button>
+          {selected && (
+            <Button variant="ghost" onClick={() => setParams({})}>
+              Voltar aos álbuns
+            </Button>
+          )}
+        </div>
+      )}
+      {show && (
+        <form className="post-composer workspace-form" onSubmit={create}>
+          <h2>Um novo registro</h2>
+          <label>
+            Título do álbum
+            <input
+              required
+              maxLength={150}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+          </label>
+          <label>
+            Descrição
+            <textarea
+              maxLength={2000}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+            />
+          </label>
+          <label>
+            Encontro relacionado
+            <select
+              value={eventId}
+              onChange={(event) => {
+                setEventId(event.target.value)
+                const meeting = snapshot?.state.events.find(
+                  (item) => item.id === event.target.value,
+                )
+                if (meeting) {
+                  setEventDate(new Date(meeting.date).toLocaleDateString('en-CA'))
+                  if (!title) setTitle(meeting.title)
+                }
+              }}
+            >
+              <option value="">Sem encontro vinculado</option>
+              {eventInfo && !snapshot?.state.events.some((event) => event.id === eventInfo.id) && (
+                <option value={eventInfo.id}>{eventInfo.title}</option>
+              )}
+              {snapshot?.state.events.map((event) => (
+                <option key={event.id} value={event.id}>
+                  {event.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Data do encontro
+            <input
+              required
+              type="date"
+              value={eventDate}
+              onChange={(event) => setEventDate(event.target.value)}
+            />
+          </label>
+          <label className="workspace-check">
+            <input
+              type="checkbox"
+              checked={allowMemberUpload}
+              onChange={(event) => setAllowMemberUpload(event.target.checked)}
+            />
+            Participantes podem adicionar registros
+          </label>
+          <label className="workspace-check">
+            <input
+              type="checkbox"
+              checked={allowDownload}
+              onChange={(event) => setAllowDownload(event.target.checked)}
+            />
+            Disponibilizar botão de download para participantes
+          </label>
+          <label className="workspace-check">
+            <input
+              type="checkbox"
+              checked={allowPublicShare}
+              onChange={(event) => setAllowPublicShare(event.target.checked)}
+            />
+            Permitir que participantes publiquem cópias de registros na comunidade, mediante
+            confirmação própria de autorização
+          </label>
+          <p>
+            O álbum fica restrito ao clube. Quem visualiza uma imagem pode salvá-la no próprio
+            aparelho.
+          </p>
+          <Button disabled={busy}>Criar álbum privado</Button>
+        </form>
+      )}
+      {busy && (
+        <div className="social-skeleton" role="status">
+          Abrindo os registros…
+        </div>
+      )}
+      <div className="album-list">
+        {page.items.map((item) => (
+          <button
+            key={item.id}
+            className="album-entry"
+            onClick={() => setParams({ album: item.id })}
+          >
+            <span className="album-illustration" aria-hidden="true">
+              <Camera size={30} />
+              <span>
+                {new Date(item.eventDate + 'T12:00:00').toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: 'short',
+                })}
+              </span>
+            </span>
+            <span>
+              <strong>{item.title}</strong>
+              <span>{item.description}</span>
+              <small>{item.photoCount} registro(s) · Abrir álbum →</small>
+            </span>
+          </button>
+        ))}
+      </div>
+      {!busy && !error && !page.items.length && (
+        <div className="library-empty">
+          <Camera size={34} />
+          <h2>Há encontros que merecem uma nova página</h2>
+          <p>Os álbuns aparecerão aqui quando a administração organizar os primeiros registros.</p>
+        </div>
+      )}
+      {page.nextCursor && (
+        <Button variant="secondary" disabled={busy} onClick={() => void more()}>
+          Mais álbuns
+        </Button>
+      )}
+    </div>
+  )
+}
+function AlbumRoom({
+  clubId,
+  album: initialAlbum,
+  onBack,
+}: {
+  clubId: string
+  album: AlbumDto
+  onBack: () => void
+}) {
+  const { user } = useAuth(),
+    [page, setPage] = useState<Page<AlbumPhoto>>({ items: [], nextCursor: null }),
+    [media, setMedia] = useState<PostMedia[]>([]),
+    [caption, setCaption] = useState(''),
+    [uploading, setUploading] = useState(false),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(''),
+    [policyMessage, setPolicyMessage] = useState(''),
+    [revision, setRevision] = useState(0)
+  const [album, setAlbum] = useState(initialAlbum),
+    [policy, setPolicy] = useState({
+      allowMemberUpload: initialAlbum.allowMemberUpload,
+      allowDownload: initialAlbum.allowDownload,
+      allowPublicShare: initialAlbum.allowPublicShare ?? false,
+    })
+  const path = `/clubs/${clubId}/albums/${album.id}`
+  useEffect(() => {
+    let live = true
+    setBusy(true)
+    setError('')
+    setPage({ items: [], nextCursor: null })
+    apiRequest<Page<AlbumPhoto>>(user!, path + '/photos')
+      .then((value) => live && setPage(value))
+      .catch((err) => live && setError(readableError(err)))
+      .finally(() => live && setBusy(false))
+    return () => {
+      live = false
+    }
+  }, [user?.uid, user?.emailVerified, path, revision])
+  async function publish(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest(user!, path + '/photos', 'POST', {
+        mediaIds: media.map((item) => item.id),
+        caption,
+      })
+      setMedia([])
+      setCaption('')
+      setRevision((v) => v + 1)
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function more() {
+    setBusy(true)
+    try {
+      const next = await apiRequest<Page<AlbumPhoto>>(
+        user!,
+        path + `/photos?cursor=${encodeURIComponent(page.nextCursor!)}`,
+      )
+      setPage((value) => ({ items: [...value.items, ...next.items], nextCursor: next.nextCursor }))
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function removeAlbum() {
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest(user!, path, 'DELETE')
+      onBack()
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="stack-lg gallery-room">
+      <Button variant="ghost" onClick={onBack}>
+        ← Voltar aos álbuns
+      </Button>
+      <header className="social-heading">
+        <span className="eyebrow">
+          ÁLBUM PRIVADO · {new Date(album.eventDate + 'T12:00:00').toLocaleDateString('pt-BR')}
+        </span>
+        <h1>{album.title}</h1>
+        <p className="preserve-text">{album.description}</p>
+      </header>
+      {album.canManage && (
+        <details className="post-composer">
+          <summary>Permissões do álbum</summary>
+          <form
+            className="workspace-form"
+            onSubmit={(event) => {
+              event.preventDefault()
+              setBusy(true)
+              void apiRequest(user!, path + '/policy', 'POST', {
+                ...policy,
+                version: album.version,
+              })
+                .then(() => {
+                  setAlbum({ ...album, ...policy, version: album.version + 1 })
+                  setPolicyMessage('Permissões do álbum salvas.')
+                })
+                .catch((err) => setError(readableError(err)))
+                .finally(() => setBusy(false))
+            }}
+          >
+            {Object.entries({
+              allowMemberUpload: 'Participantes podem adicionar arquivos',
+              allowDownload: 'Disponibilizar botão de download',
+              allowPublicShare:
+                'Permitir compartilhamento explícito de cópias na comunidade pública',
+            }).map(([key, label]) => (
+              <label className="workspace-check" key={key}>
+                <input
+                  type="checkbox"
+                  checked={policy[key as keyof typeof policy]}
+                  onChange={(event) => setPolicy({ ...policy, [key]: event.target.checked })}
+                />
+                {label}
+              </label>
+            ))}
+            <p>
+              O compartilhamento público cria uma nova publicação, sem as identificações do álbum.
+              Quem publicar ainda deverá confirmar os direitos e consentimentos necessários.
+            </p>
+            <Button disabled={busy}>Salvar permissões do álbum</Button>
+          </form>
+        </details>
+      )}
+      {album.canUpload && (
+        <details className="post-composer">
+          <summary>Adicionar registros do encontro</summary>
+          <form className="workspace-form" onSubmit={publish}>
+            <p>Os arquivos aparecerão neste álbum e no mural privado do clube.</p>
+            <MediaPicker clubId={clubId} value={media} onChange={setMedia} onBusy={setUploading} />
+            <label>
+              Legenda
+              <textarea
+                maxLength={500}
+                value={caption}
+                onChange={(event) => setCaption(event.target.value)}
+              />
+            </label>
+            <Button disabled={busy || uploading || !media.length}>
+              Publicar no álbum e no mural
+            </Button>
+          </form>
+        </details>
+      )}
+      {policyMessage && <p role="status">{policyMessage}</p>}
+      {error && <p role="alert">{error}</p>}
+      {busy && !page.items.length && <p role="status">Carregando registros…</p>}
+      <div className="gallery-photos">
+        {page.items.map((photo) => (
+          <PhotoCard
+            key={photo.id}
+            clubId={clubId}
+            album={album}
+            photo={photo}
+            onChange={(value) =>
+              setPage((page) => ({
+                ...page,
+                items: page.items.map((item) => (item.id === value.id ? value : item)),
+              }))
+            }
+            onRemoved={() =>
+              setPage((page) => ({
+                ...page,
+                items: page.items.filter((item) => item.id !== photo.id),
+              }))
+            }
+          />
+        ))}
+      </div>
+      {!busy && !page.items.length && !error && (
+        <div className="library-empty">
+          <Camera size={32} />
+          <h2>A memória começa com o primeiro registro</h2>
+          <p>As fotos e os vídeos do encontro aparecerão aqui.</p>
+        </div>
+      )}
+      {page.nextCursor && (
+        <Button variant="secondary" disabled={busy} onClick={() => void more()}>
+          Mais registros
+        </Button>
+      )}
+      {album.canManage && (
+        <ConfirmAction label="Excluir álbum" disabled={busy} onConfirm={removeAlbum} />
+      )}
+    </div>
+  )
+}
+function PhotoCard({
+  clubId,
+  album,
+  photo,
+  onChange,
+  onRemoved,
+}: {
+  clubId: string
+  album: AlbumDto
+  photo: AlbumPhoto
+  onChange: (photo: AlbumPhoto) => void
+  onRemoved: () => void
+}) {
+  const { user } = useAuth(),
+    { snapshot } = useWorkspace(),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(''),
+    [comments, setComments] = useState(false),
+    [tagging, setTagging] = useState(false),
+    [members, setMembers] = useState<ClubDetails['members']>([]),
+    [target, setTarget] = useState(''),
+    [memberQuery, setMemberQuery] = useState('')
+  const path = `/clubs/${clubId}/albums/${album.id}/photos/${photo.id}`
+  async function refresh() {
+    const value = await apiRequest<AlbumPhoto>(user!, path)
+    onChange(value)
+  }
+  async function like() {
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest(user!, `/clubs/${clubId}/posts/${photo.postId}/like`, 'POST', {
+        value: !photo.liked,
+      })
+      const post = await apiRequest<PostDto>(user!, `/clubs/${clubId}/posts/${photo.postId}`)
+      onChange({ ...photo, likes: post.likes, liked: post.liked })
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function remove() {
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest(user!, path, 'DELETE')
+      onRemoved()
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function consent(accept: boolean) {
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest(user!, path + '/consent', 'POST', { accept })
+      await refresh()
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function tag(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest(user!, path + '/tags', 'POST', { userId: target })
+      setTagging(false)
+      setTarget('')
+      await refresh()
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  useEffect(() => {
+    if (!tagging) return
+    let live = true
+    const timer = setTimeout(() => {
+      void apiRequest<Page<ClubDetails['members'][number]>>(
+        user!,
+        `/clubs/${clubId}/members${memberQuery.trim().length >= 2 ? '?q=' + encodeURIComponent(memberQuery.trim()) : ''}`,
+      )
+        .then(
+          (value) => live && setMembers(value.items.filter((member) => member.status === 'active')),
+        )
+        .catch((err) => live && setError(readableError(err)))
+    }, 250)
+    return () => {
+      live = false
+      clearTimeout(timer)
+    }
+  }, [user?.uid, user?.emailVerified, clubId, tagging, memberQuery])
+  function openTags() {
+    setTagging(!tagging)
+  }
+  async function download() {
+    setBusy(true)
+    setError('')
+    try {
+      const token = await user!.getIdToken()
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/v1/media/${photo.id}/content?variant=full&download=1`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'omit',
+          cache: 'no-store',
+          referrerPolicy: 'no-referrer',
+          signal: AbortSignal.timeout(75000),
+        },
+      )
+      if (!response.ok) throw Error('Não foi possível baixar este registro.')
+      const href = URL.createObjectURL(await response.blob()),
+        link = document.createElement('a')
+      link.href = href
+      link.download = `registro-do-encontro.${photo.kind === 'video' ? 'mp4' : 'webp'}`
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(href), 1000)
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <article className="gallery-photo">
+      <PrivateMedia media={photo} alt={photo.caption || album.title} />
+      <div className="gallery-photo-content">
+        <p className="preserve-text">{photo.caption}</p>
+        <small>Registro de {photo.addedBy.name}</small>
+        {photo.tags.length > 0 && <p>Com {photo.tags.map((tag) => tag.name).join(', ')}</p>}
+        {photo.myPendingTag && (
+          <div className="tag-consent">
+            <p>Você foi identificado neste registro. Permitir que seu nome apareça?</p>
+            <Button disabled={busy} variant="secondary" onClick={() => void consent(true)}>
+              Permitir meu nome
+            </Button>
+            <Button disabled={busy} variant="ghost" onClick={() => void consent(false)}>
+              Não me identificar
+            </Button>
+          </div>
+        )}
+        {photo.tags.some((tag) => tag.id === snapshot?.actorId) && (
+          <Button variant="ghost" disabled={busy} onClick={() => void consent(false)}>
+            Remover minha identificação
+          </Button>
+        )}
+        <div className="workspace-actions">
+          <Button
+            variant="ghost"
+            disabled={busy}
+            aria-pressed={photo.liked}
+            onClick={() => void like()}
+          >
+            <Heart size={18} fill={photo.liked ? 'currentColor' : 'none'} />
+            {photo.likes}
+          </Button>
+          <Button variant="ghost" onClick={() => setComments(!comments)}>
+            Conversar sobre este registro
+          </Button>
+          <Button variant="ghost" onClick={() => void openTags()}>
+            Identificar participante
+          </Button>
+          {album.allowDownload && (
+            <Button variant="ghost" disabled={busy} onClick={() => void download()}>
+              Baixar registro
+            </Button>
+          )}
+        </div>
+        {album.allowPublicShare && <PublicPhotoShare path={path} />}{' '}
+        {tagging && (
+          <form className="workspace-form" onSubmit={tag}>
+            <label>
+              Pesquisar participante
+              <input
+                maxLength={100}
+                value={memberQuery}
+                onChange={(event) => setMemberQuery(event.target.value)}
+                placeholder="Pesquise pelo nome"
+              />
+            </label>
+            <label>
+              Participante a identificar
+              <select required value={target} onChange={(event) => setTarget(event.target.value)}>
+                <option value="">Escolha uma pessoa</option>
+                {members.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <small>O nome só aparece depois que a própria pessoa permite.</small>
+            <Button disabled={busy || !target}>Propor identificação</Button>
+          </form>
+        )}
+        {error && <p role="alert">{error}</p>}
+        {photo.canRemove && (
+          <ConfirmAction label="Retirar registro do álbum" disabled={busy} onConfirm={remove} />
+        )}{' '}
+        {comments && <PostComments clubId={clubId} postId={photo.postId} />}
+      </div>
+    </article>
+  )
+}
+
+function PublicPhotoShare({ path }: { path: string }) {
+  const { user } = useAuth(),
+    [open, setOpen] = useState(false),
+    [body, setBody] = useState(''),
+    [authorized, setAuthorized] = useState(false),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(''),
+    [postId, setPostId] = useState('')
+  return (
+    <div>
+      <Button variant="secondary" onClick={() => setOpen(!open)}>
+        Compartilhar este registro na comunidade
+      </Button>
+      {open && (
+        <form
+          className="workspace-form"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (!user || !authorized) return
+            setBusy(true)
+            setError('')
+            void apiRequest<{ id: string }>(user, path + '/publish-public', 'POST', {
+              body,
+              authorized,
+            })
+              .then((value) => {
+                setPostId(value.id)
+                setOpen(false)
+              })
+              .catch((err) => setError(readableError(err)))
+              .finally(() => setBusy(false))
+          }}
+        >
+          <p>
+            Uma cópia desta foto ou vídeo ficará pública. O álbum continua privado e as
+            identificações de participantes não serão copiadas.
+          </p>
+          <label>
+            Legenda da publicação pública
+            <textarea
+              required
+              maxLength={5000}
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+            />
+          </label>
+          <label className="workspace-check">
+            <input
+              required
+              type="checkbox"
+              checked={authorized}
+              onChange={(event) => setAuthorized(event.target.checked)}
+            />
+            Confirmo que posso publicar este registro e que tenho os direitos e consentimentos
+            necessários.
+          </label>
+          <Button disabled={busy || !authorized}>Confirmar publicação pública do registro</Button>
+        </form>
+      )}
+      {error && <p role="alert">{error}</p>}
+      {postId && (
+        <p role="status">
+          <Link to={`/app/community?post=${postId}`}>Publicação criada na comunidade →</Link>
+        </p>
+      )}
+    </div>
+  )
+}

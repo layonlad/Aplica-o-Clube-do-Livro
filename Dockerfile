@@ -9,6 +9,7 @@ RUN npm run api:build
 FROM node:24-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=8080
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
 COPY server/package.json server/package.json
 RUN npm ci --omit=dev --workspace server --include-workspace-root=false && npm cache clean --force

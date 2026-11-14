@@ -1,3 +1,5 @@
+import {decodeCursor,pageOf} from './pagination.js'
+import { assertCapability,can } from './permissions.js'
 import { createHash, randomBytes } from 'node:crypto'
 import type { Pool, PoolClient } from 'pg'
 import type { Identity } from './auth.js'
@@ -13,8 +15,8 @@ async function audit(client: PoolClient, clubId: string, actor: string, action: 
 }
 // All membership-sensitive operations lock the club first, in the same order.
 // Removal and invite redemption cannot race past a stale permission check.
-export async function authorize(client: PoolClient, clubId: string, userId: string, ownerOnly = false): Promise<Club> {
-  await client.query('SELECT id FROM clubs WHERE id = $1 FOR UPDATE', [clubId])
+export async function authorize(client: PoolClient, clubId: string, userId: string, ownerOnly = false, lock: 'update'|'share' = 'update'): Promise<Club> {
+  await client.query(`SELECT id FROM clubs WHERE id = $1 FOR ${lock==='share'?'SHARE':'UPDATE'}`, [clubId])
   const { rows } = await client.query<Club>(`SELECT c.id, c.name, c.timezone, m.role FROM clubs c
     JOIN club_memberships m ON m.club_id = c.id WHERE c.id = $1 AND m.user_id = $2 AND m.status = 'active'`, [clubId, userId])
   const club = rows[0]
@@ -54,15 +56,25 @@ export class ClubService {
   async details(user: UserProfile, clubId: string): Promise<ClubDetails> {
     return transaction(this.pool, async (client) => {
       const club = await authorize(client, clubId, user.id)
-      const { rows } = await client.query<Member>(`SELECT u.id, u.name, m.role, m.status FROM club_memberships m JOIN users u ON u.id = m.user_id
-        WHERE m.club_id = $1 AND ($2::boolean OR m.status = 'active') ORDER BY m.joined_at`, [clubId, club.role === 'owner'])
-      return { club, members: rows }
+      const { rows } = await client.query<Member&{sortTime:string}>(`SELECT u.id, u.name, m.role, m.status,m.joined_at::text AS "sortTime" FROM club_memberships m JOIN users u ON u.id = m.user_id
+        WHERE m.club_id = $1 AND ($2::boolean OR m.status = 'active') ORDER BY m.joined_at DESC,u.id DESC LIMIT 51`, [clubId, can(club.role,'manageMembers')])
+      const page=pageOf(rows,50)
+      const count=await client.query("SELECT count(*)::int AS count FROM club_memberships WHERE club_id=$1 AND status='active'",[clubId])
+      return { club, members: page.items,membersNextCursor:page.nextCursor,memberCount:count.rows[0].count }
+    })
+  }
+
+  async members(user:UserProfile,clubId:string,input:{limit:number;cursor?:string;q?:string}){
+    return transaction(this.pool,async client=>{
+      const club=await authorize(client,clubId,user.id,false,'share'),cursor=decodeCursor(input.cursor)
+      const {rows}=await client.query<Member&{sortTime:string}>(`SELECT u.id,u.name,m.role,m.status,m.joined_at::text AS "sortTime" FROM club_memberships m JOIN users u ON u.id=m.user_id WHERE m.club_id=$1 AND ($2::boolean OR m.status='active') AND ($3::timestamptz IS NULL OR (m.joined_at,u.id)<($3,$4::uuid)) AND ($5::text IS NULL OR u.name ILIKE '%'||$5||'%') ORDER BY m.joined_at DESC,u.id DESC LIMIT $6`,[clubId,can(club.role,'manageMembers'),cursor?.time??null,cursor?.id??null,input.q??null,input.limit+1])
+      return pageOf(rows,input.limit)
     })
   }
 
   async createInvite(user: UserProfile, clubId: string, input: { email?: string; maxUses: number; expiresInDays: number }): Promise<CreatedInvite> {
     return transaction(this.pool, async (client) => {
-      await authorize(client, clubId, user.id, true)
+      assertCapability((await authorize(client, clubId, user.id)).role, 'invite')
       const token = randomBytes(32).toString('base64url')
       const { rows } = await client.query<Invite>(`INSERT INTO invites (club_id, created_by, email, token_hash, max_uses, expires_at)
         VALUES ($1, $2, $3, $4, $5, now() + $6 * interval '1 day') RETURNING ${inviteColumns}`,
@@ -74,7 +86,7 @@ export class ClubService {
 
   async listInvites(user: UserProfile, clubId: string): Promise<Invite[]> {
     return transaction(this.pool, async (client) => {
-      await authorize(client, clubId, user.id, true)
+      assertCapability((await authorize(client, clubId, user.id)).role, 'invite')
       const { rows } = await client.query<Invite>(`SELECT ${inviteColumns} FROM invites WHERE club_id = $1 ORDER BY created_at DESC LIMIT 100`, [clubId])
       return rows
     })
@@ -82,20 +94,22 @@ export class ClubService {
 
   async revokeInvite(user: UserProfile, clubId: string, inviteId: string) {
     return transaction(this.pool, async (client) => {
-      await authorize(client, clubId, user.id, true)
+      assertCapability((await authorize(client, clubId, user.id)).role, 'invite')
       const result = await client.query('UPDATE invites SET revoked_at = COALESCE(revoked_at, now()) WHERE id = $1 AND club_id = $2 RETURNING id', [inviteId, clubId])
       if (!result.rowCount) throw new HttpError(404, 'NOT_FOUND', 'Convite não encontrado neste clube.')
       await audit(client, clubId, user.id, 'invite.revoked', inviteId)
     })
   }
 
-  async acceptInvite(user: UserProfile, token: string): Promise<Club> {
+  async acceptInvite(user: UserProfile, token: string, addressed=false): Promise<Club> {
     return transaction(this.pool, async (client) => {
-      const found = await client.query('SELECT club_id FROM invites WHERE token_hash = $1', [hashToken(token)])
+      const predicate=addressed?'id=$1 AND email=$2':'token_hash=$1'
+      const params=addressed?[token,user.email.toLowerCase()]:[hashToken(token)]
+      const found = await client.query(`SELECT club_id FROM invites WHERE ${predicate}`,params)
       if (!found.rowCount) throw invalidInvite()
       const clubId = found.rows[0].club_id as string
       await client.query('SELECT id FROM clubs WHERE id = $1 FOR UPDATE', [clubId])
-      const { rows: [invite] } = await client.query(`SELECT *, expires_at <= clock_timestamp() AS expired FROM invites WHERE token_hash = $1 FOR UPDATE`, [hashToken(token)])
+      const { rows: [invite] } = await client.query(`SELECT *, expires_at <= clock_timestamp() AS expired FROM invites WHERE ${predicate} FOR UPDATE`, params)
       if (!invite || invite.revoked_at || invite.expired || (invite.email && invite.email !== user.email.toLowerCase())) throw invalidInvite()
       const { rows: [membership] } = await client.query('SELECT role, status FROM club_memberships WHERE club_id = $1 AND user_id = $2', [clubId, user.id])
       if (membership?.status === 'removed') throw new HttpError(403, 'MEMBERSHIP_REMOVED', 'Seu acesso foi removido. Peça ao responsável para reativá-lo.')
@@ -113,10 +127,10 @@ export class ClubService {
 
   async setMembership(user: UserProfile, clubId: string, targetId: string, status: 'active' | 'removed') {
     return transaction(this.pool, async (client) => {
-      await authorize(client, clubId, user.id, true)
+      const actor = await authorize(client, clubId, user.id); assertCapability(actor.role,'manageMembers')
       const { rows: [target] } = await client.query('SELECT role FROM club_memberships WHERE club_id = $1 AND user_id = $2', [clubId, targetId])
       if (!target) throw new HttpError(404, 'NOT_FOUND', 'Membro não encontrado neste clube.')
-      if (target.role === 'owner') throw new HttpError(409, 'OWNER_PROTECTED', 'O responsável pelo clube não pode ser removido.')
+      if (target.role === 'owner' || (actor.role!=='owner' && target.role==='admin')) throw new HttpError(409, 'OWNER_PROTECTED', 'O responsável pelo clube não pode ser removido.')
       await client.query("UPDATE club_memberships SET status = $3, removed_at = CASE WHEN $3 = 'removed' THEN now() ELSE NULL END WHERE club_id = $1 AND user_id = $2", [clubId, targetId, status])
       await audit(client, clubId, user.id, status === 'active' ? 'member.restored' : 'member.removed', targetId)
     })

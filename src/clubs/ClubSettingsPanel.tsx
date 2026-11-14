@@ -1,0 +1,254 @@
+import { uploadMediaFile, PrivateMedia } from '../community/PrivateMedia'
+import { useEffect, useState, type FormEvent } from 'react'
+import type { Role } from '../../server/src/contracts'
+import type { ClubSettings } from '../../server/src/club-management'
+import { useAuth } from '../auth/AuthProvider'
+import { apiRequest, readableError } from '../auth/api'
+import { Button, Card } from '../components/ui'
+type Request = { id: string; userId: string; name: string; message: string; createdAt: string }
+type Page = { items: Request[]; nextCursor: string | null }
+export function ClubSettingsPanel({
+  clubId,
+  role,
+  onUpdated,
+}: {
+  clubId: string
+  role: Role
+  onUpdated: () => void
+}) {
+  const { user } = useAuth(),
+    [open, setOpen] = useState(false),
+    [settings, setSettings] = useState<ClubSettings | null>(null),
+    [requests, setRequests] = useState<Page>({ items: [], nextCursor: null })
+  const [error, setError] = useState(''),
+    [message, setMessage] = useState(''),
+    [busy, setBusy] = useState(false),
+    [revision, setRevision] = useState(0)
+  const manager = role === 'owner' || role === 'admin'
+  useEffect(() => {
+    let live = true
+    setSettings(null)
+    setRequests({ items: [], nextCursor: null })
+    setError('')
+    if (!open || !manager) return
+    Promise.all([
+      apiRequest<ClubSettings>(user!, `/clubs/${clubId}/settings`),
+      apiRequest<Page>(user!, `/clubs/${clubId}/join-requests`),
+    ])
+      .then(([value, items]) => {
+        if (live) {
+          setSettings(value)
+          setRequests(items)
+        }
+      })
+      .catch((err) => live && setError(readableError(err)))
+    return () => {
+      live = false
+    }
+  }, [clubId, user?.uid, user?.emailVerified, manager, open, revision])
+  if (!manager) return null
+  async function save(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      setSettings(
+        await apiRequest<ClubSettings>(user!, `/clubs/${clubId}/settings`, 'POST', settings),
+      )
+      setMessage('Configurações salvas. O conteúdo do clube continua restrito aos participantes.')
+      onUpdated()
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function review(id: string, decision: 'approved' | 'rejected') {
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest(user!, `/clubs/${clubId}/join-requests/${id}/review`, 'POST', { decision })
+      setMessage(decision === 'approved' ? 'Participação aprovada.' : 'Solicitação recusada.')
+      setRevision((v) => v + 1)
+      onUpdated()
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function more() {
+    if (!requests.nextCursor) return
+    setBusy(true)
+    try {
+      const next = await apiRequest<Page>(
+        user!,
+        `/clubs/${clubId}/join-requests?cursor=${encodeURIComponent(requests.nextCursor)}`,
+      )
+      setRequests((value) => ({
+        items: [...value.items, ...next.items],
+        nextCursor: next.nextCursor,
+      }))
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Card>
+      <h2>Administrar este clube</h2>
+      <Button variant="secondary" onClick={() => setOpen(!open)}>
+        {open ? 'Fechar configurações' : 'Configurações e solicitações'}
+      </Button>
+      {open && (
+        <div className="stack-lg">
+          {error && <p role="alert">{error}</p>}
+          {message && <p role="status">{message}</p>}
+          {!settings && !error && <p role="status">Carregando configurações…</p>}
+          {settings && (
+            <form className="access-form" onSubmit={save}>
+              <label>
+                Nome do clube
+                <input
+                  required
+                  minLength={2}
+                  maxLength={80}
+                  value={settings.name}
+                  onChange={(e) => setSettings({ ...settings, name: e.target.value })}
+                />
+              </label>
+              <label>
+                Descrição
+                <textarea
+                  maxLength={2000}
+                  rows={3}
+                  value={settings.description}
+                  onChange={(e) => setSettings({ ...settings, description: e.target.value })}
+                />
+              </label>
+              <label>
+                Descoberta do clube
+                <select
+                  value={settings.visibility}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      visibility: e.target.value as ClubSettings['visibility'],
+                      ...(e.target.value === 'private' ? { coverIsPublic: false } : {}),
+                    })
+                  }
+                >
+                  <option value="private">Privado · somente por convite</option>
+                  <option value="discoverable">Descobrível · solicitar participação</option>
+                  <option value="public">Público na busca · entrada aprovada</option>
+                </select>
+              </label>
+              <p>
+                O nome e a descrição dos clubes públicos ou descobríveis aparecem na busca. Mural,
+                fórum, arquivos e encontros continuam privados. A entrada depende de aprovação.
+              </p>
+              <label>
+                Cor do clube
+                <input
+                  type="color"
+                  value={settings.accent}
+                  onChange={(e) => setSettings({ ...settings, accent: e.target.value })}
+                />
+              </label>
+              <label className="file-button">
+                Preparar capa do clube
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={busy}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    if (file) {
+                      setBusy(true)
+                      void uploadMediaFile(user!, clubId, file)
+                        .then((media) =>
+                          setSettings((value) =>
+                            value ? { ...value, coverMediaId: media.id } : value,
+                          ),
+                        )
+                        .catch((err) => setError(readableError(err)))
+                        .finally(() => setBusy(false))
+                    }
+                    event.target.value = ''
+                  }}
+                />
+              </label>
+              {settings.coverMediaId && (
+                <>
+                  <PrivateMedia
+                    media={{
+                      id: settings.coverMediaId,
+                      kind: 'image',
+                      width: 16,
+                      height: 7,
+                      duration: null,
+                    }}
+                    alt="Capa preparada para este clube"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() =>
+                      setSettings({ ...settings, coverMediaId: null, coverIsPublic: false })
+                    }
+                  >
+                    Retirar capa
+                  </Button>
+                  {settings.visibility !== 'private' && (
+                    <label className="workspace-check">
+                      <input
+                        type="checkbox"
+                        checked={settings.coverIsPublic ?? false}
+                        onChange={(event) =>
+                          setSettings({ ...settings, coverIsPublic: event.target.checked })
+                        }
+                      />
+                      Autorizar exibição desta capa para qualquer pessoa na descoberta de clubes
+                    </label>
+                  )}
+                </>
+              )}
+              <Button disabled={busy}>Salvar configurações</Button>
+            </form>
+          )}
+          <div>
+            <h3>Solicitações de participação</h3>
+            {!requests.items.length && <p>Nenhuma solicitação pendente.</p>}
+            {requests.items.map((request) => (
+              <article className="club-request" key={request.id}>
+                <strong>{request.name}</strong>
+                <small>{new Date(request.createdAt).toLocaleDateString('pt-BR')}</small>
+                <p className="preserve-text">
+                  {request.message || 'Quer participar das próximas leituras.'}
+                </p>
+                <div className="workspace-actions">
+                  <Button disabled={busy} onClick={() => void review(request.id, 'approved')}>
+                    Aprovar participação
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={() => void review(request.id, 'rejected')}
+                  >
+                    Recusar
+                  </Button>
+                </div>
+              </article>
+            ))}
+            {requests.nextCursor && (
+              <Button variant="secondary" disabled={busy} onClick={() => void more()}>
+                Mais solicitações
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}

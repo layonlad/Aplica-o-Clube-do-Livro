@@ -1,0 +1,693 @@
+import { ReportAction } from '../community/ReportAction'
+import { useEffect, useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Heart, LockKeyhole, MessageSquare, Pin } from 'lucide-react'
+import type { ForumPage, ForumReply, ForumTopic } from '../../server/src/forum-contracts'
+import type { Page, PostMedia } from '../../server/src/community-contracts'
+import { useAuth } from '../auth/AuthProvider'
+import { apiRequest, readableError } from '../auth/api'
+import { useWorkspace } from '../workspace/WorkspaceProvider'
+import { Button } from '../components/ui'
+import { ConfirmAction } from '../community/ClubWall'
+import { MediaPicker, PrivateMedia } from '../community/PrivateMedia'
+import './forum.css'
+const date = (value: string) =>
+  new Date(value).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })
+export function ClubForum({ clubId }: { clubId: string }) {
+  const { user } = useAuth(),
+    { snapshot } = useWorkspace(),
+    [params, setParams] = useSearchParams(),
+    selected = params.get('topic')
+  const [page, setPage] = useState<ForumPage>({ items: [], pinned: [], nextCursor: null }),
+    [topic, setTopic] = useState<ForumTopic | null>(null),
+    [show, setShow] = useState(false),
+    [query, setQuery] = useState(''),
+    [search, setSearch] = useState(''),
+    [book, setBook] = useState('')
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState(''),
+    [revision, setRevision] = useState(0)
+  const path = `/clubs/${clubId}/forum/topics`,
+    filter = new URLSearchParams({
+      ...(search ? { q: search } : {}),
+      ...(book ? { bookId: book } : {}),
+    }).toString()
+  useEffect(() => {
+    let live = true
+    setBusy(true)
+    setError('')
+    setPage({ items: [], pinned: [], nextCursor: null })
+    setTopic(null)
+    const request = selected
+      ? apiRequest<ForumTopic>(user!, path + '/' + selected).then((topic) => ({
+          topic,
+          page: null,
+        }))
+      : apiRequest<ForumPage>(user!, path + '?' + filter).then((page) => ({ topic: null, page }))
+    request
+      .then((value) => {
+        if (live) {
+          setTopic(value.topic)
+          if (value.page) setPage(value.page)
+        }
+      })
+      .catch((err) => live && setError(readableError(err)))
+      .finally(() => live && setBusy(false))
+    return () => {
+      live = false
+    }
+  }, [user?.uid, user?.emailVerified, path, selected, filter, revision])
+  async function more() {
+    setBusy(true)
+    setError('')
+    try {
+      const next = await apiRequest<ForumPage>(
+        user!,
+        path + '?' + filter + '&cursor=' + encodeURIComponent(page.nextCursor!),
+      )
+      setPage((value) => ({
+        ...value,
+        items: [...value.items, ...next.items],
+        nextCursor: next.nextCursor,
+      }))
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  if (topic)
+    return (
+      <TopicRoom
+        key={topic.id}
+        clubId={clubId}
+        topic={topic}
+        onChanged={setTopic}
+        onBack={() => setParams({})}
+      />
+    )
+  return (
+    <div className="stack-lg forum-room">
+      <header className="social-heading">
+        <span className="eyebrow">FÓRUM DO CLUBE</span>
+        <h1>Uma conversa para ir mais fundo</h1>
+        <p>Tópicos para pensar sobre livros, capítulos e perguntas que merecem tempo.</p>
+        {!selected && (
+          <Button variant="secondary" onClick={() => setShow(!show)}>
+            Criar discussão
+          </Button>
+        )}
+      </header>
+      {error && (
+        <div role="alert">
+          {error}{' '}
+          <Button variant="ghost" onClick={() => setRevision((value) => value + 1)}>
+            Atualizar fórum
+          </Button>
+          {selected && (
+            <Button variant="ghost" onClick={() => setParams({})}>
+              Voltar às discussões
+            </Button>
+          )}
+        </div>
+      )}
+      {show && !selected && (
+        <TopicComposer
+          clubId={clubId}
+          onCreated={(id) => {
+            setShow(false)
+            setParams({ topic: id })
+          }}
+        />
+      )}
+      {!selected && (
+        <div className="wall-filters">
+          <form
+            className="workspace-actions"
+            onSubmit={(event) => {
+              event.preventDefault()
+              setSearch(query.trim())
+            }}
+          >
+            <input
+              aria-label="Pesquisar discussões"
+              minLength={2}
+              maxLength={100}
+              placeholder="Título, capítulo ou assunto"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <Button variant="secondary">Pesquisar</Button>
+          </form>
+          <label>
+            Livro
+            <select value={book} onChange={(event) => setBook(event.target.value)}>
+              <option value="">Todos os livros</option>
+              {snapshot?.state.books.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+      {busy && !page.items.length && (
+        <div className="social-skeleton" role="status">
+          Abrindo discussões…
+        </div>
+      )}
+      {page.pinned.length > 0 && (
+        <section aria-label="Discussões fixadas" className="forum-pinned">
+          <h2>
+            <Pin size={18} /> Para acompanhar
+          </h2>
+          {page.pinned.map((item) => (
+            <TopicRow key={item.id} topic={item} onOpen={() => setParams({ topic: item.id })} />
+          ))}
+        </section>
+      )}
+      <div className="forum-list">
+        {page.items.map((item) => (
+          <TopicRow key={item.id} topic={item} onOpen={() => setParams({ topic: item.id })} />
+        ))}
+      </div>
+      {!busy && !error && !page.items.length && !page.pinned.length && (
+        <div className="library-empty">
+          <MessageSquare size={34} />
+          <h2>Há uma pergunta esperando para ser feita</h2>
+          <p>Abra uma discussão sobre a leitura ou revisite suas impressões de um capítulo.</p>
+        </div>
+      )}
+      {page.nextCursor && (
+        <Button variant="secondary" disabled={busy} onClick={() => void more()}>
+          Mais discussões
+        </Button>
+      )}
+    </div>
+  )
+}
+function TopicRow({ topic, onOpen }: { topic: ForumTopic; onOpen: () => void }) {
+  return (
+    <article className="forum-row">
+      <div>
+        <span className="eyebrow">
+          {topic.bookTitle || 'CONVERSAS ENTRE LEITORES'}
+          {topic.chapter ? ' · ' + topic.chapter : ''}
+        </span>
+        <h2>
+          <button className="forum-title-button" onClick={onOpen}>
+            {topic.title}
+          </button>
+        </h2>
+        {topic.spoiler ? (
+          <span className="chip">Contém spoilers</span>
+        ) : (
+          <p>
+            {topic.body.slice(0, 180)}
+            {topic.body.length > 180 ? '…' : ''}
+          </p>
+        )}
+        <div className="forum-row-meta">
+          <span>
+            {topic.author.name} · {date(topic.createdAt)}
+          </span>
+          <span>
+            <MessageSquare size={14} />
+            {topic.replies}
+          </span>
+          <span>
+            <Heart size={14} />
+            {topic.likes}
+          </span>
+          {topic.closed && (
+            <span>
+              <LockKeyhole size={14} />
+              Encerrada
+            </span>
+          )}
+        </div>
+      </div>
+      <Button variant="ghost" onClick={onOpen}>
+        Acompanhar →
+      </Button>
+    </article>
+  )
+}
+function TopicComposer({ clubId, onCreated }: { clubId: string; onCreated: (id: string) => void }) {
+  const { user } = useAuth(),
+    { snapshot } = useWorkspace(),
+    [title, setTitle] = useState(''),
+    [body, setBody] = useState(''),
+    [bookId, setBookId] = useState(''),
+    [chapter, setChapter] = useState(''),
+    [spoiler, setSpoiler] = useState(false),
+    [media, setMedia] = useState<PostMedia[]>([]),
+    [uploading, setUploading] = useState(false),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState('')
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      const value = await apiRequest<{ id: string }>(
+        user!,
+        `/clubs/${clubId}/forum/topics`,
+        'POST',
+        {
+          title,
+          body,
+          spoiler,
+          bookId: bookId || null,
+          chapter: bookId ? chapter : '',
+          mediaIds: media.map((item) => item.id),
+        },
+      )
+      onCreated(value.id)
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <form className="post-composer workspace-form" onSubmit={submit}>
+      <h2>Abra uma nova discussão</h2>
+      <p>Este tópico fica no fórum privado do clube.</p>
+      <label>
+        Título da discussão
+        <input
+          required
+          maxLength={150}
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+        />
+      </label>
+      <label>
+        Sua reflexão ou pergunta
+        <textarea
+          required
+          maxLength={5000}
+          rows={5}
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
+        />
+      </label>
+      <div className="form-row">
+        <label>
+          Livro relacionado
+          <select value={bookId} onChange={(event) => setBookId(event.target.value)}>
+            <option value="">Conversa geral</option>
+            {snapshot?.state.books.map((book) => (
+              <option key={book.id} value={book.id}>
+                {book.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        {bookId && (
+          <label>
+            Capítulo ou parte
+            <input
+              maxLength={200}
+              value={chapter}
+              onChange={(event) => setChapter(event.target.value)}
+            />
+          </label>
+        )}
+      </div>
+      <label className="workspace-check">
+        <input
+          type="checkbox"
+          checked={spoiler}
+          onChange={(event) => setSpoiler(event.target.checked)}
+        />
+        Esta discussão contém spoilers
+      </label>
+      <MediaPicker
+        clubId={clubId}
+        value={media}
+        onChange={setMedia}
+        onBusy={setUploading}
+        imagesOnly
+      />
+      {error && <p role="alert">{error}</p>}
+      <Button disabled={busy || uploading}>
+        {busy ? 'Criando discussão…' : 'Publicar discussão'}
+      </Button>
+    </form>
+  )
+}
+function TopicRoom({
+  clubId,
+  topic,
+  onChanged,
+  onBack,
+}: {
+  clubId: string
+  topic: ForumTopic
+  onChanged: (topic: ForumTopic) => void
+  onBack: () => void
+}) {
+  const { user } = useAuth(),
+    [revealed, setRevealed] = useState(!topic.spoiler),
+    [editing, setEditing] = useState(false),
+    [title, setTitle] = useState(topic.title),
+    [draft, setDraft] = useState(topic.body),
+    [spoiler, setSpoiler] = useState(topic.spoiler),
+    [editVersion, setEditVersion] = useState(topic.version)
+  const [page, setPage] = useState<Page<ForumReply>>({ items: [], nextCursor: null }),
+    [body, setBody] = useState(''),
+    [replySpoiler, setReplySpoiler] = useState(false),
+    [media, setMedia] = useState<PostMedia[]>([]),
+    [uploading, setUploading] = useState(false),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(''),
+    [revision, setRevision] = useState(0)
+  const path = `/clubs/${clubId}/forum/topics/${topic.id}`
+  useEffect(() => {
+    if (!revealed) return
+    let live = true
+    setPage({ items: [], nextCursor: null })
+    apiRequest<Page<ForumReply>>(user!, path + '/replies')
+      .then((value) => live && setPage(value))
+      .catch((err) => live && setError(readableError(err)))
+    return () => {
+      live = false
+    }
+  }, [user?.uid, user?.emailVerified, path, revealed, revision])
+  async function refresh() {
+    onChanged(await apiRequest<ForumTopic>(user!, path))
+  }
+  async function action(suffix: string, payload?: unknown, method = 'POST') {
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest(user!, path + suffix, method, payload)
+      if (method === 'DELETE' && suffix === '') {
+        onBack()
+        return true
+      }
+      await refresh()
+      if (suffix === '/edit') setEditing(false)
+      return true
+    } catch (err) {
+      setError(readableError(err))
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function reply(event: FormEvent) {
+    event.preventDefault()
+    if (
+      await action('/replies', {
+        body,
+        spoiler: replySpoiler,
+        mediaIds: media.map((item) => item.id),
+      })
+    ) {
+      setBody('')
+      setMedia([])
+      setReplySpoiler(false)
+      setRevision((value) => value + 1)
+    }
+  }
+  async function more() {
+    setBusy(true)
+    setError('')
+    try {
+      const next = await apiRequest<Page<ForumReply>>(
+        user!,
+        path + '/replies?cursor=' + encodeURIComponent(page.nextCursor!),
+      )
+      setPage((value) => ({ items: [...value.items, ...next.items], nextCursor: next.nextCursor }))
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="stack-lg forum-room">
+      <Button variant="ghost" onClick={onBack}>
+        ← Voltar às discussões
+      </Button>
+      <header className="social-heading">
+        <span className="eyebrow">
+          {topic.bookTitle || 'FÓRUM DO CLUBE'}
+          {topic.chapter ? ' · ' + topic.chapter : ''}
+        </span>
+        <h1>{topic.title}</h1>
+        <p>
+          {topic.author.name} · {date(topic.createdAt)}
+          {topic.version > 0 ? ' · Atualizada' : ''}
+        </p>
+        <div className="workspace-actions">
+          {topic.pinned && (
+            <span className="chip">
+              <Pin size={14} />
+              Fixada
+            </span>
+          )}
+          {topic.closed && (
+            <span className="chip">
+              <LockKeyhole size={14} />
+              Discussão encerrada
+            </span>
+          )}
+          {topic.spoiler && <span className="chip">Contém spoilers</span>}
+        </div>
+      </header>
+      {error && <p role="alert">{error}</p>}
+      {!revealed ? (
+        <div className="forum-spoiler">
+          <h2>Continue quando estiver pronto para esta parte da história</h2>
+          <p>A discussão pode revelar acontecimentos do livro.</p>
+          <Button onClick={() => setRevealed(true)}>Revelar discussão</Button>
+        </div>
+      ) : (
+        <>
+          <article className="forum-opening">
+            {editing ? (
+              <form
+                className="workspace-form"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  void action('/edit', { title, body: draft, spoiler, version: editVersion })
+                }}
+              >
+                <label>
+                  Título da discussão
+                  <input
+                    required
+                    maxLength={150}
+                    value={title}
+                    onChange={(event) => setTitle(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Sua reflexão
+                  <textarea
+                    required
+                    maxLength={5000}
+                    rows={5}
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                  />
+                </label>
+                <label className="workspace-check">
+                  <input
+                    type="checkbox"
+                    checked={spoiler}
+                    onChange={(event) => setSpoiler(event.target.checked)}
+                  />
+                  Contém spoilers
+                </label>
+                <div className="workspace-actions">
+                  <Button disabled={busy}>Salvar edição</Button>
+                  <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
+                    Cancelar edição
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <p className="post-body">{topic.body}</p>
+            )}
+            <div className="post-media-grid">
+              {topic.media.map((item) => (
+                <PrivateMedia
+                  key={item.id}
+                  media={item}
+                  alt={`Imagem da discussão ${topic.title}`}
+                />
+              ))}
+            </div>
+            <div className="workspace-actions">
+              <Button
+                variant="ghost"
+                disabled={busy}
+                aria-pressed={topic.liked}
+                onClick={() => void action('/like', { value: !topic.liked })}
+              >
+                <Heart size={18} fill={topic.liked ? 'currentColor' : 'none'} />
+                {topic.likes}
+              </Button>
+              {topic.canEdit && !topic.closed && (
+                <Button
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => {
+                    setTitle(topic.title)
+                    setDraft(topic.body)
+                    setSpoiler(topic.spoiler)
+                    setEditVersion(topic.version)
+                    setEditing(true)
+                  }}
+                >
+                  Editar discussão
+                </Button>
+              )}
+              <ReportAction kind="topic" id={topic.id} />
+              {topic.canDelete && (
+                <ConfirmAction
+                  label="Excluir discussão"
+                  disabled={busy}
+                  onConfirm={async () => {
+                    await action('', undefined, 'DELETE')
+                  }}
+                />
+              )}
+            </div>
+          </article>
+          <section className="forum-responses" aria-label="Respostas da discussão">
+            <h2>{topic.replies} resposta(s)</h2>
+            {page.items.map((item) => (
+              <ReplyCard
+                key={item.id}
+                reply={item}
+                busy={busy}
+                onRemove={async () => {
+                  if (await action(`/replies/${item.id}`, undefined, 'DELETE'))
+                    setRevision((value) => value + 1)
+                }}
+              />
+            ))}
+            {page.nextCursor && (
+              <Button variant="ghost" disabled={busy} onClick={() => void more()}>
+                Respostas anteriores
+              </Button>
+            )}
+            {!topic.closed ? (
+              <form className="post-composer workspace-form" onSubmit={reply}>
+                <h3>Continue a conversa</h3>
+                <label>
+                  Sua resposta
+                  <textarea
+                    required
+                    maxLength={5000}
+                    rows={4}
+                    value={body}
+                    onChange={(event) => setBody(event.target.value)}
+                  />
+                </label>
+                <label className="workspace-check">
+                  <input
+                    type="checkbox"
+                    checked={replySpoiler}
+                    onChange={(event) => setReplySpoiler(event.target.checked)}
+                  />
+                  Minha resposta contém spoilers
+                </label>
+                <MediaPicker
+                  clubId={clubId}
+                  value={media}
+                  onChange={setMedia}
+                  onBusy={setUploading}
+                  imagesOnly
+                />
+                <Button disabled={busy || uploading}>Publicar resposta</Button>
+              </form>
+            ) : (
+              <div>
+                <p className="notice">
+                  A moderação encerrou esta discussão. As respostas continuam disponíveis para
+                  leitura.
+                </p>
+                {body.trim() && (
+                  <label>
+                    Seu rascunho não publicado
+                    <textarea readOnly value={body} />
+                  </label>
+                )}
+              </div>
+            )}
+          </section>
+        </>
+      )}
+      {topic.canModerate && (
+        <section className="forum-moderation">
+          <h2>Moderação da discussão</h2>
+          <div className="workspace-actions">
+            <Button
+              variant="secondary"
+              disabled={busy || editing}
+              onClick={() =>
+                void action('/moderation', { version: topic.version, pinned: !topic.pinned })
+              }
+            >
+              {topic.pinned ? 'Desafixar discussão' : 'Fixar discussão'}
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={busy || editing}
+              onClick={() =>
+                void action('/moderation', { version: topic.version, closed: !topic.closed })
+              }
+            >
+              {topic.closed ? 'Reabrir discussão' : 'Encerrar discussão'}
+            </Button>
+          </div>
+        </section>
+      )}
+    </div>
+  )
+}
+function ReplyCard({
+  reply,
+  busy,
+  onRemove,
+}: {
+  reply: ForumReply
+  busy: boolean
+  onRemove: () => Promise<void>
+}) {
+  const [revealed, setRevealed] = useState(!reply.spoiler)
+  return (
+    <article className="forum-reply">
+      <header>
+        <strong>{reply.author.name}</strong>
+        <small>{date(reply.createdAt)}</small>
+      </header>
+      {revealed ? (
+        <>
+          <p className="preserve-text">{reply.body}</p>
+          <div className="post-media-grid">
+            {reply.media.map((item) => (
+              <PrivateMedia key={item.id} media={item} alt="Imagem anexada à resposta" />
+            ))}
+          </div>
+        </>
+      ) : (
+        <Button variant="secondary" onClick={() => setRevealed(true)}>
+          Revelar resposta com spoiler
+        </Button>
+      )}
+      <ReportAction kind="reply" id={reply.id} />
+      {reply.canDelete && (
+        <ConfirmAction label="Excluir resposta" disabled={busy} onConfirm={onRemove} />
+      )}
+    </article>
+  )
+}

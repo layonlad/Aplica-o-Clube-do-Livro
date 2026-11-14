@@ -217,6 +217,7 @@
   .app-header { position: static; min-height: 0; padding: 0; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; border: 0; flex-wrap: wrap; }
   .app-header::after { display: none; }
   .app-header { align-items: flex-start; }
+  .app-rail > .app-header, .app-rail > nav, .app-rail > .rail-foot { flex-shrink: 0; }
   .app-header .brand-lockup { flex: 1 1 0; }
   .app-header .brand-lockup strong { max-width: none; white-space: normal; overflow: visible; line-height: 1.15; }
   .app-header .space-switch { flex-basis: 100%; margin-top: var(--space-5); padding: var(--space-3) var(--space-4); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); transition: border-color var(--dur-fast) var(--ease-out); }
@@ -258,4 +259,26 @@
 
 @media (min-width: 1440px) {
   .app-frame { grid-template-columns: 296px minmax(0, 1fr); }
+}
+
+/* ── Grupos do menu secundário ── */
+.rail-group { display: grid; gap: 2px; }
+.rail-group + .rail-group { margin-top: var(--space-4); }
+.drawer-group { display: grid; gap: 4px; }
+.drawer-group + .drawer-group { margin-top: var(--space-4); }
+.drawer-group .rail-section-label { margin: 0 0 var(--space-1) var(--space-2); color: var(--text-subtle); font-size: var(--text-overline); font-weight: 800; letter-spacing: var(--tracking-overline); text-transform: uppercase; }
+
+/* Rótulos da navegação inferior cabem em telas de 360–400px */
+@media (max-width: 419px) {
+  .bottom-nav a { font-size: 0.62rem; letter-spacing: -0.01em; }
+  .bottom-nav a span { text-overflow: clip; }
+}
+
+/* ── Leitura imersiva: no leitor de um livro, a navegação do app sai de cena ── */
+.app-frame.is-reading .bottom-nav { display: none; }
+.app-frame.is-reading .page-content { padding-bottom: calc(var(--space-10) + env(safe-area-inset-bottom)); }
+@media (min-width: 1024px) {
+  .app-frame.is-reading { grid-template-columns: minmax(0, 1fr); }
+  .app-frame.is-reading .app-rail { display: none; }
+  .app-frame.is-reading .page-content { max-width: 920px; padding-top: var(--space-6); }
 }

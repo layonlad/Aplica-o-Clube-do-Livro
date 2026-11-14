@@ -308,3 +308,57 @@ input[type='color'] { width: 56px; height: 40px; padding: 2px; border: 1px solid
 .book-cover--lg { width: 116px; height: 170px; font-size: 1.5rem; }
 .rating { display: inline-flex; align-items: center; gap: 3px; color: var(--warning); font-weight: 800; }
 .title-icon { flex: 0 0 auto; width: 40px; height: 40px; padding: 9px; color: var(--brand-ink); background: var(--brand-soft); border-radius: 12px; }
+
+/* ── Blocos expansíveis (details/summary) ──
+ * Substitui o triângulo nativo por um chevron consistente. Menus de ação (.post-options) mantêm o próprio visual. */
+:where(.workspace-app) details:not(.post-options) > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 700;
+}
+:where(.workspace-app) details:not(.post-options) > summary::-webkit-details-marker { display: none; }
+:where(.workspace-app) details:not(.post-options) > summary::after {
+  content: '';
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  margin: 0 4px 0 auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  opacity: .55;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+:where(.workspace-app) details:not(.post-options)[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+:where(.workspace-app) details:not(.post-options) > summary:hover { color: var(--brand-ink); }
+
+/* ── Selects dentro do conteúdo ── (especificidade baixa: estilos de tela continuam valendo) */
+:where(.workspace-app main) select {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 44px;
+  padding: 10px 38px 10px 14px;
+  color: var(--text);
+  background: var(--surface-raised) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%237656a8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+:where(.workspace-app main) select:focus-visible { border-color: var(--brand); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 16%, transparent); }
+/* Telas com estilo próprio de campo (comunidade, leitor) mantêm o fundo delas, mas recebem o mesmo chevron. */
+/* :not() eleva a especificidade acima da regra de campos de .social-room (0,3,1). */
+.workspace-app main :is(.social-room, .reading-room, .library-room) select:not([multiple]):not([size]) {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%237656a8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
