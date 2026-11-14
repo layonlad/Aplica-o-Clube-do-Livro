@@ -47,3 +47,14 @@ export async function publicRequest<T>(path:string):Promise<T>{
   if(!response.ok){const payload=await response.json().catch(()=>null) as ApiErrorBody|null;throw new ApiError(response.status,payload?.error?.code??'API_ERROR',payload?.error?.message??'Não foi possível consultar o serviço.')}
   return response.json() as Promise<T>
 }
+
+/**
+ * Mensagem para a tela: erros de validação criados pelo próprio app (`new Error('…')` com texto em português)
+ * aparecem como estão; erros de rede e da API passam por `readableError`.
+ * Evita mostrar "Verifique sua conexão" quando o problema é, por exemplo, o formato do arquivo.
+ */
+export function messageFor(error: unknown): string {
+  if (error instanceof ApiError) return readableError(error)
+  if (error instanceof Error && error.constructor === Error && error.message) return error.message
+  return readableError(error)
+}

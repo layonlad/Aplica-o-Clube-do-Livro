@@ -22,8 +22,38 @@ const invalid = () =>
   new HttpError(
     400,
     'INVALID_MEDIA',
-    'Selecione uma foto JPEG, PNG ou WebP de até 5 MB, ou um vídeo MP4 de até 10 MB e 30 segundos.',
+    'Selecione uma foto JPEG, PNG ou WebP de até 5 MB, um GIF de até 8 MB ou um vídeo MP4 de até 10 MB e 30 segundos.',
   )
+const isGif = (bytes: Buffer) => bytes.length > 6 && bytes.toString('ascii', 0, 4) === 'GIF8'
+/** GIFs (inclusive animados) viram WebP animado, menor e com o mesmo movimento. */
+async function processGif(bytes: Buffer): Promise<ProcessedMedia> {
+  const input = sharp(bytes, { animated: true, limitInputPixels: 40000000, failOn: 'error' }).timeout({
+      seconds: 20,
+    }),
+    metadata = await input.metadata()
+  const pages = metadata.pages ?? 1,
+    width = metadata.width ?? 0,
+    height = metadata.pageHeight ?? metadata.height ?? 0
+  if (metadata.format !== 'gif' || !width || !height || pages > 150) throw invalid()
+  const full = await input
+    .resize({ width: 960, height: 960, fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 72, effort: 4, loop: 0 })
+    .toBuffer({ resolveWithObject: true })
+  // Miniatura estática (primeiro quadro): listas e quem prefere menos movimento não recebem animação.
+  const thumbnail = await sharp(bytes, { animated: false, limitInputPixels: 20000000 })
+    .resize({ width: 360, height: 360, fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 65 })
+    .toBuffer()
+  return {
+    bytes: full.data,
+    thumbnail,
+    kind: 'image',
+    mimeType: 'image/webp',
+    width: full.info.width,
+    height: full.info.pageHeight ?? full.info.height,
+    duration: null,
+  }
+}
 export async function processMedia(
   bytes: Buffer,
   kind: 'image' | 'video',
@@ -35,9 +65,12 @@ export async function processMedia(
       'MEDIA_BUSY',
       'Outro arquivo está sendo preparado. Aguarde alguns segundos e tente novamente.',
     )
-  if (!bytes.length || bytes.length > (kind === 'image' ? 5000000 : 10000000)) throw invalid()
+  const gif = kind === 'image' && isGif(bytes)
+  if (!bytes.length || bytes.length > (kind === 'image' ? (gif ? 8000000 : 5000000) : 10000000))
+    throw invalid()
   processing = true
   try {
+    if (gif) return await processGif(bytes)
     if (kind === 'image') {
       const input = sharp(bytes, {
           limitInputPixels: 20000000,

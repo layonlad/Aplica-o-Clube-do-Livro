@@ -105,6 +105,21 @@ export class ProfileService {
    * Devolve a foto anterior para que o chamador revogue o arquivo depois do commit.
    */
   setAvatar(user: UserProfile, avatarId: string | null) {
+    return this.setProfileMedia(user, 'avatar', avatarId).then(({ id, previous }) => ({
+      avatarId: id,
+      previous,
+    }))
+  }
+  /** Capa do perfil: mesmas garantias da foto (imagem própria, troca e revogação atômicas). */
+  setCover(user: UserProfile, coverId: string | null) {
+    return this.setProfileMedia(user, 'cover', coverId).then(({ id, previous }) => ({
+      coverId: id,
+      previous,
+    }))
+  }
+  private setProfileMedia(user: UserProfile, slot: 'avatar' | 'cover', mediaId: string | null) {
+    const column = slot === 'avatar' ? 'avatar_id' : 'cover_id',
+      other = slot === 'avatar' ? 'cover_id' : 'avatar_id'
     return transaction(this.pool, async (client) => {
       await client.query(
         'INSERT INTO profiles(user_id,handle,display_name) VALUES($1,$2,$3) ON CONFLICT(user_id) DO NOTHING',
@@ -112,36 +127,42 @@ export class ProfileService {
       )
       const {
         rows: [profile],
-      } = await client.query('SELECT avatar_id FROM profiles WHERE user_id=$1 FOR UPDATE', [
+      } = await client.query(`SELECT ${column} AS current FROM profiles WHERE user_id=$1 FOR UPDATE`, [
         user.id,
       ])
       if (
-        avatarId &&
+        mediaId &&
         !(
           await client.query(
             "SELECT 1 FROM media_objects WHERE id=$1 AND owner_user_id=$2 AND club_id IS NULL AND kind='image' AND state='active' FOR SHARE",
-            [avatarId, user.id],
+            [mediaId, user.id],
           )
         ).rowCount
       )
-        throw new HttpError(400, 'INVALID_MEDIA', 'Escolha uma foto sua preparada para o perfil.')
+        throw new HttpError(
+          400,
+          'INVALID_MEDIA',
+          slot === 'avatar'
+            ? 'Escolha uma foto sua preparada para o perfil.'
+            : 'Escolha uma imagem sua preparada para a capa.',
+        )
       await client.query(
-        'UPDATE profiles SET avatar_id=$2,version=version+1,updated_at=now() WHERE user_id=$1',
-        [user.id, avatarId],
+        `UPDATE profiles SET ${column}=$2,version=version+1,updated_at=now() WHERE user_id=$1`,
+        [user.id, mediaId],
       )
-      const previous: string | null = profile.avatar_id
-      if (previous && previous !== avatarId) {
-        // A revogação é atômica com a troca: falhas na limpeza física nunca mantêm a foto acessível.
+      const previous: string | null = profile.current
+      if (previous && previous !== mediaId) {
+        // A revogação é atômica com a troca: falhas na limpeza física nunca mantêm a imagem acessível.
         await client.query(
           "UPDATE media_objects SET state='deleted',deleted_at=COALESCE(deleted_at,now()) WHERE id=$1 AND owner_user_id=$2 AND state='active'",
           [previous, user.id],
         )
-        await client.query('UPDATE profiles SET cover_id=NULL WHERE user_id=$1 AND cover_id=$2', [
+        await client.query(`UPDATE profiles SET ${other}=NULL WHERE user_id=$1 AND ${other}=$2`, [
           user.id,
           previous,
         ])
       }
-      return { avatarId, previous: previous && previous !== avatarId ? previous : null }
+      return { id: mediaId, previous: previous && previous !== mediaId ? previous : null }
     })
   }
   /**

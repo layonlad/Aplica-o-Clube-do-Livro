@@ -5,6 +5,7 @@ import { appearanceTokens, contrast, defaultAppearance, ensureContrast, presetOp
 import { BookOpening, INTRO_KEY, introDuration, introVariant } from './BookOpening'
 import { UserAvatar, UserIdentity, initialsOf } from '../components/UserAvatar'
 import { avatarFileError } from '../components/AvatarUploader'
+import { coverFileError } from '../components/CoverUploader'
 
 vi.mock('../auth/AuthProvider', () => ({ useAuth: () => ({ user: null }) }))
 
@@ -76,8 +77,14 @@ describe('foto e identidade', () => {
     expect(screen.getByText('J')).toBeInTheDocument()
   })
   it('recusa formatos e tamanhos inválidos antes do envio', () => {
-    expect(avatarFileError({ type: 'image/gif', size: 1000 })).toMatch(/JPG, PNG ou WebP/)
+    expect(avatarFileError({ type: 'image/bmp', size: 1000 })).toMatch(/JPG, PNG, WebP ou GIF/)
     expect(avatarFileError({ type: 'image/png', size: 20_000_000 })).toMatch(/15 MB/)
     expect(avatarFileError({ type: 'image/webp', size: 300_000 })).toBe('')
+    // GIF (inclusive animado) é aceito até 8 MB, na foto e na capa.
+    expect(avatarFileError({ type: 'image/gif', size: 2_000_000 })).toBe('')
+    expect(avatarFileError({ type: 'image/gif', size: 9_000_000 })).toMatch(/8 MB/)
+    expect(coverFileError({ type: 'image/gif', size: 7_000_000 })).toBe('')
+    expect(coverFileError({ type: 'image/gif', size: 8_500_000 })).toMatch(/8 MB/)
+    expect(coverFileError({ type: 'application/pdf', size: 1000 })).toMatch(/JPG, PNG, WebP ou GIF/)
   })
 })

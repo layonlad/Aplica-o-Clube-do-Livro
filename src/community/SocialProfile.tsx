@@ -7,6 +7,7 @@ import { apiRequest, readableError } from '../auth/api'
 import { Button, CoverArt, SkeletonPage } from '../components/ui'
 import { UserAvatar } from '../components/UserAvatar'
 import { AvatarUploader } from '../components/AvatarUploader'
+import { CoverUploader } from '../components/CoverUploader'
 import { MediaPicker, PrivateMedia } from './PrivateMedia'
 import { socialRead } from './social-api'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
@@ -35,11 +36,14 @@ export interface SocialProfileDto {
   stats?: { books: number; completed: number } | null
   clubs?: { id: string; name: string }[]
 }
+/** Capa no topo do perfil: imagem completa (GIF animado incluso); com movimento reduzido, só o primeiro quadro. */
 function Photo({ id, alt }: { id: string; alt: string }) {
+  const still = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   return (
     <PrivateMedia
       publicMedia
-      media={{ id, kind: 'image', width: 4, height: 3, duration: null }}
+      full={!still}
+      media={{ id, kind: 'image', width: 16, height: 5, duration: null }}
       alt={alt}
     />
   )
@@ -552,6 +556,19 @@ export function SocialProfileEditor() {
           }
         />
       </div>
+      <div className="card">
+        <CoverUploader
+          coverId={profile.coverId}
+          isPublic={savedPublic}
+          onChange={() =>
+            void apiRequest<SocialProfileDto>(user, '/me/profile').then((next) =>
+              setProfile((current) =>
+                current ? { ...current, coverId: next.coverId, version: next.version } : next,
+              ),
+            )
+          }
+        />
+      </div>
       <form className="workspace-form card" onSubmit={save}>
         <label>
           Nome público
@@ -630,37 +647,6 @@ export function SocialProfileEditor() {
           )}
         </div>
       </form>
-      {savedPublic && (
-        <section className="card">
-          <h2>Capa do perfil público</h2>
-          <p>
-            Prepare uma imagem para o topo do seu perfil público e salve o perfil para confirmar. A
-            foto do perfil fica na seção acima.
-          </p>
-          <MediaPicker
-            clubId={null}
-            imagesOnly
-            value={media}
-            onChange={setMedia}
-            onBusy={setUploading}
-          />
-          {media.map((item) => (
-            <div className="workspace-actions" key={item.id}>
-              <Button
-                variant="secondary"
-                onClick={() => setProfile({ ...profile, coverId: item.id })}
-              >
-                Usar como capa
-              </Button>
-            </div>
-          ))}
-          <div className="workspace-actions">
-            <Button variant="ghost" onClick={() => setProfile({ ...profile, coverId: null })}>
-              Retirar capa
-            </Button>
-          </div>
-        </section>
-      )}
       {message && <p role="status">{message}</p>}
       {error && <p role="alert">{error}</p>}
       <details

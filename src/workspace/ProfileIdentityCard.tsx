@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
 import { Card } from '../components/ui'
 import { AvatarUploader } from '../components/AvatarUploader'
+import { CoverUploader } from '../components/CoverUploader'
 import { UserAvatar } from '../components/UserAvatar'
 import { useTheme } from '../app/ThemeProvider'
 import { fontOptions, presetOptions } from '../app/appearance'
@@ -17,13 +18,13 @@ export function ProfileIdentityCard() {
   const { user } = useAuth()
   const { snapshot } = useWorkspace()
   const { appearance } = useTheme()
-  const [profile, setProfile] = useState<{ displayName: string; avatarId: string | null } | null>(null)
+  const [profile, setProfile] = useState<{ displayName: string; avatarId: string | null; coverId: string | null; isPublic: boolean } | null>(null)
   const [error, setError] = useState('')
   const verified = !!user?.emailVerified
   useEffect(() => {
     if (!verified || !user) return
     let live = true
-    apiRequest<{ displayName: string; avatarId: string | null }>(user, '/me/profile')
+    apiRequest<{ displayName: string; avatarId: string | null; coverId: string | null; isPublic: boolean }>(user, '/me/profile')
       .then((value) => live && setProfile(value))
       .catch((err) => live && setError(readableError(err)))
     return () => {
@@ -43,6 +44,13 @@ export function ProfileIdentityCard() {
                 avatarId={profile.avatarId}
                 onChange={(avatarId) => setProfile((value) => value && { ...value, avatarId })}
               />
+              <div className="profile-identity__cover">
+                <CoverUploader
+                  coverId={profile.coverId}
+                  isPublic={profile.isPublic}
+                  onChange={(coverId) => setProfile((value) => value && { ...value, coverId })}
+                />
+              </div>
               {snapshot?.actorId && snapshot.actorId !== 'visitor' && (
                 <p className="profile-identity__links">
                   <Link className="text-link" to={`/app/people/${snapshot.actorId}`}>
