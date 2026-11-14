@@ -75,7 +75,7 @@ export interface CommentDto {
   version: number
   createdAt: string
   deleted: boolean
-  author: { id: string; name: string } | null
+  author: { id: string; name: string; avatarId?: string | null } | null
   likes: number
   liked: boolean
   canDelete: boolean
@@ -102,7 +102,7 @@ export interface AlbumDto {
 export interface AlbumPhoto extends PostMedia {
   caption: string
   postId: string
-  addedBy: { id: string; name: string }
+  addedBy: { id: string; name: string; avatarId?: string | null }
   createdAt: string
   likes: number
   liked: boolean

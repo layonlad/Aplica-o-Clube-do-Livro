@@ -137,7 +137,7 @@ it('pagina o mural privado e mantém autoria, edições, likes, comentários e r
   const dto = (
     await app.inject({ url: postUrl, headers: headers('social-member') })
   ).json<PostDto>()
-  expect(dto.author).toEqual({ id: ids['social-owner'], name: 'social-owner' })
+  expect(dto.author).toEqual({ id: ids['social-owner'], name: 'social-owner', avatarId: null })
   expect(JSON.stringify(dto)).not.toMatch(/@example.com|firebase_uid|object_key/)
   const reactions = await Promise.all(
     [1, 2].map(() =>

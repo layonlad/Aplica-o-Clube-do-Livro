@@ -195,7 +195,7 @@ export class ClubManagement {
       assertCapability(club.role, 'manageMembers')
       const cursor = decodeCursor(input.cursor)
       const { rows } = await client.query(
-        `SELECT r.id,u.id AS "userId",u.name,r.message,r.created_at AS "createdAt",r.created_at::text AS "sortTime" FROM club_join_requests r JOIN users u ON u.id=r.user_id WHERE r.club_id=$1 AND r.status='pending' AND ($2::timestamptz IS NULL OR (r.created_at,r.id)<($2,$3::uuid)) ORDER BY r.created_at DESC,r.id DESC LIMIT $4`,
+        `SELECT r.id,u.id AS "userId",u.name,(SELECT avatar_id FROM profiles WHERE user_id=u.id) AS "avatarId",r.message,r.created_at AS "createdAt",r.created_at::text AS "sortTime" FROM club_join_requests r JOIN users u ON u.id=r.user_id WHERE r.club_id=$1 AND r.status='pending' AND ($2::timestamptz IS NULL OR (r.created_at,r.id)<($2,$3::uuid)) ORDER BY r.created_at DESC,r.id DESC LIMIT $4`,
         [clubId, cursor?.time ?? null, cursor?.id ?? null, input.limit + 1],
       )
       return pageOf(rows, input.limit)

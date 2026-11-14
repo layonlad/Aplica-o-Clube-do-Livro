@@ -9,6 +9,7 @@ import { MediaService } from './media-service.js'
 import type { PrivateStorage } from './private-storage.js'
 import { postInput, postQuery } from './community-contracts.js'
 import { pageInput } from './pagination.js'
+import { AppearanceService, appearanceSchema } from './appearance.js'
 const idParams = z.object({ id: z.uuid() }),
   commentParams = idParams.extend({ commentId: z.uuid() }),
   bool = z.object({ value: z.boolean() }).strict()
@@ -115,7 +116,58 @@ export async function registerPublicMutations(
     profiles = new ProfileService(pool),
     moderation = new ModerationService(pool, moderatorUids),
     media = new MediaService(pool, storage)
+  const appearance = new AppearanceService(pool)
   api.get('/me/profile', (request) => profiles.mine(request.user))
+  // Foto de perfil: disponível para toda conta confirmada, mesmo com perfil público desativado.
+  api.post(
+    '/me/avatar',
+    { bodyLimit: 15000000, config: { rateLimit: { max: 5, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const input = z
+        .object({
+          data: z
+            .string()
+            .min(4)
+            .max(6666668)
+            .regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/),
+        })
+        .strict()
+        .parse(request.body)
+      const uploaded = await media.upload(
+        request.user.id,
+        null,
+        'image',
+        Buffer.from(input.data, 'base64'),
+        { profilePhoto: true },
+      )
+      const result = await profiles.setAvatar(request.user, uploaded.id)
+      // Revoga a foto anterior depois do commit; a troca já vale mesmo se a limpeza física atrasar.
+      if (result.previous) await media.remove(request.user.id, result.previous).catch(() => undefined)
+      return reply.code(201).send({ avatarId: result.avatarId })
+    },
+  )
+  api.delete('/me/avatar', async (request) => {
+    const result = await profiles.setAvatar(request.user, null)
+    if (result.previous) await media.remove(request.user.id, result.previous).catch(() => undefined)
+    return { avatarId: null }
+  })
+  api.get('/me/appearance', (request) => appearance.get(request.user))
+  api.post('/me/appearance', (request) =>
+    appearance.save(
+      request.user,
+      z.object({ appearance: appearanceSchema.nullable() }).strict().parse(request.body).appearance,
+    ),
+  )
+  api.get('/people/:id', (request) =>
+    profiles.person(request.user, idParams.parse(request.params).id),
+  )
+  api.get('/people/:id/club-posts', (request) =>
+    posts.sharedClubPosts(
+      request.user,
+      idParams.parse(request.params).id,
+      pageInput.strict().parse(request.query),
+    ),
+  )
   api.post('/me/profile', (request) =>
     profiles.update(request.user, profileInput.parse(request.body)),
   )

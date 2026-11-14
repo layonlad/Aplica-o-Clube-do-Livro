@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
 import { Button, SkeletonPage } from '../components/ui'
+import { UserIdentity } from '../components/UserAvatar'
 import { ConfirmAction } from '../community/ClubWall'
 import type { Page } from '../../server/src/community-contracts'
 import type { ForumPage } from '../../server/src/forum-contracts'
@@ -377,7 +378,7 @@ function Attendees({
   const { user } = useAuth(),
     [open, setOpen] = useState(false),
     [page, setPage] = useState<
-      Page<{ id: string; name: string; rsvp: string; attended: boolean | null }>
+      Page<{ id: string; name: string; avatarId?: string | null; rsvp: string; attended: boolean | null }>
     >({ items: [], nextCursor: null }),
     [revision, setRevision] = useState(0),
     [error, setError] = useState(''),
@@ -399,15 +400,22 @@ function Attendees({
       {error && <p role="alert">{error}</p>}
       {page.items.map((person) => (
         <div className="workspace-actions" key={person.id}>
-          <span>
-            {person.name} ·{' '}
-            {
-              ({ yes: 'Confirmou', maybe: 'Talvez', no: 'Não vai' } as Record<string, string>)[
-                person.rsvp
-              ]
+          <UserIdentity
+            size="sm"
+            id={person.id}
+            name={person.name}
+            avatarId={person.avatarId}
+            meta={
+              <>
+                {
+                  ({ yes: 'Confirmou', maybe: 'Talvez', no: 'Não vai' } as Record<string, string>)[
+                    person.rsvp
+                  ]
+                }
+                {person.attended === null ? '' : person.attended ? ' · Presente' : ' · Ausente'}
+              </>
             }
-            {person.attended === null ? '' : person.attended ? ' · Presente' : ' · Ausente'}
-          </span>
+          />
           {canManage && (
             <>
               <Button
