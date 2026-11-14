@@ -251,7 +251,7 @@
       "autor": "Codex",
       "titulo": "Mapa de infraestrutura reconciliado com a produção",
       "resumo": "Versões de API/site e liberação verificadas, dados locais e nuvem distinguidos, recuperação e retenção esclarecidas. Grants legados excedentes confirmados; revogação e teste de regressão preparados no PR, sem aplicação em produção.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/9"
     },
     {
       "data": "2026-11-14",
