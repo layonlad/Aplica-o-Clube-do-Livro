@@ -6,6 +6,9 @@ GRANT SELECT,INSERT,UPDATE ON users,clubs,club_memberships,invites,personal_work
 GRANT SELECT,INSERT ON invite_acceptances,audit_logs,post_poll_options,post_media,album_media,forum_topic_media,forum_reply_media,moderation_actions TO clube_runtime;
 GRANT SELECT,INSERT,DELETE ON post_likes,saved_posts,comment_likes,post_tags,post_mentions,forum_topic_likes,follows,user_blocks TO clube_runtime;
 GRANT DELETE ON post_media,album_media,album_participant_tags,forum_topic_media,forum_reply_media,notifications TO clube_runtime;
+-- GRANT is additive: remove CRUD privileges left by the initial deployment.
+REVOKE DELETE,TRUNCATE ON users,clubs,club_memberships,invites,invite_acceptances,personal_workspaces,club_workspaces,club_reading_states FROM clube_runtime;
+REVOKE UPDATE ON invite_acceptances FROM clube_runtime;
 GRANT USAGE ON SEQUENCE audit_logs_id_seq TO clube_runtime;
 GRANT EXECUTE ON FUNCTION emit_notification(uuid,uuid,uuid,text,text,uuid,uuid,text,text) TO clube_runtime;
 REVOKE ALL ON schema_migrations FROM clube_runtime;
