@@ -75,12 +75,20 @@ Feita numa pilha de revisão isolada: banco Postgres temporário, API desta bran
 - **Abertura:** conferida quadro a quadro em 1024 px e 375 px; livro fechado e livro aberto centralizados.
 - **Rolagem horizontal:** nenhuma em 375 px no perfil e na Aparência.
 
+## Pendências resolvidas (branch `claude/pendencias-perfis`)
+
+- **Foto nas notificações:** a lista de notificações devolve `actorAvatarId` (referência ao perfil atual) e mostra a foto de quem gerou o aviso. A entrega da imagem continua sujeita à mesma regra: perfil público, ou clube ativo em comum. Teste de integração novo.
+- **Foto no compositor do mural:** o campo "O que sua leitura despertou hoje?" mostra a foto da própria conta. O hook `useOwnAvatar` faz uma consulta por sessão e atualiza na hora quando a foto muda; o trilho lateral usa o mesmo hook.
+- **Link direto para post de clube:** `/space/:clubId?post=<id>` troca para o clube e abre a publicação no mural, com "Voltar ao mural". A aba "Publicações dos Clubes" do perfil usa esse link ("Ver no mural do clube").
+- **Tablet (768 px):** 17 telas verificadas sem rolagem horizontal. Links de texto avulsos agora têm área de toque de 44 px (WCAG 2.2, critério 2.5.8).
+- **Telas sem estilo quando abertas diretamente:** Notificações, Explorar, Moderação, Perfil e telas de clube passam a importar o CSS de que dependem. Antes, ao abrir a URL direto (sem passar pelo mural), apareciam sem estilo.
+- **Integração com a revisão do Codex (`a034dd4`, `ca8169e`):** a revogação atômica da foto e a exigência de autor ativo no clube foram mantidas. Os testes dele e o novo convivem no mesmo arquivo.
+
 ## Pendências e limites
 
-- **Publicação original de clube:** o link "Abrir o clube" leva ao espaço do clube, não direto ao post; o mural não tem rota por post.
-- **Notificações e solicitações:** as notificações ainda mostram só o nome (o contrato não traz o id do autor). As solicitações de entrada mostram a foto, mas não têm link, porque a pessoa ainda não é membro e o perfil pode ser privado.
-- **Compositor do mural:** o avatar do próprio usuário no compositor ainda é a inicial antiga do Codex.
-- **Não testados no navegador:** tablet (768 px), leitor de tela real e a prévia do recorte em celulares com câmera (o envio por arquivo foi testado no navegador de desktop).
+- **Solicitações de entrada:** mostram a foto, mas não têm link, porque a pessoa ainda não é membro e o perfil pode ser privado.
+- **Foto trocada em outro aparelho:** o próprio avatar só se atualiza nesta aba depois de recarregar a página (uma consulta por sessão).
+- **Não testados:** leitor de tela real e o recorte em celulares com câmera (o envio por arquivo foi testado no navegador).
 - **Abertura como overlay:** ela fica por cima do app enquanto ele carrega. Se a API demorar mais que a abertura, o app mostra o próprio carregamento, sem prolongar a animação.
 
 ## Possíveis conflitos com o Codex

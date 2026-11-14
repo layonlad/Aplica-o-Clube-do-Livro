@@ -46,7 +46,10 @@ it('publica no clube escolhido sem enviar identidade ou público controlados pel
     'POST',
     expect.objectContaining({ body: 'Uma descoberta entre leitores.', kind: 'reflection' }),
   )
-  const payload = vi.mocked(apiRequest).mock.calls[0][3] as Record<string, unknown>
+  // O compositor também consulta a própria foto (/me/profile); a verificação é sobre a chamada de publicação.
+  const call = vi.mocked(apiRequest).mock.calls.find((item) => item[1] === '/clubs/club-a/posts')
+  const payload = call?.[3] as Record<string, unknown>
+  expect(payload).toBeDefined()
   expect(payload).not.toHaveProperty('authorUserId')
   expect(payload).not.toHaveProperty('audience')
   expect(published).toHaveBeenCalledTimes(1)

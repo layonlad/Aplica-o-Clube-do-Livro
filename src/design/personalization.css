@@ -110,3 +110,7 @@
 .appearance-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 /* O @usuario é um identificador: não muda de caixa. */
 .profile-header__text .eyebrow { text-transform: none; letter-spacing: 0.02em; font-size: var(--text-small); }
+
+/* Notificações: foto de quem gerou o aviso ao lado do texto */
+.notification-list button:has(> .user-avatar) { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--space-3); align-items: start; }
+.notification-list button > .user-avatar { grid-row: span 2; }

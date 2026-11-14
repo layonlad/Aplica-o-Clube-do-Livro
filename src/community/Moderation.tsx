@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
 import type { Page } from '../../server/src/community-contracts'
 import { Button } from '../components/ui'
+import './community.css'
 type Report = {
   id: string
   kind: string

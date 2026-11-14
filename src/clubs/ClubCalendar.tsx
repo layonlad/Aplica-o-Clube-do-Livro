@@ -9,6 +9,7 @@ import { UserIdentity } from '../components/UserAvatar'
 import { ConfirmAction } from '../community/ClubWall'
 import type { Page } from '../../server/src/community-contracts'
 import type { ForumPage } from '../../server/src/forum-contracts'
+import './clubs.css'
 export interface ClubEvent {
   id: string
   title: string

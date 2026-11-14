@@ -2,9 +2,47 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { User } from 'firebase/auth'
 import { useAuth } from '../auth/AuthProvider'
+import { apiRequest } from '../auth/api'
 import { coverPalette } from './ui'
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+
+/** Disparado quando a própria foto muda; o detalhe é o novo id (ou null). */
+export const AVATAR_EVENT = 'clube:avatar-changed'
+const ownAvatar = new Map<string, Promise<string | null>>()
+
+/**
+ * Foto da própria conta (id da mídia), com uma única consulta a /me/profile por sessão
+ * e atualização imediata quando a foto é trocada em "Meu perfil".
+ */
+export function useOwnAvatar() {
+  const { user } = useAuth()
+  const [avatarId, setAvatarId] = useState<string | null>(null)
+  useEffect(() => {
+    setAvatarId(null)
+    if (!user?.emailVerified) return
+    let live = true
+    if (!ownAvatar.has(user.uid))
+      ownAvatar.set(
+        user.uid,
+        apiRequest<{ avatarId: string | null }>(user, '/me/profile')
+          .then((value) => value.avatarId)
+          .catch(() => null),
+      )
+    void ownAvatar.get(user.uid)!.then((value) => live && setAvatarId(value))
+    const onChange = (event: Event) => {
+      const next = (event as CustomEvent<string | null>).detail
+      ownAvatar.set(user.uid, Promise.resolve(next))
+      setAvatarId(next)
+    }
+    window.addEventListener(AVATAR_EVENT, onChange)
+    return () => {
+      live = false
+      window.removeEventListener(AVATAR_EVENT, onChange)
+    }
+  }, [user?.uid, user?.emailVerified])
+  return avatarId
+}
 
 /**
  * Cache das miniaturas de foto por id de mídia (e por sessão, porque a autorização depende de quem pede).

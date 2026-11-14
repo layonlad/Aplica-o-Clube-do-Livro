@@ -59,7 +59,7 @@ export class NotificationService {
     return transaction(this.pool, async (client) => {
       const cursor = decodeCursor(input.cursor)
       const { rows } = await client.query(
-        `SELECT n.id,n.kind,n.target_type AS "targetType",n.target_id AS "targetId",n.club_id AS "clubId",n.created_at AS "createdAt",n.created_at::text AS "sortTime",n.read_at AS "readAt",CASE WHEN n.club_id IS NULL THEN COALESCE(pr.display_name,'Leitor') ELSE u.name END AS "actorName",c.name AS "clubName" FROM notifications n LEFT JOIN notification_settings s ON s.user_id=n.recipient_id JOIN users u ON u.id=n.actor_id LEFT JOIN profiles pr ON pr.user_id=n.actor_id LEFT JOIN clubs c ON c.id=n.club_id WHERE ${visible} AND ($2::timestamptz IS NULL OR (n.created_at,n.id)<($2,$3::uuid)) ORDER BY n.created_at DESC,n.id DESC LIMIT $4`,
+        `SELECT n.id,n.kind,n.target_type AS "targetType",n.target_id AS "targetId",n.club_id AS "clubId",n.created_at AS "createdAt",n.created_at::text AS "sortTime",n.read_at AS "readAt",CASE WHEN n.club_id IS NULL THEN COALESCE(pr.display_name,'Leitor') ELSE u.name END AS "actorName",pr.avatar_id AS "actorAvatarId",c.name AS "clubName" FROM notifications n LEFT JOIN notification_settings s ON s.user_id=n.recipient_id JOIN users u ON u.id=n.actor_id LEFT JOIN profiles pr ON pr.user_id=n.actor_id LEFT JOIN clubs c ON c.id=n.club_id WHERE ${visible} AND ($2::timestamptz IS NULL OR (n.created_at,n.id)<($2,$3::uuid)) ORDER BY n.created_at DESC,n.id DESC LIMIT $4`,
         [user.id, cursor?.time ?? null, cursor?.id ?? null, input.limit + 1],
       )
       return pageOf(rows, input.limit)
