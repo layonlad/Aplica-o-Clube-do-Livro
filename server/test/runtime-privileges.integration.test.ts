@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { Pool } from 'pg'
 import { testDatabase } from './database.js'
 import { buildApp } from '../src/app.js'
+import sharp from 'sharp'
 it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou alteração da auditoria', async () => {
   const db = await testDatabase(),
     role = 'clube_runtime_test_' + randomUUID().replaceAll('-', ''),
@@ -21,6 +22,11 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
     })
     app = await buildApp({
       pool: runtime,
+      storage: {
+        put: async () => {},
+        get: async () => Buffer.from('synthetic'),
+        remove: async () => {},
+      },
       origin: 'https://club.example',
       verifyToken: async (uid) => ({
         uid,
@@ -60,6 +66,40 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
     const profile = await call('/me/profile')
     expect(profile.statusCode, profile.body).toBe(200)
     expect((await call('/me/notifications')).statusCode).toBe(200)
+    const appearance = {
+      preset: 'azul',
+      mode: 'dark',
+      accent: null,
+      headingFont: 'lora',
+      bodyFont: 'inter',
+      radius: 'soft',
+    }
+    const saved = await call('/me/appearance', 'POST', { appearance })
+    expect(saved.statusCode, saved.body).toBe(200)
+    expect((await call('/me/appearance')).json()).toEqual({ appearance })
+    const image = (
+      await sharp({ create: { width: 8, height: 8, channels: 3, background: '#462b70' } })
+        .png()
+        .toBuffer()
+    ).toString('base64')
+    const first = await call('/me/avatar', 'POST', { data: image })
+    expect(first.statusCode, first.body).toBe(201)
+    const second = await call('/me/avatar', 'POST', { data: image })
+    expect(second.statusCode, second.body).toBe(201)
+    expect((await call(`/public/media/${second.json().avatarId}/content`)).statusCode).toBe(200)
+    expect((await call(`/public/media/${first.json().avatarId}/content`)).statusCode).toBe(404)
+    expect(
+      (await runtime.query('SELECT state FROM media_objects WHERE id=$1', [first.json().avatarId]))
+        .rows[0].state,
+    ).toBe('purged')
+    const person = await call(`/people/${session.json().user.id}`)
+    expect(person.statusCode, person.body).toBe(200)
+    expect(person.json().avatarId).toBe(second.json().avatarId)
+    const shared = await call(`/people/${session.json().user.id}/club-posts`)
+    expect(shared.statusCode, shared.body).toBe(200)
+    expect(shared.json().items.map((item: { id: string }) => item.id)).toContain(post.json().id)
+    expect((await call('/me/avatar', 'DELETE')).json()).toEqual({ avatarId: null })
+    expect((await call(`/people/${session.json().user.id}`)).json().avatarId).toBeNull()
     await expect(runtime.query('SELECT * FROM schema_migrations')).rejects.toThrow(
       'permission denied',
     )

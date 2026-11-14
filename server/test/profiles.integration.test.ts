@@ -4,12 +4,14 @@ import { buildApp } from '../src/app.js'
 import { testDatabase } from './database.js'
 import type { Club, Session } from '../src/contracts.js'
 import type { Page, PostDto } from '../src/community-contracts.js'
+import { ProfileService } from '../src/profile-service.js'
 
 // Cenário da regra de privacidade: Maria participa dos clubes A e B; João só do A.
 let db: Awaited<ReturnType<typeof testDatabase>>,
   app: Awaited<ReturnType<typeof buildApp>>,
   clubA: Club,
   clubB: Club
+let avatarRequest = 10
 const ids: Record<string, string> = {},
   objects = new Map<string, Buffer>()
 const storage = {
@@ -58,7 +60,12 @@ beforeAll(async () => {
     ids[uid] = (await app.inject({ url: '/v1/me', headers: headers(uid) })).json<Session>().user.id
   const create = async (name: string) =>
     (
-      await app.inject({ url: '/v1/clubs', method: 'POST', headers: headers('maria'), payload: { name } })
+      await app.inject({
+        url: '/v1/clubs',
+        method: 'POST',
+        headers: headers('maria'),
+        payload: { name },
+      })
     ).json<Club>()
   clubA = await create('Clube A')
   clubB = await create('Clube B')
@@ -74,6 +81,7 @@ afterAll(async () => {
 
 it('permite foto de perfil sem perfil público e a mostra só a quem compartilha clube', async () => {
   const uploaded = await app.inject({
+    remoteAddress: '127.0.0.' + ++avatarRequest,
     url: '/v1/me/avatar',
     method: 'POST',
     headers: headers('maria'),
@@ -91,15 +99,16 @@ it('permite foto de perfil sem perfil público e a mostra só a quem compartilha
   expect((await avatarContent(avatarId)).statusCode).toBe(404)
 
   const invalid = await app.inject({
+    remoteAddress: '127.0.0.' + ++avatarRequest,
     url: '/v1/me/avatar',
     method: 'POST',
     headers: headers('maria'),
     payload: { data: Buffer.from('não é uma imagem').toString('base64') },
   })
   expect(invalid.statusCode).toBe(400)
-  expect((await app.inject({ url: '/v1/me/profile', headers: headers('maria') })).json().avatarId).toBe(
-    avatarId,
-  )
+  expect(
+    (await app.inject({ url: '/v1/me/profile', headers: headers('maria') })).json().avatarId,
+  ).toBe(avatarId)
 })
 
 it('atualiza a foto em publicações antigas e revoga a foto anterior', async () => {
@@ -107,6 +116,7 @@ it('atualiza a foto em publicações antigas e revoga a foto anterior', async ()
     .avatarId as string
   const id = await post('maria', clubA, 'Publicação feita antes da troca de foto')
   const replaced = await app.inject({
+    remoteAddress: '127.0.0.' + ++avatarRequest,
     url: '/v1/me/avatar',
     method: 'POST',
     headers: headers('maria'),
@@ -126,7 +136,12 @@ it('atualiza a foto em publicações antigas e revoga a foto anterior', async ()
   ).json<Page<{ id: string; avatarId: string | null }>>()
   expect(members.items.find((member) => member.id === ids.maria)?.avatarId).toBe(after)
 
-  const removed = await app.inject({ url: '/v1/me/avatar', method: 'DELETE', headers: headers('maria') })
+  const removed = await app.inject({
+    remoteAddress: '127.0.0.' + ++avatarRequest,
+    url: '/v1/me/avatar',
+    method: 'DELETE',
+    headers: headers('maria'),
+  })
   expect(removed.json()).toEqual({ avatarId: null })
   expect((await avatarContent(after, 'joao')).statusCode).toBe(404)
   const again = (
@@ -191,9 +206,9 @@ it('salva a aparência na conta e a preserva nas ações do espaço pessoal', as
     bodyFont: 'inter',
     radius: 'soft',
   }
-  expect(
-    (await app.inject({ url: '/v1/me/appearance', headers: headers('joao') })).json(),
-  ).toEqual({ appearance: null })
+  expect((await app.inject({ url: '/v1/me/appearance', headers: headers('joao') })).json()).toEqual(
+    { appearance: null },
+  )
   const saved = await app.inject({
     url: '/v1/me/appearance',
     method: 'POST',
@@ -217,10 +232,144 @@ it('salva a aparência na conta e a preserva nas ações do espaço pessoal', as
     payload: { action: { type: 'shelf.add', name: 'Clássicos' }, version: workspace.version },
   })
   expect(action.statusCode, action.body).toBe(200)
-  expect(
-    (await app.inject({ url: '/v1/me/appearance', headers: headers('joao') })).json(),
-  ).toEqual({ appearance })
+  expect((await app.inject({ url: '/v1/me/appearance', headers: headers('joao') })).json()).toEqual(
+    { appearance },
+  )
   expect(
     (await app.inject({ url: '/v1/me/appearance', headers: headers('maria') })).json(),
   ).toEqual({ appearance: null })
+})
+
+it('revoga a foto na mesma transação mesmo antes da limpeza física', async () => {
+  const user = (await app.inject({ url: '/v1/me', headers: headers('maria') })).json<Session>().user
+  const uploaded = await app.inject({
+    remoteAddress: '127.0.0.' + ++avatarRequest,
+    url: '/v1/me/avatar',
+    method: 'POST',
+    headers: headers('maria'),
+    payload: { data: await photo() },
+  })
+  const id = uploaded.json().avatarId
+  await new ProfileService(db.pool).setAvatar(user, null)
+  expect(
+    (await db.pool.query('SELECT state FROM media_objects WHERE id=$1', [id])).rows[0].state,
+  ).toBe('deleted')
+  expect((await avatarContent(id, 'maria')).statusCode).toBe(404)
+  expect((await avatarContent(id, 'joao')).statusCode).toBe(404)
+  await expect(new ProfileService(db.pool).setAvatar(user, id)).rejects.toMatchObject({
+    code: 'INVALID_MEDIA',
+  })
+})
+
+it('não inclui publicações de clube quando o autor deixou de participar', async () => {
+  await post('joao', clubA, 'Post de quem saiu do clube')
+  await db.pool.query(
+    "UPDATE club_memberships SET status='removed',removed_at=now() WHERE club_id=$1 AND user_id=$2",
+    [clubA.id, ids.joao],
+  )
+  try {
+    const response = await app.inject({
+      url: `/v1/people/${ids.joao}/club-posts`,
+      headers: headers('maria'),
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json().items).toEqual([])
+    expect(response.body).not.toContain(clubA.id)
+  } finally {
+    await db.pool.query(
+      "UPDATE club_memberships SET status='active',removed_at=NULL WHERE club_id=$1 AND user_id=$2",
+      [clubA.id, ids.joao],
+    )
+  }
+})
+
+it('respeita bloqueio nas duas direções no cartão, foto e posts compartilhados', async () => {
+  const uploaded = await app.inject({
+    remoteAddress: '127.0.0.' + ++avatarRequest,
+    url: '/v1/me/avatar',
+    method: 'POST',
+    headers: headers('maria'),
+    payload: { data: await photo() },
+  })
+  const id = uploaded.json().avatarId
+  for (const [blocker, blocked] of [
+    [ids.maria, ids.joao],
+    [ids.joao, ids.maria],
+  ]) {
+    await db.pool.query('INSERT INTO user_blocks(blocker_id,blocked_id) VALUES($1,$2)', [
+      blocker,
+      blocked,
+    ])
+    try {
+      expect((await avatarContent(id, 'joao')).statusCode).toBe(404)
+      expect(
+        (await app.inject({ url: `/v1/people/${ids.maria}`, headers: headers('joao') })).statusCode,
+      ).toBe(404)
+      expect(
+        (
+          await app.inject({ url: `/v1/people/${ids.maria}/club-posts`, headers: headers('joao') })
+        ).json().items,
+      ).toEqual([])
+    } finally {
+      await db.pool.query('DELETE FROM user_blocks WHERE blocker_id=$1 AND blocked_id=$2', [
+        blocker,
+        blocked,
+      ])
+    }
+  }
+})
+
+it('aplica a cota ao avatar e não reativa perfil suspenso', async () => {
+  const before = (await app.inject({ url: '/v1/me/profile', headers: headers('maria') })).json()
+  await db.pool.query('UPDATE profiles SET suspended=true,is_public=false WHERE user_id=$1', [
+    ids.maria,
+  ])
+  const uploaded = await app.inject({
+    remoteAddress: '127.0.0.' + ++avatarRequest,
+    url: '/v1/me/avatar',
+    method: 'POST',
+    headers: headers('maria'),
+    payload: { data: await photo() },
+  })
+  expect(uploaded.statusCode, uploaded.body).toBe(201)
+  const profile = (await app.inject({ url: '/v1/me/profile', headers: headers('maria') })).json()
+  expect(profile.suspended).toBe(true)
+  expect(profile.isPublic).toBe(false)
+  expect((await avatarContent(profile.avatarId, 'estranho')).statusCode).toBe(404)
+  expect(
+    (
+      await app.inject({
+        url: '/v1/me/profile',
+        method: 'POST',
+        headers: headers('maria'),
+        payload: {
+          ...before,
+          version: profile.version,
+          isPublic: true,
+          id: undefined,
+          suspended: undefined,
+        },
+      })
+    ).statusCode,
+  ).toBe(403)
+  const quotaObjects = await db.pool.query(
+    `INSERT INTO media_objects(owner_user_id,object_key,thumbnail_key,kind,mime_type,byte_size,thumbnail_size,width,height,state)
+    SELECT $1,'quota-'||n,'quota-thumb-'||n,'image','image/webp',10000000,1,8,8,'active' FROM generate_series(1,5) n RETURNING id`,
+    [ids.maria],
+  )
+  try {
+    const overQuota = await app.inject({
+      remoteAddress: '127.0.0.' + ++avatarRequest,
+      url: '/v1/me/avatar',
+      method: 'POST',
+      headers: headers('maria'),
+      payload: { data: await photo() },
+    })
+    expect(overQuota.statusCode, overQuota.body).toBe(409)
+    expect(overQuota.json().error.code).toBe('MEDIA_QUOTA')
+  } finally {
+    await db.pool.query("UPDATE media_objects SET state='purged' WHERE id=ANY($1::uuid[])", [
+      quotaObjects.rows.map((row) => row.id),
+    ])
+  }
 })

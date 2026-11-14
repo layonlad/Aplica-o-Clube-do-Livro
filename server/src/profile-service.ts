@@ -112,7 +112,9 @@ export class ProfileService {
       )
       const {
         rows: [profile],
-      } = await client.query('SELECT avatar_id FROM profiles WHERE user_id=$1 FOR UPDATE', [user.id])
+      } = await client.query('SELECT avatar_id FROM profiles WHERE user_id=$1 FOR UPDATE', [
+        user.id,
+      ])
       if (
         avatarId &&
         !(
@@ -128,6 +130,17 @@ export class ProfileService {
         [user.id, avatarId],
       )
       const previous: string | null = profile.avatar_id
+      if (previous && previous !== avatarId) {
+        // A revogação é atômica com a troca: falhas na limpeza física nunca mantêm a foto acessível.
+        await client.query(
+          "UPDATE media_objects SET state='deleted',deleted_at=COALESCE(deleted_at,now()) WHERE id=$1 AND owner_user_id=$2 AND state='active'",
+          [previous, user.id],
+        )
+        await client.query('UPDATE profiles SET cover_id=NULL WHERE user_id=$1 AND cover_id=$2', [
+          user.id,
+          previous,
+        ])
+      }
       return { avatarId, previous: previous && previous !== avatarId ? previous : null }
     })
   }

@@ -171,6 +171,7 @@ export class PostService {
         FROM social_posts p JOIN users u ON u.id=p.author_user_id JOIN clubs c ON c.id=p.club_id
         WHERE p.author_user_id=$1 AND p.audience='club' AND p.club_id IS NOT NULL AND p.deleted_at IS NULL
         AND EXISTS(SELECT 1 FROM club_memberships vm WHERE vm.club_id=p.club_id AND vm.user_id=$2 AND vm.status='active')
+        AND EXISTS(SELECT 1 FROM club_memberships am WHERE am.club_id=p.club_id AND am.user_id=p.author_user_id AND am.status='active')
         AND ${notBlocked('p.author_user_id', '$2')}
         AND ($3::timestamptz IS NULL OR (p.created_at,p.id)<($3,$4::uuid))
         ORDER BY p.created_at DESC,p.id DESC LIMIT $5`,

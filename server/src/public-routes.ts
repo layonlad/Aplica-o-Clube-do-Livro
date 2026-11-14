@@ -141,7 +141,7 @@ export async function registerPublicMutations(
         { profilePhoto: true },
       )
       const result = await profiles.setAvatar(request.user, uploaded.id)
-      // Revoga a foto anterior depois do commit; a troca já vale mesmo se a limpeza física atrasar.
+      // A foto anterior já foi revogada na transação; tenta apenas concluir a limpeza física.
       if (result.previous) await media.remove(request.user.id, result.previous).catch(() => undefined)
       return reply.code(201).send({ avatarId: result.avatarId })
     },

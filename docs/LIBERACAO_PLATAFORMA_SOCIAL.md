@@ -32,12 +32,29 @@ Não há solicitação de contratar upgrade, novo servidor pago, Cloud SQL, Clou
 
 ## Validação antes da liberação
 
-- 111 testes locais aprovados (32 frontend, 28 API, 50 PostgreSQL e 1 Auth Emulator). O CI de 24c36c0 passou com builds e Docker; conferir novamente o CI do hash final do PR. O build com configuração real de produção também passou, sem deploy.
+- Revisão após PRs #5/#6: 128 testes locais aprovados (41 frontend, 28 API com FFmpeg real, 58 PostgreSQL e 1 Auth Emulator). Builds demo, conectado e API aprovados. Conferir o CI do commit final do PR #2, incluindo Docker e PostgreSQL 17. O ensaio local usa PostgreSQL 18; nenhuma operação de produção foi executada nesta revisão.
 - Auditoria npm de dependências de produção: zero vulnerabilidades na consulta final local. O CI aplica o limiar de severidade alta a todas as dependências; avisos moderados de ferramentas de desenvolvimento devem ser registrados sem forçar uma atualização incompatível.
 - Ensaiar migrations 003–015 duas vezes sobre a estrutura restaurada localmente a partir de produção. Conferir preservação dos fixtures e idempotência; não copiar dados de usuários.
 - Consulta somente de leitura ao legado de produção em 14/11/2026 não encontrou tópicos ou eventos para reconciliar. Conferir novamente imediatamente antes de migrar; qualquer autoria/associação inválida deve interromper o processo, preservando a fonte.
 - Conferir que o papel restrito executa os fluxos da API e não consegue DDL, leitura de `schema_migrations`, DELETE em usuários ou alteração de auditoria.
 - Testes de foto/vídeo/EPUB usam bytes sintéticos e armazenamento local/mock. A integração real com o bucket será confirmada durante a liberação aprovada, com objeto descartável privado e limpeza autorizada.
+
+## Rotas de perfis e aparência — teste final autorizado
+
+As quatro famílias novas correspondem a seis operações HTTP, todas autenticadas com conta confirmada:
+
+| Caminho | Métodos | Validação final |
+| --- | --- | --- |
+| `/v1/me/avatar` | POST, DELETE | Enviar, trocar e remover JPEG/PNG/WebP sintético; validar tipo, tamanho, cota e limite de tentativas. Conferir atualização em posts/comentários antigos. A foto anterior deve retornar 404 inclusive ao dono, mesmo se a exclusão física falhar. |
+| `/v1/me/appearance` | GET, POST | Salvar fontes/cores, recuperar em outra sessão/aparelho, preservar após uma ação do espaço pessoal, cancelar prévia e restaurar padrão. Preferências de outra conta não podem ser retornadas. |
+| `/v1/people/:id` | GET | Com perfil privado, colega ativo vê cartão mínimo e somente clubes em comum; estranho recebe 404. Bloqueio em qualquer direção nega o cartão. Perfil suspenso não pode voltar a público pela troca da foto. |
+| `/v1/people/:id/club-posts` | GET | Maria em A/B e João somente em A: João vê somente os posts de A, sem nome/id/mídia de B. Repetir via API direta, com paginação, bloqueio e associação removida do visitante ou do autor. Anônimo recebe 401. |
+
+Também conferir `/v1/public/media/:id/content` e a miniatura: foto privada visível ao colega com associação ativa em comum e invisível ao estranho/anônimo; bloqueio e saída do clube revogam a leitura. Com perfil explicitamente público, foto pública é o comportamento esperado. Os ids em DTOs continuam referências ao perfil; a API de mídia decide a entrega dos bytes.
+
+O bucket **privado `clube-livro-media` atende às fotos sem alterações**: usa o mesmo adaptador, chaves e processamento WebP já existentes, com autorização na API e cota de 50 MB por conta. Não exige bucket público, ACL adicional, migration, nova credencial ou ampliação de `runtime-grants.sql`. A confirmação de PUT/GET real permanece reservada ao teste de liberação autorizado; esta revisão usa armazenamento sintético.
+
+A revisão executou as seis operações e leitura de mídia com um papel local que recebe exatamente `server/ops/runtime-grants.sql`, sem permissões extras. Continuaram negados DDL, leitura de migrations, exclusão de usuários e alteração da auditoria. Nenhum arquivo de design ou frontend foi modificado na revisão. Detalhes: [revisão do PR #6](REVISAO_BACKEND_PR6.md).
 
 ## Ordem e recuperação
 
