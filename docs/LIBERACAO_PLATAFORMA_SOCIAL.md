@@ -1,6 +1,6 @@
 # Liberação da plataforma social — revisão para autorização
 
-Estado: pronta para ensaio final, ainda não autorizada para produção. Código na branch `codex/plataforma-social`, PR #2. O hash e os resultados finais de CI serão acrescentados após o último commit de validação.
+Estado: implementação e ensaios locais validados, ainda não autorizada para produção. Código na branch `codex/plataforma-social`, [PR #2](https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/2). Usar o hash exibido no cabeçalho do PR e conferir o CI desse mesmo hash antes da liberação.
 
 ## Escopo público da liberação
 
@@ -32,7 +32,7 @@ Não há solicitação de contratar upgrade, novo servidor pago, Cloud SQL, Clou
 
 ## Validação antes da liberação
 
-- Conferir testes de frontend, API, PostgreSQL, Auth Emulator, build demo/conectado e Docker no CI do hash final do PR.
+- 111 testes locais aprovados (32 frontend, 28 API, 50 PostgreSQL e 1 Auth Emulator). O CI de 24c36c0 passou com builds e Docker; conferir novamente o CI do hash final do PR. O build com configuração real de produção também passou, sem deploy.
 - Auditoria npm de dependências de produção: zero vulnerabilidades na consulta final local. O CI aplica o limiar de severidade alta a todas as dependências; avisos moderados de ferramentas de desenvolvimento devem ser registrados sem forçar uma atualização incompatível.
 - Ensaiar migrations 003–015 duas vezes sobre a estrutura restaurada localmente a partir de produção. Conferir preservação dos fixtures e idempotência; não copiar dados de usuários.
 - Consulta somente de leitura ao legado de produção em 14/11/2026 não encontrou tópicos ou eventos para reconciliar. Conferir novamente imediatamente antes de migrar; qualquer autoria/associação inválida deve interromper o processo, preservando a fonte.
@@ -50,3 +50,13 @@ Estados novos de leitura/perfil não existem no código antigo. Reverter a API p
 ## Limites comunicados
 
 O plano gratuito tem franquias e o Render pode suspender a API por inatividade. EPUBs originais e mídias não integram o backup JSON. O leitor seguro não executa DRM, CSS de editoras, scripts ou recursos externos. Relatórios de qualidade não representam certificação jurídica de direitos autorais ou LGPD. A exclusão integral automatizada da identidade Firebase não foi implementada; os controles de exclusão de conteúdo, arquivos, notas e privacidade estão disponíveis. Detalhes em `ENTREGA_PLATAFORMA_06.md`.
+
+## Evidências de interface
+
+Todas usam conteúdo e contas sintéticos no ambiente local.
+
+![Publicação pública feita com autorização do álbum](evidence/community-public.jpg)
+
+![Leitor EPUB com destaque privado persistente](evidence/epub-reader.jpg)
+
+Conferência móvel: [comunidade](evidence/community-mobile.jpg) e [leitor](evidence/epub-mobile.jpg), ambos com documento de 390px para viewport de 390px.

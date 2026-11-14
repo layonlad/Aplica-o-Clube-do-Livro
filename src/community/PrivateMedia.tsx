@@ -49,7 +49,7 @@ export function MediaPicker({
     return () => {
       live = false
     }
-  }, [user?.uid, user?.emailVerified, clubId, recover])
+  }, [user?.uid, user?.emailVerified, clubId, recover, value.length])
   async function moreDrafts() {
     if (!drafts.nextCursor || !user) return
     setBusy(true)

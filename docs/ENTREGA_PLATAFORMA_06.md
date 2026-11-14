@@ -29,11 +29,13 @@ Capas de clube são privadas por padrão. Exibi-las para visitantes exige uma au
 
 ## Evidências
 
-- 32 testes de frontend, 28 testes unitários de API (incluindo processamento real de MP4), 50 de integração com PostgreSQL e 1 com Firebase Auth Emulator passaram antes das últimas mudanças de interface/documentação. A rodada final e o CI serão registrados no plano de liberação.
+- 32 testes de frontend, 28 testes unitários de API (incluindo processamento real de MP4), 50 de integração com PostgreSQL e 1 com Firebase Auth Emulator passaram: 111 no total. O CI do commit 24c36c0 também passou com build demo/conectado, imagem Docker e auditoria. Os pequenos ajustes finais de feedback/rascunhos passam novamente pelo CI antes da liberação.
 - Ensaio de todas as migrações sobre a estrutura extraída de produção, restaurada apenas localmente: zero linhas de usuários copiadas, checksums de base conferidos, dados sintéticos preservados e segunda execução idempotente. Reexecutar após qualquer nova migration.
 - Navegador real local: publicação pública com foto e comentário persistente; perfil opt-in; EPUB de demonstração importado como visitante, ilustração, capítulos, marcador/posição retomados, destaque e nota privada preservados após recarga. Console sem erros.
 - Conferência móvel 390 × 844: comunidade e leitor sem transbordamento horizontal. Ajustes de foco no menu, barra lateral sem encolher, campos e alvos de toque consistentes.
-- Capturas: `/private/tmp/clube-comunidade-publica.jpg`, `/private/tmp/clube-comunidade-mobile.jpg`, `/private/tmp/clube-epub-original.jpg`, `/private/tmp/clube-epub-mobile.jpg`.
+- Evidências com dados exclusivamente sintéticos: [comunidade pública](evidence/community-public.jpg), [comunidade móvel](evidence/community-mobile.jpg), [leitor com destaque privado](evidence/epub-reader.jpg) e [leitor móvel](evidence/epub-mobile.jpg).
+- Revisão autenticada final: encontro criado com livro, RSVP preservado após recarga, álbum com data/encontro preenchidos, recuperação de foto preparada e cópia pública criada somente após as duas autorizações. Console sem erros.
+- Build com a configuração Firebase real existente passou após a API Render responder saudável. Não houve deploy. Render confirmado no plano Free, sem suspensão e com autodeploy desligado.
 
 ## Limites conhecidos e transparência
 

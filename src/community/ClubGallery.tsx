@@ -314,6 +314,7 @@ function AlbumRoom({
     [uploading, setUploading] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
+    [policyMessage, setPolicyMessage] = useState(''),
     [revision, setRevision] = useState(0)
   const [album, setAlbum] = useState(initialAlbum),
     [policy, setPolicy] = useState({
@@ -405,7 +406,7 @@ function AlbumRoom({
               })
                 .then(() => {
                   setAlbum({ ...album, ...policy, version: album.version + 1 })
-                  setError('Permissões do álbum salvas.')
+                  setPolicyMessage('Permissões do álbum salvas.')
                 })
                 .catch((err) => setError(readableError(err)))
                 .finally(() => setBusy(false))
@@ -454,6 +455,7 @@ function AlbumRoom({
           </form>
         </details>
       )}
+      {policyMessage && <p role="status">{policyMessage}</p>}
       {error && <p role="alert">{error}</p>}
       {busy && !page.items.length && <p role="status">Carregando registros…</p>}
       <div className="gallery-photos">
