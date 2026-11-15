@@ -16,7 +16,8 @@
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
       "Leitor de tela real e recorte de foto pela câmera do celular ainda não foram testados. A persistência foi validada por novo login, sem segundo aparelho físico.",
       "O modo conectado não oferece cache offline. Até as chaves push serem configuradas, as notificações são somente internas, sem e-mail ou push.",
-      "As cópias privadas de recuperação são anteriores às respectivas liberações; não representam cópia contínua nem incluem gravações posteriores."
+      "As cópias privadas de recuperação são anteriores às respectivas liberações; não representam cópia contínua nem incluem gravações posteriores.",
+      "Nova estética \"Estante Rosa & Palha\" em PR, ainda não publicada: falta a foto definitiva da estante (enviada pelo dono) e revisar as telas conectadas com dados reais (comunidade, clubes, leitor)."
     ]
   },
   "ambientes": [
@@ -266,6 +267,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-15",
+      "autor": "Claude Code",
+      "titulo": "Nova estética \"Estante Rosa & Palha\" (em revisão)",
+      "resumo": "Branch claude/estetica-estante: paleta pastel rosa e palha, estante fixa ao fundo (ilustração própria até chegar a foto do dono), textura de papel amassado, adesivos de laço, estrela e flor, tema escuro \"estante à noite\" e movimento com framer-motion (troca de página e marcador da navegação). Ainda não publicada.",
+      "pr": ""
+    },
     {
       "data": "2026-11-15",
       "autor": "Claude Code",

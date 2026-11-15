@@ -40,7 +40,7 @@
   height: 36px;
   place-items: center;
   overflow: hidden;
-  color: var(--palha-50);
+  color: var(--text-on-brand);
   background: var(--brand);
   border-radius: 11px 11px 11px 4px;
   box-shadow: 0 6px 14px color-mix(in srgb, var(--brand) 28%, transparent);
