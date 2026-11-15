@@ -18,6 +18,11 @@
           if (mode === 'system') mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
           document.documentElement.dataset.theme = mode === 'dark' ? 'dark' : 'light'
           if (saved && /^#[0-9a-f]{6}$/i.test(saved.background || '')) document.documentElement.style.setProperty('--bg', saved.background)
+          // Tamanho do texto e espaçamento escolhidos: aplicados já no primeiro desenho, sem "pulo" de layout.
+          var scale = saved && { sm: 0.875, lg: 1, xl: 1.125 }[saved.textSize]
+          if (scale) document.documentElement.style.setProperty('--text-scale', scale)
+          var density = saved && { compact: 0.88, airy: 1.12 }[saved.density]
+          if (density) document.documentElement.style.setProperty('--density-user', density)
         } catch (e) {}
       })()
     </script>

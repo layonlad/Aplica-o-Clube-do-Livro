@@ -9,7 +9,7 @@
     "fase": "No ar; push aguardando chaves",
     "tom": "aguardando",
     "resumo": "Site e API publicados em 15/11/2026 a partir de 30a110b (PRs 10 a 14). Banco em 018 com grants explícitos e identidade restrita do executor. As notificações push e o agendador externo estão no código, mas desligados até as chaves serem configuradas.",
-    "proximoPasso": "Com autorização do dono: gerar o par VAPID e a credencial de limpeza, guardá-los no Render e nos segredos do GitHub Actions, habilitar o workflow de notificações e testar o recebimento em um aparelho autorizado. Testar também o envio direto de foto grande com uma conta descartável.",
+    "proximoPasso": "Ligar o push: o par VAPID e a credencial de limpeza já estão preparados (pelo Codex); falta o dono autorizar guardá-los no Render e nos segredos do GitHub Actions, habilitar o workflow e testar num aparelho. Depois, publicar o redesenho compacto (PR desta entrega): primeiro a API, depois o site.",
     "pendencias": [
       "Push e agendador externo publicados, mas inativos: faltam as chaves VAPID, a credencial de limpeza e os segredos do workflow. O envio direto de fotos grandes (POST assinado) está no ar e ainda não foi testado com conta real; recebimento em aparelho físico não foi testado.",
       "Os fluxos autenticados de capa GIF, capa do álbum e comentários foram testados localmente com contas e arquivos sintéticos. Nesta liberação, produção recebeu verificações sem escrita em contas reais; não foi testado um segundo aparelho físico.",
@@ -266,6 +266,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-15",
+      "autor": "Claude Code",
+      "titulo": "Visual mais compacto, abertura em tela cheia e novas opções de formatação",
+      "resumo": "Texto-base de 15 px, botões, campos, menus e cartões menores e mais justos no celular, sem perder a área de toque. A abertura ficou sem botão de pular, mais lenta (cerca de 4,8 s) e termina com a página do livro cobrindo a tela. Aparência ganhou tamanho do texto, espaçamento, entrelinha e formato de botões e campos, salvos na conta. A API precisa ir ao ar antes do site, porque o formato salvo mudou.",
+      "pr": ""
+    },
     {
       "data": "2026-11-15",
       "autor": "Claude Code",

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import './book-opening.css'
 
 export const INTRO_KEY = 'clube-livro-intro-seen'
@@ -18,8 +18,21 @@ export function introVariant(env: {
   return 'full'
 }
 
-/** Duração de cada variante (ms) até a interface ficar livre. */
-export const introDuration: Record<Variant, number> = { full: 2600, lite: 1500, still: 700 }
+/**
+ * Duração de cada variante (ms) até a interface ficar livre.
+ * Fica abaixo de 5 s: movimento automático mais longo exigiria um controle de pausa (WCAG 2.2.2).
+ */
+export const introDuration: Record<Variant, number> = { full: 4800, lite: 2800, still: 900 }
+
+/**
+ * Quanto a página da direita precisa crescer para cobrir a tela inteira (com folga para as bordas).
+ * `width` e `height` são as medidas de uma página. Exportado para testes.
+ */
+export function introZoom(page: { width: number; height: number }, viewport: { width: number; height: number }) {
+  if (!page.width || !page.height) return 6
+  const cover = Math.max(viewport.width / page.width, viewport.height / page.height)
+  return Math.max(1.5, Math.round(cover * 1.12 * 100) / 100)
+}
 
 function initialVariant(): Variant | null {
   try {
@@ -37,20 +50,33 @@ function initialVariant(): Variant | null {
 }
 
 /**
- * Abertura do app: um livro surge, abre a capa, folheia algumas páginas e revela o nome do Clube do Livro.
+ * Abertura do app: um livro grande surge, abre a capa devagar, folheia algumas páginas, mostra o nome
+ * do Clube do Livro e então a câmera entra na página até o papel tomar a tela inteira e virar o app.
  * Aparece uma vez por sessão do navegador, por cima do app (que carrega por baixo ao mesmo tempo),
- * dura cerca de 2,6 s e pode ser pulada a qualquer momento. Só usa CSS 3D (transform/opacity).
+ * e dura cerca de 4,8 s. Não tem botão de pular; Esc encerra para quem navega pelo teclado.
+ * Só usa transform/opacity (CSS 3D).
  */
 export function BookOpening() {
   const [variant] = useState(initialVariant)
   const [leaving, setLeaving] = useState(false)
   const [done, setDone] = useState(variant === null)
-  const skipRef = useRef<HTMLButtonElement>(null)
+  const root = useRef<HTMLDivElement>(null)
+  const book = useRef<HTMLDivElement>(null)
 
   const finish = useCallback(() => {
     setLeaving(true)
-    window.setTimeout(() => setDone(true), 280)
+    window.setTimeout(() => setDone(true), 320)
   }, [])
+
+  // Mede o livro antes do primeiro desenho para o zoom final cobrir exatamente esta tela.
+  useLayoutEffect(() => {
+    if (!variant || !root.current || !book.current) return
+    const zoom = introZoom(
+      { width: book.current.offsetWidth, height: book.current.offsetHeight },
+      { width: window.innerWidth, height: window.innerHeight },
+    )
+    root.current.style.setProperty('--zoom', String(zoom))
+  }, [variant])
 
   useEffect(() => {
     if (!variant) return
@@ -59,10 +85,9 @@ export function BookOpening() {
     } catch {
       /* sem armazenamento: a abertura simplesmente não se repete nesta aba */
     }
-    skipRef.current?.focus({ preventScroll: true })
     const timer = window.setTimeout(() => setDone(true), introDuration[variant])
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') finish()
+      if (event.key === 'Escape') finish()
     }
     document.addEventListener('keydown', onKey)
     return () => {
@@ -74,12 +99,13 @@ export function BookOpening() {
   if (done || !variant) return null
   return (
     <div
+      ref={root}
       className={`book-intro book-intro--${variant} ${leaving ? 'is-leaving' : ''}`}
-      onClick={finish}
+      aria-hidden="true"
       data-testid="book-intro"
     >
-      <div className="book-intro__stage" aria-hidden="true">
-        <div className="book-intro__book">
+      <div className="book-intro__stage">
+        <div className="book-intro__book" ref={book}>
           <div className="book-intro__page book-intro__page--left">
             <span className="book-intro__lines" />
           </div>
@@ -114,17 +140,6 @@ export function BookOpening() {
           )}
         </div>
       </div>
-      <button
-        ref={skipRef}
-        type="button"
-        className="book-intro__skip"
-        onClick={(event) => {
-          event.stopPropagation()
-          finish()
-        }}
-      >
-        Pular abertura
-      </button>
     </div>
   )
 }

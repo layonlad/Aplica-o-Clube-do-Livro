@@ -7,7 +7,8 @@ html {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-ui);
-  font-size: 100%;
+  /* Respeita o tamanho de fonte do navegador (100%) e aplica a escala escolhida na Aparência. */
+  font-size: calc(100% * var(--text-scale));
   line-height: var(--leading-normal);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -40,6 +41,13 @@ body::before {
 }
 
 button, input, textarea, select { font: inherit; color: inherit; letter-spacing: inherit; }
+/* No toque, campo de texto abaixo de 16 px faz o iPhone ampliar a página ao focar.
+ * O texto do app pode ser menor (Aparência → Tamanho do texto), mas os campos nunca descem disso. */
+@media (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+  textarea,
+  select { font-size: max(16px, 1em) !important; }
+}
 button, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; text-decoration: none; }
 img, svg, video { max-width: 100%; }

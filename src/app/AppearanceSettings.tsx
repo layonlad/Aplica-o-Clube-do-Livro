@@ -8,14 +8,18 @@ import { UserAvatar } from '../components/UserAvatar'
 import { useTheme } from './ThemeProvider'
 import {
   appearanceTokens,
+  buttonShapeOptions,
   defaultAppearance,
+  densityOptions,
   fontOptions,
+  lineHeightOptions,
   loadFonts,
+  normalizeAppearance,
   presetOptions,
+  sameAppearance as same,
+  textSizeOptions,
   type Appearance,
 } from './appearance'
-
-const same = (a: Appearance, b: Appearance) => JSON.stringify(a) === JSON.stringify(b)
 
 /** Mantém a aparência da conta igual em todos os aparelhos depois do login. */
 export function AppearanceSync() {
@@ -39,13 +43,44 @@ export function AppearanceSync() {
   return null
 }
 
+/** Grupo de opções em botões segmentados (rádios acessíveis). */
+function Segmented<T extends string>({
+  name,
+  value,
+  options,
+  onChange,
+}: {
+  name: string
+  value: T
+  options: readonly { id: T; label: string }[]
+  onChange: (value: T) => void
+}) {
+  return (
+    <div className="segmented" role="presentation">
+      {options.map((option) => (
+        <label key={option.id}>
+          <input
+            type="radio"
+            name={name}
+            value={option.id}
+            checked={value === option.id}
+            onChange={() => onChange(option.id)}
+          />
+          <span>{option.label}</span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
 /**
- * Aparência e personalização: tema, modo, fontes e formato dos cartões.
+ * Aparência e personalização: tema, modo, fontes, texto, espaçamento e formatos.
  * Cada escolha vira prévia imediata em todo o app; só "Aplicar alterações" salva.
  */
 export function AppearanceSettings() {
   const { user } = useAuth()
-  const { appearance, saveAppearance, previewAppearance } = useTheme()
+  const { appearance: saved, saveAppearance, previewAppearance } = useTheme()
+  const appearance = useMemo(() => normalizeAppearance(saved), [saved])
   const [draft, setDraft] = useState<Appearance>(appearance)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
@@ -247,26 +282,76 @@ export function AppearanceSettings() {
           ))}
 
           <fieldset className="appearance-group">
-            <legend>Formato dos cartões</legend>
-            <div className="segmented" role="presentation">
-              {(
-                [
-                  ['round', 'Arredondado'],
-                  ['soft', 'Suave'],
-                  ['square', 'Reto'],
-                ] as const
-              ).map(([value, label]) => (
-                <label key={value}>
-                  <input
-                    type="radio"
-                    name="radius"
-                    value={value}
-                    checked={draft.radius === value}
-                    onChange={() => update({ radius: value })}
-                  />
-                  <span>{label}</span>
-                </label>
-              ))}
+            <legend>Texto e espaçamento</legend>
+            <div className="format-rows">
+              <div className="format-row">
+                <span className="format-row__label" id="format-size">
+                  Tamanho do texto
+                  <small>Vale para o app inteiro: títulos, botões e campos acompanham.</small>
+                </span>
+                <Segmented
+                  name="textSize"
+                  value={draft.textSize ?? 'md'}
+                  options={textSizeOptions}
+                  onChange={(textSize) => update({ textSize })}
+                />
+              </div>
+              <div className="format-row">
+                <span className="format-row__label">
+                  Espaçamento
+                  <small>Compacto mostra mais conteúdo por tela, bom para o celular.</small>
+                </span>
+                <Segmented
+                  name="density"
+                  value={draft.density ?? 'regular'}
+                  options={densityOptions}
+                  onChange={(density) => update({ density })}
+                />
+              </div>
+              <div className="format-row">
+                <span className="format-row__label">
+                  Entrelinha
+                  <small>Distância entre as linhas de publicações e descrições.</small>
+                </span>
+                <Segmented
+                  name="lineHeight"
+                  value={draft.lineHeight ?? 'normal'}
+                  options={lineHeightOptions}
+                  onChange={(lineHeight) => update({ lineHeight })}
+                />
+              </div>
+            </div>
+            <p className="format-sample" aria-hidden="true">
+              <strong>Amostra:</strong> Terminei o capítulo 12 ontem à noite e ainda estou pensando
+              naquele final. Alguém mais achou que a narradora sabia de tudo desde o começo?
+            </p>
+          </fieldset>
+
+          <fieldset className="appearance-group">
+            <legend>Formatos</legend>
+            <div className="format-rows">
+              <div className="format-row">
+                <span className="format-row__label">Cartões</span>
+                <Segmented
+                  name="radius"
+                  value={draft.radius}
+                  options={[
+                    { id: 'round', label: 'Arredondado' },
+                    { id: 'soft', label: 'Suave' },
+                    { id: 'square', label: 'Reto' },
+                  ] as const}
+                  onChange={(radius) => update({ radius })}
+                />
+              </div>
+              <div className="format-row">
+                <span className="format-row__label">Botões e campos</span>
+                <Segmented
+                  name="buttons"
+                  value={draft.buttons ?? 'pill'}
+                  options={buttonShapeOptions}
+                  onChange={(buttons) => update({ buttons })}
+                />
+              </div>
             </div>
           </fieldset>
           <p className="t-caption">
@@ -301,6 +386,9 @@ export function AppearanceSettings() {
               </span>
               <span className="chip chip--accent">Romance</span>
             </div>
+            <span className="input theme-preview-card__field" aria-hidden="true">
+              Escreva um comentário…
+            </span>
           </div>
           {changed && (
             <p className="appearance-pending" role="status">

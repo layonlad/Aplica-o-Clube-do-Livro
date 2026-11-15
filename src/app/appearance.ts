@@ -93,13 +93,64 @@ export const presetOptions: { id: PresetId; label: string; brand: string; accent
   { id: 'dourado', label: 'Dourado', brand: '#7d5300', accent: '#f4b942' },
 ]
 
+/** Tamanho-base do texto (× 16 px). "Padrão" é 15 px; o app inteiro acompanha, porque tudo usa rem. */
+export const textSizeOptions: { id: NonNullable<Appearance['textSize']>; label: string; scale: number }[] = [
+  { id: 'sm', label: 'Pequeno', scale: 0.875 },
+  { id: 'md', label: 'Padrão', scale: 0.9375 },
+  { id: 'lg', label: 'Grande', scale: 1 },
+  { id: 'xl', label: 'Maior', scale: 1.125 },
+]
+/** Espaçamento: multiplica respiros e a altura de botões e campos. */
+export const densityOptions: { id: NonNullable<Appearance['density']>; label: string; scale: number }[] = [
+  { id: 'compact', label: 'Compacto', scale: 0.88 },
+  { id: 'regular', label: 'Padrão', scale: 1 },
+  { id: 'airy', label: 'Amplo', scale: 1.12 },
+]
+/** Entrelinha dos textos corridos. */
+export const lineHeightOptions: { id: NonNullable<Appearance['lineHeight']>; label: string; normal: number; relaxed: number }[] = [
+  { id: 'tight', label: 'Justa', normal: 1.4, relaxed: 1.55 },
+  { id: 'normal', label: 'Padrão', normal: 1.55, relaxed: 1.7 },
+  { id: 'relaxed', label: 'Ampla', normal: 1.75, relaxed: 1.9 },
+]
+/** Formato de botões e campos de texto. */
+export const buttonShapeOptions: { id: NonNullable<Appearance['buttons']>; label: string; button: string | null; field: string | null }[] = [
+  { id: 'pill', label: 'Pílula', button: null, field: null },
+  { id: 'soft', label: 'Suave', button: 'var(--radius-sm)', field: 'var(--radius-sm)' },
+  { id: 'square', label: 'Reto', button: 'var(--radius-xs)', field: 'var(--radius-xs)' },
+]
+
 export const defaultAppearance: Appearance = {
   preset: 'padrao',
   mode: 'light',
   accent: null,
+  background: null,
   headingFont: 'fraunces',
   bodyFont: 'jakarta',
   radius: 'round',
+  textSize: 'md',
+  density: 'regular',
+  lineHeight: 'normal',
+  buttons: 'pill',
+}
+
+/** Completa preferências antigas (sem os campos novos) e mantém a ordem das chaves, para comparar com segurança. */
+export function normalizeAppearance(value: Appearance): Appearance {
+  return {
+    preset: value.preset,
+    mode: value.mode,
+    accent: value.accent ?? null,
+    background: value.background ?? null,
+    headingFont: value.headingFont,
+    bodyFont: value.bodyFont,
+    radius: value.radius,
+    textSize: value.textSize ?? 'md',
+    density: value.density ?? 'regular',
+    lineHeight: value.lineHeight ?? 'normal',
+    buttons: value.buttons ?? 'pill',
+  }
+}
+export function sameAppearance(a: Appearance, b: Appearance) {
+  return JSON.stringify(normalizeAppearance(a)) === JSON.stringify(normalizeAppearance(b))
 }
 
 // ── Contraste (WCAG 2.2) ──
@@ -186,6 +237,10 @@ export function appearanceTokens(appearance: Appearance) {
     : ensureContrast(onLight.color, background).color
   const heading = fontOptions.find((font) => font.id === appearance.headingFont) ?? fontOptions[0]
   const body = fontOptions.find((font) => font.id === appearance.bodyFont) ?? fontOptions[4]
+  const textSize = textSizeOptions.find((item) => item.id === appearance.textSize)
+  const density = densityOptions.find((item) => item.id === appearance.density)
+  const leading = lineHeightOptions.find((item) => item.id === appearance.lineHeight)
+  const shape = buttonShapeOptions.find((item) => item.id === appearance.buttons)
   return {
     dark,
     adjusted: onLight.adjusted,
@@ -242,6 +297,12 @@ export function appearanceTokens(appearance: Appearance) {
           : appearance.radius === 'soft'
             ? 'var(--radius-md)'
             : 'var(--radius-xs)',
+      '--text-scale': textSize && textSize.id !== 'md' ? String(textSize.scale) : null,
+      '--density-user': density && density.id !== 'regular' ? String(density.scale) : null,
+      '--leading-normal': leading && leading.id !== 'normal' ? String(leading.normal) : null,
+      '--leading-relaxed': leading && leading.id !== 'normal' ? String(leading.relaxed) : null,
+      '--radius-button': shape?.button ?? null,
+      '--radius-field': shape?.field ?? null,
     } as Record<string, string | null>,
   }
 }

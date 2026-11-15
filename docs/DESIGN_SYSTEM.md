@@ -74,25 +74,29 @@ Coral 500, menta 300, amarelo 500 e rosa 300 **nunca** são cor de texto sobre f
 - **Plus Jakarta Sans Variable** (`wght`): interface e textos corridos.
 - As duas são auto-hospedadas via `@fontsource-variable` (licença SIL OFL), sem requisição a terceiros. O `unicode-range` baixa só os subconjuntos usados.
 
+Desde 15/11/2026 o tamanho-base é **15 px** (`--text-scale: 0.9375` × 16 px), e tudo é medido em `rem`. A pessoa pode trocar o tamanho-base em Aparência (Pequeno 14, Padrão 15, Grande 16, Maior 18 px), e o app inteiro acompanha. O tamanho de fonte do navegador continua sendo respeitado.
+
 | Token | Valor | Uso |
 | --- | --- | --- |
-| `--text-display` | clamp(2.5rem → 4.5rem) | Título do Início |
-| `--text-h1` | clamp(2rem → 3.1rem) | Título de página |
-| `--text-h2` | clamp(1.45rem → 2rem) | Seções |
-| `--text-h3` | 1.25rem | Títulos de cartão |
-| `--text-h4` | 1.0625rem (Jakarta 700) | Subtítulos de interface |
-| `--text-subtitle` | 1.0625rem | Linha de apoio |
+| `--text-display` | clamp(2rem → 3.6rem) | Título do Início |
+| `--text-h1` | clamp(1.6rem → 2.5rem) | Título de página |
+| `--text-h2` | clamp(1.3rem → 1.75rem) | Seções |
+| `--text-h3` | 1.15rem | Títulos de cartão |
+| `--text-h4` | 1.0333rem (Jakarta 700) | Subtítulos de interface |
+| `--text-subtitle` | 1rem | Linha de apoio |
 | `--text-body` | 1rem | Texto |
-| `--text-small` | 0.875rem | Metadados, botões pequenos |
-| `--text-caption` | 0.75rem | Legendas |
-| `--text-button` | 0.9375rem, 700 | Botões |
-| `--text-overline` | 0.6875rem, 800, espaçamento 0.14em | Sobrelinhas (`.eyebrow`) |
+| `--text-small` | 0.875rem | Metadados, textos de ajuda |
+| `--text-caption` | 0.78rem | Legendas |
+| `--text-button` | 0.9rem, 700 | Botões |
+| `--text-overline` | 0.72rem, 800, espaçamento 0.14em | Sobrelinhas (`.eyebrow`) |
 
-Os campos usam 1rem para evitar o zoom automático do iOS. O leitor tem tipografia própria (`--font-reading`, `--reading-max: 66ch`) e controles independentes.
+**Campos de texto nunca ficam abaixo de 16 px em telas de toque** (regra em `base.css`), mesmo com o texto do app menor; abaixo disso o iPhone amplia a página ao focar. O leitor tem tipografia própria (`--font-reading`, `--reading-max: 66ch`) e controles independentes.
 
 ## Espaço, forma e profundidade
 
-- **Espaço:** base de 4px (`--space-1` a `--space-16`). Margem lateral fluida `--gutter` (16px → 40px). Largura de conteúdo `--content-max: 1040px`.
+- **Espaço:** base de 4px × `--density` (`--space-1` a `--space-16`). `--density` = escolha da pessoa em Aparência (`--density-user`: compacto 0,88, padrão 1, amplo 1,12) × aperto automático no celular (`--density-screen`: 0,88 abaixo de 600 px). Margem lateral fluida `--gutter` (14px → 40px). Largura de conteúdo `--content-max: 1040px`.
+- **Controles:** `--control-sm 34`, `--control-md 40`, `--control-lg 44` px de altura, e `--field-pad-y`/`--field-pad-x` nos campos. Acompanham só a densidade escolhida, nunca o aperto do celular, para o toque continuar confortável (44 px nos campos e ícones).
+- **Formatos:** `--radius-card` (cartões), `--radius-button` (botões, pílulas de filtro) e `--radius-field` (campos) seguem as escolhas em Aparência → Formatos.
 - **Raios:** `xs 6`, `sm 10`, `md 14`, `lg 20`, `xl 28`, `pill`, e `--radius-book` (3px na lombada, 10px na borda). `--radius-card` segue a preferência do usuário em Aparência.
 - **Sombras:** `--shadow-1` (repouso), `--shadow-2` (hover), `--shadow-3` (flutuante: gaveta, navegação inferior, cartão de entrada) e `--shadow-book`. Todas quentes, tingidas de roxo, nunca cinza puro.
 - **Camadas:** `--z-header 20`, `--z-nav 30`, `--z-drawer 100`, `--z-toast 200`.

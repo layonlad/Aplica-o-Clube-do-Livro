@@ -41,19 +41,19 @@
 .social-initial {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   flex: none;
   background: var(--color-soft);
   color: var(--color-primary);
   font:
-    600 1.3rem var(--font-display, Georgia),
+    600 1.15rem var(--font-display, Georgia),
     serif;
   border-radius: 50%;
 }
 .post-body {
-  font-size: 1.08rem;
-  line-height: 1.85;
+  font-size: 1.04rem;
+  line-height: var(--leading-relaxed);
   white-space: pre-wrap;
 }
 .post-options {
@@ -108,7 +108,7 @@
   cursor: pointer;
   color: var(--color-muted);
   padding: 0;
-  min-height: 48px;
+  min-height: var(--control-lg);
 }
 .composer-prompt > span:nth-child(2) {
   flex: 1;
@@ -220,7 +220,7 @@
 }
 .post-comment .button {
   font-size: 0.75rem;
-  min-height: 36px;
+  min-height: var(--control-sm);
   padding: 0.4rem;
 }
 .post-comments form {
@@ -515,10 +515,10 @@
 .discover-clubs :is(input:not([type='checkbox']), textarea) {
   width: 100%;
   min-width: 0;
-  min-height: 44px;
-  padding: 0.7rem 0.9rem;
+  min-height: var(--control-lg);
+  padding: var(--field-pad-y) var(--field-pad-x);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md, 12px);
+  border-radius: var(--radius-field);
   font: inherit;
   color: var(--text);
   background: var(--surface);

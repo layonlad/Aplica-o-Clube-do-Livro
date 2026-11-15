@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useLayoutEffect, useState, type ReactNode } from 'react'
 import type { ThemeTokens } from '../types/domain'
 import { appearanceSchema } from '../../server/src/appearance-schema'
-import { APPEARANCE_KEY, applyAppearance, defaultAppearance, type Appearance } from './appearance'
+import { APPEARANCE_KEY, applyAppearance, defaultAppearance, normalizeAppearance, type Appearance } from './appearance'
 
 const STORAGE_KEY = 'clube-aurora-demo-theme'
 
@@ -53,7 +53,7 @@ function readStoredTheme(): ThemeTokens {
 export function readStoredAppearance(): Appearance {
   try {
     const parsed = appearanceSchema.safeParse(JSON.parse(localStorage.getItem(APPEARANCE_KEY) ?? 'null'))
-    if (parsed.success) return parsed.data
+    if (parsed.success) return normalizeAppearance(parsed.data)
     const legacy = readStoredTheme()
     return {
       ...defaultAppearance,
