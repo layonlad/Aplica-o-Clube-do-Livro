@@ -8,8 +8,8 @@
   "estado": {
     "fase": "No ar; push aguardando chaves",
     "tom": "aguardando",
-    "resumo": "Site e API publicados em 15/11/2026 a partir de 30a110b (PRs 10 a 14). Banco em 018 com grants explícitos e identidade restrita do executor. As notificações push e o agendador externo estão no código, mas desligados até as chaves serem configuradas.",
-    "proximoPasso": "Ligar o push: o par VAPID e a credencial de limpeza já estão preparados (pelo Codex); falta o dono autorizar guardá-los no Render e nos segredos do GitHub Actions, habilitar o workflow e testar num aparelho. Depois, publicar o redesenho compacto (PR desta entrega): primeiro a API, depois o site.",
+    "resumo": "Site e API publicados em 15/11/2026 a partir de 5b5a935 (PRs 10 a 16), já com o visual compacto, a nova abertura e as opções de formatação. Banco em 018 com grants explícitos e identidade restrita do executor. As notificações push e o agendador externo estão no código, mas desligados até as chaves serem configuradas.",
+    "proximoPasso": "Ligar o push: o par VAPID e a credencial de limpeza já estão preparados (pelo Codex); falta guardá-los no Render e nos segredos do GitHub Actions, habilitar o workflow e testar num aparelho. O Claude foi bloqueado pelas permissões ao tentar gravar essas credenciais; o dono precisa liberar ou o Codex conclui.",
     "pendencias": [
       "Push e agendador externo publicados, mas inativos: faltam as chaves VAPID, a credencial de limpeza e os segredos do workflow. O envio direto de fotos grandes (POST assinado) está no ar e ainda não foi testado com conta real; recebimento em aparelho físico não foi testado.",
       "Os fluxos autenticados de capa GIF, capa do álbum e comentários foram testados localmente com contas e arquivos sintéticos. Nesta liberação, produção recebeu verificações sem escrita em contas reais; não foi testado um segundo aparelho físico.",
@@ -24,7 +24,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "Código de 30a110b · publicado em 15/11/2026 no Firebase Hosting",
+      "versao": "Código de 5b5a935 · publicado em 15/11/2026 no Firebase Hosting",
       "atualizacao": "Manual, com autorização do dono; merge em main não publica o Firebase",
       "tom": "ok"
     },
@@ -32,7 +32,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api.onrender.com/health",
-      "versao": "30a110b · Docker no Render · publicado em 15/11/2026",
+      "versao": "5b5a935 · Docker no Render · publicado em 15/11/2026",
       "atualizacao": "Deploy manual do commit aprovado; autodeploy desligado",
       "tom": "ok"
     },
@@ -266,6 +266,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-15",
+      "autor": "Claude Code",
+      "titulo": "Redesenho compacto publicado: API e site em 5b5a935",
+      "resumo": "PR 16 incorporado; API publicada no Render e, depois, site no Firebase. Conferidos /health, rotas protegidas exigindo login, o site servindo a nova versão e a abertura nova rodando em produção. Push segue desligado.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/16"
+    },
     {
       "data": "2026-11-15",
       "autor": "Claude Code",
