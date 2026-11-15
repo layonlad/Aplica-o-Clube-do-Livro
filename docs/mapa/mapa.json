@@ -6,16 +6,16 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Liberação móvel e push em andamento",
+    "fase": "No ar; push aguardando chaves",
     "tom": "aguardando",
-    "resumo": "PR 13 incorporado. Banco atualizado até 018 e identidade restrita do executor criada após cópia privada de recuperação. Site e API ainda executam a66cbc2 enquanto a nova publicação é validada.",
-    "proximoPasso": "Concluir a publicação autorizada, verificar uploads diretos e executor externo, remover somente os dados sintéticos desta validação e registrar as versões efetivamente publicadas.",
+    "resumo": "Site e API publicados em 15/11/2026 a partir de 30a110b (PRs 10 a 14). Banco em 018 com grants explícitos e identidade restrita do executor. As notificações push e o agendador externo estão no código, mas desligados até as chaves serem configuradas.",
+    "proximoPasso": "Com autorização do dono: gerar o par VAPID e a credencial de limpeza, guardá-los no Render e nos segredos do GitHub Actions, habilitar o workflow de notificações e testar o recebimento em um aparelho autorizado. Testar também o envio direto de foto grande com uma conta descartável.",
     "pendencias": [
-      "Ativar a evolução após aprovação: uploads diretos privados e limpeza de temporários, notificações push e agendador externo ainda estão somente no código em revisão. Recebimento físico e compatibilidade real do POST assinado no bucket aguardam teste autorizado.",
+      "Push e agendador externo publicados, mas inativos: faltam as chaves VAPID, a credencial de limpeza e os segredos do workflow. O envio direto de fotos grandes (POST assinado) está no ar e ainda não foi testado com conta real; recebimento em aparelho físico não foi testado.",
       "Os fluxos autenticados de capa GIF, capa do álbum e comentários foram testados localmente com contas e arquivos sintéticos. Nesta liberação, produção recebeu verificações sem escrita em contas reais; não foi testado um segundo aparelho físico.",
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
       "Leitor de tela real e recorte de foto pela câmera do celular ainda não foram testados. A persistência foi validada por novo login, sem segundo aparelho físico.",
-      "Na versão atual em produção, o modo conectado não oferece cache offline; notificações são internas, sem e-mail ou push. A implementação push desta entrega aguarda aprovação e ativação.",
+      "O modo conectado não oferece cache offline. Até as chaves push serem configuradas, as notificações são somente internas, sem e-mail ou push.",
       "As cópias privadas de recuperação são anteriores às respectivas liberações; não representam cópia contínua nem incluem gravações posteriores."
     ]
   },
@@ -24,7 +24,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "Código de a66cbc2 · publicado em 14/11/2026 no Firebase Hosting",
+      "versao": "Código de 30a110b · publicado em 15/11/2026 no Firebase Hosting",
       "atualizacao": "Manual, com autorização do dono; merge em main não publica o Firebase",
       "tom": "ok"
     },
@@ -32,7 +32,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api.onrender.com/health",
-      "versao": "a66cbc2 · Docker no Render · publicado em 14/11/2026",
+      "versao": "30a110b · Docker no Render · publicado em 15/11/2026",
       "atualizacao": "Deploy manual do commit aprovado; autodeploy desligado",
       "tom": "ok"
     },
@@ -266,6 +266,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-15",
+      "autor": "Claude Code",
+      "titulo": "Liberação concluída: API e site em 30a110b",
+      "resumo": "Continuação da liberação do Codex: PR 14 incorporado, API publicada no Render e site no Firebase a partir de 30a110b. Conferidos /health, rotas novas exigindo login, CORS do app e o site abrindo com a nova versão. Push segue desligado até as chaves serem configuradas com autorização.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/14"
+    },
     {
       "data": "2026-11-15",
       "autor": "Codex",
