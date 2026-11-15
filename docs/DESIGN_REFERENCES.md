@@ -2,7 +2,39 @@
 
 ## Pasta de inspirações
 
-A pasta `Fotos e Inspiracoes/` (ao lado do repositório) estava **vazia** em 13/11/2026. Não havia nenhum arquivo para analisar. Quando ela receber imagens, vídeos ou capturas, este documento deve ganhar uma seção por referência, seguindo o roteiro abaixo.
+A pasta `Fotos e Inspiracoes/` fica ao lado do repositório. Ela estava vazia em 13/11/2026. Em 15/11/2026 recebeu as quatro capturas da nova direção, descritas logo abaixo. Cada referência nova ganha uma seção, seguindo o roteiro.
+
+## Nova direção — "Estante Rosa & Palha" (15/11/2026)
+
+O dono enviou quatro capturas de clubes do livro no Instagram, TikTok e Pinterest e pediu quatro coisas para o app inteiro:
+- um fundo fixo de estante cheia de livros;
+- cores pastel puxadas para o rosa e o palha;
+- uma textura de folha de livro um pouco amassada;
+- movimento.
+
+Os arquivos estão salvos em `Fotos e Inspiracoes/`, com nomes `01-…` a `04-…`. Nenhuma marca, logo ou arte de terceiros foi copiada.
+
+| Referência | O que mostra | O que aproveitamos |
+| --- | --- | --- |
+| 01 · "Apps para ler ou começar" (Laço de Cetim) | Fundo branco-perolado, letra arredondada e gorda em rosa-chiclete, laço de cetim em aquarela, florzinhas e brilhos | Letra de "adesivo" (Fredoka) só em selos e rótulos curtos; adesivos de laço, estrela e flor em SVG, usados com parcimônia |
+| 02 · "Encha seu Kindle!" | Xadrez ondulado vermelho e rosa, pasta de papel kraft com clipe e fita, estrelas de veludo, objetos rosa em recorte | Vinho como cor de detalhe (fitas, estrelas); cartões como papel com clipe ou fita; leve rotação nos "papéis soltos" |
+| 03 · "Se junte ao nosso Clube do Livro" | Papel rosa amassado, borda de papel rasgado sobre papel quadriculado, serifa editorial alta, livro aberto em P&B | Textura de papel amassado nas superfícies; borda rasgada em cabeçalhos; manter Fraunces nos títulos |
+| 04 · Pinterest "clube do livro" | Pôsteres de clube do livro: cartões-postais, bingo literário em vinho e rosa, cerejas e laços, estantes de livraria | Fundo de estante; cartões-postais como modelo de cartão; rosa e vinho sobre palha |
+
+**Paleta resultante** (detalhes em `DESIGN_SYSTEM.md`):
+
+| Papel | Cor |
+| --- | --- |
+| Fundo | palha `#FBF5E6` |
+| Papel | `#FFFCF4` |
+| Rosa pastel | `#F2B7CC` |
+| Rosa-chiclete | `#E897B4` (acento) |
+| Rosa-framboesa | `#9A4167` (marca, botões, links) |
+| Vinho | `#A32A40` (detalhes) |
+| Cacau | `#3A2228` (texto) |
+| Apoio | sálvia e lilás pastel |
+
+**Estante:** a foto definitiva vai ser enviada pelo dono. Até lá, o app usa uma ilustração própria em SVG (`src/assets/estante/estante-ilustrada.svg`), que se repete sem emenda nas mesmas cores. A foto não cobre a ilustração: ela continua como reserva.
 
 Roteiro por referência: estilo, cores predominantes, hierarquia tipográfica, distribuição, animações, transições, navegação, uso de imagem e vídeo, qualidade das microinterações e o que aproveitar. Use as referências como inspiração, sem copiar layout, marca ou identidade de terceiros.
 

@@ -1,108 +1,163 @@
 /*
- * Clube do Livro — Design tokens ("Lombadas")
+ * Clube do Livro — Design tokens ("Estante Rosa & Palha")
  * Fonte única de verdade para cor, tipografia, espaço, forma, profundidade e movimento.
  * Documentação: DESIGN_SYSTEM.md. Não use valores soltos nos componentes; use estes tokens.
+ *
+ * Direção: fundo fixo de estante cheia de livros, véu pastel rosa e palha por cima,
+ * superfícies de papel de livro levemente amassado, laços, estrelas e serifas editoriais.
  */
 
 :root {
   /* ── Paleta base (não use direto em componentes; use os tokens semânticos abaixo) ── */
-  --plum-950: #1b1229;
-  --plum-900: #26183d;
-  --plum-800: #341f55;
-  --plum-700: #462b70;   /* Roxo profundo — marca */
-  --plum-600: #5a3b8c;
-  --plum-500: #7656a8;
-  --plum-300: #b9a6d9;
-  --plum-200: #dcd0ee;
-  --plum-100: #efe9f7;
+  /* Rosa: do rosa-bebê (preenchimentos) ao rosa-framboesa (marca e texto) */
+  --rosa-50: #fff6f9;
+  --rosa-100: #fdeaf1;
+  --rosa-200: #f9d5e2;
+  --rosa-300: #f2b7cc;   /* rosa pastel — preenchimentos e adesivos */
+  --rosa-400: #e897b4;   /* rosa-chiclete — acento (nunca como texto sobre claro) */
+  --rosa-500: #d9769c;
+  --rosa-600: #b85a80;
+  --rosa-700: #9a4167;   /* rosa-framboesa — marca; texto AA sobre palha (5,8) e texto branco sobre ele (6,3) */
+  --rosa-800: #792f50;
+  --rosa-900: #56213a;
+  --rosa-950: #36131f;
 
-  --coral-700: #a8362a;
-  --coral-600: #b83c30;  /* coral para texto sobre claro (AA ≥ 4.7) */
-  --coral-500: #fc7667;  /* Coral vibrante — preenchimentos */
-  --coral-300: #fdac9f;
-  --coral-100: #ffe8e3;
+  /* Palha: o papel do livro, a madeira clara da estante */
+  --palha-50: #fffcf4;
+  --palha-100: #fbf5e6;  /* fundo */
+  --palha-200: #f5ebd0;
+  --palha-300: #ecdcb2;
+  --palha-400: #dcc58e;
+  --palha-500: #c8aa67;
+  --palha-600: #a88a45;
+  --palha-700: #7a6226;  /* palha para texto (AA) */
 
-  --cream-50: #fffbf4;
-  --cream-100: #fbf4e8;
-  --cream-200: #f7ebd8;  /* Creme */
-  --cream-300: #ecdcc3;
-  --cream-400: #d9c4a3;
+  /* Vinho: o vermelho do xadrez e das fitas, só em detalhes */
+  --vinho-500: #c0394f;
+  --vinho-600: #a32a40;  /* vinho para texto (AA 6,5) */
+  --vinho-700: #841f33;
 
-  --mint-800: #1f5c3f;
-  --mint-700: #2b7552;   /* menta para texto (AA) */
-  --mint-300: #b9e6c9;   /* Verde-menta */
-  --mint-100: #e4f5ea;
+  /* Cacau: tinta do texto, marrom quente puxado para o vinho */
+  --cacau-900: #3a2228;
+  --cacau-700: #5a3c43;
+  --cacau-600: #6c4d54;
+  --cacau-400: #7c5d63;
 
-  --honey-700: #7d5300;
-  --honey-500: #f4b942;  /* Amarelo quente */
-  --honey-100: #fdf0cf;
+  --salvia-800: #34543a;
+  --salvia-700: #456b48;
+  --salvia-300: #c5dcbc;
+  --salvia-100: #e8f1e3;
 
-  --blue-700: #2546a8;
-  --blue-500: #3d6be0;   /* Azul intenso */
-  --blue-100: #e3eafc;
+  --lilas-700: #5e4a99;
+  --lilas-500: #9580c8;
+  --lilas-300: #cbbde6;
+  --lilas-100: #efe9f7;
 
-  --rose-300: #f5b6c6;
-  --rose-100: #fde9ee;
-
-  --ink-900: #22192e;
-  --ink-700: #4a4056;
-  --ink-600: #5f5569;
-  --ink-400: #776c80;
+  /* ── Nomes antigos ("Lombadas") apontando para a paleta nova ──
+   * Telas ainda usam --plum-*, --coral-* etc. diretamente; assim elas acompanham a troca sem quebrar.
+   * Em código novo, use os nomes de cima ou, melhor, os semânticos. */
+  --plum-950: var(--rosa-950);
+  --plum-900: var(--rosa-900);
+  --plum-800: var(--rosa-800);
+  --plum-700: var(--rosa-700);
+  --plum-600: var(--rosa-600);
+  --plum-500: var(--rosa-500);
+  --plum-300: var(--rosa-300);
+  --plum-200: var(--rosa-200);
+  --plum-100: var(--rosa-100);
+  --coral-700: var(--vinho-700);
+  --coral-600: var(--vinho-600);
+  --coral-500: var(--rosa-400);
+  --coral-300: var(--rosa-300);
+  --coral-100: var(--rosa-100);
+  --cream-50: var(--palha-50);
+  --cream-100: var(--palha-100);
+  --cream-200: var(--palha-200);
+  --cream-300: var(--palha-300);
+  --cream-400: var(--palha-400);
+  --mint-800: var(--salvia-800);
+  --mint-700: var(--salvia-700);
+  --mint-300: var(--salvia-300);
+  --mint-100: var(--salvia-100);
+  --honey-700: var(--palha-700);
+  --honey-500: var(--palha-400);
+  --honey-100: var(--palha-200);
+  --blue-700: var(--lilas-700);
+  --blue-500: var(--lilas-500);
+  --blue-100: var(--lilas-100);
+  --rose-300: var(--rosa-300);
+  --rose-100: var(--rosa-100);
+  --ink-900: var(--cacau-900);
+  --ink-700: var(--cacau-700);
+  --ink-600: var(--cacau-600);
+  --ink-400: var(--cacau-400);
 
   /* ── Semânticos: tema claro ── */
-  --bg: var(--cream-100);
-  --bg-sunken: var(--cream-200);
-  --surface: var(--cream-50);
-  --surface-raised: #ffffff;
+  --bg: var(--palha-100);
+  --bg-sunken: var(--palha-200);
+  --surface: var(--palha-50);
+  --surface-raised: #fffefb;
   --surface-tint: color-mix(in srgb, var(--brand) 6%, var(--surface));
-  --surface-inverse: var(--plum-800);
+  --surface-inverse: var(--rosa-900);
 
-  --text: var(--ink-900);
-  --text-muted: var(--ink-600);
-  --text-subtle: var(--ink-400);
-  --text-inverse: var(--cream-50);
+  --text: var(--cacau-900);
+  --text-muted: var(--cacau-600);
+  --text-subtle: var(--cacau-400);
+  --text-inverse: var(--palha-50);
   --text-on-brand: #ffffff;
-  --text-on-accent: var(--plum-950);
+  --text-on-accent: var(--cacau-900);
 
-  --border: color-mix(in srgb, var(--cream-400) 55%, transparent);
-  --border-strong: var(--cream-400);
-  --divider: color-mix(in srgb, var(--plum-700) 9%, transparent);
+  --border: color-mix(in srgb, var(--palha-500) 38%, transparent);
+  --border-strong: color-mix(in srgb, var(--palha-500) 75%, var(--rosa-300));
+  --divider: color-mix(in srgb, var(--rosa-700) 11%, transparent);
 
-  --brand: var(--plum-700);
-  --brand-hover: var(--plum-600);
-  --brand-soft: var(--plum-100);
-  --brand-ink: var(--plum-700);
-  --accent: var(--coral-500);
-  --accent-soft: var(--coral-100);
-  --accent-ink: var(--coral-600);
-  --highlight: var(--honey-500);
+  --brand: var(--rosa-700);
+  --brand-hover: var(--rosa-800);
+  --brand-soft: var(--rosa-100);
+  --brand-ink: var(--rosa-700);
+  --accent: var(--rosa-400);
+  --accent-soft: var(--rosa-100);
+  --accent-ink: var(--vinho-600);
+  --highlight: var(--palha-400);
 
-  --success: var(--mint-700);
-  --success-soft: var(--mint-100);
-  --warning: var(--honey-700);
-  --warning-soft: var(--honey-100);
-  --danger: #a8302e;
-  --danger-soft: #fdebe8;
-  --info: var(--blue-700);
-  --info-soft: var(--blue-100);
+  --success: var(--salvia-700);
+  --success-soft: var(--salvia-100);
+  --warning: var(--palha-700);
+  --warning-soft: var(--palha-200);
+  --danger: var(--vinho-700);
+  --danger-soft: #fbe6e9;
+  --info: var(--lilas-700);
+  --info-soft: var(--lilas-100);
 
-  --focus-ring: 0 0 0 3px var(--bg), 0 0 0 5px var(--blue-500);
-  --overlay: rgba(27, 18, 41, 0.52);
+  --focus-ring: 0 0 0 3px var(--bg), 0 0 0 5px var(--rosa-600);
+  --overlay: rgba(54, 19, 31, 0.48);
 
   /* Ambiente atual (muda com data-space no shell) */
   --space-accent: var(--accent);
   --space-accent-soft: var(--accent-soft);
   --space-accent-ink: var(--accent-ink);
 
-  /* Assinatura visual: faixa de lombadas */
+  /* Assinatura visual: faixa de lombadas, agora em rosa e palha */
   --spines: linear-gradient(90deg,
-    var(--plum-700) 0 22%, var(--coral-500) 22% 38%, var(--honey-500) 38% 50%,
-    var(--mint-300) 50% 66%, var(--blue-500) 66% 78%, var(--rose-300) 78% 90%, var(--plum-500) 90% 100%);
+    var(--rosa-700) 0 16%, var(--rosa-300) 16% 32%, var(--palha-400) 32% 44%,
+    var(--vinho-500) 44% 52%, var(--rosa-400) 52% 68%, var(--salvia-300) 68% 78%, var(--palha-300) 78% 90%, var(--lilas-300) 90% 100%);
+
+  /* ── Estante e papel ──
+   * A imagem da estante (--shelf-image) e a textura de papel (--paper) ficam em base.css, por causa dos caminhos.
+   * --veil-*: véu pastel por cima da estante, para o texto continuar legível.
+   * --shelf-blur: desfoque da estante (profundidade de campo). */
+  --veil-color: var(--palha-100);
+  --veil-tint: var(--rosa-200);
+  --veil-strength: 48%;   /* véu geral: a estante aparece */
+  --veil-center: 55%;     /* reforço no centro, onde fica o texto */
+  --shelf-blur: 1.5px;
 
   /* ── Tipografia ── */
   --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
   --font-ui: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-reading: 'Fraunces Variable', Georgia, 'Iowan Old Style', serif;
+  /* Letra arredondada de "adesivo": só selos, rótulos curtos e destaques (nunca texto corrido) */
+  --font-sticker: 'Fredoka Variable', 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', system-ui, sans-serif;
 
   /* Escala: tudo em rem, sobre um tamanho-base de 15 px (--text-scale × 16 px).
    * A pessoa ajusta o tamanho-base em Perfil → Aparência; o app inteiro acompanha. */
@@ -167,11 +222,13 @@
   --radius-button: var(--radius-pill);
   --radius-field: var(--radius-md);
 
-  /* ── Profundidade (sombras quentes, tingidas de roxo) ── */
-  --shadow-1: 0 1px 2px rgba(52, 31, 85, 0.06), 0 2px 8px rgba(52, 31, 85, 0.05);
-  --shadow-2: 0 2px 4px rgba(52, 31, 85, 0.06), 0 10px 28px rgba(52, 31, 85, 0.09);
-  --shadow-3: 0 8px 18px rgba(52, 31, 85, 0.10), 0 24px 60px rgba(52, 31, 85, 0.16);
-  --shadow-book: 1px 1px 0 rgba(255, 255, 255, 0.25) inset, 6px 10px 22px rgba(38, 24, 61, 0.22);
+  /* ── Profundidade (sombras quentes, tingidas de vinho, como papel sobre madeira) ── */
+  --shadow-1: 0 1px 2px rgba(86, 33, 58, 0.07), 0 3px 10px rgba(86, 33, 58, 0.06);
+  --shadow-2: 0 2px 4px rgba(86, 33, 58, 0.07), 0 12px 30px rgba(86, 33, 58, 0.11);
+  --shadow-3: 0 8px 18px rgba(86, 33, 58, 0.12), 0 26px 64px rgba(86, 33, 58, 0.18);
+  --shadow-book: 1px 1px 0 rgba(255, 255, 255, 0.3) inset, 6px 10px 22px rgba(54, 19, 31, 0.24);
+  /* Papel solto: sombra curta e assimétrica, como folha apoiada */
+  --shadow-paper: 0 1px 1px rgba(86, 33, 58, 0.06), 2px 6px 14px -4px rgba(86, 33, 58, 0.16), -1px 14px 26px -16px rgba(86, 33, 58, 0.22);
 
   /* ── Movimento ── */
   --dur-instant: 120ms;
@@ -206,47 +263,54 @@
   color-scheme: light;
 }
 
-/* ── Tema escuro ── */
+/* ── Tema escuro: "estante à noite" (cacau e vinho, texto cor de palha) ── */
 :root[data-theme='dark'] {
-  --bg: #17111f;
-  --bg-sunken: #120d19;
-  --surface: #211a2c;
-  --surface-raised: #2a2237;
-  --surface-inverse: var(--cream-100);
+  --bg: #1e1417;
+  --bg-sunken: #170f12;
+  --surface: #2a1c21;
+  --surface-raised: #34242a;
+  --surface-inverse: var(--palha-100);
 
-  --text: #f6efe4;
-  --text-muted: #c4b8cc;
-  --text-subtle: #8e8299;
-  --text-inverse: var(--ink-900);
+  --text: #f8eedc;
+  --text-muted: #d8c3c6;
+  --text-subtle: #a8909a;
+  --text-inverse: var(--cacau-900);
 
-  --border: rgba(246, 239, 228, 0.09);
-  --border-strong: rgba(246, 239, 228, 0.18);
-  --divider: rgba(246, 239, 228, 0.08);
+  --border: rgba(248, 238, 220, 0.10);
+  --border-strong: rgba(248, 238, 220, 0.20);
+  --divider: rgba(248, 238, 220, 0.08);
 
-  --brand: var(--plum-300);
-  --brand-hover: var(--plum-200);
-  --brand-soft: rgba(185, 166, 217, 0.14);
-  --brand-ink: var(--plum-300);
-  --text-on-brand: var(--plum-950);
-  --accent: var(--coral-500);
-  --accent-soft: rgba(252, 118, 103, 0.16);
-  --accent-ink: var(--coral-300);
+  --brand: var(--rosa-300);
+  --brand-hover: var(--rosa-200);
+  --brand-soft: rgba(242, 183, 204, 0.14);
+  --brand-ink: var(--rosa-300);
+  --text-on-brand: var(--rosa-950);
+  --accent: var(--rosa-400);
+  --accent-soft: rgba(232, 151, 180, 0.16);
+  --accent-ink: #f7c6d6;
+  --highlight: var(--palha-400);
 
-  --success: var(--mint-300);
-  --success-soft: rgba(185, 230, 201, 0.12);
-  --warning: var(--honey-500);
-  --warning-soft: rgba(244, 185, 66, 0.14);
-  --danger: #ff9a8f;
-  --danger-soft: rgba(255, 154, 143, 0.12);
-  --info: #9db6ff;
-  --info-soft: rgba(157, 182, 255, 0.12);
+  --success: var(--salvia-300);
+  --success-soft: rgba(197, 220, 188, 0.12);
+  --warning: var(--palha-400);
+  --warning-soft: rgba(220, 197, 142, 0.14);
+  --danger: #ff9fae;
+  --danger-soft: rgba(255, 159, 174, 0.12);
+  --info: var(--lilas-300);
+  --info-soft: rgba(203, 189, 230, 0.12);
 
-  --focus-ring: 0 0 0 3px var(--bg), 0 0 0 5px #9db6ff;
-  --overlay: rgba(6, 3, 10, 0.66);
+  --focus-ring: 0 0 0 3px var(--bg), 0 0 0 5px var(--rosa-300);
+  --overlay: rgba(10, 4, 6, 0.66);
 
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-2: 0 10px 28px rgba(0, 0, 0, 0.35);
-  --shadow-3: 0 24px 60px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 10px 28px rgba(0, 0, 0, 0.38);
+  --shadow-3: 0 24px 60px rgba(0, 0, 0, 0.52);
+  --shadow-paper: 0 1px 1px rgba(0, 0, 0, 0.3), 2px 8px 18px -6px rgba(0, 0, 0, 0.5);
+
+  --veil-color: #1e1417;
+  --veil-tint: #3a1b28;
+  --veil-strength: 62%;
+  --veil-center: 50%;
 
   color-scheme: dark;
 }
@@ -260,7 +324,7 @@
 }
 
 /* ── Ambientes: cada área tem um acento próprio, sobre a mesma base ── */
-[data-space='personal'] { --space-accent: var(--coral-500); --space-accent-soft: var(--accent-soft); --space-accent-ink: var(--accent-ink); }
-[data-space='library'] { --space-accent: var(--plum-700); --space-accent-soft: var(--brand-soft); --space-accent-ink: var(--brand-ink); }
-[data-space='club'] { --space-accent: var(--mint-300); --space-accent-soft: var(--success-soft); --space-accent-ink: var(--success); }
-[data-space='community'] { --space-accent: var(--honey-500); --space-accent-soft: var(--warning-soft); --space-accent-ink: var(--warning); }
+[data-space='personal'] { --space-accent: var(--rosa-400); --space-accent-soft: var(--accent-soft); --space-accent-ink: var(--accent-ink); }
+[data-space='library'] { --space-accent: var(--rosa-700); --space-accent-soft: var(--brand-soft); --space-accent-ink: var(--brand-ink); }
+[data-space='club'] { --space-accent: var(--salvia-300); --space-accent-soft: var(--success-soft); --space-accent-ink: var(--success); }
+[data-space='community'] { --space-accent: var(--palha-400); --space-accent-soft: var(--warning-soft); --space-accent-ink: var(--warning); }

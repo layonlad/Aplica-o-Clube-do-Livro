@@ -2,7 +2,7 @@
  * Base, componentes, navegação e movimento ficam em src/design/. */
 
 
-.login-page { position: relative; display: grid; min-height: 100vh; overflow: hidden; background: radial-gradient(circle at 80% 8%, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent 28%), linear-gradient(160deg, var(--color-canvas), color-mix(in srgb, var(--color-primary) 8%, var(--color-canvas))); }
+.login-page { position: relative; display: grid; min-height: 100vh; overflow: hidden; background: radial-gradient(circle at 80% 8%, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent 28%); }
 .login-art { position: absolute; inset: 0; pointer-events: none; }
 .floating-book { position: absolute; display: block; width: 130px; height: 180px; opacity: 0.08; background: var(--color-primary); border-radius: 8px 22px 22px 8px; transform: rotate(18deg); }
 .floating-book--one { top: -60px; right: -35px; }

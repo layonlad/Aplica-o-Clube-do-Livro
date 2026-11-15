@@ -1,7 +1,7 @@
 /* Clube do Livro — conta, clubes e convites */
 
 /* ── Entrada ── */
-.access-page { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: var(--space-6) var(--gutter); background: var(--bg); }
+.access-page { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: var(--space-6) var(--gutter); background: transparent; }
 .access-page--split { padding: 0; align-items: stretch; }
 .access-card {
   width: min(100%, 480px);

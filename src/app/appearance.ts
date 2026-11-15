@@ -85,7 +85,7 @@ export const fontOptions: {
 
 /** Temas prontos: cor de marca (botões, links) e acento (destaques). Todos passam em AA com texto branco. */
 export const presetOptions: { id: PresetId; label: string; brand: string; accent: string }[] = [
-  { id: 'padrao', label: 'Padrão', brand: '#462b70', accent: '#fc7667' },
+  { id: 'padrao', label: 'Rosa e palha', brand: '#9a4167', accent: '#e897b4' },
   { id: 'roxo', label: 'Roxo', brand: '#5a3b8c', accent: '#b9a6d9' },
   { id: 'coral', label: 'Coral', brand: '#a8362a', accent: '#fc7667' },
   { id: 'azul', label: 'Azul', brand: '#2546a8', accent: '#9db6ff' },
@@ -206,8 +206,8 @@ export function ensureContrast(color: string, background: string, minimum = 4.5)
   return { color: lighten ? '#ffffff' : '#000000', adjusted: true }
 }
 
-const LIGHT_BG = '#fbf4e8'
-const DARK_BG = '#17111f'
+const LIGHT_BG = '#fbf5e6'
+const DARK_BG = '#1e1417'
 
 export function resolvedMode(appearance: Appearance) {
   if (appearance.mode !== 'system') return appearance.mode
@@ -250,23 +250,23 @@ export function appearanceTokens(appearance: Appearance) {
       '--surface': customBackground ? surface : null,
       '--surface-raised': customBackground ? mix(background, darkSurface ? -0.04 : 0.85) : null,
       '--text': customBackground
-        ? ensureContrast(darkSurface ? '#f6efe4' : '#22192e', background, 7).color
+        ? ensureContrast(darkSurface ? '#f8eedc' : '#3a2228', background, 7).color
         : null,
       '--text-muted': customBackground
-        ? ensureContrast(darkSurface ? '#c4b8cc' : '#5f5569', background).color
+        ? ensureContrast(darkSurface ? '#d8c3c6' : '#6c4d54', background).color
         : null,
       '--text-subtle': customBackground
-        ? ensureContrast(darkSurface ? '#c4b8cc' : '#5f5569', background).color
+        ? ensureContrast(darkSurface ? '#d8c3c6' : '#6c4d54', background).color
         : null,
-      '--danger': customBackground ? ensureContrast(darkSurface?'#ff9a8f':'#a8302e',background).color : null,
-      '--success': customBackground ? ensureContrast(darkSurface?'#b9e6c9':'#2b7552',background).color : null,
-      '--warning': customBackground ? ensureContrast(darkSurface?'#f4b942':'#7d5300',background).color : null,
-      '--info': customBackground ? ensureContrast(darkSurface?'#9db6ff':'#2546a8',background).color : null,
+      '--danger': customBackground ? ensureContrast(darkSurface?'#ff9fae':'#841f33',background).color : null,
+      '--success': customBackground ? ensureContrast(darkSurface?'#c5dcbc':'#456b48',background).color : null,
+      '--warning': customBackground ? ensureContrast(darkSurface?'#dcc58e':'#7a6226',background).color : null,
+      '--info': customBackground ? ensureContrast(darkSurface?'#cbbde6':'#5e4a99',background).color : null,
       '--danger-soft':customBackground?'color-mix(in srgb, var(--danger) 12%, var(--surface))':null,
       '--success-soft':customBackground?'color-mix(in srgb, var(--success) 12%, var(--surface))':null,
       '--warning-soft':customBackground?'color-mix(in srgb, var(--warning) 12%, var(--surface))':null,
       '--info-soft':customBackground?'color-mix(in srgb, var(--info) 12%, var(--surface))':null,
-      '--border-strong':customBackground?ensureContrast(darkSurface?'#c4b8cc':'#5f5569',background,3).color:null,
+      '--border-strong':customBackground?ensureContrast(darkSurface?'#d8c3c6':'#6c4d54',background,3).color:null,
       '--border': customBackground
         ? `color-mix(in srgb, ${darkSurface ? '#ffffff' : '#000000'} 18%, transparent)`
         : null,

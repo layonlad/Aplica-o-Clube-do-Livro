@@ -173,7 +173,7 @@ export function AppearanceSettings() {
                   value="personalizado"
                   checked={custom}
                   onChange={() =>
-                    update({ preset: 'personalizado', accent: draft.accent ?? '#7656a8' })
+                    update({ preset: 'personalizado', accent: draft.accent ?? '#b85a80' })
                   }
                 />
                 <span
@@ -190,7 +190,7 @@ export function AppearanceSettings() {
                 Sua cor principal
                 <input
                   type="color"
-                  value={draft.accent ?? '#7656a8'}
+                  value={draft.accent ?? '#b85a80'}
                   onChange={(event) => update({ accent: event.target.value.toLowerCase() })}
                 />
                 <code>{draft.accent}</code>
@@ -210,7 +210,7 @@ export function AppearanceSettings() {
               <input
                 type="color"
                 aria-label="Cor de fundo"
-                value={draft.background ?? (tokens.dark ? '#17111f' : '#fbf4e8')}
+                value={draft.background ?? (tokens.dark ? '#1e1417' : '#fbf5e6')}
                 onChange={(event) => update({ background: event.target.value.toLowerCase() })}
               />
               <code>{draft.background ?? 'Automático'}</code>
