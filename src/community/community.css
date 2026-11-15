@@ -558,3 +558,67 @@
 .profile-discovery article h3 { margin: 2px 0 6px; font-size: 1.15rem; }
 .profile-discovery article p { margin: 0 0 6px; color: var(--text-muted); }
 .person-card .avatar { margin-bottom: var(--space-3); }
+
+/* Compact social controls: wrap instead of overlapping, with 44px touch targets. */
+.social-actions { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:12px 0; }
+.social-action, .social-actions > .button { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-width:44px; min-height:44px; padding:8px; border:0; border-radius:50px; background:var(--surface-raised); color:var(--text); font:600 .8rem/1.2 var(--font-ui); cursor:pointer; box-shadow:var(--shadow-1); flex:none; }
+.social-action svg, .social-actions > .button svg { width:22px; height:22px; flex:none; stroke-width:1.8; }
+.social-action:hover, .social-action:focus-visible { background:var(--brand-soft); }
+.social-action:disabled { opacity:.45; cursor:not-allowed; }
+.social-more, .post-options { position:relative; margin-left:auto; }
+.social-more > summary { list-style:none; }
+.social-more > summary::-webkit-details-marker { display:none; }
+.social-menu { position:absolute; z-index:30; top:calc(100% + 8px); right:0; width:min(280px,calc(100vw - 40px)); padding:8px; border:1px solid var(--border); border-radius:18px; background:var(--surface-raised); box-shadow:var(--shadow-3); display:grid; gap:4px; max-height:60dvh; overflow:auto; }
+.social-menu .button { width:100%; justify-content:flex-start; text-align:left; white-space:normal; font-size:.85rem; min-height:44px; }
+.post-options[open] { min-width:0; background:none; border:0; padding:0; z-index:31; }
+.social-sheet { inset:0; padding:0; border:0; border-radius:22px; width:min(540px,calc(100vw - 32px)); max-width:100%; max-height:min(820px,calc(var(--sheet-height,100dvh) - 32px)); color:var(--text); background:var(--surface); box-shadow:var(--shadow-3); overflow:hidden; }
+.social-sheet::backdrop { background:rgba(10,7,18,.6); backdrop-filter:blur(3px); }
+.sheet-surface { display:flex; flex-direction:column; max-height:inherit; }
+.sheet-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; border-bottom:1px solid var(--border); flex:none; }
+.sheet-heading h2 { font:700 1rem/1.3 var(--font-ui); }
+.sheet-body { padding:20px; overflow:auto; }
+.sheet-body input { width:100%; min-width:0; }
+.comments-sheet .post-comments { display:flex; flex-direction:column; margin:0; padding:0; border:0; min-height:200px; overflow:hidden; }
+.comments-scroll { overflow-y:auto; overscroll-behavior:contain; padding:4px 18px; flex:1 1 auto; min-height:0; }
+.comments-sheet .post-comment { padding:14px 0; }
+.comments-sheet .post-comment .workspace-actions { gap:4px; }
+.comments-sheet .post-comment .button { min-height:44px; padding:6px 10px; font-size:.75rem; }
+.comments-sheet .post-comment p { margin:6px 0; font-size:.9rem; line-height:1.5; }
+.comments-empty, .comments-login { padding:20px; text-align:center; color:var(--text-muted); }
+.comment-composer { flex:none; display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; padding:12px 16px max(12px,env(safe-area-inset-bottom)); border-top:1px solid var(--border); background:var(--surface-raised); }
+.comment-composer > .workspace-actions { flex-basis:100%; font-size:.75rem; }
+.comment-field { flex:1; min-width:0; }
+.comment-field textarea { width:100%; min-height:44px; max-height:110px; padding:11px 14px; resize:vertical; font:400 16px/1.35 var(--font-ui); color:var(--text); background:var(--surface); border:1px solid var(--border); border-radius:22px; }
+.album-cover-stack { position:relative; display:block; flex:none; width:112px; height:140px; margin:10px 8px; }
+.album-cover-photo { position:absolute; inset:8px; background:var(--surface-raised); border:4px solid var(--surface-raised); border-bottom-width:14px; box-shadow:var(--shadow-2); transform:translate(calc((var(--card-index) - 1)*3px),0) rotate(calc((var(--card-index) - 1)*-7deg)); border-radius:3px; }
+.album-cover-photo .private-media { height:100%; width:100%; aspect-ratio:auto!important; border-radius:0; }
+.album-cover-photo img { height:100%; width:100%; object-fit:cover; }
+.album-entry { min-width:0; color:var(--text); text-decoration:none; }
+.album-entry > span:last-child { min-width:0; overflow-wrap:anywhere; }
+.photo-actions .social-action { font-variant-numeric:tabular-nums; }
+@media(max-width:600px) {
+ .social-sheet { position:fixed; inset:auto 0 0; margin:0; width:100%; border-radius:22px 22px 0 0; max-height:calc(var(--sheet-height,100dvh) - 12px); }
+ .comments-sheet { height:min(80dvh,calc(var(--sheet-height,100dvh) - 12px)); }
+ .comments-sheet .sheet-surface { height:100%; }
+ .comments-sheet .post-comments { flex:1; min-height:0; }
+ .social-heading h1 { font-size:1.65rem; line-height:1.18; }
+ .social-heading p, .gallery-photo-content > p { font-size:.9rem; line-height:1.55; }
+ .post-body { font-size:.95rem; line-height:1.6; }
+ .social-post { padding:18px 0; }
+ .post-heading { gap:8px; margin-bottom:12px; }
+ .album-entry { gap:12px; padding:14px 0; }
+ .album-cover-stack { width:88px; height:112px; margin:6px; }
+ .album-entry strong { font-size:1.15rem; }
+ .album-entry > span:last-child { gap:5px; font-size:.85rem; }
+ .album-entry small { font-size:.75rem; }
+ .gallery-photo-content .user-identity { font-size:.85rem; }
+}
+.social-more > summary::after { display:none; content:none; }
+.gallery-photo-frame { position:relative; }
+.gallery-cover-pick { position:absolute; top:12px; right:12px; padding:8px 12px; border:1px solid var(--border); box-shadow:var(--shadow-2); font-size:.75rem; }
+.gallery-cover-pick:disabled[aria-pressed=true] { opacity:1; color:var(--brand-ink); background:var(--brand-soft); }
+/* Full animated banners must keep their frame on narrow screens too. */
+.profile-header__cover .private-media img, .cover-uploader__current .private-media img { width:100%; height:100%; max-height:none; object-fit:cover; }
+@media(max-width:600px) {
+ .profile-tabs [role=tab] { flex:1 1 0; min-width:0; min-height:44px; white-space:normal; padding:8px; font-size:.76rem; line-height:1.3; }
+}

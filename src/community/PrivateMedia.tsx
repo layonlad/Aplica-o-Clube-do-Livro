@@ -240,11 +240,13 @@ export function PrivateMedia({
   alt,
   full = false,
   publicMedia = false,
+  previewOnly = false,
 }: {
   media: PostMedia
   alt: string
   full?: boolean
   publicMedia?: boolean
+  previewOnly?: boolean
 }) {
   const [visible, setVisible] = useState(full),
     [expanded, setExpanded] = useState(false),
@@ -277,7 +279,7 @@ export function PrivateMedia({
       ref={ref}
       style={{ aspectRatio: `${media.width}/${media.height}` }}
     >
-      {file.error ? (
+      {file.error && previewOnly ? <span className="media-placeholder">Imagem indisponível</span> : file.error ? (
         <div className="media-placeholder">
           <p role="alert">{file.error}</p>
           <Button variant="ghost" onClick={file.retry}>
@@ -285,7 +287,7 @@ export function PrivateMedia({
           </Button>
         </div>
       ) : file.url ? (
-        full && media.kind === 'video' ? (
+        previewOnly ? <img src={file.url} alt={alt} loading="lazy"/> : full && media.kind === 'video' ? (
           <video src={file.url} controls playsInline preload="metadata" aria-label={alt} />
         ) : full ? (
           <img src={file.url} alt={alt} />

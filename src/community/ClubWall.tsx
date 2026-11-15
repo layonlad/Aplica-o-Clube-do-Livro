@@ -1,10 +1,20 @@
+import { Sheet } from '../components/Sheet'
+import { ShareAction } from '../components/ShareAction'
 import { ConfirmAction } from './ConfirmAction'
 export { ConfirmAction } from './ConfirmAction'
 import { ReportAction } from './ReportAction'
 import { postBase, socialRead } from './social-api'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Bookmark, Heart, MessageCircle, MessageSquare, PenLine } from 'lucide-react'
+import {
+  Bookmark,
+  Heart,
+  MessageCircle,
+  MessageSquare,
+  PenLine,
+  Send,
+  MoreHorizontal,
+} from 'lucide-react'
 import type { Page, PostDto, CommentDto, PostMedia } from '../../server/src/community-contracts'
 import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
@@ -428,28 +438,49 @@ export function PostCard({
         </div>
         <details className="post-options">
           <summary aria-label="Opções da publicação">•••</summary>
-          {post.canEdit && (
-            <Button
-              variant="ghost"
-              disabled={busy}
-              onClick={() => {
-                setDraft(post.body)
-                setQuote(post.quote)
-                setSource(post.source)
-                setEdit(!edit)
-              }}
-            >
-              Editar publicação
-            </Button>
-          )}
-          <ReportAction kind="post" id={post.id} />
-          {post.canDelete && (
-            <ConfirmAction
-              label="Excluir publicação"
-              disabled={busy}
-              onConfirm={() => act('', undefined, 'DELETE')}
-            />
-          )}
+          <div className="social-menu">
+            {post.canEdit && (
+              <Button
+                variant="ghost"
+                disabled={busy}
+                onClick={() => {
+                  setDraft(post.body)
+                  setQuote(post.quote)
+                  setSource(post.source)
+                  setEdit(!edit)
+                }}
+              >
+                Editar publicação
+              </Button>
+            )}
+            <ReportAction kind="post" id={post.id} />
+            {post.canDelete && (
+              <ConfirmAction
+                label="Excluir publicação"
+                disabled={busy}
+                onConfirm={() => act('', undefined, 'DELETE')}
+              />
+            )}
+            {clubId === null && user?.emailVerified && (
+              <ConfirmAction
+                label="Compartilhar na comunidade"
+                confirmLabel="Publicar compartilhamento público"
+                disabled={busy}
+                onConfirm={async () => {
+                  setBusy(true)
+                  setError('')
+                  try {
+                    await apiRequest(user, path + '/share', 'POST', { body: '' })
+                    setError('Compartilhamento publicado na comunidade.')
+                  } catch (err) {
+                    setError(readableError(err))
+                  } finally {
+                    setBusy(false)
+                  }
+                }}
+              />
+            )}
+          </div>
         </details>
       </header>
       {edit ? (
@@ -570,7 +601,7 @@ export function PostCard({
         </>
       )}
       {error && <p role="alert">{error}</p>}
-      <footer className="post-interactions">
+      <footer className="post-interactions social-actions">
         <Button
           variant="ghost"
           className={post.liked ? 'is-liked' : ''}
@@ -582,10 +613,19 @@ export function PostCard({
           <Heart size={19} fill={post.liked ? 'currentColor' : 'none'} />
           {post.likes}
         </Button>
-        <Button variant="ghost" aria-expanded={comments} onClick={() => setComments(!comments)}>
+        <Button
+          variant="ghost"
+          aria-label="Comentários da publicação"
+          aria-expanded={comments}
+          onClick={() => setComments(!comments)}
+        >
           <MessageCircle size={19} />
-          {post.comments} comentário(s)
+          {post.comments}
         </Button>
+        <ShareAction
+          path={clubId ? `/space/${clubId}?post=${post.id}` : `/app/community?post=${post.id}`}
+          privateContent={clubId !== null}
+        />
         <Button
           variant="ghost"
           aria-label={post.saved ? 'Retirar publicação dos salvos' : 'Salvar publicação'}
@@ -601,29 +641,11 @@ export function PostCard({
           <Link to="/account">Entre para curtir, salvar e conversar</Link>.
         </p>
       )}
-      {clubId === null && user?.emailVerified && (
-        <ConfirmAction
-          label="Compartilhar na comunidade"
-          confirmLabel="Publicar compartilhamento público"
-          disabled={busy}
-          onConfirm={async () => {
-            setBusy(true)
-            setError('')
-            try {
-              await apiRequest(user, path + '/share', 'POST', { body: '' })
-              setError('Compartilhamento publicado na comunidade.')
-            } catch (err) {
-              setError(readableError(err))
-            } finally {
-              setBusy(false)
-            }
-          }}
-        />
-      )}{' '}
       {comments && (
         <PostComments
           clubId={clubId}
           postId={post.id}
+          onClose={() => setComments(false)}
           onCountChanged={() =>
             void apiRequest<PostDto>(user!, path)
               .then(onChanged)
@@ -637,10 +659,12 @@ export function PostCard({
 export function PostComments({
   clubId,
   postId,
+  onClose = () => {},
   onCountChanged = () => {},
 }: {
   clubId: string | null
   postId: string
+  onClose?: () => void
   onCountChanged?: () => void
 }) {
   const { user } = useAuth(),
@@ -694,100 +718,130 @@ export function PostComments({
     }
   }
   return (
-    <section className="post-comments" aria-label="Comentários da publicação">
-      {error && <p role="alert">{error}</p>}
-      {busy && !page.items.length && <p role="status">Abrindo comentários…</p>}
-      {page.items.map((comment) => (
-        <article
-          key={comment.id}
-          className={comment.parentId ? 'post-comment post-comment--reply' : 'post-comment'}
-        >
-          {comment.deleted ? (
-            <p>Comentário excluído.</p>
-          ) : (
-            <>
-              <UserIdentity
-                size="sm"
-                id={comment.author?.id}
-                name={comment.author?.name ?? 'Leitor'}
-                avatarId={comment.author?.avatarId}
-                meta={
-                  <>
-                    {date(comment.createdAt)}
-                    {comment.parentId ? ' · Resposta na conversa' : ''}
-                  </>
-                }
-              />
-              <p className="preserve-text">{comment.body}</p>
-              <div className="workspace-actions">
-                <Button
-                  variant="ghost"
-                  disabled={busy || !user?.emailVerified}
-                  aria-pressed={comment.liked}
-                  onClick={() => void action(`/${comment.id}/like`, { value: !comment.liked })}
-                >
-                  <Heart size={15} fill={comment.liked ? 'currentColor' : 'none'} />
-                  {comment.likes}
-                </Button>
-                {user?.emailVerified && !comment.parentId && (
-                  <Button variant="ghost" onClick={() => setParent(comment)}>
-                    Responder
-                  </Button>
-                )}
-                <ReportAction kind="comment" id={comment.id} />
-                {comment.canDelete && (
-                  <ConfirmAction
-                    label="Excluir comentário"
-                    disabled={busy}
-                    onConfirm={async () => {
-                      await action(`/${comment.id}`, undefined, 'DELETE')
-                    }}
+    <Sheet title="Comentários" onClose={onClose} className="comments-sheet">
+      <section className="post-comments" aria-label="Comentários da publicação">
+        <div className="comments-scroll">
+          {error && <p role="alert">{error}</p>}
+          {busy && !page.items.length && <p role="status">Abrindo comentários…</p>}
+          {page.items.map((comment) => (
+            <article
+              key={comment.id}
+              className={comment.parentId ? 'post-comment post-comment--reply' : 'post-comment'}
+            >
+              {comment.deleted ? (
+                <p>Comentário excluído.</p>
+              ) : (
+                <>
+                  <UserIdentity
+                    size="sm"
+                    id={comment.author?.id}
+                    name={comment.author?.name ?? 'Leitor'}
+                    avatarId={comment.author?.avatarId}
+                    meta={
+                      <>
+                        {date(comment.createdAt)}
+                        {comment.parentId ? ' · Resposta na conversa' : ''}
+                      </>
+                    }
                   />
-                )}
+                  <p className="preserve-text">{comment.body}</p>
+                  <div className="workspace-actions">
+                    <Button
+                      variant="ghost"
+                      disabled={busy || !user?.emailVerified}
+                      aria-pressed={comment.liked}
+                      onClick={() => void action(`/${comment.id}/like`, { value: !comment.liked })}
+                    >
+                      <Heart size={15} fill={comment.liked ? 'currentColor' : 'none'} />
+                      {comment.likes}
+                    </Button>
+                    {user?.emailVerified && !comment.parentId && (
+                      <Button variant="ghost" onClick={() => setParent(comment)}>
+                        Responder
+                      </Button>
+                    )}
+                    <details className="social-more">
+                      <summary className="social-action" aria-label="Opções do comentário">
+                        <MoreHorizontal size={20} />
+                      </summary>
+                      <div className="social-menu">
+                        <ReportAction kind="comment" id={comment.id} />
+                        {comment.canDelete && (
+                          <ConfirmAction
+                            label="Excluir comentário"
+                            disabled={busy}
+                            onConfirm={async () => {
+                              await action(`/${comment.id}`, undefined, 'DELETE')
+                            }}
+                          />
+                        )}
+                      </div>
+                    </details>
+                  </div>
+                </>
+              )}
+            </article>
+          ))}
+          {page.nextCursor && (
+            <Button variant="ghost" disabled={busy} onClick={() => void more()}>
+              Mais comentários
+            </Button>
+          )}
+        </div>
+        {!busy && !page.items.length && (
+          <p className="comments-empty">Seja a primeira pessoa a comentar.</p>
+        )}
+        {user?.emailVerified ? (
+          <form
+            className="comment-composer"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void action('', { body, ...(parent ? { parentId: parent.id } : {}) }).then((ok) => {
+                if (ok) {
+                  setBody('')
+                  setParent(null)
+                }
+              })
+            }}
+          >
+            {parent && (
+              <div className="workspace-actions">
+                <span>Respondendo a {parent.author?.name}</span>
+                <Button type="button" variant="ghost" onClick={() => setParent(null)}>
+                  Cancelar resposta
+                </Button>
               </div>
-            </>
-          )}
-        </article>
-      ))}
-      {page.nextCursor && (
-        <Button variant="ghost" disabled={busy} onClick={() => void more()}>
-          Mais comentários
-        </Button>
-      )}
-      {user?.emailVerified && (
-        <form
-          className="workspace-form"
-          onSubmit={(event) => {
-            event.preventDefault()
-            void action('', { body, ...(parent ? { parentId: parent.id } : {}) }).then((ok) => {
-              if (ok) {
-                setBody('')
-                setParent(null)
-              }
-            })
-          }}
-        >
-          {parent && (
-            <div className="workspace-actions">
-              <span>Respondendo a {parent.author?.name}</span>
-              <Button type="button" variant="ghost" onClick={() => setParent(null)}>
-                Cancelar resposta
-              </Button>
-            </div>
-          )}
-          <label>
-            {parent ? 'Sua resposta' : 'Seu comentário'}
-            <textarea
-              required
-              maxLength={2000}
-              rows={2}
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-            />
-          </label>
-          <Button disabled={busy}>Comentar</Button>
-        </form>
-      )}
-    </section>
+            )}
+            <label className="comment-field">
+              <span className="sr-only">{parent ? 'Sua resposta' : 'Seu comentário'}</span>
+              <textarea
+                required
+                maxLength={2000}
+                rows={1}
+                placeholder={
+                  parent
+                    ? `Respondendo a ${parent.author?.name ?? 'Leitor'}…`
+                    : 'Adicione um comentário…'
+                }
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+              />
+            </label>
+            <button
+              type="submit"
+              className="social-action"
+              aria-label="Publicar comentário"
+              disabled={busy || !body.trim()}
+            >
+              <Send size={21} />
+            </button>
+          </form>
+        ) : (
+          <p className="comments-login">
+            <Link to="/account">Entre para comentar</Link>
+          </p>
+        )}
+      </section>
+    </Sheet>
   )
 }

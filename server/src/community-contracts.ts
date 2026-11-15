@@ -85,6 +85,8 @@ export interface Page<T> {
   nextCursor: string | null
 }
 export interface AlbumDto {
+  coverMediaId?: string | null
+  covers?: PostMedia[]
   id: string
   title: string
   description: string
@@ -100,6 +102,7 @@ export interface AlbumDto {
   canUpload: boolean
 }
 export interface AlbumPhoto extends PostMedia {
+  comments?: number
   caption: string
   postId: string
   addedBy: { id: string; name: string; avatarId?: string | null }

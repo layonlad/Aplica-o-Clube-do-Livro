@@ -9,9 +9,10 @@
     "fase": "Publicado; ajuste de permissões pendente",
     "tom": "aguardando",
     "resumo": "A plataforma social está em produção desde 14/11/2026: API e site usam o código de b64835d, incluindo os PRs 5, 6 e 7. Banco, mídia privada e moderação foram configurados; os testes reais e a limpeza sintética foram concluídos. A revisão do mapa identificou permissões SQL legadas que precisam ser removidas.",
-    "proximoPasso": "Os PRs 9 (mapa e permissões) e 10 (capa do perfil e GIFs) estão em main. Próximos passos, cada um só com autorização: aplicar a revogação de permissões SQL; publicar a API no Render e depois o site no Firebase para levar a correção da capa à produção (sem migration).",
+    "proximoPasso": "Revisar o PR 11 dos ajustes sociais móveis. Depois de aprovado e autorizado: aplicar a revogação de grants pendente e a migration aditiva da capa dos álbuns; publicar API e depois Firebase, incluindo a correção de capa/GIF do PR 10. Produção permanece em b64835d nesta etapa.",
     "pendencias": [
       "Aplicar, após autorização, a revogação dos privilégios legados em server/ops/runtime-grants.sql. Em produção ainda existem DELETE em tabelas da implantação inicial e UPDATE em aceites; o script anterior só acrescentava grants.",
+      "Aprovar os controles sociais móveis e aplicar a migration de seleção de capa dos álbuns antes de publicar a nova API; não foi aplicada em produção.",
       "Publicar a correção da capa do perfil e dos GIFs (PR 10): primeiro a API no Render, depois o site no Firebase. Até lá, a produção continua recusando GIF e escondendo a capa de perfis privados.",
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
       "Leitor de tela real e recorte de foto pela câmera do celular ainda não foram testados. A persistência foi validada por novo login, sem segundo aparelho físico.",
@@ -247,6 +248,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-14",
+      "autor": "Codex",
+      "titulo": "Controles sociais e capas dos álbuns no celular",
+      "resumo": "Seletor suspenso, ações compactas e comentários em painel com campo fixo. Álbuns mostram fotos empilhadas e permitem escolher a foto da frente, com privacidade e versão verificadas. Capa/GIF do PR 10 reaproveitados e testados no celular. Implementação em revisão; nenhuma publicação nesta etapa.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/11"
+    },
     {
       "data": "2026-11-14",
       "autor": "Claude Code",
