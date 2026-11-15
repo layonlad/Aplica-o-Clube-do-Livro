@@ -2,7 +2,7 @@ import { ClubBookFile } from '../clubs/ClubBookFile'
 import { PrivateBookCover } from './PrivateBookCover'
 import { useAuth } from '../auth/AuthProvider'
 import { apiRequest } from '../auth/api'
-import { readEpub } from './epub-archive'
+
 import { saveEpub } from './epub-storage'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -11,8 +11,8 @@ import type { z } from 'zod'
 import type { bookMetadataSchema, WorkspaceState } from '../../server/src/workspace-model'
 import { preferencesSchema } from '../../server/src/workspace-model'
 import type { CatalogEntry } from '../../server/src/catalog'
-import { Button, Card, CoverArt, ProgressBar } from '../components/ui'
-import { importBook, type ImportedBook } from './import-book'
+import { Button, Card, ProgressBar } from '../components/ui'
+import type { ImportedBook } from './import-book'
 import { useWorkspace } from './WorkspaceProvider'
 import './library-room.css'
 import { PrivateBookFile } from './PrivateBookFile'
@@ -58,6 +58,7 @@ export function LibraryRoom() {
   const [searching, setSearching] = useState(false)
   async function preserveOriginal(id: string, file: File) {
     try {
+      const { readEpub } = await import('./epub-archive')
       const archive = await readEpub(file),
         cover = archive.coverPath ? archive.images.get(archive.coverPath) : null
       await saveEpub(
@@ -81,12 +82,17 @@ export function LibraryRoom() {
     } catch (error) {
       setMessage(
         'O livro foi adicionado, mas o original não foi guardado por completo: ' +
-          (error as Error).message,
+          (error instanceof Error
+            ? error.message
+            : 'Não foi possível guardar o arquivo neste navegador.'),
       )
     }
   }
   async function save(event: FormEvent) {
     event.preventDefault()
+    if (importing) return
+    let createdId: string | undefined
+    const original = originalFile
     const ok = editing
       ? await act({
           type: 'book.metadata',
@@ -97,24 +103,33 @@ export function LibraryRoom() {
           metadata: draft.metadata,
         })
       : await act({ type: 'book.add', ...draft }, (next) => {
-          if (originalFile && scope === 'personal') {
-            const created = next.state.books[0]
-            if (created) void preserveOriginal(created.id, originalFile)
-          }
+          createdId = next.state.books[0]?.id
         })
-    if (ok) {
-      setShow(false)
-      setEditing(null)
-      setDraft(blank())
-      setMessage(editing ? 'Dados do livro atualizados.' : 'Livro adicionado à biblioteca.')
-    }
+    if (!ok) return
+    if (original && createdId && scope === 'personal') {
+      setImporting(true)
+      setMessage('Guardando o EPUB e a capa…')
+      try {
+        await preserveOriginal(createdId, original)
+      } finally {
+        setImporting(false)
+      }
+    } else setMessage(editing ? 'Dados do livro atualizados.' : 'Livro adicionado à biblioteca.')
+    setShow(false)
+    setEditing(null)
+    setDraft(blank())
+    setOriginalFile(null)
   }
   async function file(file: File) {
     setImporting(true)
     setMessage('')
     try {
-      if (/\.epub$/i.test(file.name)) await readEpub(file)
-      const imported = await importBook(file)
+      if (file.size > 10000000) throw Error('Escolha um arquivo de até 10 MB.')
+      const stableFile = new File([await file.arrayBuffer()], file.name, {
+        type: file.type,
+      })
+      const { importBook } = await import('./import-book')
+      const imported = await importBook(stableFile)
       setDraft({
         title: imported.title.slice(0, 150),
         author: imported.author.slice(0, 150),
@@ -123,7 +138,7 @@ export function LibraryRoom() {
         metadata: imported.metadata ?? {},
         chapters: imported.chapters,
       })
-      setOriginalFile(/\.epub$/i.test(file.name) ? file : null)
+      setOriginalFile(/\.epub$/i.test(file.name) ? stableFile : null)
       setEditing(null)
       setShow(true)
       setMessage('Confira os dados extraídos antes de adicionar o livro.')
@@ -144,7 +159,9 @@ export function LibraryRoom() {
       .then((blob) => {
         if (live)
           return file(
-            new File([blob], 'a-cadeira-perto-da-janela.epub', { type: 'application/epub+zip' }),
+            new File([blob], 'a-cadeira-perto-da-janela.epub', {
+              type: 'application/epub+zip',
+            }),
           )
       })
       .catch((error) => live && setMessage((error as Error).message))
@@ -359,7 +376,10 @@ export function LibraryRoom() {
                     }
                     value={draft.metadata[key] ?? ''}
                     onChange={(e) =>
-                      setDraft({ ...draft, metadata: { ...draft.metadata, [key]: e.target.value } })
+                      setDraft({
+                        ...draft,
+                        metadata: { ...draft.metadata, [key]: e.target.value },
+                      })
                     }
                   />
                 </label>
@@ -390,7 +410,10 @@ export function LibraryRoom() {
                 maxLength={3000}
                 value={draft.metadata.synopsis ?? ''}
                 onChange={(e) =>
-                  setDraft({ ...draft, metadata: { ...draft.metadata, synopsis: e.target.value } })
+                  setDraft({
+                    ...draft,
+                    metadata: { ...draft.metadata, synopsis: e.target.value },
+                  })
                 }
               />
             </label>
@@ -400,7 +423,10 @@ export function LibraryRoom() {
                 maxLength={500}
                 value={draft.metadata.license ?? ''}
                 onChange={(e) =>
-                  setDraft({ ...draft, metadata: { ...draft.metadata, license: e.target.value } })
+                  setDraft({
+                    ...draft,
+                    metadata: { ...draft.metadata, license: e.target.value },
+                  })
                 }
               />
             </label>
@@ -412,7 +438,11 @@ export function LibraryRoom() {
                   maxLength={600000}
                   value={draft.content}
                   onChange={(e) =>
-                    setDraft({ ...draft, content: e.target.value, chapters: undefined })
+                    setDraft({
+                      ...draft,
+                      content: e.target.value,
+                      chapters: undefined,
+                    })
                   }
                 />
               </label>
@@ -550,17 +580,18 @@ function BookItem({ book, onEdit }: { book: Book; onEdit: () => void }) {
   return (
     <article className="library-book">
       <div className="library-book-identity">
-        {book.metadata?.cover ? (
-          <img
-            className="library-cover"
-            src={book.metadata.cover}
-            alt={`Capa de ${book.title}`}
-            loading="lazy"
-            referrerPolicy="no-referrer"
+        <Link
+          className="library-cover-link"
+          to={`/app/reader/${book.id}`}
+          aria-label={`Ler ${book.title}`}
+        >
+          <PrivateBookCover
+            id={book.id}
+            title={book.title}
+            author={book.author}
+            fallback={book.metadata?.cover}
           />
-        ) : (
-          <PrivateBookCover id={book.id} title={book.title} author={book.author} />
-        )}
+        </Link>
         <div>
           <span className="eyebrow">{book.category || 'LITERATURA'}</span>
           <h2>{book.title}</h2>
@@ -575,7 +606,11 @@ function BookItem({ book, onEdit }: { book: Book; onEdit: () => void }) {
             disabled={busy}
             aria-label={`${saved?.favorite ? 'Retirar dos' : 'Adicionar aos'} favoritos: ${book.title}`}
             onClick={() =>
-              void act({ type: 'reading.update', id: book.id, favorite: !saved?.favorite })
+              void act({
+                type: 'reading.update',
+                id: book.id,
+                favorite: !saved?.favorite,
+              })
             }
           >
             <Heart size={17} fill={saved?.favorite ? 'currentColor' : 'none'} />
@@ -612,7 +647,11 @@ function BookItem({ book, onEdit }: { book: Book; onEdit: () => void }) {
             disabled={busy}
             value={saved?.shelf ?? ''}
             onChange={(e) =>
-              void act({ type: 'reading.update', id: book.id, shelf: e.target.value })
+              void act({
+                type: 'reading.update',
+                id: book.id,
+                shelf: e.target.value,
+              })
             }
           >
             <option value="">Sem estante personalizada</option>

@@ -602,7 +602,7 @@
  .comments-sheet .sheet-surface { height:100%; }
  .comments-sheet .post-comments { flex:1; min-height:0; }
  .social-heading h1 { font-size:1.65rem; line-height:1.18; }
- .social-heading p, .gallery-photo-content > p { font-size:.9rem; line-height:1.55; }
+ .social-heading p, .gallery-photo-content > p { font-size:.9rem; line-height:var(--leading-normal); }
  .post-body { font-size:.95rem; line-height:1.6; }
  .social-post { padding:18px 0; }
  .post-heading { gap:8px; margin-bottom:12px; }
@@ -626,7 +626,7 @@
 /* Full-width social reading and uncropped, progressive photos. */
 .social-room, .social-feed, .social-post, .post-heading, .post-heading>div { min-width:0; }
 .post-body, .comment-copy { overflow-wrap:anywhere; word-break:normal; white-space:pre-wrap; }
-.post-body { width:100%; max-width:none; line-height:1.55; }
+.post-body { width:100%; max-width:none; line-height:var(--leading-normal); }
 .media-carousel { min-width:0; width:100%; margin-block:12px; }
 .media-carousel__rail { display:flex; width:100%; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain; }
 .media-carousel__rail::-webkit-scrollbar { display:none; }
@@ -673,7 +673,7 @@
  .social-room .social-feed,.social-room .post-composer,.social-room .wall-filters { max-width:none; width:100%; }
  .social-post { padding-block:18px; }
  .post-heading { gap:10px; margin-bottom:12px; }
- .post-body { font-size:.95rem; line-height:1.55; margin-block:12px; }
+ .post-body { font-size:.95rem; line-height:var(--leading-normal); margin-block:12px; }
  .media-carousel__rail { width:100%; }
  .social-sheet { bottom:var(--sheet-bottom,0px); }
  .comments-sheet { height:min(85dvh,calc(var(--sheet-height,100dvh) - 12px)); }

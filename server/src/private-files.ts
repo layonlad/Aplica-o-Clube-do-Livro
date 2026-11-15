@@ -3,6 +3,7 @@ import type { Pool, PoolClient } from 'pg'
 import { transaction } from './database.js'
 import { HttpError } from './errors.js'
 import { validateEpub, type PrivateStorage } from './private-storage.js'
+import { privateEpubCover } from './epub-cover.js'
 interface FileRow {
   id: string
   book_id: string
@@ -104,6 +105,21 @@ export class PrivateFiles {
         'O envio não foi concluído. Nenhum arquivo foi disponibilizado.',
       )
     }
+  }
+  async cover(userId: string, bookId: string) {
+    if (!this.storage) throw unavailable()
+    const file = await transaction(this.pool, async (client) => {
+      await this.book(client, userId, bookId)
+      const {
+        rows: [file],
+      } = await client.query<FileRow>(
+        "SELECT * FROM private_book_files WHERE owner_user_id=$1 AND book_id=$2 AND state='active'",
+        [userId, bookId],
+      )
+      if (!file) throw missing()
+      return file
+    })
+    return privateEpubCover(file.id, () => this.storage!.get(file.object_key))
   }
   private async purge(id: string, key: string) {
     await this.storage!.remove(key)

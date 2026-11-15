@@ -7,6 +7,8 @@ import { readEpub, epubPath, type EpubArchive } from './epub-archive'
 import { localEpub, saveEpub, removeEpub } from './epub-storage'
 import { preferencesSchema } from '../../server/src/workspace-model'
 import { QuoteShare } from '../community/QuoteShare'
+import { readerFont } from './ReaderSettings'
+import { useEpubPagination } from './useEpubPagination'
 const tags = new Set(
     'p div section h1 h2 h3 h4 h5 h6 span strong em b i small sub sup br hr ul ol li blockquote table tbody thead tfoot tr th td figure figcaption pre code a img'.split(
       ' ',
@@ -35,13 +37,28 @@ export function EpubReader({
     [message, setMessage] = useState(''),
     [loading, setLoading] = useState(false),
     [revision, setRevision] = useState(0),
-    [selected, setSelected] = useState<{ quote: string; start: number; end: number } | null>(null),
+    [selected, setSelected] = useState<{
+      quote: string
+      start: number
+      end: number
+    } | null>(null),
     [note, setNote] = useState(''),
     [pendingOffset, setPendingOffset] = useState<number | null>(null),
     [confirmRemove, setConfirmRemove] = useState(false),
     [pendingFragment, setPendingFragment] = useState<string | null>(null)
   const article = useRef<HTMLElement>(null),
+    viewport = useRef<HTMLDivElement>(null),
+    navigationTools = useRef<HTMLDetailsElement>(null),
+    navigating = useRef(false),
     latest = useRef(saved)
+  const paged = prefs.flow !== 'scroll'
+  const pagination = useEpubPagination(
+    article,
+    viewport,
+    paged,
+    `${archive?.hash ?? ''}:${chapter}`,
+    JSON.stringify(prefs),
+  )
   latest.current = saved
   async function load(file: Blob, filename: string) {
     const value = await readEpub(file),
@@ -65,12 +82,11 @@ export function EpubReader({
     setLoading(true)
     void (async () => {
       try {
-        let record = await localEpub(namespace, bookId)
+        let record = await localEpub(namespace, bookId).catch(() => undefined)
         if (!record && user?.emailVerified) {
-          const list = await apiRequest<{ items: { id: string; filename: string }[] }>(
-            user,
-            `/me/book-files/${bookId}`,
-          )
+          const list = await apiRequest<{
+            items: { id: string; filename: string }[]
+          }>(user, `/me/book-files/${bookId}`)
           if (list.items[0]) {
             const token = await user.getIdToken()
             const response = await fetch(
@@ -85,8 +101,14 @@ export function EpubReader({
             )
             if (!response.ok) throw Error('Arquivo privado indisponível.')
             const file = await response.blob()
-            await saveEpub(namespace, bookId, file, list.items[0].filename)
-            record = await localEpub(namespace, bookId)
+            await saveEpub(namespace, bookId, file, list.items[0].filename).catch(() => {})
+            record = {
+              key: namespace + ':' + bookId,
+              namespace,
+              bookId,
+              file,
+              filename: list.items[0].filename,
+            }
           }
         }
         if (!record) {
@@ -135,23 +157,49 @@ export function EpubReader({
   }, [user?.uid, user?.emailVerified, namespace, bookId, revision])
   useEffect(() => {
     if (!archive || pendingOffset === null || !article.current) return
+    if (paged) {
+      pagination.revealOffset(pendingOffset)
+      setPendingOffset(null)
+      return
+    }
     const walker = document.createTreeWalker(article.current, NodeFilter.SHOW_TEXT)
     let offset = 0,
       node: Node | null
     while ((node = walker.nextNode())) {
       if (offset + (node.textContent?.length ?? 0) >= pendingOffset) {
-        node.parentElement?.scrollIntoView({ block: 'center', behavior: 'auto' })
+        node.parentElement?.scrollIntoView({
+          block: 'center',
+          behavior: 'auto',
+        })
         break
       }
       offset += node.textContent?.length ?? 0
     }
     setPendingOffset(null)
-  }, [archive, chapter, pendingOffset])
+  }, [archive, chapter, pendingOffset, paged, pagination.revealOffset])
   useEffect(() => {
     if (!pendingFragment) return
-    document.getElementById(pendingFragment)?.scrollIntoView({ block: 'center' })
+    const element = document.getElementById(pendingFragment)
+    if (element) {
+      if (paged) pagination.revealElement(element)
+      else element.scrollIntoView({ block: 'center' })
+    }
     setPendingFragment(null)
-  }, [pendingFragment, chapter])
+  }, [pendingFragment, chapter, paged, pagination.revealElement])
+  useEffect(() => {
+    const position = latest.current?.epubLocator
+    if (archive && position?.hash === archive.hash && position.chapter === chapter)
+      setPendingOffset(position.offset)
+  }, [
+    archive,
+    prefs.flow,
+    prefs.size,
+    prefs.font,
+    prefs.margin,
+    prefs.lineHeight,
+    prefs.weight,
+    prefs.align,
+  ])
   function select() {
     const value = window.getSelection()
     if (!value?.rangeCount || value.isCollapsed || !article.current) return
@@ -178,16 +226,23 @@ export function EpubReader({
   }
   async function position(target: number, offset = 0) {
     if (!archive || !archive.chapters[target]) return false
+    if (navigating.current) return false
+    navigating.current = true
     const lengths = archive.chapters.map((c) => c.text.length),
       total = lengths.reduce((sum, n) => sum + n, 0),
       done = lengths.slice(0, target).reduce((sum, n) => sum + n, 0) + offset
-    const ok = await act({
-      type: 'reading.update',
-      id: bookId,
-      epubLocator: { hash: archive.hash, chapter: target, offset },
-      percent: Math.min(99, Math.round((done / Math.max(1, total)) * 100)),
-      expectedRevision: latest.current?.revision ?? 0,
-    })
+    let ok = false
+    try {
+      ok = await act({
+        type: 'reading.update',
+        id: bookId,
+        epubLocator: { hash: archive.hash, chapter: target, offset },
+        percent: Math.min(99, Math.round((done / Math.max(1, total)) * 100)),
+        expectedRevision: latest.current?.revision ?? 0,
+      })
+    } finally {
+      navigating.current = false
+    }
     if (ok) {
       setChapter(target)
       setSelected(null)
@@ -197,7 +252,12 @@ export function EpubReader({
     return ok
   }
   function saveVisible() {
-    if (!archive || !article.current) return
+    if (!archive || !article.current || navigating.current) return
+    if (document.querySelector('.reading-room .reader-settings[open]')) return
+    if (!paged) {
+      const rect = article.current.getBoundingClientRect()
+      if (rect.top >= window.innerHeight || rect.bottom < 80) return
+    }
     const walker = document.createTreeWalker(article.current, NodeFilter.SHOW_TEXT)
     let node: Node | null,
       offset = 0
@@ -207,13 +267,18 @@ export function EpubReader({
       if (range.getBoundingClientRect().bottom >= 80) break
       offset += node.textContent?.length ?? 0
     }
+    if (paged) offset = pagination.visibleOffset()
     const lengths = archive.chapters.map((c) => c.text.length),
       done = lengths.slice(0, chapter).reduce((sum, n) => sum + n, 0) + offset,
       total = lengths.reduce((sum, n) => sum + n, 0)
     void act({
       type: 'reading.update',
       id: bookId,
-      epubLocator: { hash: archive.hash, chapter, offset: Math.min(offset, 3000000) },
+      epubLocator: {
+        hash: archive.hash,
+        chapter,
+        offset: Math.min(offset, 3000000),
+      },
       percent: Math.min(99, Math.round((done / Math.max(1, total)) * 100)),
       expectedRevision: latest.current?.revision ?? 0,
     })
@@ -226,11 +291,28 @@ export function EpubReader({
       timer = setTimeout(saveVisible, 1200)
     }
     window.addEventListener('scroll', save, { passive: true })
+    const host = viewport.current
+    host?.addEventListener('scroll', save, { passive: true })
     return () => {
       window.removeEventListener('scroll', save)
+      host?.removeEventListener('scroll', save)
       if (timer) clearTimeout(timer)
     }
-  }, [archive, chapter])
+  }, [archive, chapter, paged, pagination.visibleOffset])
+  async function turnPage(direction: number) {
+    if (busy || navigating.current || !archive) return
+    const next = pagination.page + direction
+    if (next < 0) {
+      if (chapter > 0) await position(chapter - 1, archive.chapters[chapter - 1].text.length)
+      return
+    }
+    if (next >= pagination.count) {
+      if (chapter + 1 < archive.chapters.length) await position(chapter + 1)
+      return
+    }
+    pagination.go(next)
+    await position(chapter, pagination.visibleOffset())
+  }
   // Rendering creates only a small allowlist of React elements. EPUB scripts, styles,
   // event handlers, remote URLs and arbitrary attributes are never attached to DOM.
   const marks = (saved?.epubAnnotations ?? []).filter((mark) => mark.hash === archive?.hash)
@@ -266,6 +348,29 @@ export function EpubReader({
     if (node.nodeType !== 1) return null
     const element = node as Element,
       tag = element.localName.toLowerCase()
+    if (tag === 'svg') {
+      return Array.from(element.getElementsByTagNameNS('*', 'image'))
+        .slice(0, 8)
+        .map((image, index) => {
+          const path = epubPath(
+            image.getAttribute('href') ??
+              image.getAttributeNS('http://www.w3.org/1999/xlink', 'href') ??
+              '',
+            archive!.chapters[chapter].path,
+          )?.path
+          const url = path ? urls.get(path) : undefined,
+            info = path ? archive!.images.get(path) : undefined
+          return url ? (
+            <img
+              key={index}
+              src={url}
+              alt="Ilustração do livro"
+              width={info?.width}
+              height={info?.height}
+            />
+          ) : null
+        })
+    }
     if (drop.has(tag)) return null
     const children = Array.from(node.childNodes).map((child, index) =>
       createElement(Fragment, { key: index }, render(child, depth + 1)),
@@ -280,6 +385,8 @@ export function EpubReader({
       return url ? (
         <img
           src={url}
+          width={path ? archive!.images.get(path)?.width : undefined}
+          height={path ? archive!.images.get(path)?.height : undefined}
           alt={(element.getAttribute('alt') ?? 'Ilustração do livro').slice(0, 200)}
           loading="lazy"
         />
@@ -360,70 +467,127 @@ export function EpubReader({
       {!archive && fileButton}
       {archive && (
         <>
-          <div className="reader-settings-grid reader-toolbar-grid">
-            <label>
-              Sumário EPUB
-              <select
-                value={chapter}
-                disabled={busy}
-                onChange={(event) => void position(Number(event.target.value))}
-              >
-                {archive.chapters.map((c, index) => (
-                  <option value={index} key={c.path}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Pesquisar no EPUB
-              <input
-                maxLength={100}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </label>
-          </div>
-          {query.trim().length >= 2 && (
-            <div className="reader-search-results">
-              <p>
-                {matches.length}
-                {matches.length === 50 ? '+' : ''} resultado(s)
-              </p>
-              {matches.map((match, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    void position(match.chapter, match.offset)
-                    setQuery('')
-                  }}
+          <details ref={navigationTools} className="reader-navigation-tools">
+            <summary>Sumário e pesquisa</summary>
+            <div className="reader-settings-grid reader-toolbar-grid">
+              <label>
+                Sumário EPUB
+                <select
+                  aria-label="Sumário EPUB"
+                  value={chapter}
+                  disabled={busy}
+                  onChange={(event) =>
+                    void position(Number(event.target.value)).then((ok) => {
+                      if (ok && navigationTools.current) navigationTools.current.open = false
+                    })
+                  }
                 >
-                  {match.text}
-                </button>
-              ))}
+                  {archive.chapters.map((c, index) => (
+                    <option value={index} key={c.path}>
+                      {c.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Pesquisar no EPUB
+                <input
+                  maxLength={100}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              </label>
             </div>
-          )}
+            {query.trim().length >= 2 && (
+              <div className="reader-search-results">
+                <p>
+                  {matches.length}
+                  {matches.length === 50 ? '+' : ''} resultado(s)
+                </p>
+                {matches.map((match, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      void position(match.chapter, match.offset)
+                      setQuery('')
+                      if (navigationTools.current) navigationTools.current.open = false
+                    }}
+                  >
+                    {match.text}
+                  </button>
+                ))}
+              </div>
+            )}
+          </details>
           <p className="reader-chapter-label">
             {archive.chapters[chapter]?.title} · capítulo {chapter + 1} de {archive.chapters.length}
           </p>
-          <article
-            ref={article}
-            className="reader-prose epub-prose"
-            style={{
-              fontSize: prefs.size,
-              fontFamily: prefs.font === 'serif' ? 'var(--font-reading)' : 'var(--font-ui)',
+          <div
+            ref={viewport}
+            className={paged ? 'epub-page-viewport' : 'epub-scroll-viewport'}
+            tabIndex={paged ? 0 : undefined}
+            role="region"
+            aria-label={paged ? 'Páginas do EPUB' : 'Texto do EPUB'}
+            onKeyDown={(event) => {
+              if (
+                !paged ||
+                (event.target instanceof Element &&
+                  event.target.closest('input,textarea,select,button,a'))
+              )
+                return
+              if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+                event.preventDefault()
+                void turnPage(event.key === 'ArrowRight' ? 1 : -1)
+              }
             }}
-            onMouseUp={select}
-            onKeyUp={select}
-            onTouchEnd={select}
           >
-            {render(
-              new DOMParser().parseFromString(
-                archive.chapters[chapter].html.replace(/<!DOCTYPE[\s\S]*?>/gi, ''),
-                'application/xml',
-              ).documentElement,
-            )}
-          </article>
+            <article
+              ref={article}
+              className={`reader-prose epub-prose ${paged ? 'epub-prose--paged' : ''}`}
+              style={{
+                fontSize: prefs.size,
+                fontFamily: readerFont(prefs.font),
+              }}
+              onMouseUp={select}
+              onKeyUp={select}
+              onTouchEnd={select}
+            >
+              {(() => {
+                const document = new DOMParser().parseFromString(
+                  archive.chapters[chapter].html.replace(/<!DOCTYPE[\s\S]*?>/gi, ''),
+                  'application/xml',
+                )
+                return render(
+                  document.getElementsByTagNameNS('*', 'body')[0] ?? document.documentElement,
+                )
+              })()}
+            </article>
+          </div>
+          {paged && (
+            <nav className="epub-page-controls" aria-label="Páginas EPUB">
+              <Button
+                variant="ghost"
+                disabled={busy || (chapter === 0 && pagination.page === 0)}
+                onClick={() => void turnPage(-1)}
+              >
+                ← Página anterior
+              </Button>
+              <span role="status" aria-live="polite">
+                Página {pagination.page + 1} de {pagination.count}
+              </span>
+              <Button
+                variant="ghost"
+                disabled={
+                  busy ||
+                  (chapter === archive.chapters.length - 1 &&
+                    pagination.page === pagination.count - 1)
+                }
+                onClick={() => void turnPage(1)}
+              >
+                Próxima página →
+              </Button>
+            </nav>
+          )}
           {nodeCount > 30000 && (
             <p role="alert">
               Este capítulo excede a complexidade suportada. Use a leitura em texto para consultar
@@ -447,7 +611,11 @@ export function EpubReader({
                   void act({
                     type: 'reading.epub.annotate',
                     id: bookId,
-                    locator: { hash: archive.hash, chapter, offset: selected.start },
+                    locator: {
+                      hash: archive.hash,
+                      chapter,
+                      offset: selected.start,
+                    },
                     ...selected,
                     note,
                   }).then((ok) => {

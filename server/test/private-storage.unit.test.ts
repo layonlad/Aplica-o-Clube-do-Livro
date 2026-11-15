@@ -25,9 +25,9 @@ it('recusa assinatura inválida, ZIP genérico, manifesto ausente e conteúdo cr
     Buffer.from(
       zipSync({
         mimetype: strToU8('application/epub+zip'),
-        'META-INF/container.xml': strToU8('<rootfile full-path="book.opf"/>'),
+        'META-INF/container.xml': strToU8('<container><rootfiles><rootfile full-path="book.opf"/></rootfiles></container>'),
         'book.opf': strToU8('<package/>'),
-        'META-INF/encryption.xml': strToU8('<encryption/>'),
+        'META-INF/encryption.xml': strToU8('<encryption><EncryptedData><EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/><CipherData><CipherReference URI="body.xhtml"/></CipherData></EncryptedData></encryption>'),
       }),
     ),
   ])

@@ -1,18 +1,39 @@
 import { QuoteShare } from '../community/QuoteShare'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Bookmark, Highlighter, Search } from 'lucide-react'
+import { Bookmark, Highlighter, Search, Expand, Minimize } from 'lucide-react'
 import { preferencesSchema } from '../../server/src/workspace-model'
 import { Button, Card, ProgressBar } from '../components/ui'
 import { useWorkspace } from './WorkspaceProvider'
 import { pageAt, readingPages } from './reading-layout'
 import './reading-room.css'
+import { ReaderSettings, readerFont, readerStyle } from './ReaderSettings'
+import { useAuth } from '../auth/AuthProvider'
+import { localEpub } from './epub-storage'
+import { apiRequest } from '../auth/api'
 
 const EpubReader = lazy(() =>
   import('./EpubReader').then((module) => ({ default: module.EpubReader })),
 )
 export function ReadingRoom() {
   const { id } = useParams()
+  const { user } = useAuth()
+  const manualMode = useRef(false)
+  const [focused, setFocused] = useState(false)
+  useEffect(() => {
+    if (focused) document.documentElement.dataset.readerFocus = 'true'
+    else delete document.documentElement.dataset.readerFocus
+    return () => {
+      delete document.documentElement.dataset.readerFocus
+    }
+  }, [focused])
+  useEffect(() => {
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setFocused(false)
+    }
+    window.addEventListener('keydown', escape)
+    return () => window.removeEventListener('keydown', escape)
+  }, [])
   const { snapshot, act, busy, scope } = useWorkspace()
   const book = snapshot!.state.books.find((book) => book.id === id)
   const saved = id ? snapshot!.reading[id] : undefined
@@ -30,14 +51,39 @@ export function ReadingRoom() {
   const [original, setOriginal] = useState(
     Boolean(
       saved?.epubLocator ||
-        (scope === 'personal' && book?.metadata?.source?.startsWith('EPUB importado')),
+      (scope === 'personal' && book?.metadata?.source?.startsWith('EPUB importado')),
     ),
   )
+  useEffect(() => {
+    setFocused(original)
+  }, [id, original])
+  useEffect(() => {
+    if (!id || scope !== 'personal') return
+    let live = true
+    void (async () => {
+      const record = await localEpub(user?.emailVerified ? user.uid : 'visitor', id).catch(
+        () => undefined,
+      )
+      if (record) {
+        if (live && !manualMode.current) setOriginal(true)
+        return
+      }
+      if (user?.emailVerified) {
+        const result = await apiRequest<{ items: unknown[] }>(user, `/me/book-files/${id}`)
+        if (live && !manualMode.current && result.items.length) setOriginal(true)
+      }
+    })().catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [id, scope, user?.uid, user?.emailVerified])
   const [query, setQuery] = useState('')
   const [message, setMessage] = useState('')
-  const [selection, setSelection] = useState<{ quote: string; start: number; end: number } | null>(
-    null,
-  )
+  const [selection, setSelection] = useState<{
+    quote: string
+    start: number
+    end: number
+  } | null>(null)
   const [note, setNote] = useState('')
   const article = useRef<HTMLElement>(null)
   const current = pages[page]
@@ -53,10 +99,11 @@ export function ReadingRoom() {
         : Math.min(saved?.page ?? 0, Math.max(0, pages.length - 1)),
     )
     setSelection(null)
+    manualMode.current = false
     setOriginal(
       Boolean(
         saved?.epubLocator ||
-          (scope === 'personal' && book?.metadata?.source?.startsWith('EPUB importado')),
+        (scope === 'personal' && book?.metadata?.source?.startsWith('EPUB importado')),
       ),
     )
   }, [id])
@@ -147,93 +194,45 @@ export function ReadingRoom() {
   return (
     <div
       className={`reading-room reading-room--${preferences.theme} reading-room--${preferences.margin}`}
+      style={readerStyle(preferences)}
     >
-      <Link className="reading-room-back" to="/app/library">← Minha biblioteca</Link>
+      <Link className="reading-room-back" to="/app/library">
+        ← Minha biblioteca
+      </Link>
+      <Button
+        className="reader-focus-toggle"
+        variant="ghost"
+        onClick={() => setFocused((value) => !value)}
+      >
+        {focused ? <Minimize size={18} /> : <Expand size={18} />}{' '}
+        {focused ? 'Mostrar navegação' : 'Ler sem distrações'}
+      </Button>
       <header className="reading-room-title">
         <span className="eyebrow">MEU ESPAÇO DE LEITURA</span>
         <h1>{book.title}</h1>
         <p>{book.author}</p>
       </header>
-      <details className="reader-settings">
-        <summary>Preferências de leitura</summary>
-        <div className="reader-settings-grid">
-          <label>
-            Tamanho da fonte
-            <select
-              value={preferences.size}
-              disabled={busy}
-              onChange={(e) =>
-                void act({
-                  type: 'reader.preferences',
-                  reader: { ...preferences, size: Number(e.target.value) },
-                })
-              }
-            >
-              {[16, 18, 20, 22, 24, 28, 32].map((size) => (
-                <option key={size} value={size}>
-                  {size} px
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Tipografia
-            <select
-              value={preferences.font}
-              disabled={busy}
-              onChange={(e) =>
-                void act({
-                  type: 'reader.preferences',
-                  reader: { ...preferences, font: e.target.value as 'serif' | 'sans' },
-                })
-              }
-            >
-              <option value="serif">Editorial</option>
-              <option value="sans">Sem serifa</option>
-            </select>
-          </label>
-          <label>
-            Tema de leitura
-            <select
-              value={preferences.theme}
-              disabled={busy}
-              onChange={(e) =>
-                void act({
-                  type: 'reader.preferences',
-                  reader: { ...preferences, theme: e.target.value as typeof preferences.theme },
-                })
-              }
-            >
-              <option value="light">Claro</option>
-              <option value="dark">Escuro</option>
-              <option value="sepia">Sépia</option>
-            </select>
-          </label>
-          <label>
-            Margens
-            <select
-              value={preferences.margin}
-              disabled={busy}
-              onChange={(e) =>
-                void act({
-                  type: 'reader.preferences',
-                  reader: { ...preferences, margin: e.target.value as typeof preferences.margin },
-                })
-              }
-            >
-              <option value="compact">Compactas</option>
-              <option value="comfortable">Confortáveis</option>
-              <option value="wide">Ampliação lateral</option>
-            </select>
-          </label>
-        </div>
-      </details>
+      <ReaderSettings />
       {scope === 'personal' && (
         <div className="reader-mode" role="group" aria-label="Modo de leitura">
-          <button type="button" aria-pressed={!original} onClick={() => setOriginal(false)}>
+          <button
+            type="button"
+            aria-pressed={!original}
+            onClick={() => {
+              manualMode.current = true
+              setOriginal(false)
+            }}
+          >
             Texto simples
           </button>
-          <button type="button" aria-pressed={original} onClick={() => setOriginal(true)}>
+          <button
+            type="button"
+            aria-pressed={original}
+            onClick={() => {
+              manualMode.current = true
+              setOriginal(true)
+            }}
+          >
             EPUB original
           </button>
         </div>
@@ -307,7 +306,7 @@ export function ReadingRoom() {
             onTouchEnd={selected}
             style={{
               fontSize: preferences.size,
-              fontFamily: preferences.font === 'serif' ? 'Georgia, serif' : 'system-ui, sans-serif',
+              fontFamily: readerFont(preferences.font),
             }}
           >
             {segments}
@@ -325,15 +324,18 @@ export function ReadingRoom() {
               <Button
                 disabled={busy}
                 onClick={() =>
-                  void act({ type: 'reading.annotate', id: book.id, ...selection, note }).then(
-                    (ok) => {
-                      if (ok) {
-                        setSelection(null)
-                        setNote('')
-                        setMessage('Destaque e anotação salvos somente na sua leitura.')
-                      }
-                    },
-                  )
+                  void act({
+                    type: 'reading.annotate',
+                    id: book.id,
+                    ...selection,
+                    note,
+                  }).then((ok) => {
+                    if (ok) {
+                      setSelection(null)
+                      setNote('')
+                      setMessage('Destaque e anotação salvos somente na sua leitura.')
+                    }
+                  })
                 }
               >
                 Salvar destaque

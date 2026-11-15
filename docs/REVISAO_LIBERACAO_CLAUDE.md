@@ -1,5 +1,7 @@
 # Revisão da entrega do Claude em 15/11/2026
 
+> Registro histórico anterior à ativação do push nesta data. A configuração foi concluída e a correção de entrelinha preparada na entrega [EPUB e notificações](LEITURA_EPUB_E_NOTIFICACOES.md). Os achados abaixo descrevem a conferência original.
+
 O PR 14 foi incorporado e publicado em `30a110b`. Depois, o PR 16 introduziu o visual compacto, a abertura maior e mais lenta e opções de texto, densidade, entrelinha e formato. A API Render e o Firebase executam o código de `5b5a935`; `5e8ceb8` acrescenta somente o registro da publicação no mapa, via PR 17. O nome atual foi preservado.
 
 ## Conferência independente
