@@ -271,7 +271,7 @@
       "autor": "Codex",
       "titulo": "Liberação autorizada: recuperação, migrations e executor restrito",
       "resumo": "PR 13 incorporado; terceira cópia privada sem compute criada e migrations 017–018 com grants explícitos aplicadas. Ajustada a trava da entrega rápida para conexões agrupadas. Publicação de API, site e ativação do executor em andamento; versões finais serão registradas após validação.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/14"
     },
     {
       "data": "2026-11-15",
