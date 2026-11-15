@@ -6,12 +6,11 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "No ar; push ativo e leitura EPUB em revisão",
-    "tom": "aguardando",
-    "resumo": "Site e API continuam no código 5b5a935. A configuração gratuita do Render/GitHub foi ativada e o executor rodou com sucesso. Banco em 018 e permissões restritas preservadas. Correções de entrelinha, importação/capas privadas e controles de leitura EPUB estão prontas nesta branch, aguardando merge e publicação autorizados.",
-    "proximoPasso": "Conferir o CI do PR desta entrega e obter aprovação do dono para publicar a nova API antes do site. Não há migrations ou grants novos. Validar o EPUB do dono após publicação e o recebimento push em aparelho físico após permissão explícita.",
+    "fase": "No ar; EPUB, entrelinha e push liberados",
+    "tom": "ok",
+    "resumo": "API Render e site Firebase publicados em 15/11/2026 a partir de 644b10e (PR 19), após autorização do dono. Leitura EPUB privada com capas e controles próprios, armazenamento compatível com Safari e entrelinha das publicações corrigidos. CI aprovado; banco continua em 018 e permissões restritas preservadas. Push e executor externo configurados no plano gratuito.",
+    "proximoPasso": "O dono pode conferir seu EPUB na versão publicada. Recebimento push em aparelho físico depende de habilitação explícita no Perfil e permissão do sistema; ainda não foi comprovado. Melhorias futuras seguem o fluxo de PR e aprovação.",
     "pendencias": [
-      "Nova leitura EPUB e entrelinha corrigida ainda não estão no Firebase/Render; precisam de aprovação para merge e publicação. A API deve ser publicada antes do site por causa das preferências novas.",
       "Push e executor externo configurados e ativos; execução manual concluída sem falhas. Recebimento em aparelho físico ainda não foi testado; depende da escolha e permissão do usuário. Agendamento gratuito pode atrasar.",
       "Upload geral de fotografias foi confirmado como funcional pelo dono. Os testes da nova leitura usam EPUB, contas e capas sintéticos locais; nenhum arquivo específico do dono foi inspecionado.",
       "EPUB com fontes ofuscadas é aceito; texto ou imagens realmente criptografados exigem edição legível da loja/editora. Sem capa raster compatível, permanece uma ilustração de reserva.",
@@ -25,7 +24,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "Código de 5b5a935 · publicado em 15/11/2026 no Firebase Hosting",
+      "versao": "644b10e · publicado em 15/11/2026 no Firebase Hosting; EPUB e entrelinha liberados",
       "atualizacao": "Manual, com autorização do dono; merge em main não publica o Firebase",
       "tom": "ok"
     },
@@ -33,7 +32,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api.onrender.com/health",
-      "versao": "5b5a935 · Docker no Render · configuração push/limpeza ativada em 15/11/2026; leitor novo ainda em revisão",
+      "versao": "644b10e · Docker no Render · publicado em 15/11/2026; push e limpeza ativos",
       "atualizacao": "Deploy manual do commit aprovado; autodeploy desligado",
       "tom": "ok"
     },
@@ -71,7 +70,7 @@
       "coluna": 1,
       "cor": "coral",
       "guarda": ["Biblioteca e leituras do visitante (sem conta)", "EPUB original no IndexedDB", "Aparência escolhida", "Sessão de login"],
-      "detalhe": "Sem conta, biblioteca e leitura ficam neste navegador. EPUBs originais usam IndexedDB separado por visitante/conta. Apagar os dados do navegador pode apagar essas cópias. O modo conectado não registra cache offline por service worker. Na atualização em revisão, EPUB e capa são guardados como bytes portáveis, mantendo leitura de registros antigos; controles do leitor e posição são independentes da aparência geral.",
+      "detalhe": "Sem conta, biblioteca e leitura ficam neste navegador. EPUBs originais usam IndexedDB separado por visitante/conta. Apagar os dados do navegador pode apagar essas cópias. O modo conectado não registra cache offline por service worker. Desde a liberação EPUB, EPUB e capa são guardados como bytes portáveis, mantendo leitura de registros antigos; controles do leitor e posição são independentes da aparência geral.",
       "link": ""
     },
     {
@@ -126,7 +125,7 @@
       "coluna": 4,
       "cor": "rose",
       "guarda": ["Fotos e capas de perfil (GIF animado vira WebP animado)", "Fotos e vídeos de publicações e álbuns", "EPUBs originais guardados na conta", "Arquivos EPUB do acervo dos clubes"],
-      "detalhe": "Acesso direto anônimo ao bucket é negado. A API entrega conteúdo público quando explicitamente permitido e conteúdo privado somente a quem tem acesso; fotos privadas do perfil exigem titular ou colega ativo em comum, respeitando bloqueios. As cotas de mídia por conta, EPUBs pessoais e EPUBs por clube são separadas. Gravação, leitura e remoção reais foram validadas na liberação. Na atualização EPUB em revisão, a API deriva a capa pessoal do original após conferir titularidade, sem novo objeto permanente; o bucket privado atual atende sem mudanças.",
+      "detalhe": "Acesso direto anônimo ao bucket é negado. A API entrega conteúdo público quando explicitamente permitido e conteúdo privado somente a quem tem acesso; fotos privadas do perfil exigem titular ou colega ativo em comum, respeitando bloqueios. As cotas de mídia por conta, EPUBs pessoais e EPUBs por clube são separadas. Gravação, leitura e remoção reais foram validadas na liberação. Desde a liberação EPUB, a API deriva a capa pessoal do original após conferir titularidade, sem novo objeto permanente; o bucket privado atual atende sem mudanças.",
       "link": ""
     },
     {
@@ -186,7 +185,7 @@
     { "o_que": "E-mail, senha e login com Google", "onde": "auth", "privacidade": "Privado", "copia": "Gerenciado pelo Google" },
     { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Perfil público por escolha; colega ativo em comum pode ver somente cartão mínimo e clubes compartilhados", "copia": "Persistência no banco; a cópia pré-liberação não cobre mudanças posteriores" },
     { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON pessoal e persistência no banco; arquivos originais não entram no JSON" },
-    { "o_que": "Aparência do app e controles do leitor", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "Preferências no navegador e, com conta, no banco. Novas fontes, paginação e entrelinha do leitor estão em revisão; não exigem migration." },
+    { "o_que": "Aparência do app e controles do leitor", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "Preferências no navegador e, com conta, no banco. Fontes, paginação e entrelinha do leitor publicadas em 644b10e, sem migration; sincronização conferida em contextos locais independentes." },
     { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Metadados de descoberta por escolha do clube; membros e gestão conforme papel; convites restritos aos autorizados", "copia": "Banco" },
     { "o_que": "Mural, fórum, encontros e álbuns dos clubes", "onde": "banco", "privacidade": "Só membros ativos", "copia": "Banco" },
     { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Públicos enquanto perfil e conteúdo estiverem disponíveis; bloqueios e moderação são revalidados", "copia": "Banco" },
@@ -249,7 +248,7 @@
       ]
     },
     {
-      "titulo": "Importar e ler um EPUB pessoal (atualização em revisão)",
+      "titulo": "Importar e ler um EPUB pessoal",
       "passos": [
         {
           "camada": "pessoa",
@@ -292,6 +291,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-15",
+      "autor": "Codex",
+      "titulo": "EPUB, capas e entrelinha publicados em 644b10e",
+      "resumo": "PR 19 mesclado com autorização; API Render publicada antes do Firebase. CI de main aprovado e arquivos do site idênticos ao build conectado. EPUB sintético importado e lido pela capa em Chrome móvel, WebKit móvel e desktop, com página restaurada, controles persistidos e entrelinha aplicada. Banco em 018, sem migrations ou grants novos; planos gratuitos preservados. Testes em produção como visitante, sem alterar contas reais; push físico ainda pendente.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/19"
+    },
     {
       "data": "2026-11-15",
       "autor": "Codex",
