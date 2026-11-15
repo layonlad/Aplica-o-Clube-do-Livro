@@ -137,7 +137,9 @@ export function AppearanceSettings() {
                   name="preset"
                   value="personalizado"
                   checked={custom}
-                  onChange={() => update({ preset: 'personalizado', accent: draft.accent ?? '#7656a8' })}
+                  onChange={() =>
+                    update({ preset: 'personalizado', accent: draft.accent ?? '#7656a8' })
+                  }
                 />
                 <span
                   className="theme-option__swatch theme-option__swatch--custom"
@@ -164,6 +166,28 @@ export function AppearanceSettings() {
                 Ajustamos o tom para manter textos e botões legíveis (contraste mínimo AA).
               </p>
             )}
+          </fieldset>
+
+          <fieldset className="appearance-group">
+            <legend>Fundo do aplicativo</legend>
+            <label className="custom-color">
+              Cor de fundo
+              <input
+                type="color"
+                aria-label="Cor de fundo"
+                value={draft.background ?? (tokens.dark ? '#17111f' : '#fbf4e8')}
+                onChange={(event) => update({ background: event.target.value.toLowerCase() })}
+              />
+              <code>{draft.background ?? 'Automático'}</code>
+            </label>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={!draft.background}
+              onClick={() => update({ background: null })}
+            >
+              Usar fundo do tema
+            </Button>
           </fieldset>
 
           <fieldset className="appearance-group">
@@ -287,7 +311,11 @@ export function AppearanceSettings() {
             <Button disabled={busy || !changed} onClick={() => void apply()}>
               {busy ? 'Salvando…' : 'Aplicar alterações'}
             </Button>
-            <Button variant="secondary" disabled={busy || !changed} onClick={() => setDraft(appearance)}>
+            <Button
+              variant="secondary"
+              disabled={busy || !changed}
+              onClick={() => setDraft(appearance)}
+            >
               Cancelar
             </Button>
             <Button
@@ -298,8 +326,16 @@ export function AppearanceSettings() {
               <RotateCcw size={16} aria-hidden="true" /> Restaurar padrão
             </Button>
           </div>
-          {message && <p className="toast-status" role="status">{message}</p>}
-          {error && <p className="access-error" role="alert">{error}</p>}
+          {message && (
+            <p className="toast-status" role="status">
+              {message}
+            </p>
+          )}
+          {error && (
+            <p className="access-error" role="alert">
+              {error}
+            </p>
+          )}
         </aside>
       </div>
     </div>

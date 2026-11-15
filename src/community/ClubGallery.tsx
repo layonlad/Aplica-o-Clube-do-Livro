@@ -763,7 +763,7 @@ function PhotoCard({
                 Identificar participante
               </Button>
 
-              {album.allowPublicShare && <PublicPhotoShare path={path} />}
+              {album.allowPublicShare && photo.kind==='image' && <PublicPhotoShare path={path} />}
               {photo.canRemove && (
                 <ConfirmAction
                   label="Retirar registro do álbum"

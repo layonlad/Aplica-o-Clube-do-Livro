@@ -1,10 +1,11 @@
+import { MediaCarousel } from './MediaCarousel'
 import { Sheet } from '../components/Sheet'
 import { ShareAction } from '../components/ShareAction'
 import { ConfirmAction } from './ConfirmAction'
 export { ConfirmAction } from './ConfirmAction'
 import { ReportAction } from './ReportAction'
 import { postBase, socialRead } from './social-api'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   Bookmark,
@@ -14,6 +15,7 @@ import {
   PenLine,
   Send,
   MoreHorizontal,
+  ImagePlus,
 } from 'lucide-react'
 import type { Page, PostDto, CommentDto, PostMedia } from '../../server/src/community-contracts'
 import { useAuth } from '../auth/AuthProvider'
@@ -21,7 +23,7 @@ import { apiRequest, readableError } from '../auth/api'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
 import { Button } from '../components/ui'
 import { UserAvatar, UserIdentity, useOwnAvatar } from '../components/UserAvatar'
-import { MediaPicker, PrivateMedia } from './PrivateMedia'
+import { MediaPicker } from './PrivateMedia'
 import './community.css'
 export const kindLabels = {
   reflection: 'Reflexão',
@@ -211,53 +213,54 @@ export function PostComposer({
   clubId: string | null
   onPublished: () => void
 }) {
-  const ownAvatar = useOwnAvatar()
-  const { user } = useAuth(),
-    { snapshot } = useWorkspace(),
-    [open, setOpen] = useState(false),
-    [kind, setKind] = useState<keyof typeof kindLabels>('reflection'),
+  const ownAvatar = useOwnAvatar(),
+    { user } = useAuth()
+  const [open, setOpen] = useState(false),
+    [poll, setPoll] = useState(false),
     [body, setBody] = useState(''),
-    [quote, setQuote] = useState(''),
-    [source, setSource] = useState(''),
-    [bookId, setBookId] = useState(''),
-    [options, setOptions] = useState(''),
-    [media, setMedia] = useState<PostMedia[]>([])
-  const [busy, setBusy] = useState(false),
+    [options, setOptions] = useState('')
+  const [media, setMedia] = useState<PostMedia[]>([]),
+    [busy, setBusy] = useState(false),
     [uploading, setUploading] = useState(false),
     [error, setError] = useState('')
+  const sending = useRef(false),
+    request = useRef({ payload: '', id: '' })
   async function submit(event: FormEvent) {
     event.preventDefault()
-    if (!user) return
+    if (!user || sending.current) return
+    sending.current = true
     setBusy(true)
     setError('')
+    const input = {
+      body,
+      kind: poll ? 'poll' : 'reflection',
+      mediaIds: media.map((item) => item.id),
+      options: poll
+        ? options
+            .split('\n')
+            .map((v) => v.trim())
+            .filter(Boolean)
+        : [],
+    }
+    const serialized = JSON.stringify(input)
+    if (request.current.payload !== serialized)
+      request.current = { payload: serialized, id: crypto.randomUUID() }
     try {
-      const book = snapshot?.state.books.find((item) => item.id === bookId)
       await apiRequest(user, postBase(clubId), 'POST', {
-        kind,
-        body,
-        quote,
-        source,
-        bookTitle: book?.title ?? '',
-        bookAuthor: book?.author ?? '',
-        mediaIds: media.map((item) => item.id),
-        options:
-          kind === 'poll'
-            ? options
-                .split('\n')
-                .map((value) => value.trim())
-                .filter(Boolean)
-            : [],
+        ...input,
+        clientRequestId: request.current.id,
       })
       setBody('')
-      setQuote('')
-      setSource('')
       setOptions('')
       setMedia([])
       setOpen(false)
+      setPoll(false)
+      request.current = { payload: '', id: '' }
       onPublished()
     } catch (err) {
       setError(readableError(err))
     } finally {
+      sending.current = false
       setBusy(false)
     }
   }
@@ -267,105 +270,53 @@ export function PostComposer({
         className="composer-prompt"
         type="button"
         aria-expanded={open}
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          setPoll(false)
+          setOpen(!open)
+        }}
       >
         <UserAvatar name={user?.displayName || 'Leitor'} avatarId={ownAvatar} size="md" />
-        <span>O que sua leitura despertou hoje?</span>
+        <span>O que você está pensando sobre sua leitura?</span>
         <PenLine size={18} />
       </button>
       {open && (
-        <form className="workspace-form" onSubmit={submit}>
+        <form className="workspace-form simple-composer" onSubmit={submit}>
           <p className="composer-audience">
-            {clubId === null
-              ? 'Publicação pública · qualquer pessoa poderá ver'
-              : 'Publicação privada · integrantes deste clube'}
+            {clubId === null ? 'Publicação pública' : 'Somente integrantes deste clube'}
           </p>
+          {poll && <h3>Criar enquete</h3>}
           <label>
-            Tipo
-            <select
-              value={kind}
-              onChange={(event) => setKind(event.target.value as keyof typeof kindLabels)}
-            >
-              {Object.entries(kindLabels)
-                .filter(
-                  ([value]) =>
-                    value !== 'announcement' ||
-                    (clubId !== null && ['owner', 'admin'].includes(snapshot?.role ?? 'member')),
-                )
-                .map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label>
-            Sua mensagem
+            <span className="sr-only">Sua mensagem</span>
             <textarea
               rows={4}
-              required={!quote.trim()}
-              maxLength={5000}
+              required
               value={body}
               onChange={(event) => setBody(event.target.value)}
-              placeholder="Uma ideia que merece encontrar outros leitores…"
+              placeholder="O que você está pensando sobre sua leitura?"
             />
           </label>
-          {kind === 'quote' && (
-            <>
-              <label>
-                Citação curta · até 280 caracteres
-                <textarea
-                  required
-                  maxLength={280}
-                  value={quote}
-                  onChange={(event) => setQuote(event.target.value)}
-                />
-              </label>
-              <label>
-                Origem do trecho
-                <input
-                  required
-                  maxLength={500}
-                  value={source}
-                  onChange={(event) => setSource(event.target.value)}
-                  placeholder="Livro, edição e página, quando disponível"
-                />
-              </label>
-            </>
-          )}
-          <label>
-            Livro relacionado
-            <select value={bookId} onChange={(event) => setBookId(event.target.value)}>
-              <option value="">Sem livro relacionado</option>
-              {snapshot?.state.books.map((book) => (
-                <option key={book.id} value={book.id}>
-                  {book.title} · {book.author}
-                </option>
-              ))}
-            </select>
-          </label>
-          {kind === 'poll' && (
+          {poll && (
             <label>
-              Opções da enquete · duas a seis, uma por linha
+              Opções da enquete
               <textarea
-                required
                 rows={3}
-                maxLength={605}
+                required
                 value={options}
                 onChange={(event) => setOptions(event.target.value)}
+                placeholder="Uma opção por linha"
               />
             </label>
           )}
-          <MediaPicker clubId={clubId} value={media} onChange={setMedia} onBusy={setUploading} />
+          <MediaPicker
+            clubId={clubId}
+            value={media}
+            onChange={setMedia}
+            onBusy={setUploading}
+            imagesOnly
+          />
           {error && <p role="alert">{error}</p>}
           <div className="workspace-actions">
-            <Button disabled={busy || uploading}>
-              {busy
-                ? 'Publicando…'
-                : clubId === null
-                  ? 'Publicar na comunidade'
-                  : 'Publicar no clube'}
-            </Button>
+            <Button disabled={busy || uploading}>{busy ? 'Publicando…' : 'Publicar'}</Button>
             <Button
               type="button"
               variant="ghost"
@@ -376,6 +327,18 @@ export function PostComposer({
             </Button>
           </div>
         </form>
+      )}
+      {!open && (
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            setPoll(true)
+            setOpen(true)
+          }}
+        >
+          Criar enquete
+        </Button>
       )}
     </section>
   )
@@ -495,7 +458,6 @@ export function PostCard({
             Mensagem
             <textarea
               required={!quote.trim()}
-              maxLength={5000}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
             />
@@ -569,16 +531,11 @@ export function PostCard({
               </div>
             )}
           </>
-          <div className="post-media-grid">
-            {post.media.map((media) => (
-              <PrivateMedia
-                publicMedia={clubId === null}
-                key={media.id}
-                media={media}
-                alt={post.body.slice(0, 100) || post.bookTitle || 'Registro do clube'}
-              />
-            ))}
-          </div>
+          <MediaCarousel
+            media={post.media}
+            publicMedia={clubId === null}
+            alt={post.body.slice(0, 100) || post.bookTitle || 'Registro do clube'}
+          />
           {post.options.length > 0 && (
             <div className="post-poll" role="group" aria-label="Votar na enquete">
               {post.options.map((option) => (
@@ -669,32 +626,57 @@ export function PostComments({
 }) {
   const { user } = useAuth(),
     [page, setPage] = useState<Page<CommentDto>>({ items: [], nextCursor: null }),
-    [body, setBody] = useState(''),
-    [parent, setParent] = useState<CommentDto | null>(null),
+    [body, setBody] = useState('')
+  const [parent, setParent] = useState<CommentDto | null>(null),
+    [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState(''),
-    [revision, setRevision] = useState(0)
+    [error, setError] = useState('')
+  const [media, setMedia] = useState<PostMedia[]>([]),
+    [uploading, setUploading] = useState(false),
+    [attachments, setAttachments] = useState(false)
+  const field = useRef<HTMLTextAreaElement>(null),
+    scroll = useRef<HTMLDivElement>(null),
+    sending = useRef(false),
+    commentRequest = useRef({ payload: '', id: '' })
   const path = `${postBase(clubId)}/${postId}/comments`
   useEffect(() => {
     let live = true
-    setPage({ items: [], nextCursor: null })
+    setLoading(true)
     setError('')
-    setBusy(true)
+    setPage({ items: [], nextCursor: null })
     socialRead<Page<CommentDto>>(user, path)
       .then((value) => live && setPage(value))
       .catch((err) => live && setError(readableError(err)))
-      .finally(() => live && setBusy(false))
+      .finally(() => live && setLoading(false))
     return () => {
       live = false
     }
-  }, [user?.uid, user?.emailVerified, path, revision])
-  async function action(suffix: string, body?: unknown, method = 'POST') {
+  }, [user?.uid, user?.emailVerified, path])
+  useEffect(() => {
+    const element = field.current
+    if (element) {
+      element.style.height = 'auto'
+      element.style.height = `${Math.min(120, element.scrollHeight)}px`
+    }
+  }, [body])
+  async function refreshOne(id: string, insert = false) {
+    const item = await socialRead<CommentDto>(user, `${path}/${id}`)
+    setPage((value) => ({
+      ...value,
+      items: value.items.some((c) => c.id === id)
+        ? value.items.map((c) => (c.id === id ? item : c))
+        : insert
+          ? [item, ...value.items]
+          : value.items,
+    }))
+  }
+  async function change(comment: CommentDto, suffix: string, payload?: unknown, method = 'POST') {
     setBusy(true)
     setError('')
     try {
-      await apiRequest(user!, path + suffix, method, body)
-      setRevision((value) => value + 1)
-      onCountChanged()
+      await apiRequest(user!, `${path}/${comment.id}${suffix}`, method, payload)
+      await refreshOne(comment.id)
+      if (method === 'DELETE') onCountChanged()
       return true
     } catch (err) {
       setError(readableError(err))
@@ -710,113 +692,156 @@ export function PostComments({
         user,
         `${path}?cursor=${encodeURIComponent(page.nextCursor!)}`,
       )
-      setPage((value) => ({ items: [...value.items, ...next.items], nextCursor: next.nextCursor }))
+      setPage((value) => ({
+        items: [
+          ...value.items,
+          ...next.items.filter((c) => !value.items.some((old) => old.id === c.id)),
+        ],
+        nextCursor: next.nextCursor,
+      }))
     } catch (err) {
       setError(readableError(err))
     } finally {
       setBusy(false)
     }
   }
+  const roots = page.items.filter((c) => !c.parentId),
+    orphans = page.items.filter(
+      (c) => c.parentId && !page.items.some((root) => root.id === c.parentId),
+    )
+  function reply(comment: CommentDto) {
+    setParent(comment)
+    field.current?.focus()
+  }
+  function row(comment: CommentDto) {
+    return (
+      <CommentRow
+        key={comment.id}
+        comment={comment}
+        busy={busy}
+        signedIn={!!user?.emailVerified}
+        publicMedia={clubId === null}
+        onReply={() => reply(comment)}
+        onLike={() => void change(comment, '/like', { value: !comment.liked })}
+        onDelete={() => change(comment, '', undefined, 'DELETE')}
+        onEdit={(text) => change(comment, '/edit', { body: text, version: comment.version })}
+      />
+    )
+  }
   return (
     <Sheet title="Comentários" onClose={onClose} className="comments-sheet">
       <section className="post-comments" aria-label="Comentários da publicação">
-        <div className="comments-scroll">
+        <div className="comments-scroll" ref={scroll}>
           {error && <p role="alert">{error}</p>}
-          {busy && !page.items.length && <p role="status">Abrindo comentários…</p>}
-          {page.items.map((comment) => (
-            <article
-              key={comment.id}
-              className={comment.parentId ? 'post-comment post-comment--reply' : 'post-comment'}
-            >
-              {comment.deleted ? (
-                <p>Comentário excluído.</p>
-              ) : (
-                <>
-                  <UserIdentity
-                    size="sm"
-                    id={comment.author?.id}
-                    name={comment.author?.name ?? 'Leitor'}
-                    avatarId={comment.author?.avatarId}
-                    meta={
-                      <>
-                        {date(comment.createdAt)}
-                        {comment.parentId ? ' · Resposta na conversa' : ''}
-                      </>
-                    }
-                  />
-                  <p className="preserve-text">{comment.body}</p>
-                  <div className="workspace-actions">
-                    <Button
-                      variant="ghost"
-                      disabled={busy || !user?.emailVerified}
-                      aria-pressed={comment.liked}
-                      onClick={() => void action(`/${comment.id}/like`, { value: !comment.liked })}
-                    >
-                      <Heart size={15} fill={comment.liked ? 'currentColor' : 'none'} />
-                      {comment.likes}
-                    </Button>
-                    {user?.emailVerified && !comment.parentId && (
-                      <Button variant="ghost" onClick={() => setParent(comment)}>
-                        Responder
-                      </Button>
-                    )}
-                    <details className="social-more">
-                      <summary className="social-action" aria-label="Opções do comentário">
-                        <MoreHorizontal size={20} />
-                      </summary>
-                      <div className="social-menu">
-                        <ReportAction kind="comment" id={comment.id} />
-                        {comment.canDelete && (
-                          <ConfirmAction
-                            label="Excluir comentário"
-                            disabled={busy}
-                            onConfirm={async () => {
-                              await action(`/${comment.id}`, undefined, 'DELETE')
-                            }}
-                          />
-                        )}
-                      </div>
-                    </details>
-                  </div>
-                </>
-              )}
-            </article>
+          {loading && <p role="status">Abrindo comentários…</p>}
+          {roots.map((root) => (
+            <div className="comment-thread" key={root.id}>
+              {row(root)}
+              <div className="comment-replies">
+                {page.items
+                  .filter((c) => c.parentId === root.id)
+                  .slice()
+                  .reverse()
+                  .map(row)}
+              </div>
+            </div>
+          ))}
+          {orphans.map((comment) => (
+            <div className="comment-thread" key={comment.id}>
+              <Button
+                variant="ghost"
+                disabled={busy}
+                onClick={() =>
+                  void refreshOne(comment.parentId!, true).catch((err) =>
+                    setError(readableError(err)),
+                  )
+                }
+              >
+                Ver comentário original
+              </Button>
+              <div className="comment-replies">{row(comment)}</div>
+            </div>
           ))}
           {page.nextCursor && (
             <Button variant="ghost" disabled={busy} onClick={() => void more()}>
               Mais comentários
             </Button>
           )}
+          {!loading && !page.items.length && (
+            <p className="comments-empty">Seja a primeira pessoa a comentar.</p>
+          )}
         </div>
-        {!busy && !page.items.length && (
-          <p className="comments-empty">Seja a primeira pessoa a comentar.</p>
-        )}
         {user?.emailVerified ? (
           <form
             className="comment-composer"
             onSubmit={(event) => {
               event.preventDefault()
-              void action('', { body, ...(parent ? { parentId: parent.id } : {}) }).then((ok) => {
-                if (ok) {
+              if (sending.current || uploading || !body.trim()) return
+              sending.current = true
+              setBusy(true)
+              setError('')
+              const input = {
+                  body,
+                  mediaIds: media.map((item) => item.id),
+                  ...(parent ? { parentId: parent.id } : {}),
+                },
+                payload = JSON.stringify(input)
+              if (commentRequest.current.payload !== payload)
+                commentRequest.current = { payload, id: crypto.randomUUID() }
+              void apiRequest<{ id: string }>(user, path, 'POST', {
+                ...input,
+                clientRequestId: commentRequest.current.id,
+              })
+                .then(async (result) => {
+                  await refreshOne(result.id, true)
                   setBody('')
                   setParent(null)
-                }
-              })
+                  setMedia([])
+                  setAttachments(false)
+                  commentRequest.current = { payload: '', id: '' }
+                  onCountChanged()
+                })
+                .catch((err) => setError(readableError(err)))
+                .finally(() => {
+                  sending.current = false
+                  setBusy(false)
+                })
             }}
           >
             {parent && (
-              <div className="workspace-actions">
-                <span>Respondendo a {parent.author?.name}</span>
+              <div className="comment-reply-target">
+                <span>Respondendo a {parent.author?.name ?? 'Leitor'}</span>
                 <Button type="button" variant="ghost" onClick={() => setParent(null)}>
                   Cancelar resposta
                 </Button>
               </div>
             )}
+            {attachments && (
+              <div className="comment-attachments-panel">
+                <MediaPicker
+                  compact
+                  imagesOnly
+                  clubId={clubId}
+                  value={media}
+                  onChange={setMedia}
+                  onBusy={setUploading}
+                />
+              </div>
+            )}
+            <button
+              type="button"
+              className="social-action"
+              aria-label="Adicionar fotos ao comentário"
+              aria-expanded={attachments}
+              onClick={() => setAttachments(!attachments)}
+            >
+              <ImagePlus size={20} />
+            </button>
             <label className="comment-field">
               <span className="sr-only">{parent ? 'Sua resposta' : 'Seu comentário'}</span>
               <textarea
+                ref={field}
                 required
-                maxLength={2000}
                 rows={1}
                 placeholder={
                   parent
@@ -831,7 +856,7 @@ export function PostComments({
               type="submit"
               className="social-action"
               aria-label="Publicar comentário"
-              disabled={busy || !body.trim()}
+              disabled={busy || uploading || !body.trim()}
             >
               <Send size={21} />
             </button>
@@ -843,5 +868,140 @@ export function PostComments({
         )}
       </section>
     </Sheet>
+  )
+}
+export function relativeTime(value: string) {
+  const timestamp = new Date(value).getTime()
+  if (!Number.isFinite(timestamp)) return ''
+  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000))
+  const unit =
+    seconds < 60 ? 'second' : seconds < 3600 ? 'minute' : seconds < 86400 ? 'hour' : 'day'
+  const divisor = unit === 'second' ? 1 : unit === 'minute' ? 60 : unit === 'hour' ? 3600 : 86400
+  return new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto', style: 'short' }).format(
+    -Math.floor(seconds / divisor),
+    unit,
+  )
+}
+function CommentRow({
+  comment,
+  busy,
+  signedIn,
+  publicMedia,
+  onReply,
+  onLike,
+  onDelete,
+  onEdit,
+}: {
+  comment: CommentDto
+  busy: boolean
+  signedIn: boolean
+  publicMedia: boolean
+  onReply: () => void
+  onLike: () => void
+  onDelete: () => Promise<boolean>
+  onEdit: (text: string) => Promise<boolean>
+}) {
+  const [edit, setEdit] = useState(false),
+    [draft, setDraft] = useState(comment.body)
+  if (comment.deleted)
+    return <article className="post-comment comment-tombstone">Comentário excluído.</article>
+  return (
+    <article className="post-comment">
+      <Link
+        className="comment-avatar"
+        to={`/app/people/${comment.author?.id}`}
+        aria-label={`Perfil de ${comment.author?.name ?? 'Leitor'}`}
+      >
+        <UserAvatar
+          name={comment.author?.name ?? 'Leitor'}
+          avatarId={comment.author?.avatarId}
+          size="sm"
+        />
+      </Link>
+      <div className="comment-content">
+        {edit ? (
+          <form
+            className="comment-edit"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void onEdit(draft).then((ok) => ok && setEdit(false))
+            }}
+          >
+            <label>
+              <span className="sr-only">Editar comentário</span>
+              <textarea required value={draft} onChange={(event) => setDraft(event.target.value)} />
+            </label>
+            <Button disabled={busy}>Salvar comentário</Button>
+            <Button type="button" variant="ghost" onClick={() => setEdit(false)}>
+              Cancelar edição
+            </Button>
+          </form>
+        ) : (
+          <p className="comment-copy">
+            <Link to={`/app/people/${comment.author?.id}`}>
+              <strong>{comment.author?.name ?? 'Leitor'}</strong>
+            </Link>{' '}
+            {comment.body}
+          </p>
+        )}
+        {!!comment.media?.length && (
+          <MediaCarousel media={comment.media} alt="Foto do comentário" publicMedia={publicMedia} />
+        )}
+        <div className="comment-meta">
+          <time dateTime={comment.createdAt} title={date(comment.createdAt)}>
+            {relativeTime(comment.createdAt)}
+          </time>
+          {comment.version > 0 && <span>Editado</span>}
+          {
+            <span className="comment-like-count">
+              {comment.likes} curtida{comment.likes === 1 ? '' : 's'}
+            </span>
+          }
+          {signedIn && (
+            <button type="button" onClick={onReply}>
+              Responder
+            </button>
+          )}
+          <details className="social-more">
+            <summary className="social-action" aria-label="Opções do comentário">
+              <MoreHorizontal size={17} />
+            </summary>
+            <div className="social-menu">
+              {comment.canEdit && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setDraft(comment.body)
+                    setEdit(true)
+                  }}
+                >
+                  Editar comentário
+                </Button>
+              )}
+              <ReportAction kind="comment" id={comment.id} />
+              {comment.canDelete && (
+                <ConfirmAction
+                  label="Excluir comentário"
+                  disabled={busy}
+                  onConfirm={async () => {
+                    await onDelete()
+                  }}
+                />
+              )}
+            </div>
+          </details>
+        </div>
+      </div>
+      <button
+        className="comment-like social-action"
+        type="button"
+        aria-label={comment.liked ? 'Descurtir comentário' : 'Curtir comentário'}
+        aria-pressed={comment.liked}
+        disabled={busy || !signedIn}
+        onClick={onLike}
+      >
+        <Heart size={16} fill={comment.liked ? 'currentColor' : 'none'} />
+      </button>
+    </article>
   )
 }

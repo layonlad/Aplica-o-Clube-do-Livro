@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useLayoutEffect, useState, type ReactNode } from 'react'
 import type { ThemeTokens } from '../types/domain'
 import { appearanceSchema } from '../../server/src/appearance-schema'
 import { APPEARANCE_KEY, applyAppearance, defaultAppearance, type Appearance } from './appearance'
@@ -75,12 +75,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(theme)) } catch { /* armazenamento indisponível */ }
   }, [theme])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const active = preview ?? appearance
     applyAppearance(active)
     // Cores livres do protótipo só valem quando a aparência está no tema padrão.
     const root = document.documentElement
     if (active.preset === 'padrao' && import.meta.env.VITE_APP_MODE !== 'connected') {
+      if (!active.background && theme.surface !== defaultTheme.surface) root.style.setProperty('--bg', theme.surface)
       if (theme.primary.toLowerCase() !== defaultTheme.primary) root.style.setProperty('--brand', theme.primary)
       if (theme.accent.toLowerCase() !== defaultTheme.accent) root.style.setProperty('--accent', theme.accent)
     }
@@ -89,7 +90,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const onChange = () => applyAppearance(active)
     media.addEventListener('change', onChange)
     return () => media.removeEventListener('change', onChange)
-  }, [appearance, preview, theme.primary, theme.accent])
+  }, [appearance, preview, theme.primary, theme.accent, theme.surface])
 
   const saveAppearance = useCallback((next: Appearance) => {
     setAppearance(next)

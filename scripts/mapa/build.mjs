@@ -104,12 +104,14 @@ const testes = {
 const workflows = list('.github/workflows', (n) => /\.ya?ml$/.test(n)).map((arquivo) => {
   const y = read('.github/workflows/' + arquivo)
   const nome = (y.match(/^name:\s*(.+)$/m) ?? [])[1] ?? arquivo
-  const gatilhos = [/push:/.test(y) && 'push' + ((y.match(/branches:\s*\[([^\]]+)\]/) ?? [])[1] ? ` (${(y.match(/branches:\s*\[([^\]]+)\]/) ?? [])[1].trim()})` : ''), /pull_request:/.test(y) && 'pull request', /workflow_dispatch:/.test(y) && 'manual'].filter(Boolean)
+  const gatilhos = [/push:/.test(y) && 'push' + ((y.match(/branches:\s*\[([^\]]+)\]/) ?? [])[1] ? ` (${(y.match(/branches:\s*\[([^\]]+)\]/) ?? [])[1].trim()})` : ''), /pull_request:/.test(y) && 'pull request', /workflow_dispatch:/.test(y) && 'manual', /schedule:/.test(y) && 'agendado'].filter(Boolean)
   return { arquivo, nome: nome.trim(), gatilhos }
 })
 
 // Só os NOMES das configurações (nunca valores).
+const nomesEnv = [...walk('server/src',p=>p.endsWith('.ts')),...walk('server/scripts',p=>p.endsWith('.ts'))].flatMap(file=>[...read(file).matchAll(/(?:process\.env|env)\.([A-Z][A-Z0-9_]+)/g)].map(m=>m[1]))
 const configuracoes = [...new Set([
+  ...nomesEnv,
   ...[...read('server/src/config.ts').matchAll(/^\s{2}([A-Z][A-Z0-9_]+):/gm)].map((m) => m[1]),
   ...(exists('server/src/private-storage.ts') ? [...read('server/src/private-storage.ts').matchAll(/(?:'|env\.)((?:AWS|MEDIA)_[A-Z0-9_]+)/g)].map((m) => m[1]) : []),
   ...(exists('render.yaml') ? [...read('render.yaml').matchAll(/key:\s*([A-Z0-9_]+)/g)].map((m) => m[1]) : []),

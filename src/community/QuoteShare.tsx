@@ -82,7 +82,7 @@ export function QuoteShare({
             <label>
               Seu comentário
               <textarea
-                maxLength={5000}
+
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
               />

@@ -212,12 +212,13 @@ export class AlbumService {
           'PUBLIC_SHARE_DISABLED',
           'A administração não autorizou compartilhar este registro na comunidade.',
         )
+      if(row.kind!=='image')throw new HttpError(400,'PHOTOS_ONLY','A comunidade aceita somente fotografias neste compartilhamento.')
       return row as { kind: 'image' | 'video' }
     }
     const check = () => transaction(this.pool, checkClient)
     const source = await check(),
       file = await mediaService.content(user.id, mediaId, false),
-      copy = await mediaService.upload(user.id, null, source.kind, Buffer.from(file.bytes))
+      copy = await mediaService.upload(user.id, null, source.kind, Buffer.from(file.bytes),{sourceCopy:true})
     // Recheck after processing/storage so revocation during transfer cannot publish.
     return new PostService(this.pool).create(
       user,
@@ -357,7 +358,7 @@ export class AlbumService {
       )
       await client.query('DELETE FROM post_media WHERE post_id=$1', [photo.post_id])
       await client.query(
-        "UPDATE media_objects SET state='deleted',deleted_at=now() WHERE id=$1 AND NOT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=$1 AND p.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM album_media am WHERE am.media_id=$1) AND NOT EXISTS(SELECT 1 FROM forum_topic_media fm JOIN forum_topics t ON t.id=fm.topic_id WHERE fm.media_id=$1 AND t.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM forum_reply_media fm JOIN forum_replies r ON r.id=fm.reply_id JOIN forum_topics t ON t.id=r.topic_id WHERE fm.media_id=$1 AND r.deleted_at IS NULL AND t.deleted_at IS NULL)",
+        "UPDATE media_objects SET state='deleted',deleted_at=now() WHERE id=$1 AND NOT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=$1 AND p.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM comment_media cm JOIN post_comments pc ON pc.id=cm.comment_id JOIN social_posts sp ON sp.id=pc.post_id WHERE cm.media_id=$1 AND pc.deleted_at IS NULL AND sp.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM album_media am WHERE am.media_id=$1) AND NOT EXISTS(SELECT 1 FROM forum_topic_media fm JOIN forum_topics t ON t.id=fm.topic_id WHERE fm.media_id=$1 AND t.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM forum_reply_media fm JOIN forum_replies r ON r.id=fm.reply_id JOIN forum_topics t ON t.id=r.topic_id WHERE fm.media_id=$1 AND r.deleted_at IS NULL AND t.deleted_at IS NULL)",
         [mediaId],
       )
       await client.query(

@@ -5,7 +5,7 @@ import type { PrivateStorage } from './private-storage.js'
 import { PostService } from './post-service.js'
 import { AlbumService } from './album-service.js'
 import { MediaService } from './media-service.js'
-import { postInput, postQuery } from './community-contracts.js'
+import { postInput, postQuery, commentInput, commentEditInput } from './community-contracts.js'
 import { pageInput } from './pagination.js'
 const clubParams = z.object({ clubId: z.uuid() }),
   postParams = clubParams.extend({ postId: z.uuid() }),
@@ -39,7 +39,7 @@ export async function registerCommunityRoutes(
   )
   api.post(
     '/clubs/:clubId/posts',
-    { config: { rateLimit: { max: 15, timeWindow: '1 minute' } } },
+    { bodyLimit: 262144, config: { rateLimit: { max: 15, timeWindow: '1 minute' } } },
     async (request, reply) =>
       reply
         .code(201)
@@ -55,7 +55,7 @@ export async function registerCommunityRoutes(
     const { clubId, postId } = postParams.parse(request.params)
     return posts.get(request.user, clubId, postId)
   })
-  api.post('/clubs/:clubId/posts/:postId/edit', (request) => {
+  api.post('/clubs/:clubId/posts/:postId/edit', { bodyLimit: 262144 }, (request) => {
     const { clubId, postId } = postParams.parse(request.params)
     return posts.edit(
       request.user,
@@ -63,7 +63,7 @@ export async function registerCommunityRoutes(
       postId,
       z
         .object({
-          body: z.string().trim().max(5000),
+          body: z.string().trim().max(50000),
           quote: z.string().trim().max(280),
           source: z.string().trim().max(500),
           version: z.number().int().min(0),
@@ -98,20 +98,12 @@ export async function registerCommunityRoutes(
   })
   api.post(
     '/clubs/:clubId/posts/:postId/comments',
-    { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } },
+    { bodyLimit: 262144, config: { rateLimit: { max: 30, timeWindow: '1 minute' } } },
     async (request, reply) => {
       const { clubId, postId } = postParams.parse(request.params)
-      return reply.code(201).send(
-        await posts.comment(
-          request.user,
-          clubId,
-          postId,
-          z
-            .object({ body: z.string().trim().min(1).max(2000), parentId: z.uuid().optional() })
-            .strict()
-            .parse(request.body),
-        ),
-      )
+      return reply
+        .code(201)
+        .send(await posts.comment(request.user, clubId, postId, commentInput.parse(request.body)))
     },
   )
   api.delete('/clubs/:clubId/posts/:postId/comments/:commentId', async (request, reply) => {
@@ -133,6 +125,28 @@ export async function registerCommunityRoutes(
       bool.parse(request.body).value,
     )
   })
+  api.get('/clubs/:clubId/posts/:postId/comments/:commentId', (request) => {
+    const { clubId, postId, commentId } = postParams
+      .extend({ commentId: z.uuid() })
+      .parse(request.params)
+    return posts.oneComment(request.user, clubId, postId, commentId)
+  })
+  api.post(
+    '/clubs/:clubId/posts/:postId/comments/:commentId/edit',
+    { bodyLimit: 262144 },
+    (request) => {
+      const { clubId, postId, commentId } = postParams
+        .extend({ commentId: z.uuid() })
+        .parse(request.params)
+      return posts.editComment(
+        request.user,
+        clubId,
+        postId,
+        commentId,
+        commentEditInput.parse(request.body),
+      )
+    },
+  )
   api.get('/clubs/:clubId/media/drafts', (request) =>
     media.drafts(
       request.user.id,
@@ -172,7 +186,7 @@ export async function registerCommunityRoutes(
     const { id } = z.object({ id: z.uuid() }).parse(request.params),
       input = z
         .object({
-          variant: z.enum(['thumbnail', 'full']).default('thumbnail'),
+          variant: z.enum(['thumbnail', 'feed', 'full']).default('thumbnail'),
           download: z.enum(['1']).optional(),
         })
         .strict()
@@ -180,7 +194,7 @@ export async function registerCommunityRoutes(
     const value = await media.content(
       request.user.id,
       id,
-      input.variant === 'thumbnail',
+      input.variant === 'thumbnail' ? true : input.variant === 'feed' ? 'feed' : false,
       input.download === '1',
     )
     return reply
@@ -221,9 +235,12 @@ export async function registerCommunityRoutes(
     return albums.get(request.user, clubId, albumId)
   })
   api.post('/clubs/:clubId/albums/:albumId/cover', (request) => {
-    const {clubId,albumId} = albumParams.parse(request.params)
-    const input = z.object({mediaId:z.uuid().nullable(),version:z.number().int().min(0)}).strict().parse(request.body)
-    return albums.setCover(request.user,clubId,albumId,input.mediaId,input.version)
+    const { clubId, albumId } = albumParams.parse(request.params)
+    const input = z
+      .object({ mediaId: z.uuid().nullable(), version: z.number().int().min(0) })
+      .strict()
+      .parse(request.body)
+    return albums.setCover(request.user, clubId, albumId, input.mediaId, input.version)
   })
   api.post('/clubs/:clubId/albums/:albumId/policy', (request) => {
     const { clubId, albumId } = albumParams.parse(request.params)

@@ -5,6 +5,7 @@ import {
   publicScope,
   publicMissing,
 } from './public-policy.js'
+import { createHash } from 'node:crypto'
 import type { PostDto } from './community-contracts.js'
 import type { Pool, PoolClient } from 'pg'
 import type { UserProfile, Role } from './contracts.js'
@@ -14,6 +15,7 @@ import { can } from './permissions.js'
 import { HttpError } from './errors.js'
 import { decodeCursor, pageOf } from './pagination.js'
 export interface NewPost {
+  clientRequestId?: string
   kind:
     | 'reflection'
     | 'review'
@@ -103,11 +105,15 @@ export class PostService {
       ])
     await client.query('DELETE FROM post_mentions WHERE post_id=$1', [id])
     const handles = [
-      ...new Set([...text.matchAll(/@([a-z0-9_]{3,30})/g)].map((match) => match[1])),
+      ...new Set(
+        [...text.matchAll(/(?:^|[^a-z0-9_])@([a-z0-9_]{3,30})\b/gi)].map((match) =>
+          match[1].toLowerCase(),
+        ),
+      ),
     ].slice(0, 10)
     if (handles.length)
       await client.query(
-        `INSERT INTO post_mentions(post_id,user_id) SELECT p.id,pr.user_id FROM social_posts p CROSS JOIN profiles pr WHERE p.id=$1 AND pr.handle=ANY($2::text[]) AND pr.is_public AND ${notBlocked('pr.user_id', 'p.author_user_id')} AND (p.audience='public' OR EXISTS(SELECT 1 FROM club_memberships cm WHERE cm.club_id=p.club_id AND cm.user_id=pr.user_id AND cm.status='active')) ON CONFLICT DO NOTHING`,
+        `INSERT INTO post_mentions(post_id,user_id) SELECT p.id,pr.user_id FROM social_posts p CROSS JOIN profiles pr WHERE p.id=$1 AND pr.handle=ANY($2::text[]) AND ${notBlocked('pr.user_id', 'p.author_user_id')} AND ((p.audience='public' AND pr.is_public) OR EXISTS(SELECT 1 FROM club_memberships cm WHERE cm.club_id=p.club_id AND cm.user_id=pr.user_id AND cm.status='active')) ON CONFLICT DO NOTHING`,
         [id, handles],
       )
   }
@@ -163,7 +169,11 @@ export class PostService {
    * Publicações de mural feitas por `authorId` somente nos clubes em que o visitante tem associação ativa agora.
    * A interseção é calculada no SQL: clubes que o visitante não frequenta nunca entram na consulta nem no DTO.
    */
-  sharedClubPosts(viewer: UserProfile, authorId: string, input: { limit: number; cursor?: string }) {
+  sharedClubPosts(
+    viewer: UserProfile,
+    authorId: string,
+    input: { limit: number; cursor?: string },
+  ) {
     return transaction(this.pool, async (client) => {
       const cursor = decodeCursor(input.cursor)
       const { rows } = await client.query(
@@ -229,10 +239,25 @@ export class PostService {
           'INVALID_POLL',
           'Opções de votação só podem ser usadas em enquetes.',
         )
+      const requestHash = createHash('sha256')
+        .update(
+          JSON.stringify([
+            clubId,
+            input.kind,
+            input.body,
+            input.bookTitle,
+            input.bookAuthor,
+            input.quote,
+            input.source,
+            input.mediaIds,
+            input.options,
+          ]),
+        )
+        .digest('hex')
       const {
         rows: [post],
       } = await client.query(
-        'INSERT INTO social_posts(author_user_id,club_id,audience,kind,body,book_title,book_author,quote,source) VALUES($1,$2,$9,$3,$4,$5,$6,$7,$8) RETURNING id',
+        'INSERT INTO social_posts(author_user_id,club_id,audience,kind,body,book_title,book_author,quote,source,client_request_id,request_hash) VALUES($1,$2,$9,$3,$4,$5,$6,$7,$8,$10,$11) ON CONFLICT(author_user_id,client_request_id) DO NOTHING RETURNING id',
         [
           user.id,
           clubId,
@@ -243,11 +268,28 @@ export class PostService {
           input.quote,
           input.source,
           clubId === null ? 'public' : 'club',
+          input.clientRequestId ?? null,
+          requestHash,
         ],
       )
+      if (!post) {
+        const prior = (
+          await client.query(
+            'SELECT id,request_hash FROM social_posts WHERE author_user_id=$1 AND client_request_id=$2',
+            [user.id, input.clientRequestId],
+          )
+        ).rows[0]
+        if (!prior || prior.request_hash !== requestHash)
+          throw new HttpError(
+            409,
+            'REQUEST_CHANGED',
+            'Este envio já foi usado para outra publicação.',
+          )
+        return { id: prior.id }
+      }
       for (const [position, id] of input.mediaIds.entries()) {
         const media = await client.query(
-          "SELECT id FROM media_objects WHERE id=$1 AND club_id IS NOT DISTINCT FROM $2::uuid AND owner_user_id=$3 AND state='active' FOR UPDATE",
+          "SELECT id FROM media_objects WHERE id=$1 AND club_id IS NOT DISTINCT FROM $2::uuid AND owner_user_id=$3 AND state='active' AND kind='image' FOR UPDATE",
           [id, clubId, user.id],
         )
         if (!media.rowCount)
@@ -375,7 +417,7 @@ export class PostService {
     user: UserProfile | null,
     clubId: string | null,
     id: string,
-    input: { limit: number; cursor?: string },
+    input: { limit: number; cursor?: string; commentId?: string },
   ) {
     return transaction(this.pool, async (client) => {
       const club = await this.access(client, user, clubId, true)
@@ -389,8 +431,10 @@ export class PostService {
         `SELECT c.id,c.parent_id AS "parentId",CASE WHEN c.deleted_at IS NULL THEN c.body ELSE '' END AS body,c.version,c.created_at AS "createdAt",c.created_at::text AS "sortTime",c.deleted_at IS NOT NULL AS deleted,
       CASE WHEN c.deleted_at IS NULL THEN jsonb_build_object('id',u.id,'name',CASE WHEN $7::boolean THEN u.name ELSE (SELECT display_name FROM profiles WHERE user_id=u.id) END,'avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) ELSE NULL END AS author,
       (SELECT count(*)::int FROM comment_likes l WHERE l.comment_id=c.id) AS likes,EXISTS(SELECT 1 FROM comment_likes l WHERE l.comment_id=c.id AND l.user_id=$2) AS liked,
-      (c.author_user_id=$2 OR $6::boolean) AND c.deleted_at IS NULL AS "canDelete"
-      FROM post_comments c JOIN users u ON u.id=c.author_user_id WHERE c.post_id=$1 AND ($7::boolean OR (EXISTS(SELECT 1 FROM profiles pr WHERE pr.user_id=c.author_user_id AND pr.is_public) AND ${notBlocked('c.author_user_id', '$2')})) AND ($3::timestamptz IS NULL OR (c.created_at,c.id)<($3,$4::uuid)) ORDER BY c.created_at DESC,c.id DESC LIMIT $5`,
+      (c.author_user_id=$2 OR $6::boolean) AND c.deleted_at IS NULL AS "canDelete",
+      c.author_user_id=$2 AND c.deleted_at IS NULL AS "canEdit",
+      CASE WHEN c.deleted_at IS NULL THEN COALESCE((SELECT jsonb_agg(jsonb_build_object('id',m.id,'kind',m.kind,'width',m.width,'height',m.height,'duration',m.duration) ORDER BY cm.position) FROM comment_media cm JOIN media_objects m ON m.id=cm.media_id WHERE cm.comment_id=c.id AND m.state='active'),'[]') ELSE '[]'::jsonb END AS media
+      FROM post_comments c JOIN users u ON u.id=c.author_user_id WHERE c.post_id=$1 AND ${notBlocked('c.author_user_id', '$2')} AND ($8::uuid IS NULL OR c.id=$8) AND ($7::boolean OR (EXISTS(SELECT 1 FROM profiles pr WHERE pr.user_id=c.author_user_id AND pr.is_public) AND ${notBlocked('c.author_user_id', '$2')})) AND ($3::timestamptz IS NULL OR (c.created_at,c.id)<($3,$4::uuid)) ORDER BY c.created_at DESC,c.id DESC LIMIT $5`,
         [
           id,
           user?.id ?? null,
@@ -399,6 +443,7 @@ export class PostService {
           input.limit + 1,
           can(club.role, 'moderate') || (clubId === null && (await this.moderator(client, user))),
           clubId !== null,
+          input.commentId ?? null,
         ],
       )
       return pageOf(rows, input.limit)
@@ -408,18 +453,22 @@ export class PostService {
     user: UserProfile,
     clubId: string | null,
     id: string,
-    input: { body: string; parentId?: string },
+    input: { body: string; parentId?: string; mediaIds?: string[]; clientRequestId?: string },
   ) {
     return transaction(this.pool, async (client) => {
       await this.access(client, user, clubId)
       await this.post(client, clubId, id, user.id)
       if (clubId === null) await requirePublicProfile(client, user.id)
+      const requestHash = createHash('sha256')
+        .update(JSON.stringify([id, input.body, input.parentId ?? null, input.mediaIds ?? []]))
+        .digest('hex')
+      let replyRecipient: string | undefined
       if (input.parentId) {
         const {
           rows: [parent],
         } = await client.query(
-          'SELECT parent_id,deleted_at,author_user_id FROM post_comments WHERE id=$1 AND post_id=$2',
-          [input.parentId, id],
+          `SELECT parent_id,deleted_at,author_user_id FROM post_comments WHERE id=$1 AND post_id=$2 AND ${notBlocked('author_user_id', '$3')}`,
+          [input.parentId, id, user.id],
         )
         if (!parent || parent.deleted_at) throw missing()
         if (
@@ -432,28 +481,123 @@ export class PostService {
           ).rowCount
         )
           throw missing()
-        if (parent.parent_id)
-          throw new HttpError(
-            400,
-            'REPLY_DEPTH',
-            'Responda ao comentário original para manter a conversa organizada.',
-          )
+        // Replies stay grouped under their original comment, even when answering a reply.
+        if (parent.parent_id) replyRecipient = parent.author_user_id
+        input = { ...input, parentId: parent.parent_id ?? input.parentId }
       }
       const {
         rows: [row],
       } = await client.query(
-        'INSERT INTO post_comments(post_id,author_user_id,body,parent_id) VALUES($1,$2,$3,$4) RETURNING id',
-        [id, user.id, input.body, input.parentId ?? null],
+        'INSERT INTO post_comments(post_id,author_user_id,body,parent_id,client_request_id,request_hash) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(author_user_id,client_request_id) DO NOTHING RETURNING id',
+        [
+          id,
+          user.id,
+          input.body,
+          input.parentId ?? null,
+          input.clientRequestId ?? null,
+          requestHash,
+        ],
       )
-      const handles = [
-        ...new Set([...input.body.matchAll(/@([a-z0-9_]{3,30})/g)].map((match) => match[1])),
-      ].slice(0, 10)
-      if (handles.length)
+      if (!row) {
+        const prior = (
+          await client.query(
+            'SELECT id,request_hash FROM post_comments WHERE author_user_id=$1 AND client_request_id=$2',
+            [user.id, input.clientRequestId],
+          )
+        ).rows[0]
+        if (!prior || prior.request_hash !== requestHash)
+          throw new HttpError(
+            409,
+            'REQUEST_CHANGED',
+            'Este envio já foi usado para outro comentário.',
+          )
+        return { id: prior.id }
+      }
+      for (const [position, mediaId] of (input.mediaIds ?? []).entries()) {
+        const file = await client.query(
+          "SELECT id FROM media_objects WHERE id=$1 AND owner_user_id=$2 AND club_id IS NOT DISTINCT FROM $3::uuid AND kind='image' AND state='active' FOR UPDATE",
+          [mediaId, user.id, clubId],
+        )
+        if (!file.rowCount)
+          throw new HttpError(
+            400,
+            'INVALID_MEDIA',
+            'Use somente fotos suas enviadas para esta conversa.',
+          )
         await client.query(
-          `SELECT emit_notification(pr.user_id,$2,p.club_id,'mention','post',p.id,$3::uuid,'mentions','comment-mention:'||$3::uuid::text||':'||pr.user_id) FROM profiles pr CROSS JOIN social_posts p WHERE p.id=$1 AND pr.is_public AND pr.handle=ANY($4::text[]) AND ${notBlocked('pr.user_id', '$2')} AND (p.audience='public' OR EXISTS(SELECT 1 FROM club_memberships m WHERE m.club_id=p.club_id AND m.user_id=pr.user_id AND m.status='active'))`,
-          [id, user.id, row.id, handles],
+          'INSERT INTO comment_media(comment_id,media_id,position,post_id,scope_id) VALUES($1,$2,$3,$4,$5)',
+          [row.id, mediaId, position, id, clubId ?? publicScope],
+        )
+      }
+      await this.commentMentions(client, user, id, row.id, input.body)
+      if (replyRecipient)
+        await client.query(
+          "SELECT emit_notification($1,$2,$3,'reply','post',$4,$5,'interactions','reply:'||$5::uuid)",
+          [replyRecipient, user.id, clubId, id, row.id],
         )
       return row
+    })
+  }
+  private async commentMentions(
+    client: PoolClient,
+    user: UserProfile,
+    postId: string,
+    commentId: string,
+    body: string,
+  ) {
+    await client.query('DELETE FROM comment_mentions WHERE comment_id=$1', [commentId])
+    const handles = [
+      ...new Set(
+        [...body.matchAll(/(?:^|[^a-z0-9_])@([a-z0-9_]{3,30})\b/gi)].map((m) => m[1].toLowerCase()),
+      ),
+    ].slice(0, 10)
+    if (!handles.length) return
+    await client.query(
+      `INSERT INTO comment_mentions(comment_id,user_id) SELECT $3,pr.user_id FROM profiles pr CROSS JOIN social_posts p WHERE p.id=$1 AND pr.handle=ANY($4::text[]) AND ${notBlocked('pr.user_id', '$2')} AND ((p.audience='public' AND pr.is_public) OR EXISTS(SELECT 1 FROM club_memberships m WHERE m.club_id=p.club_id AND m.user_id=pr.user_id AND m.status='active')) ON CONFLICT DO NOTHING`,
+      [postId, user.id, commentId, handles],
+    )
+    await client.query(
+      `SELECT emit_notification(cm.user_id,$2,p.club_id,'mention','post',p.id,$3::uuid,'mentions','comment-mention:'||$3::uuid::text||':'||cm.user_id) FROM comment_mentions cm JOIN social_posts p ON p.id=$1 WHERE cm.comment_id=$3`,
+      [postId, user.id, commentId],
+    )
+  }
+  async oneComment(
+    user: UserProfile | null,
+    clubId: string | null,
+    postId: string,
+    commentId: string,
+  ) {
+    const page = await this.comments(user, clubId, postId, { limit: 1, commentId })
+    if (!page.items.length) throw missing()
+    return page.items[0]
+  }
+  editComment(
+    user: UserProfile,
+    clubId: string | null,
+    postId: string,
+    commentId: string,
+    input: { body: string; version: number },
+  ) {
+    return transaction(this.pool, async (client) => {
+      await this.access(client, user, clubId)
+      await this.post(client, clubId, postId, user.id)
+      const row = (
+        await client.query(
+          'SELECT author_user_id,version FROM post_comments WHERE id=$1 AND post_id=$2 AND deleted_at IS NULL FOR UPDATE',
+          [commentId, postId],
+        )
+      ).rows[0]
+      if (!row) throw missing()
+      if (row.author_user_id !== user.id)
+        throw new HttpError(403, 'ACCESS_DENIED', 'Você só pode editar seus comentários.')
+      if (row.version !== input.version)
+        throw new HttpError(409, 'COMMENT_CHANGED', 'O comentário mudou. Atualize antes de editar.')
+      await client.query(
+        'UPDATE post_comments SET body=$2,version=version+1,updated_at=now() WHERE id=$1',
+        [commentId, input.body],
+      )
+      await this.commentMentions(client, user, postId, commentId, input.body)
+      return { updated: true }
     })
   }
   removeComment(user: UserProfile, clubId: string | null, id: string, commentId: string) {

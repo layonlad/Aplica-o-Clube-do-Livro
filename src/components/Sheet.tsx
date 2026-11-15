@@ -20,18 +20,23 @@ export function Sheet({
   useEffect(() => {
     const dialog = ref.current!,
       previous = document.body.style.overflow
-    const resize = () =>
+    const resize = () => {
+      const viewport = window.visualViewport
+      dialog.style.setProperty('--sheet-height', `${viewport?.height ?? window.innerHeight}px`)
       dialog.style.setProperty(
-        '--sheet-height',
-        `${window.visualViewport?.height ?? window.innerHeight}px`,
+        '--sheet-bottom',
+        `${Math.max(0, window.innerHeight - (viewport ? viewport.height + viewport.offsetTop : window.innerHeight))}px`,
       )
+    }
     resize()
     window.visualViewport?.addEventListener('resize', resize)
+    window.visualViewport?.addEventListener('scroll', resize)
     document.body.style.overflow = 'hidden'
     if (dialog.showModal) dialog.showModal()
     else dialog.setAttribute('open', '')
     return () => {
       window.visualViewport?.removeEventListener('resize', resize)
+      window.visualViewport?.removeEventListener('scroll', resize)
       dialog.close?.()
       document.body.style.overflow = previous
     }

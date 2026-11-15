@@ -11,6 +11,7 @@ sharp.cache({ memory: 16, files: 0, items: 16 })
 export interface ProcessedMedia {
   bytes: Buffer
   thumbnail: Buffer
+  feed?: Buffer
   kind: 'image' | 'video'
   mimeType: 'image/webp' | 'video/mp4'
   width: number
@@ -27,7 +28,11 @@ const invalid = () =>
 const isGif = (bytes: Buffer) => bytes.length > 6 && bytes.toString('ascii', 0, 4) === 'GIF8'
 /** GIFs (inclusive animados) viram WebP animado, menor e com o mesmo movimento. */
 async function processGif(bytes: Buffer): Promise<ProcessedMedia> {
-  const input = sharp(bytes, { animated: true, limitInputPixels: 40000000, failOn: 'error' }).timeout({
+  const input = sharp(bytes, {
+      animated: true,
+      limitInputPixels: 40000000,
+      failOn: 'error',
+    }).timeout({
       seconds: 20,
     }),
     metadata = await input.metadata()
@@ -58,6 +63,7 @@ export async function processMedia(
   bytes: Buffer,
   kind: 'image' | 'video',
   env: NodeJS.ProcessEnv = process.env,
+  photoInputLimit: 5000000 | 10000000 = 5000000,
 ): Promise<ProcessedMedia> {
   if (processing)
     throw new HttpError(
@@ -66,7 +72,10 @@ export async function processMedia(
       'Outro arquivo está sendo preparado. Aguarde alguns segundos e tente novamente.',
     )
   const gif = kind === 'image' && isGif(bytes)
-  if (!bytes.length || bytes.length > (kind === 'image' ? (gif ? 8000000 : 5000000) : 10000000))
+  if (
+    !bytes.length ||
+    bytes.length > (kind === 'image' ? (gif ? 8000000 : photoInputLimit) : 10000000)
+  )
     throw invalid()
   processing = true
   try {
@@ -258,6 +267,80 @@ export async function processMedia(
         'O processamento de vídeo ainda não está disponível neste ambiente.',
       )
     throw invalid()
+  } finally {
+    processing = false
+  }
+}
+
+/** A disk-backed source bounds memory for originals up to 100 MB. One codec job per process. */
+export async function processPhotoFile(
+  path: string,
+  expectedType: string,
+): Promise<ProcessedMedia> {
+  if (processing)
+    throw new HttpError(
+      429,
+      'MEDIA_BUSY',
+      'Outro arquivo está sendo preparado. Tente novamente em alguns segundos.',
+    )
+  processing = true
+  try {
+    const input = sharp(path, {
+      limitInputPixels: 40000000,
+      animated: false,
+      failOn: 'error',
+      sequentialRead: true,
+    }).timeout({ seconds: 25 })
+    const meta = await input.metadata()
+    const formats: Record<string, string> = {
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      webp: 'image/webp',
+    }
+    if (
+      !meta.format ||
+      formats[meta.format] !== expectedType ||
+      !meta.width ||
+      !meta.height ||
+      (meta.pages ?? 1) > 1
+    )
+      throw new HttpError(
+        400,
+        'INVALID_PHOTO',
+        'Selecione uma fotografia JPEG, PNG ou WebP válida.',
+      )
+    const full = await input
+      .rotate()
+      .resize({ width: 2560, height: 2560, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 86, effort: 4 })
+      .toBuffer({ resolveWithObject: true })
+    const feed = await sharp(full.data)
+      .resize({ width: 1440, height: 1440, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 84 })
+      .toBuffer()
+    const thumbnail = await sharp(full.data)
+      .resize({ width: 480, height: 480, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 68 })
+      .toBuffer()
+    if (full.data.length > 10000000 || feed.length > 10000000 || thumbnail.length > 500000)
+      throw new HttpError(400, 'INVALID_PHOTO', 'A foto não pôde ser otimizada com segurança.')
+    return {
+      bytes: full.data,
+      feed,
+      thumbnail,
+      width: full.info.width,
+      height: full.info.height,
+      kind: 'image',
+      mimeType: 'image/webp',
+      duration: null,
+    }
+  } catch (error) {
+    if (error instanceof HttpError) throw error
+    throw new HttpError(
+      400,
+      'INVALID_PHOTO',
+      'Não foi possível processar esta foto. Use JPEG, PNG ou WebP com até 40 megapixels.',
+    )
   } finally {
     processing = false
   }

@@ -1,3 +1,6 @@
+import {registerPhotoMaintenance} from './photo-maintenance.js'
+import {PushSubscriptions,subscriptionInput} from './push-subscriptions.js'
+import {registerPhotoRoutes} from './photo-routes.js'
 import {ClubFiles} from './club-files.js'
 import {registerEventRoutes} from './event-routes.js'
 import {ModerationService} from './moderation-service.js'
@@ -38,7 +41,7 @@ const inviteInput = z.object({
   expiresInDays: z.number().int().min(1).max(30).default(7),
 }).strict().refine((data) => !data.email || data.maxUses === 1, 'Convites por e-mail devem ter um único uso.')
 
-export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage;moderatorUids?:string[] }) {
+export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage;moderatorUids?:string[];pushPublicKey?:string;photoCleanupToken?:string;afterSocialMutation?:()=>void }) {
   const app = Fastify({
     logger: options.logger ? { redact: ['req.headers.authorization', 'req.body', 'res.headers'] } : false,
     logController: new LogController({ disableRequestLogging: true }),
@@ -52,6 +55,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
   const files=new PrivateFiles(options.pool,options.storage)
   const management=new ClubManagement(options.pool)
   const notifications=new NotificationService(options.pool)
+  const push=new PushSubscriptions(options.pool,options.pushPublicKey)
   await app.register(cors, { origin: options.origin, methods: ['GET', 'POST', 'DELETE'], allowedHeaders: ['Authorization', 'Content-Type'] })
   await app.register(helmet)
   await app.register(rateLimit, { max: options.rateMax ?? 120, timeWindow: '1 minute' })
@@ -70,6 +74,8 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     request.log.error({ requestId: request.id, route: request.routeOptions.url }, 'Falha interna na API')
     return reply.code(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Não foi possível concluir a operação.' } })
   })
+  if(options.afterSocialMutation)app.addHook('onResponse',async(request,reply)=>{if(reply.statusCode<300&&request.method!=='GET'&&/\/(posts|forum|events|invites|follow|join-requests|invitations)(?:[/?]|$)/.test(request.url))options.afterSocialMutation!()})
+  registerPhotoMaintenance(app,options.pool,options.storage,options.photoCleanupToken)
   app.get('/health', async () => {
     try { await options.pool.query('SELECT 1'); return { status: 'ok' } }
     catch { throw new HttpError(503, 'DATABASE_UNAVAILABLE', 'Banco temporariamente indisponível.') }
@@ -91,11 +97,17 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
   await app.register(async (api) => {
     api.addHook('onRequest',authenticate)
     await registerPublicMutations(api,options.pool,options.storage,options.moderatorUids)
+    api.get('/me/push/config',()=>push.config())
+    api.post('/me/push/subscriptions',{config:{rateLimit:{max:5,timeWindow:'1 minute',hook:'preHandler',keyGenerator:request=>request.user.id}}},request=>push.register(request.user,subscriptionInput.parse(request.body)))
+    api.post('/me/push/status',request=>push.status(request.user,z.object({endpoint:z.string().max(2048)}).strict().parse(request.body).endpoint))
+    api.delete('/me/push/subscriptions',request=>push.revoke(request.user,z.object({endpoint:z.string().max(2048)}).strict().parse(request.body).endpoint))
+    api.get('/me/notifications/:id',request=>notifications.get(request.user,z.object({id:z.uuid()}).parse(request.params).id))
     api.get('/me/notifications',request=>notifications.list(request.user,pageInput.strict().parse(request.query)))
     api.get('/me/notifications/unread',request=>notifications.unread(request.user))
     api.post('/me/notifications/read',request=>notifications.read(request.user,z.object({id:z.uuid().optional()}).strict().parse(request.body).id))
     api.get('/me/notification-preferences',request=>notifications.preferences(request.user))
-    api.post('/me/notification-preferences',request=>notifications.setPreferences(request.user,z.object({interactions:z.boolean(),mentions:z.boolean(),clubs:z.boolean(),events:z.boolean(),readings:z.boolean()}).strict().parse(request.body)))
+    api.post('/me/notification-preferences',request=>notifications.setPreferences(request.user,z.object({interactions:z.boolean(),mentions:z.boolean(),clubs:z.boolean(),events:z.boolean(),readings:z.boolean(),reminderMinutes:z.union([z.literal(0),z.literal(15),z.literal(60),z.literal(1440)]).optional()}).strict().parse(request.body)))
+    await registerPhotoRoutes(api,options.pool,options.storage)
     await registerCommunityRoutes(api,options.pool,options.storage)
     await registerForumRoutes(api,options.pool)
     await registerEventRoutes(api,options.pool)

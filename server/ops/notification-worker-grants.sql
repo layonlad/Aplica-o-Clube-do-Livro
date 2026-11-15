@@ -1,0 +1,22 @@
+-- Apply as migration owner after migrations. Create the LOGIN identity separately.
+-- Metadata and queue only: no user mutation, private texts, audit, DDL or migrations.
+BEGIN;
+DO $$ BEGIN EXECUTE format('GRANT USAGE ON SCHEMA %I TO clube_notifications',current_schema()); END $$;
+GRANT SELECT(id,email) ON users TO clube_notifications;
+GRANT SELECT(user_id,is_public) ON profiles TO clube_notifications;
+GRANT SELECT(blocker_id,blocked_id) ON user_blocks TO clube_notifications;
+GRANT SELECT(id,club_id,audience,deleted_at,author_user_id,created_at) ON social_posts TO clube_notifications;
+GRANT SELECT(id,post_id,deleted_at,author_user_id) ON post_comments TO clube_notifications;
+GRANT SELECT ON post_mentions,comment_mentions,notification_settings TO clube_notifications;
+GRANT SELECT(id,club_id,deleted_at) ON forum_topics TO clube_notifications;
+GRANT SELECT(id,topic_id,deleted_at) ON forum_replies TO clube_notifications;
+GRANT SELECT(club_id,user_id,status,role,joined_at) ON club_memberships TO clube_notifications;
+GRANT SELECT(id,club_id,created_by,starts_at,deleted_at) ON club_events TO clube_notifications;
+GRANT SELECT(id,club_id,email,revoked_at,expires_at,uses,max_uses) ON invites TO clube_notifications;
+GRANT SELECT(id,club_id,status,user_id) ON club_join_requests TO clube_notifications;
+GRANT EXECUTE ON FUNCTION notification_club_has_book(uuid,uuid) TO clube_notifications;
+GRANT SELECT,INSERT ON notifications TO clube_notifications;
+GRANT SELECT,INSERT,UPDATE,DELETE ON push_deliveries,club_post_notices TO clube_notifications;
+GRANT SELECT,DELETE ON push_subscriptions TO clube_notifications;
+GRANT UPDATE(revoked_at) ON push_subscriptions TO clube_notifications;
+COMMIT;

@@ -293,7 +293,7 @@ function TopicComposer({ clubId, onCreated }: { clubId: string; onCreated: (id: 
         Sua reflexão ou pergunta
         <textarea
           required
-          maxLength={5000}
+
           rows={5}
           value={body}
           onChange={(event) => setBody(event.target.value)}
@@ -503,7 +503,7 @@ function TopicRoom({
                   Sua reflexão
                   <textarea
                     required
-                    maxLength={5000}
+
                     rows={5}
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
@@ -598,7 +598,7 @@ function TopicRoom({
                   Sua resposta
                   <textarea
                     required
-                    maxLength={5000}
+
                     rows={4}
                     value={body}
                     onChange={(event) => setBody(event.target.value)}

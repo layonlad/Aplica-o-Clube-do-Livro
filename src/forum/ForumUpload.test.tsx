@@ -2,6 +2,8 @@ import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { uploadPhoto } from '../community/photo-upload'
+import type { PostMedia } from '../../server/src/community-contracts'
 import { ClubForum } from './ClubForum'
 import { apiRequest } from '../auth/api'
 const { auth } = vi.hoisted(() => ({
@@ -22,6 +24,7 @@ vi.mock('../auth/api', async (original) => ({
   ...(await original<typeof import('../auth/api')>()),
   apiRequest: vi.fn(),
 }))
+vi.mock('../community/photo-upload', () => ({ uploadPhoto: vi.fn() }))
 const topic = {
   id: 'topic',
   title: 'Uma conversa',
@@ -47,6 +50,7 @@ const topic = {
 }
 beforeEach(() => {
   vi.mocked(apiRequest).mockReset()
+  vi.mocked(uploadPhoto).mockReset()
   vi.stubEnv('VITE_API_URL', 'http://localhost:3001')
   vi.stubGlobal(
     'fetch',
@@ -68,15 +72,17 @@ afterEach(() => {
   vi.unstubAllEnvs()
 })
 it('mantém a resposta e o upload quando a sessão renova sem trocar o usuário', async () => {
-  let finish: (value: unknown) => void = () => {}
+  let finish: (value: PostMedia) => void = () => {}
   const user = userEvent.setup()
   vi.mocked(apiRequest).mockImplementation((_user, path, method) => {
-    if (path.endsWith('/media') && method === 'POST')
-      return new Promise((resolve) => {
-        finish = resolve
-      })
     return Promise.resolve(path.endsWith('/replies') ? { items: [], nextCursor: null } : topic)
   })
+  vi.mocked(uploadPhoto).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve
+      }),
+  )
   const view = render(
     <MemoryRouter initialEntries={['/app/forum?topic=topic']}>
       <ClubForum clubId="club" />
@@ -92,11 +98,11 @@ it('mantém a resposta e o upload quando a sessão renova sem trocar o usuário'
   })
   await user.upload(view.container.querySelector('input[type=file]')!, file)
   await waitFor(() =>
-    expect(apiRequest).toHaveBeenCalledWith(
+    expect(uploadPhoto).toHaveBeenCalledWith(
       auth.user,
-      '/clubs/club/media',
-      'POST',
-      expect.anything(),
+      'club',
+      file,
+      expect.objectContaining({ id: expect.any(String), signal: expect.anything() }),
     ),
   )
   auth.user = { ...auth.user }

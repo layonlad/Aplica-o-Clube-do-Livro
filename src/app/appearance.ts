@@ -15,7 +15,12 @@ export const fontOptions: {
   family: string
   load?: () => Promise<unknown>
 }[] = [
-  { id: 'fraunces', label: 'Fraunces', kind: 'editorial', family: "'Fraunces Variable', Georgia, serif" },
+  {
+    id: 'fraunces',
+    label: 'Fraunces',
+    kind: 'editorial',
+    family: "'Fraunces Variable', Georgia, serif",
+  },
   {
     id: 'playfair',
     label: 'Playfair Display',
@@ -104,10 +109,23 @@ function channel(value: number) {
 }
 function rgb(hex: string) {
   const value = hex.replace('#', '')
-  return [0, 2, 4].map((index) => parseInt(value.slice(index, index + 2), 16)) as [number, number, number]
+  return [0, 2, 4].map((index) => parseInt(value.slice(index, index + 2), 16)) as [
+    number,
+    number,
+    number,
+  ]
 }
 function hex([r, g, b]: [number, number, number]) {
-  return '#' + [r, g, b].map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('')
+  return (
+    '#' +
+    [r, g, b]
+      .map((v) =>
+        Math.round(Math.max(0, Math.min(255, v)))
+          .toString(16)
+          .padStart(2, '0'),
+      )
+      .join('')
+  )
 }
 export function luminance(color: string) {
   const [r, g, b] = rgb(color)
@@ -129,7 +147,7 @@ function mix(color: string, amount: number) {
  */
 export function ensureContrast(color: string, background: string, minimum = 4.5) {
   if (contrast(color, background) >= minimum) return { color, adjusted: false }
-  const lighten = luminance(background) < 0.2
+  const lighten = contrast('#ffffff', background) >= contrast('#000000', background)
   for (let step = 0.05; step <= 1; step += 0.05) {
     const candidate = mix(color, lighten ? step : -step)
     if (contrast(candidate, background) >= minimum) return { color: candidate, adjusted: true }
@@ -142,7 +160,8 @@ const DARK_BG = '#17111f'
 
 export function resolvedMode(appearance: Appearance) {
   if (appearance.mode !== 'system') return appearance.mode
-  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches
+  return typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-color-scheme: dark)').matches
     ? 'dark'
     : 'light'
 }
@@ -153,26 +172,76 @@ export function resolvedMode(appearance: Appearance) {
  */
 export function appearanceTokens(appearance: Appearance) {
   const preset = presetOptions.find((item) => item.id === appearance.preset) ?? presetOptions[0]
-  const base = appearance.preset === 'personalizado' && appearance.accent ? appearance.accent : preset.brand
+  const base =
+    appearance.preset === 'personalizado' && appearance.accent ? appearance.accent : preset.brand
   const dark = resolvedMode(appearance) === 'dark'
-  const isDefault = appearance.preset === 'padrao'
+  const background = appearance.background ?? (dark ? DARK_BG : LIGHT_BG)
+  const customBackground = !!appearance.background
+  const darkSurface = contrast('#ffffff', background) >= contrast('#000000', background)
+  const surface = mix(background, darkSurface ? -0.1 : 0.65)
+  const isDefault = appearance.preset === 'padrao' && !customBackground
   const onLight = ensureContrast(base, '#ffffff')
-  const brand = dark ? ensureContrast(mix(base, 0.45), DARK_BG, 7).color : ensureContrast(onLight.color, LIGHT_BG).color
+  const brand = darkSurface
+    ? ensureContrast(mix(base, 0.45), background, 7).color
+    : ensureContrast(onLight.color, background).color
   const heading = fontOptions.find((font) => font.id === appearance.headingFont) ?? fontOptions[0]
   const body = fontOptions.find((font) => font.id === appearance.bodyFont) ?? fontOptions[4]
   return {
     dark,
     adjusted: onLight.adjusted,
     vars: {
+      '--bg': customBackground ? background : null,
+      '--bg-sunken': customBackground ? mix(background, darkSurface ? -0.16 : 0.05) : null,
+      '--surface': customBackground ? surface : null,
+      '--surface-raised': customBackground ? mix(background, darkSurface ? -0.04 : 0.85) : null,
+      '--text': customBackground
+        ? ensureContrast(darkSurface ? '#f6efe4' : '#22192e', background, 7).color
+        : null,
+      '--text-muted': customBackground
+        ? ensureContrast(darkSurface ? '#c4b8cc' : '#5f5569', background).color
+        : null,
+      '--text-subtle': customBackground
+        ? ensureContrast(darkSurface ? '#c4b8cc' : '#5f5569', background).color
+        : null,
+      '--danger': customBackground ? ensureContrast(darkSurface?'#ff9a8f':'#a8302e',background).color : null,
+      '--success': customBackground ? ensureContrast(darkSurface?'#b9e6c9':'#2b7552',background).color : null,
+      '--warning': customBackground ? ensureContrast(darkSurface?'#f4b942':'#7d5300',background).color : null,
+      '--info': customBackground ? ensureContrast(darkSurface?'#9db6ff':'#2546a8',background).color : null,
+      '--danger-soft':customBackground?'color-mix(in srgb, var(--danger) 12%, var(--surface))':null,
+      '--success-soft':customBackground?'color-mix(in srgb, var(--success) 12%, var(--surface))':null,
+      '--warning-soft':customBackground?'color-mix(in srgb, var(--warning) 12%, var(--surface))':null,
+      '--info-soft':customBackground?'color-mix(in srgb, var(--info) 12%, var(--surface))':null,
+      '--border-strong':customBackground?ensureContrast(darkSurface?'#c4b8cc':'#5f5569',background,3).color:null,
+      '--border': customBackground
+        ? `color-mix(in srgb, ${darkSurface ? '#ffffff' : '#000000'} 18%, transparent)`
+        : null,
+      '--divider': customBackground
+        ? `color-mix(in srgb, ${darkSurface ? '#ffffff' : '#000000'} 12%, transparent)`
+        : null,
+      '--text-on-brand': customBackground
+        ? contrast('#ffffff', brand) >= 4.5
+          ? '#ffffff'
+          : '#000000'
+        : null,
       '--brand': isDefault ? null : brand,
       '--brand-hover': isDefault ? null : dark ? mix(brand, 0.2) : mix(brand, -0.18),
       '--brand-ink': isDefault ? null : brand,
-      '--brand-soft': isDefault ? null : `color-mix(in srgb, ${brand} ${dark ? 18 : 11}%, var(--surface))`,
-      '--accent': isDefault ? null : preset.accent && appearance.preset !== 'personalizado' ? preset.accent : mix(base, 0.35),
+      '--brand-soft': isDefault
+        ? null
+        : `color-mix(in srgb, ${brand} ${dark ? 18 : 11}%, var(--surface))`,
+      '--accent': isDefault
+        ? null
+        : preset.accent && appearance.preset !== 'personalizado'
+          ? preset.accent
+          : mix(base, 0.35),
       '--font-display': appearance.headingFont === 'fraunces' ? null : heading.family,
       '--font-ui': appearance.bodyFont === 'jakarta' ? null : body.family,
       '--radius-card':
-        appearance.radius === 'round' ? null : appearance.radius === 'soft' ? 'var(--radius-md)' : 'var(--radius-xs)',
+        appearance.radius === 'round'
+          ? null
+          : appearance.radius === 'soft'
+            ? 'var(--radius-md)'
+            : 'var(--radius-xs)',
     } as Record<string, string | null>,
   }
 }
@@ -183,14 +252,19 @@ export function loadFonts(appearance: Appearance) {
 }
 
 /** Aplica os tokens no <html>. Usado pelo provedor de tema e pela prévia. */
-export function applyAppearance(appearance: Appearance, root: HTMLElement = document.documentElement) {
+export function applyAppearance(
+  appearance: Appearance,
+  root: HTMLElement = document.documentElement,
+) {
   const { dark, vars } = appearanceTokens(appearance)
   loadFonts(appearance)
   root.dataset.theme = dark ? 'dark' : 'light'
   for (const [name, value] of Object.entries(vars))
     if (value) root.style.setProperty(name, value)
     else root.style.removeProperty(name)
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? DARK_BG : appearanceTokens({ ...appearance, mode: 'light' }).vars['--brand'] ?? '#462b70')
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute('content', appearance.background ?? (dark ? DARK_BG : LIGHT_BG))
 }
 
 export const APPEARANCE_KEY = 'clube-livro-appearance'

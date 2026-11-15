@@ -1,6 +1,8 @@
 import { mediaBase } from './social-api'
 import { useEffect, useRef, useState } from 'react'
-import { Play, X } from 'lucide-react'
+import { Sheet } from '../components/Sheet'
+import { uploadPhoto } from './photo-upload'
+import { Play, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, ApiError, messageFor, readableError } from '../auth/api'
 import type { PostMedia, Page } from '../../server/src/community-contracts'
@@ -9,16 +11,26 @@ export async function uploadMediaFile(
   user: NonNullable<ReturnType<typeof useAuth>['user']>,
   clubId: string | null,
   file: File,
+  options?: { id: string; signal: AbortSignal; onProgress: (value: number) => void },
 ): Promise<PostMedia> {
+  if (['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
+    return uploadPhoto(
+      user,
+      clubId,
+      file,
+      options ?? {
+        id: crypto.randomUUID(),
+        signal: new AbortController().signal,
+        onProgress: () => {},
+      },
+    )
   const kind = file.type.startsWith('video/') ? 'video' : 'image'
   const limit = kind === 'video' ? 10000000 : file.type === 'image/gif' ? 8000000 : 5000000
   if (
     !['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4'].includes(file.type) ||
     file.size > limit
   )
-    throw Error(
-      'Use uma foto JPEG, PNG ou WebP de até 5 MB, um GIF de até 8 MB ou um MP4 de até 10 MB e 30 segundos.',
-    )
+    throw Error('Este formato ou tamanho de arquivo não é compatível com o envio.')
   const bytes = new Uint8Array(await file.arrayBuffer())
   let binary = ''
   for (let index = 0; index < bytes.length; index += 16384)
@@ -31,9 +43,11 @@ export function MediaPicker({
   onChange,
   onBusy,
   imagesOnly = false,
+  compact = false,
 }: {
   clubId: string | null
   imagesOnly?: boolean
+  compact?: boolean
   value: PostMedia[]
   onChange: (value: PostMedia[]) => void
   onBusy?: (busy: boolean) => void
@@ -42,7 +56,23 @@ export function MediaPicker({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [recover, setRecover] = useState(false),
+    [pendingTicket, setPendingTicket] = useState<string | null>(null),
+    [progress, setProgress] = useState(0),
+    [retryFiles, setRetryFiles] = useState<File[]>([]),
     [drafts, setDrafts] = useState<Page<PostMedia>>({ items: [], nextCursor: null })
+  const abort = useRef<AbortController | null>(null),
+    tickets = useRef(new WeakMap<File, string>()),
+    activeTicket = useRef<string | null>(null),
+    selectedRef = useRef(value)
+  selectedRef.current = value
+  useEffect(
+    () => () => {
+      abort.current?.abort()
+      const id = activeTicket.current
+      if (id && user) void apiRequest(user, `/photo-uploads/${id}`, 'DELETE').catch(() => {})
+    },
+    [user?.uid],
+  )
   useEffect(() => {
     if (!recover || !user?.emailVerified) return
     let live = true
@@ -76,19 +106,47 @@ export function MediaPicker({
     setBusy(true)
     onBusy?.(true)
     setError('')
-    const selected = [...value]
+    const controller = new AbortController()
+    abort.current = controller
+    setProgress(0)
+    const selected = [...selectedRef.current]
     try {
       if (imagesOnly && files.some((file) => file.type.startsWith('video/')))
         throw Error('Anexe somente fotos nesta discussão.')
       if (files.length + value.length > 4) throw Error('Adicione até quatro arquivos de cada vez.')
-      for (const file of files) {
-        selected.push(await uploadMediaFile(user, clubId, file))
+      for (const [index, file] of files.entries()) {
+        if (!tickets.current.has(file)) tickets.current.set(file, crypto.randomUUID())
+        activeTicket.current = tickets.current.get(file)!
+        const item = await uploadMediaFile(user, clubId, file, {
+          id: tickets.current.get(file)!,
+          signal: controller.signal,
+          onProgress: (value) =>
+            setProgress(Math.round(((index + value / 100) / files.length) * 100)),
+        })
+        if (controller.signal.aborted) {
+          await apiRequest(user, `/media/${item.id}`, 'DELETE').catch(() => {})
+          throw new DOMException('Cancelado', 'AbortError')
+        }
+        if (!selected.some((media) => media.id === item.id)) selected.push(item)
+        selectedRef.current = [...selected]
         onChange([...selected])
       }
+      setRetryFiles([])
     } catch (err) {
-      setError(messageFor(err))
+      if ((err as { name?: string }).name !== 'AbortError') {
+        setError(messageFor(err))
+        setRetryFiles(files)
+        if (err instanceof ApiError && err.code === 'PHOTO_UPLOAD_IN_PROGRESS') {
+          const pending = await apiRequest<{ items: { id: string }[] }>(
+            user,
+            '/photo-uploads',
+          ).catch(() => ({ items: [] }))
+          setPendingTicket(pending.items[0]?.id ?? null)
+        }
+      }
     } finally {
       setBusy(false)
+      activeTicket.current = null
       onBusy?.(false)
     }
   }
@@ -108,7 +166,7 @@ export function MediaPicker({
     }
   }
   return (
-    <div className="media-picker">
+    <div className={`media-picker ${compact ? 'media-picker--compact' : ''}`}>
       <label className="file-button">
         {imagesOnly ? 'Adicionar fotos' : 'Adicionar fotos ou vídeo'}
         <input
@@ -126,14 +184,43 @@ export function MediaPicker({
           }}
         />
       </label>
-      <small>
-        {clubId === null
-          ? 'Arquivos preparados para publicação pública. Fotos: até 5 MB; MP4: até 10 MB e 30 segundos.'
-          : imagesOnly
-            ? 'Fotos de até 5 MB, visíveis somente neste clube.'
-            : 'Fotos: até 5 MB. MP4: até 10 MB e 30 segundos. Os registros pertencem a este clube.'}
-      </small>
-      {busy && <p role="status">Preparando o arquivo e sua miniatura…</p>}
+      {busy && (
+        <div className="upload-progress" role="status">
+          <progress max={100} value={progress} aria-label="Progresso do envio" />
+          <span>{progress < 97 ? `Enviando foto · ${progress}%` : 'Preparando a foto…'}</span>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              abort.current?.abort()
+              const id = activeTicket.current
+              if (id) void apiRequest(user!, `/photo-uploads/${id}`, 'DELETE').catch(() => {})
+            }}
+          >
+            Cancelar envio
+          </Button>
+        </div>
+      )}
+      {!busy && pendingTicket && (
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            void apiRequest(user!, `/photo-uploads/${pendingTicket}`, 'DELETE').then(() => {
+              setPendingTicket(null)
+              setError('')
+              setRetryFiles([])
+            })
+          }}
+        >
+          Cancelar envio em aberto
+        </Button>
+      )}
+      {!busy && !pendingTicket && retryFiles.length > 0 && (
+        <Button type="button" variant="secondary" onClick={() => void files(retryFiles)}>
+          Tentar envio novamente
+        </Button>
+      )}
       {error && <p role="alert">{error}</p>}
       <div className="post-media-grid">
         {value.map((item) => (
@@ -151,11 +238,8 @@ export function MediaPicker({
         ))}
       </div>
       <details onToggle={(event) => setRecover(event.currentTarget.open)}>
-        <summary>Recuperar arquivos preparados</summary>
-        <p>
-          Arquivos seus que ainda não estão publicados. A limpeza pode removê-los depois de um dia
-          sem uso.
-        </p>
+        <summary>Rascunhos de fotos</summary>
+        <p>Selecione uma foto de um envio anterior.</p>
         <div className="post-media-grid">
           {drafts.items
             .filter(
@@ -187,7 +271,12 @@ export function MediaPicker({
     </div>
   )
 }
-function useMediaUrl(id: string, full: boolean, enabled: boolean, publicMedia = false) {
+function useMediaUrl(
+  id: string,
+  variant: 'thumbnail' | 'feed' | 'full',
+  enabled: boolean,
+  publicMedia = false,
+) {
   const { user } = useAuth(),
     [url, setUrl] = useState(''),
     [error, setError] = useState(''),
@@ -203,7 +292,7 @@ function useMediaUrl(id: string, full: boolean, enabled: boolean, publicMedia = 
         const token = user?.emailVerified ? await user.getIdToken() : null
         if (abort.signal.aborted) return
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/v1/${publicMedia ? 'public/' : ''}media/${id}/content?variant=${full ? 'full' : 'thumbnail'}`,
+          `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/v1/${publicMedia ? 'public/' : ''}media/${id}/content?variant=${variant}`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
             credentials: 'omit',
@@ -232,7 +321,7 @@ function useMediaUrl(id: string, full: boolean, enabled: boolean, publicMedia = 
       abort.abort()
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [user?.uid, user?.emailVerified, id, full, enabled, retry, publicMedia])
+  }, [user?.uid, user?.emailVerified, id, variant, enabled, retry, publicMedia])
   return { url, error, retry: () => setRetry((value) => value + 1) }
 }
 export function PrivateMedia({
@@ -241,12 +330,14 @@ export function PrivateMedia({
   full = false,
   publicMedia = false,
   previewOnly = false,
+  feed = false,
 }: {
   media: PostMedia
   alt: string
   full?: boolean
   publicMedia?: boolean
   previewOnly?: boolean
+  feed?: boolean
 }) {
   const [visible, setVisible] = useState(full),
     [expanded, setExpanded] = useState(false),
@@ -272,14 +363,32 @@ export function PrivateMedia({
     if (ref.current) observer.observe(ref.current)
     return () => observer.disconnect()
   }, [full])
-  const file = useMediaUrl(media.id, full, visible, publicMedia)
+  const thumbnail = useMediaUrl(media.id, 'thumbnail', visible && !full, publicMedia)
+  const detailed = useMediaUrl(
+    media.id,
+    full ? 'full' : 'feed',
+    visible && (full || (feed && media.kind === 'image')),
+    publicMedia,
+  )
+  const file = full
+    ? detailed
+    : {
+        url: detailed.url || thumbnail.url,
+        error: thumbnail.error,
+        retry: () => {
+          thumbnail.retry()
+          detailed.retry()
+        },
+      }
   return (
     <div
-      className={`private-media ${full ? 'private-media--full' : ''}`}
+      className={`private-media ${full ? 'private-media--full' : ''} ${feed ? 'private-media--feed' : ''}`}
       ref={ref}
       style={{ aspectRatio: `${media.width}/${media.height}` }}
     >
-      {file.error && previewOnly ? <span className="media-placeholder">Imagem indisponível</span> : file.error ? (
+      {file.error && previewOnly ? (
+        <span className="media-placeholder">Imagem indisponível</span>
+      ) : file.error ? (
         <div className="media-placeholder">
           <p role="alert">{file.error}</p>
           <Button variant="ghost" onClick={file.retry}>
@@ -287,7 +396,9 @@ export function PrivateMedia({
           </Button>
         </div>
       ) : file.url ? (
-        previewOnly ? <img src={file.url} alt={alt} loading="lazy"/> : full && media.kind === 'video' ? (
+        previewOnly ? (
+          <img src={file.url} alt={alt} loading="lazy" />
+        ) : full && media.kind === 'video' ? (
           <video src={file.url} controls playsInline preload="metadata" aria-label={alt} />
         ) : full ? (
           <img src={file.url} alt={alt} />
@@ -328,32 +439,60 @@ function MediaDialog({
 }: {
   media: PostMedia
   alt: string
-  publicMedia?: boolean
   onClose: () => void
+  publicMedia?: boolean
 }) {
-  const ref = useRef<HTMLDialogElement>(null)
-  useEffect(() => {
-    const dialog = ref.current
-    if (dialog && !dialog.open) dialog.showModal()
-  }, [])
+  const file = useMediaUrl(media.id, 'full', true, publicMedia),
+    [zoom, setZoom] = useState(1)
   return (
-    <dialog
-      ref={ref}
-      className="media-dialog"
-      aria-label={alt}
-      onCancel={onClose}
-      onClose={onClose}
-    >
-      <button
-        className="icon-button media-close"
-        type="button"
-        aria-label="Fechar registro ampliado"
-        onClick={onClose}
-      >
-        <X />
-      </button>
-      <PrivateMedia media={media} alt={alt} full publicMedia={publicMedia} />
-      <p>{alt}</p>
-    </dialog>
+    <Sheet title="Visualizar registro" onClose={onClose} className="media-viewer">
+      {media.kind === 'image' && (
+        <div className="media-zoom-controls">
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Diminuir zoom"
+            disabled={zoom === 1}
+            onClick={() => setZoom((v) => Math.max(1, v - 0.5))}
+          >
+            <ZoomOut size={20} />
+          </button>
+          <button
+            type="button"
+            className="button button--ghost"
+            aria-label="Restaurar zoom"
+            onClick={() => setZoom(1)}
+          >
+            <RotateCcw size={16} />
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Aumentar zoom"
+            disabled={zoom === 4}
+            onClick={() => setZoom((v) => Math.min(4, v + 0.5))}
+          >
+            <ZoomIn size={20} />
+          </button>
+        </div>
+      )}
+      <div className="media-zoom-scroll">
+        {file.error ? (
+          <p role="alert">
+            {file.error}
+            <Button onClick={file.retry}>Tentar novamente</Button>
+          </p>
+        ) : file.url ? (
+          media.kind === 'video' ? (
+            <video src={file.url} aria-label={alt} controls playsInline />
+          ) : (
+            <img src={file.url} alt={alt} style={{ width: `${zoom * 100}%` }} />
+          )
+        ) : (
+          <p role="status">Abrindo foto…</p>
+        )}
+      </div>
+    </Sheet>
   )
 }

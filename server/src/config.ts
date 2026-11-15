@@ -1,3 +1,4 @@
+import {assertPublicPushKey,assertVapidConfig} from './push-config.js'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -9,6 +10,10 @@ const schema = z.object({
   FRONTEND_ORIGIN: z.string().url(),
   MEDIA_CLEANUP_ENABLED:z.enum(['true','false']).default('false').transform(value=>value==='true'),
   PLATFORM_MODERATOR_UIDS: z.string().default('').transform(value=>value.split(',').map(id=>id.trim()).filter(Boolean)).refine(ids=>ids.length<=10&&ids.every(id=>/^[A-Za-z0-9_-]{1,128}$/.test(id))),
+  PHOTO_CLEANUP_TOKEN:z.string().regex(/^[A-Za-z0-9_-]{43}$/).optional(),
+  PUSH_PRIVATE_KEY:z.string().regex(/^[A-Za-z0-9_-]{43}$/).optional(),
+  PUSH_SUBJECT:z.url().startsWith('https://').optional(),
+  PUSH_PUBLIC_KEY:z.string().regex(/^[A-Za-z0-9_-]{87}$/).optional(),
   HOST: z.string().default('127.0.0.1'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
 })
@@ -30,5 +35,8 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   if (config.FIREBASE_PROJECT_ID.startsWith('demo-') && !config.FIREBASE_AUTH_EMULATOR_HOST) {
     throw new Error('Projeto demo- exige o emulador local de autenticação.')
   }
+  if(config.PUSH_PRIVATE_KEY&&(!config.PUSH_PUBLIC_KEY||!config.PUSH_SUBJECT))throw Error('Configuração VAPID incompleta.')
+  if(config.PUSH_PUBLIC_KEY)assertPublicPushKey(config.PUSH_PUBLIC_KEY)
+  if(config.PUSH_PRIVATE_KEY)assertVapidConfig(config.PUSH_PUBLIC_KEY!,config.PUSH_PRIVATE_KEY,config.PUSH_SUBJECT!)
   return config
 }

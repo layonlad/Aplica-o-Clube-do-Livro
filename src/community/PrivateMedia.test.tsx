@@ -2,6 +2,7 @@ import { StrictMode, useState } from 'react'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { uploadPhoto } from './photo-upload'
 import { MediaPicker } from './PrivateMedia'
 import type { PostMedia } from '../../server/src/community-contracts'
 import { apiRequest } from '../auth/api'
@@ -15,6 +16,7 @@ vi.mock('../auth/api', async (original) => ({
   ...(await original<typeof import('../auth/api')>()),
   apiRequest: vi.fn(),
 }))
+vi.mock('./photo-upload', () => ({ uploadPhoto: vi.fn() }))
 function Form() {
   const [media, setMedia] = useState<PostMedia[]>([]),
     [busy, setBusy] = useState(false),
@@ -35,6 +37,7 @@ function Form() {
 }
 beforeEach(() => {
   vi.mocked(apiRequest).mockReset()
+  vi.mocked(uploadPhoto).mockReset()
   vi.stubEnv('VITE_API_URL', 'http://localhost:3001')
   vi.stubGlobal(
     'fetch',
@@ -57,8 +60,8 @@ afterEach(() => {
 })
 it('preserva a foto selecionada após concluir upload e digitar a mensagem', async () => {
   const user = userEvent.setup()
-  let finish: (value: unknown) => void = () => {}
-  vi.mocked(apiRequest).mockImplementation(
+  let finish: (value: PostMedia) => void = () => {}
+  vi.mocked(uploadPhoto).mockImplementation(
     () =>
       new Promise((resolve) => {
         finish = resolve
@@ -74,7 +77,7 @@ it('preserva a foto selecionada após concluir upload e digitar a mensagem', asy
     value: async () => new Uint8Array([1, 2, 3]).buffer,
   })
   await user.upload(view.container.querySelector('input[type=file]')!, file)
-  await waitFor(() => expect(apiRequest).toHaveBeenCalled())
+  await waitFor(() => expect(uploadPhoto).toHaveBeenCalled())
   expect(screen.getByRole('button', { name: 'Publicar' })).toBeDisabled()
   finish({ id: 'media', kind: 'image', width: 80, height: 60, duration: null })
   expect(await screen.findByText('1 arquivo preparado')).toBeInTheDocument()
@@ -91,7 +94,7 @@ it('recupera um arquivo já preparado sem reenviar seus bytes', async () => {
     nextCursor: null,
   })
   render(<Form />)
-  await user.click(screen.getByText('Recuperar arquivos preparados'))
+  await user.click(screen.getByText('Rascunhos de fotos'))
   await user.click(await screen.findByRole('button', { name: 'Usar este arquivo' }))
   expect(screen.getByText('1 arquivo preparado')).toBeInTheDocument()
   expect(vi.mocked(apiRequest).mock.calls.some((call) => call[2] === 'POST')).toBe(false)

@@ -37,15 +37,16 @@ it('publica no clube escolhido sem enviar identidade ou público controlados pel
       <PostComposer clubId="club-a" onPublished={published} />
     </MemoryRouter>,
   )
-  await user.click(screen.getByRole('button', { name: /O que sua leitura despertou/ }))
+  await user.click(screen.getByRole('button', { name: /O que você está pensando/ }))
   await user.type(screen.getByLabelText('Sua mensagem'), 'Uma descoberta entre leitores.')
-  await user.click(screen.getByRole('button', { name: 'Publicar no clube' }))
+  await user.click(screen.getByRole('button', { name: 'Publicar' }))
   expect(apiRequest).toHaveBeenCalledWith(
     auth.user,
     '/clubs/club-a/posts',
     'POST',
     expect.objectContaining({ body: 'Uma descoberta entre leitores.', kind: 'reflection' }),
   )
+  expect(screen.queryByLabelText('Tipo')).not.toBeInTheDocument()
   // O compositor também consulta a própria foto (/me/profile); a verificação é sobre a chamada de publicação.
   const call = vi.mocked(apiRequest).mock.calls.find((item) => item[1] === '/clubs/club-a/posts')
   const payload = call?.[3] as Record<string, unknown>
@@ -65,9 +66,9 @@ it('mantém o rascunho quando a persistência falha', async () => {
       <PostComposer clubId="club-a" onPublished={published} />
     </MemoryRouter>,
   )
-  await user.click(screen.getByRole('button', { name: /O que sua leitura despertou/ }))
+  await user.click(screen.getByRole('button', { name: /O que você está pensando/ }))
   await user.type(screen.getByLabelText('Sua mensagem'), 'Meu rascunho privado.')
-  await user.click(screen.getByRole('button', { name: 'Publicar no clube' }))
+  await user.click(screen.getByRole('button', { name: 'Publicar' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível publicar.')
   expect(screen.getByLabelText('Sua mensagem')).toHaveValue('Meu rascunho privado.')
   expect(published).not.toHaveBeenCalled()
