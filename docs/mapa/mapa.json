@@ -271,7 +271,7 @@
       "autor": "Claude Code",
       "titulo": "Visual mais compacto, abertura em tela cheia e novas opções de formatação",
       "resumo": "Texto-base de 15 px, botões, campos, menus e cartões menores e mais justos no celular, sem perder a área de toque. A abertura ficou sem botão de pular, mais lenta (cerca de 4,8 s) e termina com a página do livro cobrindo a tela. Aparência ganhou tamanho do texto, espaçamento, entrelinha e formato de botões e campos, salvos na conta. A API precisa ir ao ar antes do site, porque o formato salvo mudou.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/16"
     },
     {
       "data": "2026-11-15",
