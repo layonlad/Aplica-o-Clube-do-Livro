@@ -16,10 +16,10 @@
   --w: clamp(140px, min(46vw, 38vh), 340px);
   --h: calc(var(--w) * 1.42);
   --zoom: 6;
-  --cloth: #462b70;
-  --cloth-dark: #341f55;
-  --paper: #fbf4e8;
-  --paper-shade: #ecdcc3;
+  --cloth: var(--rosa-700);
+  --cloth-dark: var(--rosa-800);
+  --paper: var(--palha-50);
+  --paper-shade: var(--palha-300);
   --soft: cubic-bezier(0.45, 0, 0.15, 1);
   position: fixed;
   inset: 0;
@@ -28,8 +28,10 @@
   place-items: center;
   overflow: hidden;
   background:
-    radial-gradient(70% 55% at 50% 52%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 72%),
-    var(--bg);
+    radial-gradient(70% 55% at 50% 52%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 72%),
+    color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   animation: intro-out 600ms var(--ease-in-out) 4200ms both;
 }
 .book-intro.is-leaving { animation: intro-out 300ms var(--ease-out) both; }
@@ -57,21 +59,21 @@
   left: 0;
   border-radius: 2px 6px 6px 2px;
   /* Espessura do bloco de páginas, como a borda creme do livro fechado */
-  box-shadow: 1px 1px 0 var(--paper-shade), 2px 2px 0 var(--paper), 3px 3px 0 var(--paper-shade), 4px 4px 0 var(--paper), 5px 6px 0 var(--paper-shade), 14px 26px 44px rgba(38, 24, 61, 0.3);
+  box-shadow: 1px 1px 0 var(--paper-shade), 2px 2px 0 var(--paper), 3px 3px 0 var(--paper-shade), 4px 4px 0 var(--paper), 5px 6px 0 var(--paper-shade), 14px 26px 44px rgba(54, 19, 31, 0.3);
   background: linear-gradient(90deg, rgba(0, 0, 0, 0.08), transparent 12%), var(--paper);
 }
 .book-intro__page--left {
   right: 100%;
   border-radius: 6px 2px 2px 6px;
   background: linear-gradient(270deg, rgba(0, 0, 0, 0.1), transparent 14%), var(--paper);
-  box-shadow: -1px 1px 0 var(--paper-shade), -2px 2px 0 var(--paper), -3px 3px 0 var(--paper-shade), -14px 26px 44px rgba(38, 24, 61, 0.24);
+  box-shadow: -1px 1px 0 var(--paper-shade), -2px 2px 0 var(--paper), -3px 3px 0 var(--paper-shade), -14px 26px 44px rgba(54, 19, 31, 0.24);
   opacity: 0;
   animation: fade-in 220ms linear 1180ms both;
 }
 .book-intro__lines {
   position: absolute;
   inset: 18% 16% 22% 14%;
-  background: repeating-linear-gradient(180deg, transparent 0 calc(var(--w) * 0.062), rgba(70, 43, 112, 0.12) calc(var(--w) * 0.062) calc(var(--w) * 0.062 + 1px));
+  background: repeating-linear-gradient(180deg, transparent 0 calc(var(--w) * 0.062), rgba(154, 65, 103, 0.12) calc(var(--w) * 0.062) calc(var(--w) * 0.062 + 1px));
 }
 
 /* Título revelado na página da direita; some quando a câmera entra no livro */
@@ -83,7 +85,7 @@
   justify-items: center;
   gap: calc(var(--w) * 0.045);
   padding: 12%;
-  color: #26183d;
+  color: var(--cacau-900);
   text-align: center;
   opacity: 0;
   animation: intro-title 2200ms var(--ease-out) 2100ms both;
@@ -99,7 +101,7 @@
   font: 700 calc(var(--w) * 0.085) var(--font-display);
 }
 .book-intro__title strong { font: 600 calc(var(--w) * 0.118)/1.05 var(--font-display); letter-spacing: -0.02em; }
-.book-intro__title em { font: italic 400 calc(var(--w) * 0.066) var(--font-display); color: #5f5569; }
+.book-intro__title em { font: italic 400 calc(var(--w) * 0.066) var(--font-display); color: var(--cacau-600); }
 .book-intro__spines { display: block; width: 70%; height: max(3px, calc(var(--w) * 0.022)); margin-top: calc(var(--w) * 0.03); border-radius: 4px; background: var(--spines); }
 
 /* Folhas que viram */
@@ -111,7 +113,7 @@
   border-radius: 2px 6px 6px 2px;
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.1), transparent 18%, transparent 80%, rgba(0, 0, 0, 0.05)),
-    repeating-linear-gradient(180deg, transparent 0 calc(var(--w) * 0.062), rgba(70, 43, 112, 0.08) calc(var(--w) * 0.062) calc(var(--w) * 0.062 + 1px)) 14% 18% / 70% 60% no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 calc(var(--w) * 0.062), rgba(154, 65, 103, 0.08) calc(var(--w) * 0.062) calc(var(--w) * 0.062 + 1px)) 14% 18% / 70% 60% no-repeat,
     var(--paper);
   backface-visibility: visible;
   animation: intro-flip 1000ms var(--soft) both;
@@ -135,19 +137,19 @@
     radial-gradient(120% 90% at 30% 20%, rgba(255, 255, 255, 0.1), transparent 55%),
     repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 4px),
     linear-gradient(90deg, var(--cloth-dark) 0 7%, var(--cloth) 9%);
-  box-shadow: inset -2px 0 0 rgba(0, 0, 0, 0.15), 14px 26px 44px rgba(38, 24, 61, 0.32);
+  box-shadow: inset -2px 0 0 rgba(0, 0, 0, 0.15), 14px 26px 44px rgba(54, 19, 31, 0.32);
 }
 .book-intro__cover-back {
   transform: rotateY(180deg);
-  background: linear-gradient(270deg, rgba(0, 0, 0, 0.18), transparent 16%), #ead8c0;
+  background: linear-gradient(270deg, rgba(0, 0, 0, 0.18), transparent 16%), var(--palha-200);
 }
-.book-intro__ribbon { position: absolute; top: -2%; right: 22%; width: 6%; height: 26%; background: var(--coral-500, #fc7667); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 86%, 0 100%); }
+.book-intro__ribbon { position: absolute; top: -2%; right: 22%; width: 6%; height: 26%; background: var(--rosa-300); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 86%, 0 100%); }
 .book-intro__emboss {
   position: absolute;
   left: 50%;
   top: 44%;
   transform: translate(-50%, -50%);
-  color: rgba(251, 244, 232, 0.86);
+  color: rgba(255, 252, 244, 0.88);
   font: 600 calc(var(--w) * 0.19) var(--font-display);
   letter-spacing: 0.04em;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);

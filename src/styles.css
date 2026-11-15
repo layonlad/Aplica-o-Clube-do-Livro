@@ -8,7 +8,20 @@
 .floating-book--one { top: -60px; right: -35px; }
 .floating-book--two { bottom: -80px; left: -55px; transform: rotate(-24deg); }
 .floating-star { position: absolute; top: 20%; left: 8%; color: var(--color-accent); font-size: 3rem; opacity: 0.34; }
+/* Estética "Estante": os adesivos substituem os livros e a estrela flutuantes */
+.floating-book, .floating-star { display: none; }
 .login-content { position: relative; z-index: 1; width: min(100%, 450px); margin: auto; padding: 42px 24px; }
+.login-sticker { position: absolute; z-index: 2; }
+.login-sticker--bow { top: 6px; left: 2px; }
+.login-sticker--star { top: 8px; right: 6px; }
+.login-sticker--flower { bottom: 18px; right: 10%; }
+@media (min-width: 560px) {
+  .login-sticker--bow { top: calc(50% - 360px); left: calc(50% - 270px); }
+  .login-sticker--star { top: calc(50% - 330px); right: calc(50% - 260px); }
+  .login-sticker--flower { bottom: calc(50% - 340px); right: auto; left: calc(50% - 250px); }
+}
+@media (max-width: 559px) { .login-content { align-self: center; width: auto; margin: 44px 14px 28px; padding: 36px 20px 28px; background-color: color-mix(in srgb, var(--surface) 88%, transparent); background-image: var(--paper); background-size: 560px; background-blend-mode: multiply; border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-2); } }
+@media (min-width: 560px) { .login-content { align-self: center; margin: 48px auto; padding: 40px; background-color: color-mix(in srgb, var(--surface) 90%, transparent); background-image: var(--paper); background-size: 560px; background-blend-mode: multiply; border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-3); } }
 .login-brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 38px; }
 .login-content > h1 { margin-bottom: 8px; font-family: var(--font-display); font-size: clamp(2.6rem, 12vw, 4.2rem); line-height: 0.96; }
 .login-lead { margin-bottom: 28px; color: var(--color-muted); font-family: var(--font-display); font-size: 1.18rem; line-height: 1.5; }

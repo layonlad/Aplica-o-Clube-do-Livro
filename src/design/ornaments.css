@@ -1,0 +1,75 @@
+/* Clube do Livro — ornamentos da estética "Estante Rosa & Palha"
+ * Papel, fita adesiva, borda rasgada, xadrez e adesivos. Use com parcimônia:
+ * um ornamento por bloco basta. Tudo é decorativo e não carrega informação.
+ */
+
+/* ── Adesivos (componentes em components/Stickers.tsx) ── */
+.sticker { position: relative; display: inline-block; flex: 0 0 auto; pointer-events: none; filter: drop-shadow(0 3px 4px rgba(86, 33, 58, .18)); }
+.sticker svg { display: block; width: 100%; height: 100%; }
+.sticker--float { animation: sticker-float 5.5s var(--ease-in-out) infinite; }
+.sticker--star.sticker--float { animation-duration: 6.5s; animation-delay: -1.2s; }
+.sticker--flower.sticker--float { animation-name: sticker-spin; animation-duration: 14s; animation-timing-function: linear; }
+.sticker--sparkle.sticker--float { animation-name: sticker-twinkle; animation-duration: 2.8s; }
+@keyframes sticker-float { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-5px) rotate(4deg); } }
+@keyframes sticker-spin { to { transform: rotate(360deg); } }
+@keyframes sticker-twinkle { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.7); opacity: .6; } }
+
+/* Adesivo preso no canto de um bloco (o bloco precisa de position: relative) */
+.sticker-corner { position: absolute; z-index: 2; top: -14px; right: -10px; }
+.sticker-corner--left { right: auto; left: -12px; }
+
+/* ── Fita adesiva (washi) segurando um papel ── */
+.taped { position: relative; }
+.taped::before {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: -11px;
+  left: 50%;
+  width: 92px;
+  height: 24px;
+  transform: translateX(-50%) rotate(-3deg);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .35) 0 6px, transparent 6px 12px),
+    color-mix(in srgb, var(--rosa-300) 78%, transparent);
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(86, 33, 58, .14);
+  clip-path: polygon(3% 0, 97% 6%, 100% 50%, 96% 100%, 4% 94%, 0 50%);
+}
+.taped--palha::before { background: repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 6px, transparent 6px 12px), color-mix(in srgb, var(--palha-400) 80%, transparent); }
+
+/* ── Papel solto, levemente torto (como post-it ou cartão-postal) ── */
+.paper-tilt { transform: rotate(-0.8deg); }
+.paper-tilt:nth-child(even) { transform: rotate(0.7deg); }
+
+/* ── Borda de papel rasgado (embaixo de um cabeçalho) ── */
+.torn-edge { position: relative; }
+.torn-edge::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -9px;
+  height: 10px;
+  background: inherit;
+  background-color: inherit;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='10' viewBox='0 0 120 10'%3E%3Cpath d='M0 0h120v4l-6 4-7-3-8 5-6-4-9 3-7-5-8 4-6-3-9 5-7-4-8 3-6-5-9 4-7-3-8 5-6-4-3 2V0Z'/%3E%3C/svg%3E") repeat-x 0 0 / 120px 10px;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='10' viewBox='0 0 120 10'%3E%3Cpath d='M0 0h120v4l-6 4-7-3-8 5-6-4-9 3-7-5-8 4-6-3-9 5-7-4-8 3-6-5-9 4-7-3-8 5-6-4-3 2V0Z'/%3E%3C/svg%3E") repeat-x 0 0 / 120px 10px;
+}
+
+/* ── Xadrez rosa e vinho (referência "Encha seu Kindle"), para faixas e destaques ── */
+.checker {
+  --checker-a: var(--rosa-300);
+  --checker-b: var(--rosa-100);
+  background-color: var(--checker-b);
+  background-image: conic-gradient(var(--checker-a) 25%, transparent 0 50%, var(--checker-a) 0 75%, transparent 0);
+  background-size: 28px 28px;
+}
+.checker--vinho { --checker-a: var(--vinho-500); --checker-b: var(--rosa-300); }
+
+/* ── Letra de adesivo para selos curtos ── */
+.t-sticker { font-family: var(--font-sticker); font-weight: 600; letter-spacing: 0.01em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sticker--float { animation: none; }
+}

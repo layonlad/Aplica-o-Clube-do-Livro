@@ -18,8 +18,7 @@
 @keyframes ribbon-drop { from { transform: translateY(-100%); } to { transform: none; } }
 @keyframes spines-slide { from { background-position: -240px 0; } to { background-position: 0 0; } }
 
-/* Troca de rota: a página nova sobe levemente */
-.route-view { animation: page-enter var(--dur-page) var(--ease-page) both; }
+/* Troca de rota: animada pelo framer-motion (variants pageTurn em design/motion.ts) */
 
 /* Revelação em cascata: aplique .reveal aos filhos; o atraso vem de --i */
 .reveal > * { animation: rise-in var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 55ms); }

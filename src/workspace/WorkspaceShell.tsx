@@ -9,6 +9,8 @@ import { SkeletonPage } from '../components/ui'
 import { UserAvatar, useOwnAvatar } from '../components/UserAvatar'
 import { AppearanceSync } from '../app/AppearanceSettings'
 import { useWorkspace } from './WorkspaceProvider'
+import { motion } from 'framer-motion'
+import { pageTurn, settle } from '../design/motion'
 
 type NavItem = { to: string; name: string; icon: LucideIcon; hint?: string }
 type NavGroup = { label: string; items: NavItem[] }
@@ -145,7 +147,7 @@ export function WorkspaceShell() {
         <button ref={menuButtonRef} className="icon-button mobile-only" aria-label="Abrir menu" aria-expanded={menu} onClick={() => setMenu(true)}><Menu /></button>
       </header>
       <nav className="bottom-nav" aria-label="Navegação principal">
-        {nav.map(({ to, name, icon: Icon }) => <NavLink key={to} to={to} end={to === '/app'} className={({ isActive }) => isActive ? 'active' : ''}><Icon size={21} strokeWidth={1.9} aria-hidden="true" /><span>{name}</span></NavLink>)}
+        {nav.map(({ to, name, icon: Icon }) => <NavLink key={to} to={to} end={to === '/app'} className={({ isActive }) => isActive ? 'active' : ''}>{({ isActive }) => <>{isActive && <motion.span layoutId="nav-pill" className="nav-pill" transition={settle} aria-hidden="true" />}<Icon size={21} strokeWidth={1.9} aria-hidden="true" /><span>{name}</span></>}</NavLink>)}
       </nav>
       <nav className="rail-more rail-only" aria-label="Mais do aplicativo">
         {groups.map(group => <div className="rail-group" key={group.label}>
@@ -166,7 +168,7 @@ export function WorkspaceShell() {
       {unread && <p className="toast-status" role="status">{unread}</p>}
       {error && <div role="alert" className="access-error">{error} {['AUTH_REQUIRED','EMAIL_NOT_VERIFIED'].includes(errorCode)?<button type="button" onClick={()=>void reenter()}>Entrar novamente</button>:<button type="button" onClick={() => void refresh()}>Recarregar</button>}</div>}
       {accountError&&<p role="alert">{accountError}</p>}
-      {loading&&!globalPage ? <SkeletonPage label="Abrindo seu espaço…" /> : snapshot||globalPage ? <div key={pathname} className="route-view"><Suspense fallback={<SkeletonPage label="Abrindo esta página…"/>}><Outlet /></Suspense></div> : !error ? <p role="status">Escolha seu espaço para começar.</p> : null}
+      {loading&&!globalPage ? <SkeletonPage label="Abrindo seu espaço…" /> : snapshot||globalPage ? <motion.div key={pathname} className="route-view" variants={pageTurn} initial="initial" animate="enter"><Suspense fallback={<SkeletonPage label="Abrindo esta página…"/>}><Outlet /></Suspense></motion.div> : !error ? <p role="status">Escolha seu espaço para começar.</p> : null}
     </main>
 
     {menu && <div className="drawer-layer" onMouseDown={() => setMenu(false)}>
