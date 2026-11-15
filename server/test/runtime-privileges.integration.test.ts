@@ -13,14 +13,30 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
   const objects = new Map<string, Buffer>()
   try {
     await db.pool.query(`CREATE ROLE ${role} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT`)
-    // Reproduz os grants CRUD herdados da primeira publicação, antes da matriz restrita.
+    // Reproduz a regra herdada que concedia CRUD a todas as tabelas, inclusive futuras.
     await db.pool.query(
-      `GRANT SELECT,INSERT,UPDATE,DELETE ON users,clubs,club_memberships,invites,invite_acceptances,personal_workspaces,club_workspaces,club_reading_states TO ${role}`,
+      `GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ${schema} TO ${role}`,
+    )
+    await db.pool.query(
+      `ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO ${role}`,
+    )
+    await db.pool.query(
+      `ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} GRANT SELECT,USAGE ON SEQUENCES TO ${role}`,
     )
     const grants = (
       await readFile(new URL('../ops/runtime-grants.sql', import.meta.url), 'utf8')
     ).replaceAll('clube_runtime', role)
     await db.pool.query(grants)
+    await db.pool.query('CREATE TABLE future_grant_probe(id int)')
+    expect(
+      (
+        await db.pool.query(
+          "SELECT has_table_privilege($1,'future_grant_probe','SELECT') AS allowed",
+          [role],
+        )
+      ).rows[0].allowed,
+    ).toBe(false)
+    await db.pool.query('DROP TABLE future_grant_probe')
     runtime = new Pool({
       connectionString: db.pool.options.connectionString,
       options: `-c search_path=${schema} -c role=${role}`,
@@ -90,7 +106,9 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
     expect(saved.statusCode, saved.body).toBe(200)
     expect((await call('/me/appearance')).json()).toEqual({ appearance })
     const image = (
-      await sharp({ create: { width: 8, height: 8, channels: 3, background: '#462b70' } })
+      await sharp({
+        create: { width: 8, height: 8, channels: 3, background: '#462b70' },
+      })
         .png()
         .toBuffer()
     ).toString('base64')
@@ -110,7 +128,9 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
     const shared = await call(`/people/${session.json().user.id}/club-posts`)
     expect(shared.statusCode, shared.body).toBe(200)
     expect(shared.json().items.map((item: { id: string }) => item.id)).toContain(post.json().id)
-    expect((await call('/me/avatar', 'DELETE')).json()).toEqual({ avatarId: null })
+    expect((await call('/me/avatar', 'DELETE')).json()).toEqual({
+      avatarId: null,
+    })
     expect((await call(`/people/${session.json().user.id}`)).json().avatarId).toBeNull()
     const album = await call(`/clubs/${club.json().id}/albums`, 'POST', {
       title: 'Capa restrita',
@@ -137,7 +157,10 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
     expect(albumRead.json().coverMediaId).toBe(media.json().id)
     expect(albumRead.json().covers[0].id).toBe(media.json().id)
     const { id: profileId, suspended, ...publicSettings } = (await call('/me/profile')).json()
-    const madePublic = await call('/me/profile', 'POST', { ...publicSettings, isPublic: true })
+    const madePublic = await call('/me/profile', 'POST', {
+      ...publicSettings,
+      isPublic: true,
+    })
     expect(madePublic.statusCode, madePublic.body).toBe(200)
     const sharedCopy = await call(
       `/clubs/${club.json().id}/albums/${album.json().id}/photos/${media.json().id}/publish-public`,
@@ -173,6 +196,19 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
     await expect(
       runtime.query('UPDATE invite_acceptances SET accepted_at=now() WHERE false'),
     ).rejects.toThrow('permission denied')
+    for (const table of ['album_media', 'post_media', 'post_likes', 'follows'])
+      expect(
+        (
+          await db.pool.query("SELECT has_table_privilege($1,$2,'UPDATE') AS allowed", [
+            role,
+            table,
+          ])
+        ).rows[0].allowed,
+      ).toBe(false)
+    for (const table of ['club_albums', 'social_posts', 'profiles', 'media_objects', 'club_events'])
+      await expect(runtime.query(`DELETE FROM ${table} WHERE false`)).rejects.toThrow(
+        'permission denied',
+      )
     await expect(runtime.query('TRUNCATE users')).rejects.toThrow('permission denied')
   } finally {
     await app?.close()

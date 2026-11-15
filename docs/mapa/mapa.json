@@ -6,18 +6,16 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Publicado; ajuste de permissões pendente",
-    "tom": "aguardando",
-    "resumo": "A plataforma social está em produção desde 14/11/2026: API e site usam o código de b64835d, incluindo os PRs 5, 6 e 7. Banco, mídia privada e moderação foram configurados; os testes reais e a limpeza sintética foram concluídos. A revisão do mapa identificou permissões SQL legadas que precisam ser removidas.",
-    "proximoPasso": "Revisar o PR 11 dos ajustes sociais móveis. Depois de aprovado e autorizado: aplicar a revogação de grants pendente e a migration aditiva da capa dos álbuns; publicar API e depois Firebase, incluindo a correção de capa/GIF do PR 10. Produção permanece em b64835d nesta etapa.",
+    "fase": "Publicado e validado",
+    "tom": "ok",
+    "resumo": "API e site usam a66cbc2 desde 14/11/2026, incluindo os PRs 10 e 11: capa de perfil/GIF, controles sociais móveis, comentários em painel e capa selecionável dos álbuns. Migration aditiva aplicada, permissões legadas reconciliadas e concessões automáticas removidas. Cópias privadas de recuperação preservadas.",
+    "proximoPasso": "Conferir a experiência na conta e no aparelho do dono. Alterações futuras continuam passando por PR, testes e autorização para produção.",
     "pendencias": [
-      "Aplicar, após autorização, a revogação dos privilégios legados em server/ops/runtime-grants.sql. Em produção ainda existem DELETE em tabelas da implantação inicial e UPDATE em aceites; o script anterior só acrescentava grants.",
-      "Aprovar os controles sociais móveis e aplicar a migration de seleção de capa dos álbuns antes de publicar a nova API; não foi aplicada em produção.",
-      "Publicar a correção da capa do perfil e dos GIFs (PR 10): primeiro a API no Render, depois o site no Firebase. Até lá, a produção continua recusando GIF e escondendo a capa de perfis privados.",
+      "Os fluxos autenticados de capa GIF, capa do álbum e comentários foram testados localmente com contas e arquivos sintéticos. Nesta liberação, produção recebeu verificações sem escrita em contas reais; não foi testado um segundo aparelho físico.",
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
       "Leitor de tela real e recorte de foto pela câmera do celular ainda não foram testados. A persistência foi validada por novo login, sem segundo aparelho físico.",
       "Modo conectado sem cache offline por service worker; notificações são internas ao app, sem e-mail ou push.",
-      "A cópia privada de recuperação é anterior à liberação de 14/11; não representa cópia contínua nem inclui gravações posteriores."
+      "As cópias privadas de recuperação são anteriores às respectivas liberações; não representam cópia contínua nem incluem gravações posteriores."
     ]
   },
   "ambientes": [
@@ -25,7 +23,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "Código de b64835d · publicado em 14/11/2026 no Firebase Hosting",
+      "versao": "Código de a66cbc2 · publicado em 14/11/2026 no Firebase Hosting",
       "atualizacao": "Manual, com autorização do dono; merge em main não publica o Firebase",
       "tom": "ok"
     },
@@ -33,7 +31,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api.onrender.com/health",
-      "versao": "b64835d · Docker no Render · publicado em 14/11/2026",
+      "versao": "a66cbc2 · Docker no Render · publicado em 14/11/2026",
       "atualizacao": "Deploy manual do commit aprovado; autodeploy desligado",
       "tom": "ok"
     },
@@ -115,7 +113,7 @@
       "coluna": 4,
       "cor": "mint",
       "guarda": ["Perfis, clubes e membros", "Publicações, comentários e curtidas", "Fórum, encontros e álbuns", "Leituras sincronizadas e preferências", "Notificações, denúncias e moderação", "Histórico de auditoria e aceites de convites"],
-      "detalhe": "Migrations da versão publicada aplicadas e conferidas em 14/11. A API usa clube_runtime; migrations e concessões usam uma identidade separada. DDL, leitura de migrations e alteração da auditoria estão negados. A revisão encontrou permissões legadas de exclusão e alteração de aceites ainda presentes em produção; a correção preparada neste PR aguarda aplicação autorizada.",
+      "detalhe": "Migrations da versão publicada aplicadas, incluindo a referência aditiva de capa dos álbuns. A API usa clube_runtime com a matriz de permissões testada: sem DDL, leitura de migrations, exclusão de usuários ou alteração da auditoria. Privilégios CRUD legados e concessões automáticas do proprietário de migrations foram removidos e conferidos; nenhuma permissão extra para capas.",
       "link": "https://console.neon.tech/app/projects/wandering-block-99253816"
     },
     {
@@ -147,8 +145,8 @@
       "plano": "Na franquia Free · sem compute próprio",
       "coluna": 4,
       "cor": "honey",
-      "guarda": ["Ponto de recuperação do banco antes da liberação social"],
-      "detalhe": "Cópia preservada e pronta. Não inclui gravações posteriores à sua criação e não substitui uma política periódica de backup. Restaurar sobre dados atuais ou excluir essa cópia exige autorização específica.",
+      "guarda": ["Pontos de recuperação do banco antes das liberações social e móvel"],
+      "detalhe": "Duas cópias privadas prontas, criadas antes das respectivas liberações de 14/11/2026, sem compute próprio. A mais recente precede a migration da capa dos álbuns e a reconciliação de permissões. Não incluem gravações posteriores nem substituem backup periódico. Restaurar sobre dados atuais ou excluir cópias exige autorização específica.",
       "link": "https://console.neon.tech/app/projects/wandering-block-99253816"
     }
   ],
@@ -178,7 +176,7 @@
     { "o_que": "Fotos e vídeos de publicações e álbuns", "onde": "midia", "privacidade": "Permissões da publicação ou álbum; copiar foto de clube para a comunidade exige autorização explícita", "copia": "Persistência no bucket; arquivos não entram no backup JSON" },
     { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Não entram no backup JSON; baixe o original separadamente. O envio de acervo ao clube exige origem e autorização." },
     { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" },
-    { "o_que": "Ponto de recuperação anterior à liberação", "onde": "recuperacao", "privacidade": "Privado no mesmo projeto Neon", "copia": "Cópia de 14/11/2026, sem escritas posteriores; mantida até decisão do dono" }
+    { "o_que": "Ponto de recuperação anterior à liberação", "onde": "recuperacao", "privacidade": "Privado no mesmo projeto Neon", "copia": "Cópias de 14/11/2026 antes das liberações social e móvel; sem escritas posteriores; mantidas até decisão do dono" }
   ],
   "fluxoPublicacao": [
     { "titulo": "Você pede uma mudança", "onde": "Conversa com Claude ou Codex", "texto": "Claude cuida de visual e telas; Codex de backend, banco e regras.", "modo": "voce" },
@@ -248,6 +246,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-14",
+      "autor": "Codex",
+      "titulo": "Ajustes sociais móveis publicados com autorização",
+      "resumo": "PR 11 mesclado; API Render e site Firebase publicados em a66cbc2, incluindo a correção de capa/GIF do Claude. Cópia privada pré-liberação criada, migration de capa dos álbuns aplicada e grants/defaults legados reconciliados. CI de main aprovado; 135 testes prévios e 61 de PostgreSQL repetidos após a correção. Validação de produção sem escrita em contas reais e navegador de 390/1440px sem transbordamento ou exceções.",
+      "pr": ""
+    },
     {
       "data": "2026-11-14",
       "autor": "Codex",
