@@ -303,3 +303,14 @@
 .space-popover button:hover, .space-popover button:focus-visible, .space-popover button[aria-selected=true] { color:var(--brand-ink); background:var(--brand-soft); }
 .app-header .space-switch small { position:absolute; top:0; left:0; width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:12px; font-size:.6rem; pointer-events:none; }
 .app-header .space-trigger { padding-top:12px; padding-bottom:0; min-height:44px; }
+
+/* Leave scrollable space for fixed navigation and safe areas, including the keyboard. */
+@media(max-width:1023px){
+ .page-content { padding-bottom:calc(116px + env(safe-area-inset-bottom)); scroll-padding-bottom:calc(116px + env(safe-area-inset-bottom)); }
+ .page-content :is(input,textarea,button,a,select) { scroll-margin-block:90px 120px; }
+ body:has(dialog[open]) .bottom-nav { visibility:hidden; }
+ .app-frame[data-keyboard='open'] .bottom-nav { visibility:hidden; }
+}
+.notification-bell { flex:0 0 44px; position:relative; }
+.notification-badge { position:absolute; top:1px; right:0; min-width:17px; height:17px; padding:0 3px; display:grid; place-items:center; border-radius:999px; background:var(--accent-ink); color:var(--surface); font:700 10px/1 var(--font-ui); }
+@media(max-width:600px){ .app-header { gap:6px; } .app-header .space-switcher { min-width:0; } }

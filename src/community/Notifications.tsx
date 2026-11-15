@@ -1,5 +1,7 @@
+import {notificationChanged} from './NotificationBell'
+import {PushSettings} from './PushSettings'
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Bell } from 'lucide-react'
 import type { Page } from '../../server/src/community-contracts'
 import type { NotificationPreferences } from '../../server/src/notification-service'
@@ -33,7 +35,8 @@ const labels: Record<string, string> = {
   join_approved: 'aprovou sua participação',
   topic: 'iniciou uma discussão',
   event: 'agendou ou atualizou um encontro',
-  event_reminder: 'tem um encontro com você nas próximas 24 horas',
+  post: 'publicou no mural do clube',
+  event_reminder: 'tem um encontro se aproximando',
   reading: 'atualizou a leitura coletiva',
   book: 'adicionou um livro ao clube',
 }
@@ -41,6 +44,7 @@ export function Notifications() {
   const { user } = useAuth(),
     { setScope, refresh } = useWorkspace(),
     navigate = useNavigate(),
+    [params]=useSearchParams(),
     [page, setPage] = useState<Page<Notice>>({ items: [], nextCursor: null }),
     [preferences, setPreferences] = useState<NotificationPreferences | null>(null),
     [loading, setLoading] = useState(false),
@@ -69,12 +73,19 @@ export function Notifications() {
       live = false
     }
   }, [user?.uid, user?.emailVerified, revision])
+  useEffect(()=>{
+    const id=params.get('open');if(!user?.emailVerified||!id||! /^[0-9a-f-]{36}$/i.test(id))return
+    let live=true
+    void apiRequest<Notice>(user,`/me/notifications/${id}`).then(notice=>{if(live)void open(notice)}).catch(err=>live&&setError(readableError(err)))
+    return()=>{live=false}
+  },[user?.uid,params.get('open')])
   async function open(notice: Notice) {
     if (!user) return
     setBusy(true)
     setError('')
     try {
       await apiRequest(user, '/me/notifications/read', 'POST', { id: notice.id })
+      notificationChanged()
       if (notice.clubId && !['invitation', 'join_request'].includes(notice.kind))
         setScope(notice.clubId)
       if (notice.targetType === 'post')
@@ -139,7 +150,7 @@ export function Notifications() {
             onClick={() => {
               setBusy(true)
               void apiRequest(user, '/me/notifications/read', 'POST', {})
-                .then(() => setRevision((n) => n + 1))
+                .then(() => {notificationChanged();setRevision((n) => n + 1)})
                 .catch((err) => setError(readableError(err)))
                 .finally(() => setBusy(false))
             }}
@@ -148,6 +159,7 @@ export function Notifications() {
           </Button>
         </div>
       </header>
+      <PushSettings/>
       {preferences && (
         <details className="card">
           <summary>Escolher o que acompanhar</summary>
@@ -175,7 +187,7 @@ export function Notifications() {
               <label className="workspace-check" key={key}>
                 <input
                   type="checkbox"
-                  checked={preferences[key as keyof NotificationPreferences]}
+                  checked={!!preferences[key as keyof NotificationPreferences]}
                   onChange={(event) =>
                     setPreferences({ ...preferences, [key]: event.target.checked })
                   }
@@ -183,6 +195,9 @@ export function Notifications() {
                 {label}
               </label>
             ))}
+            <label>Lembrar encontros com antecedência<select value={preferences.reminderMinutes??1440} onChange={event=>setPreferences({...preferences,reminderMinutes:Number(event.target.value) as 0|15|60|1440})}>
+              <option value={1440}>1 dia</option><option value={60}>1 hora</option><option value={15}>15 minutos</option><option value={0}>Sem lembrete</option>
+            </select></label>
             <Button disabled={busy}>Salvar preferências</Button>
           </form>
         </details>

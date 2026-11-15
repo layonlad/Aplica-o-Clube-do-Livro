@@ -174,10 +174,10 @@ it('pagina o mural privado e mantém autoria, edições, likes, comentários e r
         url: postUrl + '/comments',
         method: 'POST',
         headers: headers(),
-        payload: { body: 'Profundidade excessiva', parentId: reply.json().id },
+        payload: { body: 'Resposta agrupada no comentário original', parentId: reply.json().id },
       })
     ).statusCode,
-  ).toBe(400)
+  ).toBe(201)
   const unrelated = await createPost({ body: 'Outra conversa' })
   expect(
     (

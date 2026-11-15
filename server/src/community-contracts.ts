@@ -13,8 +13,9 @@ export const postKinds = [
 ] as const
 export const postInput = z
   .object({
-    kind: z.enum(postKinds),
-    body: z.string().trim().max(5000),
+    kind: z.enum(postKinds).default('reflection'),
+    clientRequestId: z.uuid().optional(),
+    body: z.string().trim().max(50000),
     bookTitle: z.string().trim().max(150).default(''),
     bookAuthor: z.string().trim().max(150).default(''),
     quote: z.string().trim().max(280).default(''),
@@ -79,6 +80,8 @@ export interface CommentDto {
   likes: number
   liked: boolean
   canDelete: boolean
+  canEdit?: boolean
+  media?: PostMedia[]
 }
 export interface Page<T> {
   items: T[]
@@ -113,3 +116,19 @@ export interface AlbumPhoto extends PostMedia {
   tags: { id: string; name: string }[]
   myPendingTag: boolean
 }
+
+export const commentInput = z
+  .object({
+    clientRequestId: z.uuid().optional(),
+    body: z.string().trim().min(1).max(10000),
+    parentId: z.uuid().optional(),
+    mediaIds: z
+      .array(z.uuid())
+      .max(4)
+      .default([])
+      .refine((ids) => new Set(ids).size === ids.length),
+  })
+  .strict()
+export const commentEditInput = z
+  .object({ body: z.string().trim().min(1).max(10000), version: z.number().int().min(0) })
+  .strict()

@@ -2,6 +2,7 @@ import type { Pool } from 'pg'
 import type { PrivateStorage } from './private-storage.js'
 import { PrivateFiles } from './private-files.js'
 import { ClubFiles } from './club-files.js'
+import {PhotoUploads} from './photo-uploads.js'
 import { MediaService } from './media-service.js'
 export async function maintain(pool: Pool, storage?: PrivateStorage) {
   const client = await pool.connect()
@@ -19,6 +20,7 @@ export async function maintain(pool: Pool, storage?: PrivateStorage) {
               personal: await new PrivateFiles(pool, storage).cleanup(5),
               club: await new ClubFiles(pool, storage).cleanup(5),
               social: await new MediaService(pool, storage).cleanup(5),
+              photoUploads: await new PhotoUploads(pool,storage).cleanup(5),
             }
           : {}),
       }

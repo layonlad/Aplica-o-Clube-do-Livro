@@ -34,6 +34,11 @@ export const appearanceSchema = z
       .string()
       .regex(/^#[0-9a-f]{6}$/i)
       .nullable(),
+    background: z
+      .string()
+      .regex(/^#[0-9a-f]{6}$/i)
+      .nullable()
+      .optional(),
     headingFont: z.enum(appearanceFonts),
     bodyFont: z.enum(appearanceFonts),
     radius: z.enum(['round', 'soft', 'square']),

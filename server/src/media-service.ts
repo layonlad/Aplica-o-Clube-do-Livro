@@ -19,6 +19,7 @@ interface Media {
   club_id: string | null
   object_key: string
   thumbnail_key: string
+  feed_key?: string | null
   mime_type: string
   state: string
 }
@@ -58,14 +59,19 @@ export class MediaService {
     clubId: string | null,
     kind: 'image' | 'video',
     bytes: Buffer,
-    options: { profilePhoto?: boolean } = {},
+    options: { profilePhoto?: boolean; sourceCopy?: boolean } = {},
   ) {
     if (!this.storage) throw unavailable()
     const profilePhoto = !!options.profilePhoto && clubId === null && kind === 'image'
     await transaction(this.pool, (client) =>
       this.membership(client, userId, clubId, false, profilePhoto),
     )
-    const processed = await processMedia(bytes, kind),
+    const processed = await processMedia(
+        bytes,
+        kind,
+        process.env,
+        options.sourceCopy ? 10000000 : 5000000,
+      ),
       id = randomUUID(),
       key = `club-media/${clubId}/${id}.${kind === 'image' ? 'webp' : 'mp4'}`,
       thumbnailKey = `club-media/${clubId}/${id}-thumb.webp`
@@ -73,7 +79,7 @@ export class MediaService {
       await this.membership(client, userId, clubId, false, profilePhoto)
       await client.query('SELECT id FROM users WHERE id=$1 FOR UPDATE', [userId])
       const quota = await client.query(
-        "SELECT COALESCE(sum(byte_size+thumbnail_size),0)::bigint AS bytes FROM media_objects WHERE owner_user_id=$1 AND state<>'purged'",
+        "SELECT COALESCE(sum(byte_size+thumbnail_size+feed_size),0)::bigint AS bytes FROM media_objects WHERE owner_user_id=$1 AND state<>'purged'",
         [userId],
       )
       if (
@@ -139,7 +145,7 @@ export class MediaService {
       const { rows } = await client.query(
         `SELECT m.id,m.kind,m.width,m.height,m.duration,m.created_at AS "createdAt",m.created_at::text AS "sortTime" FROM media_objects m WHERE m.owner_user_id=$1 AND m.club_id IS NOT DISTINCT FROM $2::uuid AND m.state='active'
       AND ($3::timestamptz IS NULL OR (m.created_at,m.id)<($3,$4::uuid))
-      AND NOT EXISTS(SELECT 1 FROM club_settings cs WHERE cs.cover_media_id=m.id) AND NOT EXISTS(SELECT 1 FROM profiles pr WHERE pr.avatar_id=m.id OR pr.cover_id=m.id) AND NOT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=m.id AND p.deleted_at IS NULL)
+      AND NOT EXISTS(SELECT 1 FROM club_settings cs WHERE cs.cover_media_id=m.id) AND NOT EXISTS(SELECT 1 FROM profiles pr WHERE pr.avatar_id=m.id OR pr.cover_id=m.id) AND NOT EXISTS(SELECT 1 FROM comment_media cm JOIN post_comments pc ON pc.id=cm.comment_id JOIN social_posts sp ON sp.id=pc.post_id WHERE cm.media_id=m.id AND pc.deleted_at IS NULL AND sp.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=m.id AND p.deleted_at IS NULL)
       AND NOT EXISTS(SELECT 1 FROM album_media am JOIN club_albums a ON a.id=am.album_id WHERE am.media_id=m.id AND a.deleted_at IS NULL)
       AND NOT EXISTS(SELECT 1 FROM forum_topic_media fm JOIN forum_topics t ON t.id=fm.topic_id WHERE fm.media_id=m.id AND t.deleted_at IS NULL)
       AND NOT EXISTS(SELECT 1 FROM forum_reply_media fm JOIN forum_replies r ON r.id=fm.reply_id JOIN forum_topics t ON t.id=r.topic_id WHERE fm.media_id=m.id AND r.deleted_at IS NULL AND t.deleted_at IS NULL)
@@ -149,7 +155,12 @@ export class MediaService {
       return pageOf(rows, input.limit)
     })
   }
-  async content(userId: string, id: string, thumbnail: boolean, download = false) {
+  async content(
+    userId: string,
+    id: string,
+    thumbnail: boolean | 'thumbnail' | 'feed' | 'full',
+    download = false,
+  ) {
     if (!this.storage) throw unavailable()
     const media = await transaction(this.pool, async (client) => {
       const {
@@ -167,16 +178,18 @@ export class MediaService {
         rows: [links],
       } = await client.query(
         `SELECT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=$1 AND p.deleted_at IS NULL AND p.audience='club') AS posted,
+        EXISTS(SELECT 1 FROM comment_media cm JOIN post_comments pc ON pc.id=cm.comment_id JOIN social_posts sp ON sp.id=pc.post_id WHERE cm.media_id=$1 AND pc.deleted_at IS NULL AND sp.deleted_at IS NULL AND sp.audience='club' AND ${notBlocked('pc.author_user_id', '$2')}) AS comment,
         EXISTS(SELECT 1 FROM album_media am JOIN club_albums a ON a.id=am.album_id WHERE am.media_id=$1 AND a.deleted_at IS NULL) AS album,
         EXISTS(SELECT 1 FROM album_media am JOIN club_albums a ON a.id=am.album_id WHERE am.media_id=$1 AND a.deleted_at IS NULL AND a.allow_download) AS downloadable,
         (EXISTS(SELECT 1 FROM forum_topic_media fm JOIN forum_topics t ON t.id=fm.topic_id WHERE fm.media_id=$1 AND t.deleted_at IS NULL) OR EXISTS(SELECT 1 FROM forum_reply_media fm JOIN forum_replies r ON r.id=fm.reply_id JOIN forum_topics t ON t.id=r.topic_id WHERE fm.media_id=$1 AND r.deleted_at IS NULL AND t.deleted_at IS NULL)) AS forum`,
-        [id],
+        [id, userId],
       )
       if (
         file.owner_user_id !== userId &&
         !links.posted &&
         !links.album &&
         !links.forum &&
+        !links.comment &&
         !(await client.query('SELECT 1 FROM club_settings WHERE cover_media_id=$1', [id])).rowCount
       )
         throw missing()
@@ -190,8 +203,14 @@ export class MediaService {
     })
     try {
       return {
-        bytes: await this.storage.get(thumbnail ? media.thumbnail_key : media.object_key),
-        mimeType: thumbnail ? 'image/webp' : media.mime_type,
+        bytes: await this.storage.get(
+          thumbnail === true || thumbnail === 'thumbnail'
+            ? media.thumbnail_key
+            : thumbnail === 'feed'
+              ? (media.feed_key ?? media.object_key)
+              : media.object_key,
+        ),
+        mimeType: thumbnail === true || thumbnail === 'thumbnail' ? 'image/webp' : media.mime_type,
       }
     } catch {
       throw new HttpError(503, 'DOWNLOAD_FAILED', 'Não foi possível carregar a mídia agora.')
@@ -212,13 +231,17 @@ export class MediaService {
     }
     if (file.owner_user_id === userId) return
     const visible = await client.query(
-      `SELECT 1 WHERE EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=$1 AND ${visiblePublicPost('p', '$2')}) OR EXISTS(SELECT 1 FROM profiles pr WHERE (pr.avatar_id=$1 OR pr.cover_id=$1) AND pr.is_public AND ${notBlocked('pr.user_id', '$2')})
+      `SELECT 1 WHERE EXISTS(SELECT 1 FROM comment_media cm JOIN post_comments pc ON pc.id=cm.comment_id JOIN social_posts p ON p.id=pc.post_id JOIN profiles cp ON cp.user_id=pc.author_user_id WHERE cm.media_id=$1 AND pc.deleted_at IS NULL AND cp.is_public AND ${notBlocked('pc.author_user_id', '$2')} AND ${visiblePublicPost('p', '$2')}) OR EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=$1 AND ${visiblePublicPost('p', '$2')}) OR EXISTS(SELECT 1 FROM profiles pr WHERE (pr.avatar_id=$1 OR pr.cover_id=$1) AND pr.is_public AND ${notBlocked('pr.user_id', '$2')})
       OR EXISTS(SELECT 1 FROM profiles pr WHERE pr.avatar_id=$1 AND $2::uuid IS NOT NULL AND ${notBlocked('pr.user_id', '$2')} AND EXISTS(SELECT 1 FROM club_memberships mine JOIN club_memberships theirs ON theirs.club_id=mine.club_id WHERE mine.user_id=$2 AND mine.status='active' AND theirs.user_id=pr.user_id AND theirs.status='active'))`,
       [file.id, userId],
     )
     if (!visible.rowCount) throw publicMissing()
   }
-  async publicContent(userId: string | null, id: string, thumbnail: boolean) {
+  async publicContent(
+    userId: string | null,
+    id: string,
+    thumbnail: boolean | 'thumbnail' | 'feed' | 'full',
+  ) {
     if (!this.storage) throw unavailable()
     const media = await transaction(this.pool, async (client) => {
       const {
@@ -232,16 +255,23 @@ export class MediaService {
     })
     try {
       return {
-        bytes: await this.storage.get(thumbnail ? media.thumbnail_key : media.object_key),
-        mimeType: thumbnail ? 'image/webp' : media.mime_type,
+        bytes: await this.storage.get(
+          thumbnail === true || thumbnail === 'thumbnail'
+            ? media.thumbnail_key
+            : thumbnail === 'feed'
+              ? (media.feed_key ?? media.object_key)
+              : media.object_key,
+        ),
+        mimeType: thumbnail === true || thumbnail === 'thumbnail' ? 'image/webp' : media.mime_type,
       }
     } catch {
       throw new HttpError(503, 'DOWNLOAD_FAILED', 'Não foi possível carregar a mídia agora.')
     }
   }
-  private async purge(file: Pick<Media, 'id' | 'object_key' | 'thumbnail_key'>) {
+  private async purge(file: Pick<Media, 'id' | 'object_key' | 'thumbnail_key' | 'feed_key'>) {
     await this.storage!.remove(file.object_key)
     await this.storage!.remove(file.thumbnail_key)
+    if (file.feed_key) await this.storage!.remove(file.feed_key)
     await this.pool.query(
       "UPDATE media_objects SET state='purged',last_purge_at=now() WHERE id=$1 AND state IN ('deleted','purged')",
       [file.id],
@@ -289,7 +319,7 @@ export class MediaService {
     if (!this.storage) throw unavailable()
     limit = Math.max(1, Math.min(50, limit))
     await this.pool.query(
-      `UPDATE media_objects SET state='deleted',deleted_at=now() WHERE id IN(SELECT m.id FROM media_objects m WHERE (m.state='pending' AND m.created_at<now()-interval '15 minutes') OR (m.state='active' AND m.created_at<now()-interval '1 day' AND NOT EXISTS(SELECT 1 FROM club_settings cs WHERE cs.cover_media_id=m.id) AND NOT EXISTS(SELECT 1 FROM profiles pr WHERE pr.avatar_id=m.id OR pr.cover_id=m.id) AND NOT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=m.id AND p.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM album_media am JOIN club_albums a ON a.id=am.album_id WHERE am.media_id=m.id AND a.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM forum_topic_media fm JOIN forum_topics t ON t.id=fm.topic_id WHERE fm.media_id=m.id AND t.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM forum_reply_media fm JOIN forum_replies r ON r.id=fm.reply_id JOIN forum_topics t ON t.id=r.topic_id WHERE fm.media_id=m.id AND r.deleted_at IS NULL AND t.deleted_at IS NULL)) ORDER BY m.created_at LIMIT $1 FOR UPDATE SKIP LOCKED)`,
+      `UPDATE media_objects SET state='deleted',deleted_at=now() WHERE id IN(SELECT m.id FROM media_objects m WHERE (m.state='pending' AND m.created_at<now()-interval '15 minutes') OR (m.state='active' AND m.created_at<now()-interval '1 day' AND NOT EXISTS(SELECT 1 FROM club_settings cs WHERE cs.cover_media_id=m.id) AND NOT EXISTS(SELECT 1 FROM profiles pr WHERE pr.avatar_id=m.id OR pr.cover_id=m.id) AND NOT EXISTS(SELECT 1 FROM comment_media cm JOIN post_comments pc ON pc.id=cm.comment_id JOIN social_posts sp ON sp.id=pc.post_id WHERE cm.media_id=m.id AND pc.deleted_at IS NULL AND sp.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=m.id AND p.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM album_media am JOIN club_albums a ON a.id=am.album_id WHERE am.media_id=m.id AND a.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM forum_topic_media fm JOIN forum_topics t ON t.id=fm.topic_id WHERE fm.media_id=m.id AND t.deleted_at IS NULL) AND NOT EXISTS(SELECT 1 FROM forum_reply_media fm JOIN forum_replies r ON r.id=fm.reply_id JOIN forum_topics t ON t.id=r.topic_id WHERE fm.media_id=m.id AND r.deleted_at IS NULL AND t.deleted_at IS NULL)) ORDER BY m.created_at LIMIT $1 FOR UPDATE SKIP LOCKED)`,
       [limit],
     )
     const { rows } = await this.pool.query<Media>(

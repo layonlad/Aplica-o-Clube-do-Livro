@@ -1,7 +1,12 @@
+import { createPresignedPost } from '@aws-sdk/s3-presigned-post'
+import { createWriteStream } from 'node:fs'
+import { Transform } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
 import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3'
 import { Unzip, UnzipInflate, strFromU8 } from 'fflate'
@@ -10,6 +15,18 @@ export interface PrivateStorage {
   put(key: string, bytes: Buffer, contentType?: string): Promise<void>
   get(key: string): Promise<Uint8Array>
   remove(key: string): Promise<void>
+  preparePhotoUpload?(
+    key: string,
+    byteSize: number,
+    contentType: string,
+    expiresIn?: number,
+  ): Promise<{ url: string; fields: Record<string, string> }>
+  photoStatus?(key: string): Promise<{ byteSize: number; contentType: string } | null>
+  copyPhotoToFile?(
+    key: string,
+    path: string,
+    maxBytes: number,
+  ): Promise<{ byteSize: number; contentType: string }>
 }
 export function createPrivateStorage(
   env: NodeJS.ProcessEnv = process.env,
@@ -37,6 +54,68 @@ export function createPrivateStorage(
   })
   const bucket = env.MEDIA_BUCKET
   return {
+    async preparePhotoUpload(key, byteSize, contentType, expiresIn = 300) {
+      return createPresignedPost(s3, {
+        Bucket: bucket,
+        Key: key,
+        Expires: Math.max(1, Math.min(300, expiresIn)),
+        Fields: {
+          'Content-Type': contentType,
+          'Cache-Control': 'private, no-store',
+          'Content-Disposition': 'attachment',
+        },
+        Conditions: [
+          ['content-length-range', byteSize, byteSize],
+          ['eq', '$Content-Type', contentType],
+          ['eq', '$Cache-Control', 'private, no-store'],
+          ['eq', '$Content-Disposition', 'attachment'],
+        ],
+      })
+    },
+    async photoStatus(key) {
+      try {
+        const object = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }), {
+          abortSignal: AbortSignal.timeout(10000),
+        })
+        return { byteSize: object.ContentLength ?? 0, contentType: object.ContentType ?? '' }
+      } catch (error) {
+        if (
+          (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode === 404
+        )
+          return null
+        throw error
+      }
+    },
+    async copyPhotoToFile(key, path, maxBytes) {
+      const signal = AbortSignal.timeout(45000)
+      const object = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }), {
+        abortSignal: signal,
+      })
+      if (!object.Body || object.ContentLength !== maxBytes || maxBytes > 100000000)
+        throw new HttpError(
+          400,
+          'INVALID_PHOTO_SIZE',
+          'O arquivo enviado não corresponde ao tamanho autorizado.',
+        )
+      let size = 0
+      const bounded = new Transform({
+        transform(chunk, _, done) {
+          size += chunk.length
+          if (size > maxBytes)
+            done(new HttpError(400, 'INVALID_PHOTO_SIZE', 'O arquivo excedeu o envio autorizado.'))
+          else done(null, chunk)
+        },
+      })
+      await pipeline(
+        object.Body as import('node:stream').Readable,
+        bounded,
+        createWriteStream(path, { flags: 'wx', mode: 0o600 }),
+        { signal },
+      )
+      if (size !== maxBytes)
+        throw new HttpError(400, 'INVALID_PHOTO_SIZE', 'O envio da foto ficou incompleto.')
+      return { byteSize: size, contentType: object.ContentType ?? '' }
+    },
     async put(key, bytes, contentType = 'application/epub+zip') {
       await s3.send(
         new PutObjectCommand({

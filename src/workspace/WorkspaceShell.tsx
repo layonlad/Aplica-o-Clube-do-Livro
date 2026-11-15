@@ -1,3 +1,4 @@
+import {NotificationBell} from '../community/NotificationBell'
 import { SpaceSwitcher } from '../components/SpaceSwitcher'
 import { Suspense, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
@@ -28,6 +29,23 @@ function spaceFor(pathname: string, scope: string) {
 export function WorkspaceShell() {
   const [menu, setMenu] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [keyboardOpen,setKeyboardOpen]=useState(false)
+  useEffect(()=>{
+    const viewport=window.visualViewport
+    let baseline=viewport?.height??window.innerHeight,width=window.innerWidth
+    const update=()=>{
+      const height=viewport?.height??window.innerHeight
+      if(window.innerWidth!==width){width=window.innerWidth;baseline=height}
+      const active=document.activeElement
+      const editing=active instanceof HTMLTextAreaElement||(active instanceof HTMLInputElement&&!['button','checkbox','radio','color','file'].includes(active.type))
+      if(!editing)baseline=Math.max(baseline,height)
+      setKeyboardOpen(editing&&(baseline-height>150||window.innerHeight-height>150))
+    }
+    const focus=()=>requestAnimationFrame(update)
+    viewport?.addEventListener('resize',update);window.addEventListener('resize',update);document.addEventListener('focusin',focus);document.addEventListener('focusout',focus)
+    return()=>{viewport?.removeEventListener('resize',update);window.removeEventListener('resize',update);document.removeEventListener('focusin',focus);document.removeEventListener('focusout',focus)}
+  },[])
+
   const [dismissed, setDismissed] = useState(readDismissed)
   const { publicModerator,snapshot, scope, scopeName, clubs, setScope, loading, busy, error, errorCode, refresh } = useWorkspace()
   const { user,signOut } = useAuth()
@@ -115,13 +133,14 @@ export function WorkspaceShell() {
   const showVisitorNote = !user?.emailVerified && !dismissed && pathname === '/app'
 
   const reading = /^\/app\/reader\/[^/]+/.test(pathname)
-  return <div className={`app-frame workspace-app ${reading ? 'is-reading' : ''}`} data-space={globalPage?'community':spaceFor(pathname, scope)}>
+  return <div className={`app-frame workspace-app ${reading ? 'is-reading' : ''}`} data-keyboard={keyboardOpen?'open':'closed'} data-space={globalPage?'community':spaceFor(pathname, scope)}>
     <a className="skip-link" href="#conteudo" onClick={skip}>Pular para o conteúdo</a>
     <AppearanceSync />
     <aside className="app-rail">
       <header className={`app-header ${scrolled ? 'is-scrolled' : ''}`}>
         <Link className="brand-lockup" to="/app" aria-label="Clube do Livro, início"><span className="brand-mark">{monogram}</span><span className="rail-brand-name rail-only"><strong>Clube do Livro</strong><small>Leituras que aproximam</small></span></Link>
         <SpaceSwitcher label={globalPage?'Espaço para suas leituras':'Você está em'} disabled={busy} value={scope} options={[{id:'personal',name:'Meu espaço pessoal'},...clubs]} onChange={value => {setScope(value);if(globalPage)navigate('/app')}}/>
+        <NotificationBell/>
         {!user && <Link className="header-chip mobile-only" to="/account">Entrar</Link>}
         <button ref={menuButtonRef} className="icon-button mobile-only" aria-label="Abrir menu" aria-expanded={menu} onClick={() => setMenu(true)}><Menu /></button>
       </header>

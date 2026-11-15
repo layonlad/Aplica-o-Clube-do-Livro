@@ -57,25 +57,24 @@ it('mostra comentários no painel, envia a resposta para o post certo e fecha', 
   const keyboard = userEvent.setup(),
     close = vi.fn(),
     changed = vi.fn()
+  const existing = {
+    id: 'comment',
+    body: 'Uma conversa que já existe.',
+    author: { id: 'someone', name: 'Outra leitora' },
+    parentId: null,
+    createdAt: '2026-11-14T12:00:00Z',
+    likes: 0,
+    liked: false,
+    canDelete: false,
+  }
+  const created = { ...existing, id: 'created', body: 'Gostei desta leitura.' }
   vi.mocked(apiRequest).mockImplementation((_u, path, method) =>
     Promise.resolve(
       method === 'POST'
-        ? {}
-        : {
-            items: [
-              {
-                id: 'comment',
-                body: 'Uma conversa que já existe.',
-                author: { id: 'someone', name: 'Outra leitora' },
-                parentId: null,
-                createdAt: '2026-11-14T12:00:00Z',
-                likes: 0,
-                liked: false,
-                canDelete: false,
-              },
-            ],
-            nextCursor: null,
-          },
+        ? { id: 'created' }
+        : path.endsWith('/created')
+          ? created
+          : { items: [existing], nextCursor: null },
     ),
   )
   render(
@@ -90,9 +89,11 @@ it('mostra comentários no painel, envia a resposta para o post certo e fecha', 
   await waitFor(() =>
     expect(apiRequest).toHaveBeenCalledWith(user, '/clubs/club-a/posts/post-a/comments', 'POST', {
       body: 'Gostei desta leitura.',
+      mediaIds: [],
+      clientRequestId: expect.any(String),
     }),
   )
-  expect(changed).toHaveBeenCalled()
+  await waitFor(() => expect(changed).toHaveBeenCalled())
   await keyboard.click(screen.getByRole('button', { name: 'Fechar comentários' }))
   expect(close).toHaveBeenCalled()
 })

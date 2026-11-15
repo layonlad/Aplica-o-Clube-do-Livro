@@ -8,7 +8,7 @@ import type { UserProfile } from './contracts.js'
 import { ModerationService } from './moderation-service.js'
 import { MediaService } from './media-service.js'
 import type { PrivateStorage } from './private-storage.js'
-import { postInput, postQuery } from './community-contracts.js'
+import { postInput, postQuery, commentInput, commentEditInput } from './community-contracts.js'
 import { pageInput } from './pagination.js'
 import { AppearanceService, appearanceSchema } from './appearance.js'
 const idParams = z.object({ id: z.uuid() }),
@@ -74,6 +74,10 @@ export async function registerPublicReads(
           pageInput.strict().parse(request.query),
         ),
       )
+      publicApi.get('/posts/:id/comments/:commentId', (request) => {
+        const { id, commentId } = commentParams.parse(request.params)
+        return posts.oneComment(request.user ?? null, null, id, commentId)
+      })
       publicApi.get('/profiles', (request) =>
         profiles.search(
           request.user ?? null,
@@ -94,9 +98,9 @@ export async function registerPublicReads(
           request.user?.id ?? null,
           idParams.parse(request.params).id,
           z
-            .object({ variant: z.enum(['thumbnail', 'full']).default('thumbnail') })
+            .object({ variant: z.enum(['thumbnail', 'feed', 'full']).default('thumbnail') })
             .strict()
-            .parse(request.query).variant === 'thumbnail',
+            .parse(request.query).variant,
         )
         return reply
           .type(value.mimeType)
@@ -151,13 +155,15 @@ export async function registerPublicMutations(
         )
         const result = await set(request.user, uploaded.id)
         // A imagem anterior já foi revogada na transação; tenta apenas concluir a limpeza física.
-        if (result.previous) await media.remove(request.user.id, result.previous).catch(() => undefined)
+        if (result.previous)
+          await media.remove(request.user.id, result.previous).catch(() => undefined)
         return reply.code(201).send({ [key]: result.id })
       },
     )
     api.delete(`/me/${slot}`, async (request) => {
       const result = await set(request.user, null)
-      if (result.previous) await media.remove(request.user.id, result.previous).catch(() => undefined)
+      if (result.previous)
+        await media.remove(request.user.id, result.previous).catch(() => undefined)
       return { [key]: null }
     })
   }
@@ -196,33 +202,33 @@ export async function registerPublicMutations(
   )
   api.post(
     '/public/posts',
-    { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
+    { bodyLimit: 262144, config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
     async (request, reply) =>
       reply.code(201).send(await posts.create(request.user, null, postInput.parse(request.body))),
   )
   api.post(
     '/public/posts/:id/share',
-    { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
+    { bodyLimit: 262144, config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
     async (request, reply) =>
       reply.code(201).send(
         await posts.share(
           request.user,
           idParams.parse(request.params).id,
           z
-            .object({ body: z.string().trim().max(5000).default('') })
+            .object({ body: z.string().trim().max(50000).default('') })
             .strict()
             .parse(request.body).body,
         ),
       ),
   )
-  api.post('/public/posts/:id/edit', (request) =>
+  api.post('/public/posts/:id/edit', { bodyLimit: 262144 }, (request) =>
     posts.edit(
       request.user,
       null,
       idParams.parse(request.params).id,
       z
         .object({
-          body: z.string().trim().max(5000),
+          body: z.string().trim().max(50000),
           quote: z.string().trim().max(280),
           source: z.string().trim().max(500),
           version: z.number().int().min(0),
@@ -256,20 +262,29 @@ export async function registerPublicMutations(
   )
   api.post(
     '/public/posts/:id/comments',
-    { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } },
+    { bodyLimit: 262144, config: { rateLimit: { max: 20, timeWindow: '1 minute' } } },
     async (request, reply) =>
-      reply.code(201).send(
-        await posts.comment(
-          request.user,
-          null,
-          idParams.parse(request.params).id,
-          z
-            .object({ body: z.string().trim().min(1).max(2000), parentId: z.uuid().optional() })
-            .strict()
-            .parse(request.body),
+      reply
+        .code(201)
+        .send(
+          await posts.comment(
+            request.user,
+            null,
+            idParams.parse(request.params).id,
+            commentInput.parse(request.body),
+          ),
         ),
-      ),
   )
+  api.post('/public/posts/:id/comments/:commentId/edit', { bodyLimit: 262144 }, (request) => {
+    const { id, commentId } = commentParams.parse(request.params)
+    return posts.editComment(
+      request.user,
+      null,
+      id,
+      commentId,
+      commentEditInput.parse(request.body),
+    )
+  })
   api.delete('/public/posts/:id/comments/:commentId', async (request, reply) => {
     const { id, commentId } = commentParams.parse(request.params)
     await posts.removeComment(request.user, null, id, commentId)

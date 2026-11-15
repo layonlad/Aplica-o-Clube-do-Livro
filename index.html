@@ -17,6 +17,7 @@
           var mode = saved && saved.mode
           if (mode === 'system') mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
           document.documentElement.dataset.theme = mode === 'dark' ? 'dark' : 'light'
+          if (saved && /^#[0-9a-f]{6}$/i.test(saved.background || '')) document.documentElement.style.setProperty('--bg', saved.background)
         } catch (e) {}
       })()
     </script>
