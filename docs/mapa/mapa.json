@@ -9,9 +9,10 @@
     "fase": "No ar; push aguardando chaves",
     "tom": "aguardando",
     "resumo": "Site e API publicados em 15/11/2026 a partir de 5b5a935 (PRs 10 a 16), já com o visual compacto, a nova abertura e as opções de formatação. Banco em 018 com grants explícitos e identidade restrita do executor. As notificações push e o agendador externo estão no código, mas desligados até as chaves serem configuradas.",
-    "proximoPasso": "Ligar o push: o par VAPID e a credencial de limpeza já estão preparados (pelo Codex); falta guardá-los no Render e nos segredos do GitHub Actions, habilitar o workflow e testar num aparelho. O Claude foi bloqueado pelas permissões ao tentar gravar essas credenciais; o dono precisa liberar ou o Codex conclui.",
+    "proximoPasso": "Concluir a configuração gratuita de push e limpeza, já autorizada pelo dono: guardar as configurações no Render/GitHub, ativar o executor e validar o envio e a fotografia autenticada. Corrigir a integração da entrelinha com o CSS final das publicações. A falha anterior foi do controle automático, não falta de autorização.",
     "pendencias": [
       "Push e agendador externo publicados, mas inativos: faltam as chaves VAPID, a credencial de limpeza e os segredos do workflow. O envio direto de fotos grandes (POST assinado) está no ar e ainda não foi testado com conta real; recebimento em aparelho físico não foi testado.",
+      "A opção de entrelinha salva os tokens, mas ainda não altera a altura das linhas das publicações: regras finais de CSS mantêm o valor fixo. Confirmado em navegadores móveis e desktop na revisão do Codex.",
       "Os fluxos autenticados de capa GIF, capa do álbum e comentários foram testados localmente com contas e arquivos sintéticos. Nesta liberação, produção recebeu verificações sem escrita em contas reais; não foi testado um segundo aparelho físico.",
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
       "Leitor de tela real e recorte de foto pela câmera do celular ainda não foram testados. A persistência foi validada por novo login, sem segundo aparelho físico.",
@@ -195,8 +196,8 @@
     { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Não entram no backup JSON; baixe o original separadamente. O envio de acervo ao clube exige origem e autorização." },
     { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" },
     { "o_que": "Ponto de recuperação anterior à liberação", "onde": "recuperacao", "privacidade": "Privado no mesmo projeto Neon", "copia": "Cópias de 14/11/2026 antes das liberações social e móvel; sem escritas posteriores; mantidas até decisão do dono" },
-    {"o_que": "Assinaturas de aparelhos e fila push (em revisão)", "onde": "banco", "privacidade": "Privado; leitura e envio revalidam preferências, bloqueios e participação. Avisos externos não carregam conteúdo privado.", "copia": "Retenção e revogação implementadas; ativação e recebimento físico aguardam aprovação."},
-    {"o_que": "Originais temporários de fotografias (em revisão)", "onde": "midia", "privacidade": "POST assinado por arquivo, chave, tipo e tamanho; bucket continua privado.", "copia": "Sem original permanente: versões otimizadas e cota da conta; limpeza imediata e após expiração, com diagnóstico e limite de temporários."}
+    {"o_que": "Assinaturas de aparelhos e fila push (inativas)", "onde": "banco", "privacidade": "Privado; leitura e envio revalidam preferências, bloqueios e participação. Avisos externos não carregam conteúdo privado.", "copia": "Retenção e revogação implementadas; configuração gratuita já autorizada, ainda não ativada. Recebimento físico pendente."},
+    {"o_que": "Originais temporários de fotografias (em validação)", "onde": "midia", "privacidade": "POST assinado por arquivo, chave, tipo e tamanho; bucket continua privado.", "copia": "Sem original permanente: versões otimizadas e cota da conta; limpeza imediata e após expiração, com diagnóstico e limite de temporários."}
   ],
   "fluxoPublicacao": [
     { "titulo": "Você pede uma mudança", "onde": "Conversa com Claude ou Codex", "texto": "Claude cuida de visual e telas; Codex de backend, banco e regras.", "modo": "voce" },
@@ -266,6 +267,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-15",
+      "autor": "Codex",
+      "titulo": "Publicação do Claude conferida; push e entrelinha pendentes",
+      "resumo": "Render confirmado em 5b5a935, banco em 018 e CI aprovado. Repetidos 60 testes frontend e 32 da API; navegação de visitante e aparência verificadas em três navegadores. Push sem configurações no Render/GitHub e entrelinha dos posts ainda fixa no CSS. Autorização da configuração gratuita já concedida; produção não alterada nesta revisão.",
+      "pr": ""
+    },
     {
       "data": "2026-11-15",
       "autor": "Claude Code",
