@@ -272,7 +272,7 @@
       "autor": "Codex",
       "titulo": "Publicação do Claude conferida; push e entrelinha pendentes",
       "resumo": "Render confirmado em 5b5a935, banco em 018 e CI aprovado. Repetidos 60 testes frontend e 32 da API; navegação de visitante e aparência verificadas em três navegadores. Push sem configurações no Render/GitHub e entrelinha dos posts ainda fixa no CSS. Autorização da configuração gratuita já concedida; produção não alterada nesta revisão.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/18"
     },
     {
       "data": "2026-11-15",
