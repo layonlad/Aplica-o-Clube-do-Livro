@@ -6,9 +6,9 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "No ar; EPUB, entrelinha e push liberados",
+    "fase": "No ar; nova estética Estante Rosa & Palha publicada",
     "tom": "ok",
-    "resumo": "API Render e site Firebase publicados em 15/11/2026 a partir de 644b10e (PR 19), após autorização do dono. Leitura EPUB privada com capas e controles próprios, armazenamento compatível com Safari e entrelinha das publicações corrigidos. CI aprovado; banco continua em 018 e permissões restritas preservadas. Push e executor externo configurados no plano gratuito.",
+    "resumo": "Site Firebase republicado em 15/11/2026 a partir de fa98171 (PR 21) com a nova estética Estante Rosa & Palha. API Render e site Firebase publicados antes em 15/11/2026 a partir de 644b10e (PR 19), após autorização do dono. Leitura EPUB privada com capas e controles próprios, armazenamento compatível com Safari e entrelinha das publicações corrigidos. CI aprovado; banco continua em 018 e permissões restritas preservadas. Push e executor externo configurados no plano gratuito.",
     "proximoPasso": "O dono pode conferir seu EPUB na versão publicada. Recebimento push em aparelho físico depende de habilitação explícita no Perfil e permissão do sistema; ainda não foi comprovado. Melhorias futuras seguem o fluxo de PR e aprovação.",
     "pendencias": [
       "Push e executor externo configurados e ativos; execução manual concluída sem falhas. Recebimento em aparelho físico ainda não foi testado; depende da escolha e permissão do usuário. Agendamento gratuito pode atrasar.",
@@ -17,7 +17,7 @@
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
       "Leitor de tela e aparelho físico não foram testados. Sincronização de capa, arquivo e preferências foi validada em contextos independentes de navegadores locais.",
       "O modo conectado não oferece cache offline por service worker. As cópias privadas de recuperação são anteriores às respectivas liberações, sem gravações posteriores.",
-      "Nova estética \"Estante Rosa & Palha\" em PR, ainda não publicada: falta a foto definitiva da estante (enviada pelo dono) e revisar as telas conectadas com dados reais (comunidade, clubes, leitor)."
+      "Estética \"Estante Rosa & Palha\" publicada com a ilustração de estante; falta a foto definitiva do dono. As telas conectadas com dados reais (comunidade, clubes, fórum, leitor) ainda não foram revisadas uma a uma no novo visual."
     ]
   },
   "ambientes": [
@@ -25,7 +25,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "644b10e · publicado em 15/11/2026 no Firebase Hosting; EPUB e entrelinha liberados",
+      "versao": "fa98171 · site publicado em 15/11/2026 no Firebase Hosting com a estética Estante Rosa & Palha (API segue em 644b10e)",
       "atualizacao": "Manual, com autorização do dono; merge em main não publica o Firebase",
       "tom": "ok"
     },
@@ -292,6 +292,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-15",
+      "autor": "Claude Code",
+      "titulo": "Estética Estante Rosa & Palha publicada no site em fa98171",
+      "resumo": "PR 21 mesclado e publicado com autorização do dono. Mudança só de frontend: API e banco não mudaram (API segue em 644b10e). Build de produção a partir de cópia limpa do commit, com a API saudável conferida pelo predeploy; site em produção conferido no celular, sem erros de console. Foto definitiva da estante ainda pendente.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/21"
+    },
     {
       "data": "2026-11-15",
       "autor": "Claude Code",
