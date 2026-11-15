@@ -1,16 +1,26 @@
 # EPUB privado, entrelinha e notificações — 15/11/2026
 
-A configuração autorizada do Render/GitHub está ativa. As mudanças de leitura e entrelinha estão preparadas no [PR 19](https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/19); ainda precisam de aprovação do dono para merge e publicação.
+A configuração autorizada do Render/GitHub está ativa. O [PR 19](https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/19) foi mesclado com autorização do dono e publicado na API e no site em `644b10ed1705d33d904fbe6f6a2e289675f4da4d`.
 
-## Configuração já aplicada
+## Publicação concluída
+
+- Render: deploy `dep-dbstv549v7es73bl70h0` confirmado `live` em 15/11/2026 às 16:38 UTC, no commit `644b10e`. Saúde da API/banco aprovada antes do site.
+- Firebase Hosting: versão `6bdf5389404c5ad2`, canal live, liberada às 16:39 UTC. HTML e os quatro assets JS/CSS referenciados no HTML conferidos byte a byte com o build conectado.
+- [CI do merge](https://github.com/layonlad/Aplica-o-Clube-do-Livro/actions/runs/43736371652): todos os passos aprovados, incluindo Docker, modo conectado, PostgreSQL, Auth Emulator e auditoria. O CI do head aprovado também passou antes do merge.
+- Produção: saúde 200; rotas privadas de capa, aparência e push exigem autenticação; comunidade pública 200; CORS da capa aceita a origem do app.
+- EPUB sintético importado como visitante no site publicado em Chrome móvel 390 px, WebKit móvel 390 px e Chrome desktop 1366 px. Capa, abertura pela estante, paginação, restauração da página 3, fonte/tema/entrelinha/peso/alinhamento, persistência e rolagem aprovados. Sem exceções JavaScript ou overflow horizontal.
+- Entrelinha publicada medida no celular: 22,0875 para 24,9375 px; desktop: 24,18 para 27,3 px. A verificação usa apenas um parágrafo sintético no DOM do navegador isolado, sem publicar conteúdo.
+- Nenhuma conta real, livro de usuário ou dado existente foi alterado nos testes de produção. O recebimento push em aparelho físico continua não comprovado.
+
+## Configuração aplicada antes da publicação
 
 - Render: configurações VAPID e limpeza guardadas como segredos, preservando as demais configurações. Deploy `dep-dbsspjui0phs73e1sd0g` confirmado como `live`, executando o mesmo código publicado anteriormente: `5b5a935028094c1e487df5a2cfddac5fd73833e7`. Autodeploy continua desligado; plano Free.
 - GitHub: segredos do executor configurados, conexão direta e TLS verificado usando a identidade restrita das notificações; assunto VAPID e URL de limpeza em variáveis. Nenhum valor está no repositório.
 - [Executor manual 43729122310](https://github.com/layonlad/Aplica-o-Clube-do-Livro/actions/runs/43729122310): terminou com sucesso e executou o worker, sem pular o processamento por falta de configuração. Nenhuma entrega ou falha foi registrada nessa execução; a limpeza também terminou sem falhas. Isso comprova a ativação, não recebimento em aparelho físico.
 - O agendamento gratuito roda aproximadamente a cada 15 minutos e pode atrasar. O usuário precisa habilitar notificações explicitamente no Perfil. No iPhone, o recebimento depende também da instalação e permissão oferecidas pelo sistema.
-- Firebase Hosting continua com o código `5b5a935`. Nenhum serviço pago, migration, novo papel ou privilégio de banco foi necessário nesta tarefa.
+- Na etapa de configuração, o Firebase ainda estava em `5b5a935`; a publicação posterior de `644b10e` está registrada acima. Nenhum serviço pago, migration, novo papel ou privilégio de banco foi necessário nesta tarefa.
 
-## Leitura e importação preparadas
+## Leitura e importação publicadas
 
 O leitor anterior tratava qualquer `META-INF/encryption.xml` como DRM. EPUBs podem incluir esse arquivo somente para ofuscação de fontes, inclusive livros adquiridos legitimamente. Agora navegador e API usam a mesma inspeção: metadados de direitos autorais não bloqueiam a importação; ofuscação IDPF e Adobe somente de fontes é aceita, usando fontes do app. Criptografia efetiva de capítulos ou imagens continua exigindo edição legível fornecida pela loja/editora; este trabalho não implementa decifragem de DRM.
 
@@ -42,8 +52,8 @@ A entrelinha geral do app foi corrigida nas regras finais das publicações e de
 
 Todos os livros, contas e imagens desses testes são sintéticos e locais. O ensaio não representa leitura no aparelho físico do dono, push recebido em telefone, nem validação de um EPUB específico que não foi fornecido. O relatório anterior em `REVISAO_LIBERACAO_CLAUDE.md` descreve o estado antes da ativação acima.
 
-## Próxima liberação
+## Procedimento da liberação
 
-Depois de CI aprovado e autorização explícita do dono: mesclar o PR, publicar primeiro a API no Render e validar saúde/rota protegida; só depois gerar e publicar o site conectado no Firebase. A ordem importa porque a API antiga não aceita as novas fontes do leitor.
+Executado após CI aprovado e autorização explícita do dono: merge do PR, publicação da API no Render, validação de saúde/rota protegida e, em seguida, publicação do site conectado no Firebase. A ordem importa porque a API antiga não aceita as novas fontes do leitor.
 
 Não há migrations ou alterações de grants nesta entrega. Não criar cópia de banco com dados de usuários sem necessidade: a liberação não modifica estrutura nem converte livros existentes. Registrar os commits/deploys efetivamente publicados no mapa e validar sem alterar contas reais. Recebimento push em aparelho físico permanece uma verificação separada, dependente da permissão do usuário.
