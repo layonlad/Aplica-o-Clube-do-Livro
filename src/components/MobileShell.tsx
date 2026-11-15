@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { pageTurn, settle } from '../design/motion'
 import { BookOpen, CalendarDays, ChevronRight, History, Home, LogOut, Menu, MessageCircle, Palette, Settings, Sparkles, TicketCheck, UserRound, X } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTheme } from '../app/ThemeProvider'
@@ -57,14 +59,17 @@ export function MobileShell() {
       <nav className="bottom-nav" aria-label="Navegação principal">
         {primaryNav.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className={({ isActive }) => isActive ? 'active' : ''}>
-            <Icon size={21} strokeWidth={1.9} />
-            <span>{label}</span>
+            {({ isActive }) => <>
+              {isActive && <motion.span layoutId="nav-pill" className="nav-pill" transition={settle} aria-hidden="true" />}
+              <Icon size={21} strokeWidth={1.9} />
+              <span>{label}</span>
+            </>}
           </NavLink>
         ))}
       </nav>
       </aside>
 
-      <main className="page-content"><Outlet /></main>
+      <main className="page-content"><motion.div key={location.pathname} className="route-view" variants={pageTurn} initial="initial" animate="enter"><Outlet /></motion.div></main>
 
       {menuOpen && (
         <div className="drawer-layer" role="presentation" onMouseDown={() => setMenuOpen(false)}>

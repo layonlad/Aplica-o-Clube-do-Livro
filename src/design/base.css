@@ -27,17 +27,64 @@ body {
   overflow-x: hidden;
 }
 
-/* Grão de papel muito sutil: dá calor ao creme sem pesar */
-body::before {
-  content: '';
+/* ── Estante fixa atrás de tudo (componente ShelfBackdrop) ──
+ * Camadas: estante (foto ou ilustração) → véu pastel → grão de papel. Nada aqui rola com a página. */
+:root {
+  --shelf-image: url('../assets/estante/estante-ilustrada.svg');
+  --shelf-size: 720px auto;          /* ilustração: ladrilho que se repete; foto: cover */
+  --shelf-repeat: repeat;
+  --paper: url('../assets/papel/papel-amassado.svg');
+}
+:root[data-paper='off'] { --paper: none; }
+
+.shelf-backdrop {
   position: fixed;
   inset: 0;
   z-index: -1;
+  overflow: hidden;
   pointer-events: none;
-  opacity: 0.5;
+  background: var(--bg);
+}
+.shelf-backdrop__shelf {
+  position: absolute;
+  inset: -40px -24px;
+  background-image: var(--shelf-image);
+  background-size: var(--shelf-size);
+  background-repeat: var(--shelf-repeat);
+  background-position: center top;
+  filter: blur(var(--shelf-blur)) saturate(0.9);
+  will-change: transform;
+}
+/* Véu: mais denso no centro (onde fica o texto), deixando a estante aparecer nas bordas e no topo. */
+.shelf-backdrop__veil {
+  position: absolute;
+  inset: 0;
   background:
-    radial-gradient(1200px 600px at 100% -10%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, color-mix(in srgb, var(--brand) 6%, transparent), transparent 60%);
+    radial-gradient(70% 80% at 50% 50%, color-mix(in srgb, var(--veil-color) var(--veil-center), transparent) 0 40%, transparent 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--veil-tint) 40%, transparent), transparent 30%, transparent 75%, color-mix(in srgb, var(--veil-tint) 30%, transparent)),
+    color-mix(in srgb, var(--veil-color) var(--veil-strength), transparent);
+}
+.shelf-backdrop__veil::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--paper);
+  background-size: 560px;
+  mix-blend-mode: multiply;
+  opacity: .55;
+}
+:root[data-theme='dark'] .shelf-backdrop__veil::after { mix-blend-mode: soft-light; opacity: .35; }
+/* Economia de dados ou contraste alto: sem foto, só o papel */
+@media (prefers-reduced-data: reduce), (prefers-contrast: more) {
+  .shelf-backdrop__shelf { display: none; }
+}
+
+/* Superfície de papel: aplique em painéis, cartões e folhas. */
+.paper {
+  background-color: var(--surface);
+  background-image: var(--paper);
+  background-size: 560px;
+  background-blend-mode: multiply;
 }
 
 button, input, textarea, select { font: inherit; color: inherit; letter-spacing: inherit; }

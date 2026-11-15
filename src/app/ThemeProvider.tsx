@@ -6,9 +6,9 @@ import { APPEARANCE_KEY, applyAppearance, defaultAppearance, normalizeAppearance
 const STORAGE_KEY = 'clube-aurora-demo-theme'
 
 export const defaultTheme: ThemeTokens = {
-  primary: '#462b70',
-  accent: '#fc7667',
-  surface: '#fbf4e8',
+  primary: '#9a4167',
+  accent: '#e897b4',
+  surface: '#fbf5e6',
   font: 'humanist',
   mode: 'light',
   clubName: 'Clube Aurora',
@@ -16,8 +16,12 @@ export const defaultTheme: ThemeTokens = {
   radius: 'round',
 }
 
-/** Valores padrão da identidade anterior. Quem nunca personalizou recebe a nova paleta. */
-const legacyDefaults: Partial<Record<keyof ThemeTokens, string>> = { primary: '#5b3a73', accent: '#d7a85c', surface: '#f8f4ef' }
+/** Valores padrão das identidades anteriores (original e "Lombadas"). Quem nunca personalizou recebe a paleta atual. */
+const legacyDefaults: Partial<Record<keyof ThemeTokens, string[]>> = {
+  primary: ['#5b3a73', '#462b70'],
+  accent: ['#d7a85c', '#fc7667'],
+  surface: ['#f8f4ef', '#fbf4e8'],
+}
 
 interface ThemeContextValue {
   /** Tema do protótipo de demonstração (nome do clube, monograma e cores livres). */
@@ -40,8 +44,8 @@ function readStoredTheme(): ThemeTokens {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) return defaultTheme
     const parsed = { ...defaultTheme, ...JSON.parse(stored) } as ThemeTokens
-    for (const [key, legacy] of Object.entries(legacyDefaults) as [keyof ThemeTokens, string][]) {
-      if (String(parsed[key]).toLowerCase() === legacy) (parsed[key] as string) = defaultTheme[key] as string
+    for (const [key, legacy] of Object.entries(legacyDefaults) as [keyof ThemeTokens, string[]][]) {
+      if (legacy.includes(String(parsed[key]).toLowerCase())) (parsed[key] as string) = defaultTheme[key] as string
     }
     return parsed
   } catch {

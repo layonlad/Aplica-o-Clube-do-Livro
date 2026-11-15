@@ -1,24 +1,30 @@
 import { StrictMode } from 'react'
+import { MotionConfig } from 'framer-motion'
 import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
 import { App } from './app/App'
 import { ThemeProvider } from './app/ThemeProvider'
 import { BookOpening } from './app/BookOpening'
+import { ShelfBackdrop } from './app/ShelfBackdrop'
 import '@fontsource-variable/fraunces/opsz.css'
 import '@fontsource-variable/fraunces/wght-italic.css'
 import '@fontsource-variable/plus-jakarta-sans/index.css'
+import '@fontsource-variable/fredoka/index.css'
 import './design/tokens.css'
 import './design/base.css'
 import './design/components.css'
 import './design/shell.css'
 import './design/motion.css'
+import './design/ornaments.css'
 import './design/personalization.css'
 import './styles.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HashRouter>
-      <ThemeProvider><App /><BookOpening /></ThemeProvider>
+      <MotionConfig reducedMotion="user">
+        <ThemeProvider><ShelfBackdrop /><App /><BookOpening /></ThemeProvider>
+      </MotionConfig>
     </HashRouter>
   </StrictMode>,
 )

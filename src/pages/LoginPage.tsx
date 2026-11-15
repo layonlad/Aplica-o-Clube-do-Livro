@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../app/ThemeProvider'
 import { Button, DemoBadge } from '../components/ui'
+import { BowSticker, FlowerSticker, StarSticker } from '../components/Stickers'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -20,6 +21,9 @@ export function LoginPage() {
         <span className="floating-book floating-book--one" />
         <span className="floating-book floating-book--two" />
         <span className="floating-star">✦</span>
+        <BowSticker size={74} className="login-sticker login-sticker--bow" />
+        <StarSticker size={44} className="login-sticker login-sticker--star" />
+        <FlowerSticker size={36} className="login-sticker login-sticker--flower" />
       </div>
       <section className="login-content">
         <div className="login-brand">

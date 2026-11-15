@@ -7,7 +7,7 @@ export const currentBook: Book = {
   category: 'Romance brasileiro',
   pages: 264,
   progress: 62,
-  cover: { from: '#321b3f', to: '#8a4d62', mark: 'TA' },
+  cover: { from: '#792f50', to: '#d9769c', mark: 'TA' },
   status: 'reading',
 }
 
@@ -20,7 +20,7 @@ export const books: Book[] = [
     category: 'Ficção brasileira',
     pages: 96,
     rating: 4.8,
-    cover: { from: '#195d68', to: '#74b3a7', mark: 'AV' },
+    cover: { from: '#34543a', to: '#86a97e', mark: 'AV' },
     status: 'finished',
   },
   {
@@ -30,7 +30,7 @@ export const books: Book[] = [
     category: 'Realismo mágico',
     pages: 448,
     rating: 4.9,
-    cover: { from: '#9b5c2c', to: '#e0a84f', mark: 'CS' },
+    cover: { from: '#7a6226', to: '#c8aa67', mark: 'CS' },
     status: 'finished',
   },
   {
@@ -39,7 +39,7 @@ export const books: Book[] = [
     author: 'Carolina Maria de Jesus',
     category: 'Diário',
     pages: 200,
-    cover: { from: '#38434c', to: '#8b7763', mark: 'QD' },
+    cover: { from: '#56213a', to: '#b85a80', mark: 'QD' },
     status: 'available',
   },
   {
@@ -49,7 +49,7 @@ export const books: Book[] = [
     category: 'Fábula',
     pages: 96,
     rating: 4.6,
-    cover: { from: '#235b86', to: '#91bdd7', mark: 'PP' },
+    cover: { from: '#5e4a99', to: '#9580c8', mark: 'PP' },
     status: 'finished',
   },
 ]
@@ -142,14 +142,14 @@ export const members: Member[] = [
 ]
 
 export const nominations = [
-  { id: 'n1', title: 'A Vida Invisível de Eurídice Gusmão', author: 'Martha Batalha', member: 'Lia', initials: 'LM', votes: 5, color: '#b45f55' },
-  { id: 'n2', title: 'O Avesso da Pele', author: 'Jeferson Tenório', member: 'Ravi', initials: 'RA', votes: 4, color: '#476c72' },
-  { id: 'n3', title: 'Niketche', author: 'Paulina Chiziane', member: 'Bia', initials: 'BC', votes: 3, color: '#8b6a3d' },
+  { id: 'n1', title: 'A Vida Invisível de Eurídice Gusmão', author: 'Martha Batalha', member: 'Lia', initials: 'LM', votes: 5, color: '#b85a80' },
+  { id: 'n2', title: 'O Avesso da Pele', author: 'Jeferson Tenório', member: 'Ravi', initials: 'RA', votes: 4, color: '#456b48' },
+  { id: 'n3', title: 'Niketche', author: 'Paulina Chiziane', member: 'Bia', initials: 'BC', votes: 3, color: '#a88a45' },
 ]
 
 export const readingHistory = [
-  { month: 'SET', year: '2026', title: 'Água Viva', author: 'Clarice Lispector', chosenBy: 'Lia Martins', method: 'Sorteio', rating: 4.8, color: '#28727a' },
-  { month: 'AGO', year: '2026', title: 'Cem Anos de Solidão', author: 'Gabriel García Márquez', chosenBy: 'Ravi Almeida', method: 'Indicação do grupo', rating: 4.9, color: '#b6732e' },
-  { month: 'JUL', year: '2026', title: 'Quarto de Despejo', author: 'Carolina Maria de Jesus', chosenBy: 'Marina Alves', method: 'Curadoria', rating: 4.7, color: '#5d625f' },
-  { month: 'JUN', year: '2026', title: 'O Filho de Mil Homens', author: 'Valter Hugo Mãe', chosenBy: 'Tom Nunes', method: 'Sorteio', rating: 4.5, color: '#735381' },
+  { month: 'SET', year: '2026', title: 'Água Viva', author: 'Clarice Lispector', chosenBy: 'Lia Martins', method: 'Sorteio', rating: 4.8, color: '#456b48' },
+  { month: 'AGO', year: '2026', title: 'Cem Anos de Solidão', author: 'Gabriel García Márquez', chosenBy: 'Ravi Almeida', method: 'Indicação do grupo', rating: 4.9, color: '#a88a45' },
+  { month: 'JUL', year: '2026', title: 'Quarto de Despejo', author: 'Carolina Maria de Jesus', chosenBy: 'Marina Alves', method: 'Curadoria', rating: 4.7, color: '#6c4d54' },
+  { month: 'JUN', year: '2026', title: 'O Filho de Mil Homens', author: 'Valter Hugo Mãe', chosenBy: 'Tom Nunes', method: 'Sorteio', rating: 4.5, color: '#5e4a99' },
 ]

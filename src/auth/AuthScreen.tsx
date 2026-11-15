@@ -4,12 +4,19 @@ import { Button } from '../components/ui'
 import { useAuth } from './AuthProvider'
 import { readableError } from './api'
 import { Link } from 'react-router-dom'
+import { BowSticker, FlowerSticker, SparkleSticker, StarSticker } from '../components/Stickers'
 
 /** Painel editorial da entrada: estante em lombadas e uma citação em domínio público. */
 function AccessArt() {
   return <aside className="access-art" aria-hidden="true">
-    <div className="access-art__shelf">{Array.from({ length: 11 }, (_, index) => <i key={index} />)}</div>
-    <blockquote>Ler é sonhar pela mão de outrem.<cite>Fernando Pessoa</cite></blockquote>
+    <StarSticker size={58} className="access-art__star access-art__star--1" />
+    <StarSticker size={38} tone="rosa" className="access-art__star access-art__star--2" />
+    <SparkleSticker size={30} className="access-art__star access-art__star--3" />
+    <div className="access-art__note card taped">
+      <BowSticker size={64} className="sticker-corner" />
+      <div className="access-art__shelf">{Array.from({ length: 11 }, (_, index) => <i key={index} />)}</div>
+      <blockquote>Ler é sonhar pela mão de outrem.<cite>Fernando Pessoa</cite></blockquote>
+    </div>
   </aside>
 }
 
@@ -43,6 +50,7 @@ export function AuthScreen() {
     finally { setBusy(false) }
   }
   return <main className="access-page access-page--split"><AccessArt /><section className="access-card">
+    <FlowerSticker size={44} className="sticker-corner" />
     <span className="brand-mark brand-mark--large">CL</span><p className="eyebrow">Clube do Livro</p>
     <h1>{mode === 'signup' ? 'Comece sua história' : mode === 'reset' ? 'Recuperar senha' : 'Bom ter você aqui'}</h1>
     <p>Entre para sincronizar suas leituras, acessar seus clubes ou aceitar um convite. Você também pode usar o aplicativo sem conta.</p>

@@ -1,6 +1,16 @@
-# Design System — "Lombadas"
+# Design System — "Estante Rosa & Palha"
 
-O conceito parte do ritmo de cor de uma estante: lombadas diferentes lado a lado. A base é creme e calma, porque a leitura vem primeiro. A cor aparece em faixas, capas e acentos de ambiente, nunca como ruído.
+Desde 15/11/2026 o app tem cara de clube do livro aconchegante, inspirado nas referências em `DESIGN_REFERENCES.md`. A estrutura de camadas é esta:
+
+- **Fundo:** uma estante cheia de livros, fixa atrás de tudo.
+- **Véu:** uma camada pastel rosa e palha por cima da estante, para o texto continuar legível.
+- **Papel:** o conteúdo fica em folhas de papel de livro levemente amassado.
+
+Laços, estrelas e flores aparecem como adesivos, sempre poucos. Títulos seguem em serifa editorial. O movimento é macio: a página nova entra como folha virada e o marcador da navegação desliza.
+
+O sistema anterior, "Lombadas", continua vivo em dois pontos:
+- a faixa de lombadas (`--spines`) segue como assinatura, agora em rosa e palha;
+- os nomes antigos de cor viraram apelidos da paleta nova.
 
 ## Arquivos
 
@@ -10,7 +20,13 @@ O conceito parte do ritmo de cor de uma estante: lombadas diferentes lado a lado
 | `src/design/base.css` | Elementos nativos, escala de títulos, foco, seleção, utilitários (`.eyebrow`, `.t-display`, `.sr-only`) |
 | `src/design/components.css` | Botões, campos, busca, arquivo, pílulas, progresso, avatar, capa gerada, lombadas, estados vazio e de carregamento, avisos, chips, ficha de data, curtir |
 | `src/design/shell.css` | Barra superior, navegação inferior, gaveta, trilho lateral do desktop |
-| `src/design/motion.css` | Keyframes, entrada de página, cascata, `prefers-reduced-motion` |
+| `src/design/motion.css` | Keyframes em CSS, cascata, `prefers-reduced-motion` |
+| `src/design/motion.ts` | Movimento com framer-motion: `pageTurn` (troca de rota), `cascade`/`riseIn`, `settle` (mola dos marcadores) |
+| `src/design/ornaments.css` | Adesivos, fita (`.taped`), papel torto (`.paper-tilt`), borda rasgada (`.torn-edge`), xadrez (`.checker`), letra de adesivo (`.t-sticker`) |
+| `src/app/ShelfBackdrop.tsx` | Estante fixa + véu, atrás de todas as telas |
+| `src/components/Stickers.tsx` | `BowSticker`, `StarSticker`, `FlowerSticker`, `SparkleSticker` (sempre decorativos) |
+| `src/assets/estante/` | Imagem da estante. Hoje: `estante-ilustrada.svg` (ilustração própria que se repete sem emenda) |
+| `src/assets/papel/papel-amassado.svg` | Textura de papel amassado (filtro SVG, quase branca, aplicada com `multiply`) |
 | `src/components/ui.tsx` | Componentes React: `Button`, `Card`, `CoverArt`, `BookStack`, `Spines`, `SkeletonPage`, `ProgressBar`… |
 | `src/workspace/workspace.css`, `src/connected/connected.css` | Composição específica de cada tela, usando só tokens |
 | `src/styles.css` | Telas do protótipo de demonstração (legado), já apontando para os tokens |
@@ -23,14 +39,26 @@ O conceito parte do ritmo de cor de uma estante: lombadas diferentes lado a lado
 
 | Família | Tons | Uso principal |
 | --- | --- | --- |
-| Roxo (`--plum-*`) | 950 → 100; **700 `#462B70`** é a marca | Marca, ações primárias, Biblioteca |
-| Coral (`--coral-*`) | **500 `#FC7667`** para preenchimentos; 600 `#B83C30` para texto | Acento, ambiente pessoal, curtidas |
-| Creme (`--cream-*`) | 50 → 400; **200 `#F7EBD8`** | Fundos e superfícies |
-| Menta (`--mint-*`) | **300 `#B9E6C9`**; 700 e 800 para texto | Clubes, sucesso |
-| Amarelo (`--honey-*`) | 500 `#F4B942`; 700 para texto | Destaques, sorteio, avaliações, futura Comunidade |
-| Azul (`--blue-*`) | 500 `#3D6BE0`; 700 para texto | Informação, anel de foco |
-| Rosa (`--rose-*`) | 300 `#F5B6C6` | Capas e lombadas |
-| Tinta (`--ink-*`) | 900, 700, 600, 400 | Texto |
+| Rosa (`--rosa-*`) | 50 → 950; **700 `#9A4167`** é a marca; 400 `#E897B4` é o acento; 300 `#F2B7CC` pastel | Marca, botões, links, adesivos, preenchimentos |
+| Palha (`--palha-*`) | 50 → 700; **100 `#FBF5E6`** é o fundo; 700 para texto | Fundos, papel, madeira da estante, aviso |
+| Vinho (`--vinho-*`) | 500, 600 (texto), 700 (perigo) | Detalhes: fitas, estrelas, xadrez, acento como texto |
+| Cacau (`--cacau-*`) | 900, 700, 600, 400 | Texto |
+| Sálvia (`--salvia-*`) | 100, 300, 700, 800 | Clubes, sucesso |
+| Lilás (`--lilas-*`) | 100, 300, 500, 700 | Informação |
+
+**Nomes antigos:** `--plum-*`, `--coral-*`, `--cream-*`, `--mint-*`, `--honey-*`, `--blue-*`, `--rose-*` e `--ink-*` continuam valendo, mas apontam para a paleta nova (por exemplo, `--plum-700` → `--rosa-700`). Em código novo, use os semânticos.
+
+### Estante, véu e papel
+
+| Token | Onde | Para quê |
+| --- | --- | --- |
+| `--shelf-image`, `--shelf-size`, `--shelf-repeat` | `base.css` | Imagem da estante. Para usar uma foto: `url(foto)`, `cover`, `no-repeat` |
+| `--shelf-blur` | `tokens.css` | Desfoque da estante (profundidade) |
+| `--veil-color`, `--veil-tint`, `--veil-strength`, `--veil-center` | `tokens.css` | Véu pastel por cima da estante; o centro é mais denso, onde fica o texto |
+| `--paper` | `base.css` | Textura de papel. `:root[data-paper='off']` desliga |
+| `--shadow-paper` | `tokens.css` | Sombra curta e assimétrica de folha apoiada |
+
+Superfície de papel: `background-color: var(--surface); background-image: var(--paper); background-size: 560px; background-blend-mode: multiply;` (ou a classe `.paper`). Já vem em `.card`, `.notice`, trilho, gaveta, navegação inferior e cartões de entrada. Telas que não sobrepõem a estante (leitor) mantêm fundo próprio e opaco.
 
 ### Tokens semânticos
 
@@ -46,27 +74,29 @@ O shell define `data-space` conforme a rota e o escopo. Isso muda só `--space-a
 
 | `data-space` | Quando | Acento |
 | --- | --- | --- |
-| `personal` | Espaço pessoal (Início, Agenda, Caderno…) | Coral |
-| `library` | Biblioteca, Leitor e Histórico | Roxo |
-| `club` | Qualquer tela dentro de um clube; área de clubes | Menta |
-| `community` | Reservado para a rede social | Amarelo |
+| `personal` | Espaço pessoal (Início, Agenda, Caderno…) | Rosa-chiclete |
+| `library` | Biblioteca, Leitor e Histórico | Rosa-framboesa |
+| `club` | Qualquer tela dentro de um clube; área de clubes | Sálvia |
+| `community` | Comunidade, Explorar, perfis | Palha |
 
 ### Contraste (WCAG 2.2 AA)
 
 | Par | Razão |
 | --- | --- |
-| Texto `#22192E` sobre creme `#FBF4E8` | 15,4 |
-| Texto secundário `#5F5569` sobre creme | 6,4 |
-| Texto sutil/placeholder `#776C80` sobre branco | 4,95 |
-| Branco sobre roxo (botão) | 11,4 |
-| Coral-600 `#B83C30` sobre creme | 5,15 |
-| Tinta sobre coral (botão de acento) | 6,8 |
-| Menta-800 sobre menta-300 (faixa de clubes) | 5,7 |
-| Escuro: texto `#F6EFE4` sobre `#17111F` | 16,2 |
-| Escuro: roxo-300 sobre fundo | 8,4 |
-| As 8 combinações de capa (`coverPalette`) | todas ≥ 5,7 |
+| Texto cacau `#3A2228` sobre palha `#FBF5E6` | 13,4 |
+| Texto secundário `#6C4D54` sobre palha | 6,8 |
+| Texto sutil `#7C5D63` sobre palha-200 `#F5EBD0` | ≥ 4,5 |
+| Rosa-framboesa `#9A4167` (link) sobre palha | 5,8 |
+| Branco sobre rosa-framboesa (botão) | 6,3 |
+| Vinho-600 `#A32A40` (acento como texto) sobre palha | 6,5 |
+| Cacau sobre rosa-chiclete (botão de acento) | 6,6 |
+| Sálvia-700, palha-700, lilás-700 sobre palha | 5,6 / 5,4 / 6,6 |
+| Escuro: texto `#F8EEDC` sobre `#1E1417` | 15,6 |
+| Escuro: rosa-300 sobre fundo; rosa-950 sobre rosa-300 | 10,6 / 9,8 |
 
-Coral 500, menta 300, amarelo 500 e rosa 300 **nunca** são cor de texto sobre fundo claro. Para texto, use o tom 600, 700 ou 800 da mesma família.
+Rosa 300/400/500, palha 300/400, sálvia 300 e lilás 300 **nunca** são cor de texto sobre fundo claro. Texto sobre um preenchimento de marca usa `--text-on-brand` (branco no claro, rosa-950 no escuro), nunca `white` fixo.
+
+Sobre a estante, o texto fica sempre em papel ou com o véu por trás. Texto pequeno não vai direto sobre a imagem.
 
 ## Tipografia
 
@@ -127,7 +157,21 @@ Desde 15/11/2026 o tamanho-base é **15 px** (`--text-scale: 0.9375` × 16 px), 
 
 **Movimentos editoriais:** `cover-open` (a capa gira sobre a lombada), `title-reveal` (o título sobe como uma linha impressa), `ribbon-drop` (marcador da navegação ativa), `spines-slide` (a faixa de lombadas entra) e a capa que inclina no hover (`CoverArt tilt`).
 
-**Regras:** animar só `transform` e `opacity` (a exceção é `clip-path` no título); nada de reprodução automática; com `prefers-reduced-motion: reduce`, toda animação e transição vira instantânea. Optamos por CSS puro, sem Motion ou GSAP, para não somar dependência nem JS ao carregamento inicial.
+**Movimentos da estética Estante** (framer-motion, `src/design/motion.ts`):
+
+| Movimento | Onde | Como |
+| --- | --- | --- |
+| `pageTurn` | Troca de rota (`.route-view` nos shells) | A página nova entra deslizando da direita e assenta (opacidade + `x`) |
+| `layoutId="nav-pill"` + `settle` | Navegação inferior e trilho | O marcador do item ativo desliza de uma aba para a outra com mola |
+| Estante | `ShelfBackdrop` | Entra com leve zoom ao abrir; desloca até 28px ao rolar (profundidade). Não se move com movimento reduzido |
+| Adesivos | `.sticker--float` | Laço e estrela balançam devagar; a flor gira; o brilho pisca |
+| Cartão interativo | `.card--interactive:hover` | Sobe 3px e inclina 0,4° (papel na mão) |
+
+**Regras:**
+- Anime só `transform` e `opacity`. A exceção é `clip-path` no título.
+- Nada de reprodução automática.
+- Com `prefers-reduced-motion: reduce`, o CSS zera animações e transições, e o `MotionConfig reducedMotion="user"` (em `main.tsx`) faz o framer-motion pular o movimento.
+- Não deixe `transform` permanente em contêineres de página: ele prende elementos `position: fixed` dentro deles. As variantes terminam em `transform: none`.
 
 ## Componentes
 

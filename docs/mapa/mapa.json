@@ -16,7 +16,8 @@
       "EPUB com fontes ofuscadas é aceito; texto ou imagens realmente criptografados exigem edição legível da loja/editora. Sem capa raster compatível, permanece uma ilustração de reserva.",
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
       "Leitor de tela e aparelho físico não foram testados. Sincronização de capa, arquivo e preferências foi validada em contextos independentes de navegadores locais.",
-      "O modo conectado não oferece cache offline por service worker. As cópias privadas de recuperação são anteriores às respectivas liberações, sem gravações posteriores."
+      "O modo conectado não oferece cache offline por service worker. As cópias privadas de recuperação são anteriores às respectivas liberações, sem gravações posteriores.",
+      "Nova estética \"Estante Rosa & Palha\" em PR, ainda não publicada: falta a foto definitiva da estante (enviada pelo dono) e revisar as telas conectadas com dados reais (comunidade, clubes, leitor)."
     ]
   },
   "ambientes": [
@@ -291,6 +292,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-15",
+      "autor": "Claude Code",
+      "titulo": "Nova estética \"Estante Rosa & Palha\" (em revisão)",
+      "resumo": "Branch claude/estetica-estante: paleta pastel rosa e palha, estante fixa ao fundo (ilustração própria até chegar a foto do dono), textura de papel amassado, adesivos de laço, estrela e flor, tema escuro \"estante à noite\" e movimento com framer-motion (troca de página e marcador da navegação). Ainda não publicada.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/21"
+    },
     {
       "data": "2026-11-15",
       "autor": "Codex",
