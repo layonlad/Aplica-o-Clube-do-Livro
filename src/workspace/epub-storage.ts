@@ -7,11 +7,26 @@ interface FileRecord {
   filename: string
   cover?: Blob
 }
+interface StoredRecord extends Omit<FileRecord, 'file' | 'cover'> {
+  file?: Blob
+  cover?: Blob
+  bytes?: ArrayBuffer
+  mime?: string
+  coverBytes?: ArrayBuffer
+  coverMime?: string
+  byteSize?: number
+}
+const recordSize = (item: StoredRecord) =>
+  item.byteSize ??
+  (item.file?.size ?? item.bytes?.byteLength ?? 0) +
+    (item.cover?.size ?? item.coverBytes?.byteLength ?? 0)
 async function open() {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(database, 1)
     request.onupgradeneeded = () => {
-      const store = request.result.createObjectStore('files', { keyPath: 'key' })
+      const store = request.result.createObjectStore('files', {
+        keyPath: 'key',
+      })
       store.createIndex('namespace', 'namespace')
     }
     request.onsuccess = () => resolve(request.result)
@@ -24,8 +39,33 @@ export async function localEpub(namespace: string, id: string) {
   try {
     return await new Promise<FileRecord | undefined>((resolve, reject) => {
       const request = db.transaction('files').objectStore('files').get(key(namespace, id))
-      request.onsuccess = () => resolve(request.result)
-      request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        const raw = request.result as StoredRecord | undefined
+        if (!raw) {
+          resolve(undefined)
+          return
+        }
+        const file = raw.bytes
+          ? new Blob([raw.bytes], { type: raw.mime ?? 'application/epub+zip' })
+          : raw.file
+        const cover = raw.coverBytes
+          ? new Blob([raw.coverBytes], { type: raw.coverMime ?? 'image/jpeg' })
+          : raw.cover
+        resolve(
+          file
+            ? {
+                key: raw.key,
+                namespace: raw.namespace,
+                bookId: raw.bookId,
+                file,
+                filename: raw.filename,
+                cover,
+              }
+            : undefined,
+        )
+      }
+      request.onerror = () =>
+        reject(request.error ?? Error('Não foi possível recuperar o EPUB neste navegador.'))
     })
   } finally {
     db.close()
@@ -39,31 +79,50 @@ export async function saveEpub(
   cover?: Blob,
 ) {
   if (file.size > 10000000) throw Error('EPUB excede 10 MB.')
+  if (cover && cover.size > 5000000) throw Error('A capa do EPUB excede o limite.')
+  // Safari may fail to clone a File/Blob backed by a file-picker handle.
+  // Buffers are portable; keep reading legacy Blob records without rewriting them.
+  const bytes = await file.arrayBuffer(),
+    coverBytes = await cover?.arrayBuffer()
+  const stored: StoredRecord = {
+    key: key(namespace, id),
+    namespace,
+    bookId: id,
+    filename,
+    bytes,
+    mime: file.type,
+    coverBytes,
+    coverMime: cover?.type,
+    byteSize: bytes.byteLength + (coverBytes?.byteLength ?? 0),
+  }
   const db = await open()
   try {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction('files', 'readwrite'),
         store = tx.objectStore('files'),
-        request = store.index('namespace').getAll(namespace)
+        request = store.index('namespace').openCursor(namespace)
+      let size = 0
       request.onsuccess = () => {
-        const size = (request.result as FileRecord[])
-          .filter((item) => item.bookId !== id)
-          .reduce((sum, item) => sum + item.file.size + (item.cover?.size ?? 0), 0)
+        const cursor = request.result
+        if (cursor) {
+          const item = cursor.value as StoredRecord
+          if (item.bookId !== id) size += recordSize(item)
+          cursor.continue()
+          return
+        }
         if (size + file.size + (cover?.size ?? 0) > 50000000) {
           tx.abort()
           return
         }
-        store.put({
-          key: key(namespace, id),
-          namespace,
-          bookId: id,
-          file,
-          filename,
-          cover,
-        } satisfies FileRecord)
+        store.put(stored)
       }
       tx.oncomplete = () => resolve()
-      tx.onerror = () => reject(tx.error)
+      tx.onerror = (event) =>
+        reject(
+          (event.target as IDBRequest)?.error ??
+            tx.error ??
+            Error('Não foi possível guardar o EPUB neste navegador.'),
+        )
       tx.onabort = () =>
         reject(
           Error(

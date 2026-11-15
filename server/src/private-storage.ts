@@ -9,7 +9,7 @@ import {
   HeadObjectCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3'
-import { Unzip, UnzipInflate, strFromU8 } from 'fflate'
+import { openEpubPackage } from './epub-package.js'
 import { HttpError } from './errors.js'
 export interface PrivateStorage {
   put(key: string, bytes: Buffer, contentType?: string): Promise<void>
@@ -145,75 +145,13 @@ export function createPrivateStorage(
   }
 }
 export function validateEpub(bytes: Buffer) {
-  if (bytes.length < 4 || bytes.length > 10000000 || bytes.readUInt32LE(0) !== 0x04034b50)
-    throw new HttpError(400, 'INVALID_EPUB', 'Selecione um EPUB válido de até 10 MB.')
-  let count = 0,
-    total = 0,
-    failure = false,
-    mime = '',
-    container = '',
-    encrypted = false
-  const names = new Set<string>()
-  const zip = new Unzip((file) => {
-    names.add(file.name)
-    if (++count > 1500 || (file.originalSize ?? 0) > 3000000) {
-      failure = true
-      return
-    }
-    if (!['mimetype', 'META-INF/container.xml', 'META-INF/encryption.xml'].includes(file.name))
-      return
-    if (file.name === 'META-INF/encryption.xml') {
-      encrypted = true
-      return
-    }
-    const parts: Uint8Array[] = []
-    let length = 0
-    file.ondata = (error, chunk, final) => {
-      total += chunk.length
-      length += chunk.length
-      if (error || total > 3000000) {
-        failure = true
-        file.terminate()
-        return
-      }
-      parts.push(chunk)
-      if (final) {
-        const value = new Uint8Array(length)
-        let offset = 0
-        for (const part of parts) {
-          value.set(part, offset)
-          offset += part.length
-        }
-        if (file.name === 'mimetype') mime = strFromU8(value)
-        else container = strFromU8(value)
-      }
-    }
-    file.start()
-  })
-  zip.register(UnzipInflate)
   try {
-    for (let offset = 0; offset < bytes.length; offset += 4096) {
-      zip.push(bytes.subarray(offset, offset + 4096), offset + 4096 >= bytes.length)
-      if (failure) break
-    }
-  } catch {
-    failure = true
-  }
-  const path = /\bfull-path\s*=\s*["']([^"']+)["']/.exec(container)?.[1]
-  if (
-    failure ||
-    encrypted ||
-    mime.trim() !== 'application/epub+zip' ||
-    !path ||
-    !names.has(path) ||
-    path.startsWith('/') ||
-    path.split('/').includes('..') ||
-    !/\.opf$/i.test(path) ||
-    /<!DOCTYPE|<!ENTITY/i.test(container)
-  )
+    openEpubPackage(bytes, false)
+  } catch (error) {
     throw new HttpError(
       400,
       'INVALID_EPUB',
-      'O arquivo não tem estrutura EPUB suportada ou usa conteúdo protegido.',
+      error instanceof Error ? error.message : 'Arquivo EPUB inválido.',
     )
+  }
 }

@@ -130,6 +130,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     api.get('/club-files/:id/content',async(request,reply)=>{const value=await clubFiles.download(request.user,z.object({id:z.uuid()}).parse(request.params).id);return reply.type('application/epub+zip').header('Content-Disposition',`attachment; filename="book.epub"; filename*=UTF-8''${encodeURIComponent(value.filename)}`).send(Buffer.from(value.bytes))})
     api.delete('/club-files/:id',async(request,reply)=>{const value=await clubFiles.remove(request.user,z.object({id:z.uuid()}).parse(request.params).id);return reply.code(value.purged?200:202).send(value)})
     api.get('/me/book-files/:bookId',request=>files.list(request.user.id,fileParams.parse(request.params).bookId))
+    api.get('/me/book-files/:bookId/cover',async(request,reply)=>reply.type('image/jpeg').header('Cache-Control','private, no-store').send(await files.cover(request.user.id,fileParams.parse(request.params).bookId)))
     api.post('/me/book-files/:bookId',{bodyLimit:15000000,config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(request,reply)=>{
       const input=z.object({filename:z.string().min(1).max(150).regex(/^[^\p{C}]+\.epub$/iu),data:z.string().min(4).max(13333336).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/)}).strict().parse(request.body)
       const bytes=Buffer.from(input.data,'base64')

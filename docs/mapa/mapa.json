@@ -6,17 +6,17 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "No ar; push aguardando chaves",
-    "tom": "aguardando",
-    "resumo": "Site e API publicados em 15/11/2026 a partir de 5b5a935 (PRs 10 a 16), já com o visual compacto, a nova abertura e as opções de formatação. Banco em 018 com grants explícitos e identidade restrita do executor. As notificações push e o agendador externo estão no código, mas desligados até as chaves serem configuradas.",
-    "proximoPasso": "Ligar o push: o par VAPID e a credencial de limpeza já estão preparados (pelo Codex); falta guardá-los no Render e nos segredos do GitHub Actions, habilitar o workflow e testar num aparelho. O Claude foi bloqueado pelas permissões ao tentar gravar essas credenciais; o dono precisa liberar ou o Codex conclui.",
+    "fase": "No ar; EPUB, entrelinha e push liberados",
+    "tom": "ok",
+    "resumo": "API Render e site Firebase publicados em 15/11/2026 a partir de 644b10e (PR 19), após autorização do dono. Leitura EPUB privada com capas e controles próprios, armazenamento compatível com Safari e entrelinha das publicações corrigidos. CI aprovado; banco continua em 018 e permissões restritas preservadas. Push e executor externo configurados no plano gratuito.",
+    "proximoPasso": "O dono pode conferir seu EPUB na versão publicada. Recebimento push em aparelho físico depende de habilitação explícita no Perfil e permissão do sistema; ainda não foi comprovado. Melhorias futuras seguem o fluxo de PR e aprovação.",
     "pendencias": [
-      "Push e agendador externo publicados, mas inativos: faltam as chaves VAPID, a credencial de limpeza e os segredos do workflow. O envio direto de fotos grandes (POST assinado) está no ar e ainda não foi testado com conta real; recebimento em aparelho físico não foi testado.",
-      "Os fluxos autenticados de capa GIF, capa do álbum e comentários foram testados localmente com contas e arquivos sintéticos. Nesta liberação, produção recebeu verificações sem escrita em contas reais; não foi testado um segundo aparelho físico.",
+      "Push e executor externo configurados e ativos; execução manual concluída sem falhas. Recebimento em aparelho físico ainda não foi testado; depende da escolha e permissão do usuário. Agendamento gratuito pode atrasar.",
+      "Upload geral de fotografias foi confirmado como funcional pelo dono. Os testes da nova leitura usam EPUB, contas e capas sintéticos locais; nenhum arquivo específico do dono foi inspecionado.",
+      "EPUB com fontes ofuscadas é aceito; texto ou imagens realmente criptografados exigem edição legível da loja/editora. Sem capa raster compatível, permanece uma ilustração de reserva.",
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
-      "Leitor de tela real e recorte de foto pela câmera do celular ainda não foram testados. A persistência foi validada por novo login, sem segundo aparelho físico.",
-      "O modo conectado não oferece cache offline. Até as chaves push serem configuradas, as notificações são somente internas, sem e-mail ou push.",
-      "As cópias privadas de recuperação são anteriores às respectivas liberações; não representam cópia contínua nem incluem gravações posteriores.",
+      "Leitor de tela e aparelho físico não foram testados. Sincronização de capa, arquivo e preferências foi validada em contextos independentes de navegadores locais.",
+      "O modo conectado não oferece cache offline por service worker. As cópias privadas de recuperação são anteriores às respectivas liberações, sem gravações posteriores.",
       "Nova estética \"Estante Rosa & Palha\" em PR, ainda não publicada: falta a foto definitiva da estante (enviada pelo dono) e revisar as telas conectadas com dados reais (comunidade, clubes, leitor)."
     ]
   },
@@ -25,7 +25,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "Código de 5b5a935 · publicado em 15/11/2026 no Firebase Hosting",
+      "versao": "644b10e · publicado em 15/11/2026 no Firebase Hosting; EPUB e entrelinha liberados",
       "atualizacao": "Manual, com autorização do dono; merge em main não publica o Firebase",
       "tom": "ok"
     },
@@ -33,7 +33,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api.onrender.com/health",
-      "versao": "5b5a935 · Docker no Render · publicado em 15/11/2026",
+      "versao": "644b10e · Docker no Render · publicado em 15/11/2026; push e limpeza ativos",
       "atualizacao": "Deploy manual do commit aprovado; autodeploy desligado",
       "tom": "ok"
     },
@@ -71,7 +71,7 @@
       "coluna": 1,
       "cor": "coral",
       "guarda": ["Biblioteca e leituras do visitante (sem conta)", "EPUB original no IndexedDB", "Aparência escolhida", "Sessão de login"],
-      "detalhe": "Sem conta, biblioteca e leitura ficam neste navegador. EPUBs originais usam IndexedDB separado por visitante/conta. Apagar os dados do navegador pode apagar essas cópias. O modo conectado não registra cache offline por service worker.",
+      "detalhe": "Sem conta, biblioteca e leitura ficam neste navegador. EPUBs originais usam IndexedDB separado por visitante/conta. Apagar os dados do navegador pode apagar essas cópias. O modo conectado não registra cache offline por service worker. Desde a liberação EPUB, EPUB e capa são guardados como bytes portáveis, mantendo leitura de registros antigos; controles do leitor e posição são independentes da aparência geral.",
       "link": ""
     },
     {
@@ -126,7 +126,7 @@
       "coluna": 4,
       "cor": "rose",
       "guarda": ["Fotos e capas de perfil (GIF animado vira WebP animado)", "Fotos e vídeos de publicações e álbuns", "EPUBs originais guardados na conta", "Arquivos EPUB do acervo dos clubes"],
-      "detalhe": "Acesso direto anônimo ao bucket é negado. A API entrega conteúdo público quando explicitamente permitido e conteúdo privado somente a quem tem acesso; fotos privadas do perfil exigem titular ou colega ativo em comum, respeitando bloqueios. As cotas de mídia por conta, EPUBs pessoais e EPUBs por clube são separadas. Gravação, leitura e remoção reais foram validadas na liberação.",
+      "detalhe": "Acesso direto anônimo ao bucket é negado. A API entrega conteúdo público quando explicitamente permitido e conteúdo privado somente a quem tem acesso; fotos privadas do perfil exigem titular ou colega ativo em comum, respeitando bloqueios. As cotas de mídia por conta, EPUBs pessoais e EPUBs por clube são separadas. Gravação, leitura e remoção reais foram validadas na liberação. Desde a liberação EPUB, a API deriva a capa pessoal do original após conferir titularidade, sem novo objeto permanente; o bucket privado atual atende sem mudanças.",
       "link": ""
     },
     {
@@ -153,16 +153,16 @@
     },
     {
       "id": "avisos",
-      "titulo": "Executor de notificações (em configuração)",
+      "titulo": "Executor de notificações ativo",
       "servico": "GitHub Actions agendado e entrega Web Push",
-      "plano": "Gratuito previsto para este repositório público",
+      "plano": "Gratuito neste repositório público",
       "coluna": 3,
       "cor": "blue",
       "guarda": [
         "Fila e tentativas no banco; execução fora do Render",
         "Configuração privada somente nos ambientes autorizados"
       ],
-      "detalhe": "Identidade restrita criada; ativação externa em andamento na liberação autorizada. Consulta metadados e permissões, envia aviso genérico aos serviços push dos navegadores e solicita limpeza limitada à API. Não recebe textos privados ou credenciais do bucket. Fila persistente, limites e retentativas; agendamento gratuito pode atrasar, sem garantia de horário exato.",
+      "detalhe": "Configurações privadas presentes no Render/GitHub; executor manual concluído com sucesso em 15/11/2026. Identidade restrita consulta metadados/permissões e solicita limpeza limitada à API. Envia aviso genérico após escolha explícita do usuário, sem textos privados ou credenciais do bucket. Fila persistente e retentativas; agendamento pode atrasar e recebimento físico ainda não foi testado.",
       "link": ""
     }
   ],
@@ -176,9 +176,9 @@
     { "de": "banco", "para": "recuperacao", "texto": "cópia isolada anterior à liberação" },
     { "de": "github", "para": "site", "texto": "código aprovado; publicação manual no Firebase" },
     { "de": "github", "para": "api", "texto": "commit aprovado; deploy manual no Render" },
-    {"de": "avisos", "para": "banco", "texto": "fluxo preparado: fila, permissões e lembretes"},
-    {"de": "avisos", "para": "pessoa", "texto": "fluxo preparado: aviso genérico após escolha explícita"},
-    {"de": "avisos", "para": "api", "texto": "fluxo preparado: limpeza limitada autenticada"}
+    {"de": "avisos", "para": "banco", "texto": "ativo: fila, permissões e lembretes"},
+    {"de": "avisos", "para": "pessoa", "texto": "ativo: aviso genérico após escolha explícita"},
+    {"de": "avisos", "para": "api", "texto": "ativo: limpeza limitada autenticada"}
   ],
   "dados": [
     { "o_que": "Leituras de quem usa sem conta", "onde": "pessoa", "privacidade": "Só no aparelho", "copia": "Backup JSON exportado pelo Perfil; originais e mídias baixados separadamente" },
@@ -186,7 +186,7 @@
     { "o_que": "E-mail, senha e login com Google", "onde": "auth", "privacidade": "Privado", "copia": "Gerenciado pelo Google" },
     { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Perfil público por escolha; colega ativo em comum pode ver somente cartão mínimo e clubes compartilhados", "copia": "Persistência no banco; a cópia pré-liberação não cobre mudanças posteriores" },
     { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON pessoal e persistência no banco; arquivos originais não entram no JSON" },
-    { "o_que": "Aparência (tema, fontes, modo)", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "No navegador e, com conta confirmada, nas preferências do banco" },
+    { "o_que": "Aparência do app e controles do leitor", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "Preferências no navegador e, com conta, no banco. Fontes, paginação e entrelinha do leitor publicadas em 644b10e, sem migration; sincronização conferida em contextos locais independentes." },
     { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Metadados de descoberta por escolha do clube; membros e gestão conforme papel; convites restritos aos autorizados", "copia": "Banco" },
     { "o_que": "Mural, fórum, encontros e álbuns dos clubes", "onde": "banco", "privacidade": "Só membros ativos", "copia": "Banco" },
     { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Públicos enquanto perfil e conteúdo estiverem disponíveis; bloqueios e moderação são revalidados", "copia": "Banco" },
@@ -196,8 +196,8 @@
     { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Não entram no backup JSON; baixe o original separadamente. O envio de acervo ao clube exige origem e autorização." },
     { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" },
     { "o_que": "Ponto de recuperação anterior à liberação", "onde": "recuperacao", "privacidade": "Privado no mesmo projeto Neon", "copia": "Cópias de 14/11/2026 antes das liberações social e móvel; sem escritas posteriores; mantidas até decisão do dono" },
-    {"o_que": "Assinaturas de aparelhos e fila push (em revisão)", "onde": "banco", "privacidade": "Privado; leitura e envio revalidam preferências, bloqueios e participação. Avisos externos não carregam conteúdo privado.", "copia": "Retenção e revogação implementadas; ativação e recebimento físico aguardam aprovação."},
-    {"o_que": "Originais temporários de fotografias (em revisão)", "onde": "midia", "privacidade": "POST assinado por arquivo, chave, tipo e tamanho; bucket continua privado.", "copia": "Sem original permanente: versões otimizadas e cota da conta; limpeza imediata e após expiração, com diagnóstico e limite de temporários."}
+    {"o_que": "Assinaturas de aparelhos e fila push", "onde": "banco", "privacidade": "Privado; leitura e envio revalidam preferências, bloqueios e participação. Avisos externos não carregam conteúdo privado.", "copia": "Executor externo ativado e conferido sem falhas. Retenção e revogação implementadas; recebimento físico ainda pendente."},
+    {"o_que": "Originais temporários de fotografias", "onde": "midia", "privacidade": "POST assinado por arquivo, chave, tipo e tamanho; bucket continua privado.", "copia": "Sem original permanente: versões otimizadas e cota da conta; limpeza imediata e após expiração, com diagnóstico e limite de temporários."}
   ],
   "fluxoPublicacao": [
     { "titulo": "Você pede uma mudança", "onde": "Conversa com Claude ou Codex", "texto": "Claude cuida de visual e telas; Codex de backend, banco e regras.", "modo": "voce" },
@@ -247,6 +247,31 @@
         { "camada": "api", "texto": "Com conta, envia para a API" },
         { "camada": "banco", "texto": "Gravada nas preferências e recuperada em outro aparelho" }
       ]
+    },
+    {
+      "titulo": "Importar e ler um EPUB pessoal",
+      "passos": [
+        {
+          "camada": "pessoa",
+          "texto": "Seleciona EPUB; capa e original são guardados no navegador"
+        },
+        {
+          "camada": "api",
+          "texto": "Com conta e escolha de guardar, valida e recebe o original privado"
+        },
+        {
+          "camada": "midia",
+          "texto": "Original continua privado; a capa de outra sessão é derivada sob autorização"
+        },
+        {
+          "camada": "pessoa",
+          "texto": "Clica na capa para ler; ajusta fonte, páginas, tema, margens e entrelinha"
+        },
+        {
+          "camada": "banco",
+          "texto": "Conta sincroniza preferências e posição, sem publicar o livro"
+        }
+      ]
     }
   ],
   "agentes": [
@@ -273,6 +298,27 @@
       "titulo": "Nova estética \"Estante Rosa & Palha\" (em revisão)",
       "resumo": "Branch claude/estetica-estante: paleta pastel rosa e palha, estante fixa ao fundo (ilustração própria até chegar a foto do dono), textura de papel amassado, adesivos de laço, estrela e flor, tema escuro \"estante à noite\" e movimento com framer-motion (troca de página e marcador da navegação). Ainda não publicada.",
       "pr": ""
+    },
+    {
+      "data": "2026-11-15",
+      "autor": "Codex",
+      "titulo": "EPUB, capas e entrelinha publicados em 644b10e",
+      "resumo": "PR 19 mesclado com autorização; API Render publicada antes do Firebase. CI de main aprovado e arquivos do site idênticos ao build conectado. EPUB sintético importado e lido pela capa em Chrome móvel, WebKit móvel e desktop, com página restaurada, controles persistidos e entrelinha aplicada. Banco em 018, sem migrations ou grants novos; planos gratuitos preservados. Testes em produção como visitante, sem alterar contas reais; push físico ainda pendente.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/19"
+    },
+    {
+      "data": "2026-11-15",
+      "autor": "Codex",
+      "titulo": "Push ativado; EPUB privado, capas e entrelinha corrigidos em revisão",
+      "resumo": "Render/GitHub configurados no plano gratuito; executor manual aprovado, mantendo código de produção 5b5a935. Leitor passa a aceitar ofuscação somente de fontes, importar capa, abrir pela estante e oferecer páginas/rolagem e controles próprios. Corrigido armazenamento no Safari e entrelinha dos posts; 182 testes locais aprovados e leitura sincronizada em contextos independentes. Novo código aguarda merge/publicação autorizados; nenhuma migration ou grant novo.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/19"
+    },
+    {
+      "data": "2026-11-15",
+      "autor": "Codex",
+      "titulo": "Publicação do Claude conferida; push e entrelinha pendentes",
+      "resumo": "Render confirmado em 5b5a935, banco em 018 e CI aprovado. Repetidos 60 testes frontend e 32 da API; navegação de visitante e aparência verificadas em três navegadores. Push sem configurações no Render/GitHub e entrelinha dos posts ainda fixa no CSS. Autorização da configuração gratuita já concedida; produção não alterada nesta revisão.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/18"
     },
     {
       "data": "2026-11-15",

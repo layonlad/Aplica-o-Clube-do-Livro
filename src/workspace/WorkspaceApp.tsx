@@ -1,3 +1,4 @@
+import {PrivateBookCover} from './PrivateBookCover'
 import { lazy, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowRight, CalendarDays, ChevronRight, Clock, Heart, History, MapPin, Search, Sparkles, Star, UsersRound } from 'lucide-react'
@@ -10,7 +11,7 @@ import { BookStack, Button, Card, CoverArt, ProgressBar, Spines } from '../compo
 import { useTheme } from '../app/ThemeProvider'
 import { WorkspaceProvider, useWorkspace } from './WorkspaceProvider'
 import { backupSchema } from './storage'
-import { importPhoto } from './import-book'
+import { importPhoto } from './import-photo'
 import { LibraryRoom as LibraryView } from './LibraryRoom'
 import { ReadingRoom as ReaderView } from './ReadingRoom'
 import { ProfileIdentityCard } from './ProfileIdentityCard'
@@ -55,7 +56,7 @@ function HomeView(){
       <Spines/>
     </header>
     {current?<section className="card card--raised home-current" aria-labelledby="home-current-title">
-      <Link to={`/app/reader/${current.id}`} tabIndex={-1} aria-hidden="true" className="home-current__cover cover-open"><CoverArt title={current.title} author={current.author} size="lg" tilt/></Link>
+      <Link to={`/app/reader/${current.id}`} tabIndex={-1} aria-hidden="true" className="home-current__cover cover-open"><PrivateBookCover id={current.id} title={current.title} author={current.author} fallback={current.metadata?.cover}/></Link>
       <div className="home-current__body">
         <span className="eyebrow">{state.currentBookId?'Leitura em destaque':'Continue sua leitura'}</span>
         <h2 id="home-current-title">{current.title}</h2>
@@ -134,7 +135,7 @@ function NominationsView(){
   </div>
 }
 function HistoryView(){const {snapshot}=useWorkspace();const [query,setQuery]=useState('');const items=snapshot!.state.books.filter(book=>snapshot!.reading[book.id]?.percent===100&&`${book.title} ${book.author}`.toLowerCase().includes(query.toLowerCase()));return <div className="stack-lg"><Intro eyebrow="Histórico" title="Histórias que você já viveu" body="As leituras marcadas como concluídas aparecem aqui."/><div className="search-field"><Search size={18} aria-hidden="true"/><input aria-label="Buscar no histórico" placeholder="Título ou autor" value={query} onChange={e=>setQuery(e.target.value)}/></div>
-  <ol className="timeline-x reveal">{items.map(book=>{const entry=snapshot!.reading[book.id];const rating=entry.rating??0;return <li key={book.id} className="timeline-x__item"><span className="timeline-x__dot" aria-hidden="true"/><article className="card card--interactive timeline-x__card"><CoverArt title={book.title} author={book.author} size="sm"/><div><span className="eyebrow">Concluído em {new Date(entry.finishedAt!).toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'})}</span><h2>{book.title}</h2><p>{book.author}</p><p className="stars" role="img" aria-label={rating?`Sua avaliação: ${rating}/5`:'Sem avaliação'}>{rating?[1,2,3,4,5].map(n=><Star key={n} size={15} aria-hidden="true" className={n<=rating?'is-on':''}/>):<span className="t-caption">Sem avaliação</span>}</p><Link className="text-link" to={`/app/reader/${book.id}`}>Revisitar leitura <ArrowRight size={15} aria-hidden="true"/></Link></div></article></li>})}</ol>
+  <ol className="timeline-x reveal">{items.map(book=>{const entry=snapshot!.reading[book.id];const rating=entry.rating??0;return <li key={book.id} className="timeline-x__item"><span className="timeline-x__dot" aria-hidden="true"/><article className="card card--interactive timeline-x__card"><PrivateBookCover id={book.id} title={book.title} author={book.author} fallback={book.metadata?.cover}/><div><span className="eyebrow">Concluído em {new Date(entry.finishedAt!).toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'})}</span><h2>{book.title}</h2><p>{book.author}</p><p className="stars" role="img" aria-label={rating?`Sua avaliação: ${rating}/5`:'Sem avaliação'}>{rating?[1,2,3,4,5].map(n=><Star key={n} size={15} aria-hidden="true" className={n<=rating?'is-on':''}/>):<span className="t-caption">Sem avaliação</span>}</p><Link className="text-link" to={`/app/reader/${book.id}`}>Revisitar leitura <ArrowRight size={15} aria-hidden="true"/></Link></div></article></li>})}</ol>
   {!items.length&&<Empty title="Cada leitura deixa uma marca" body="Conclua uma leitura na biblioteca para começar seu histórico." link={['/app/library','Escolher um livro']}/>}</div>}
 function ProfileView(){
   const {user,signOut}=useAuth();const {snapshot,act,busy,scope}=useWorkspace()

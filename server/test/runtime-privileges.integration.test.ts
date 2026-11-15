@@ -5,6 +5,7 @@ import { Pool } from 'pg'
 import { testDatabase } from './database.js'
 import { buildApp } from '../src/app.js'
 import sharp from 'sharp'
+import { zipSync, strToU8 } from 'fflate'
 it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou alteração da auditoria', async () => {
   const db = await testDatabase(),
     role = 'clube_runtime_test_' + randomUUID().replaceAll('-', ''),
@@ -112,6 +113,54 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
         .png()
         .toBuffer()
     ).toString('base64')
+    const workspace = (await call('/me/workspace')).json()
+    const bookAdded = await call('/me/workspace', 'POST', {
+      version: workspace.version,
+      action: {
+        type: 'book.add',
+        title: 'EPUB restrito',
+        author: 'Teste',
+        category: '',
+        content: 'Leitura privada',
+      },
+    })
+    expect(bookAdded.statusCode, bookAdded.body).toBe(200)
+    const bookId = bookAdded.json().state.books[0].id
+    const epub = zipSync({
+      mimetype: strToU8('application/epub+zip'),
+      'META-INF/container.xml': strToU8(
+        '<container><rootfiles><rootfile full-path="book.opf"/></rootfiles></container>',
+      ),
+      'book.opf': strToU8(
+        '<package><metadata/><manifest><item id="text" href="text.xhtml" media-type="application/xhtml+xml"/><item id="cover" href="cover.png" media-type="image/png" properties="cover-image"/></manifest><spine><itemref idref="text"/></spine></package>',
+      ),
+      'text.xhtml': strToU8('<html><body><p>Leitura privada</p></body></html>'),
+      'cover.png': Buffer.from(image, 'base64'),
+    })
+    const epubUpload = await call(`/me/book-files/${bookId}`, 'POST', {
+      filename: 'restrito.epub',
+      data: Buffer.from(epub).toString('base64'),
+    })
+    expect(epubUpload.statusCode, epubUpload.body).toBe(201)
+    const epubCover = await call(`/me/book-files/${bookId}/cover`)
+    expect(epubCover.statusCode, epubCover.body).toBe(200)
+    expect(epubCover.headers['content-type']).toContain('image/jpeg')
+    const reader = {
+      size: 24,
+      font: 'lora',
+      theme: 'sepia',
+      margin: 'wide',
+      lineHeight: 'relaxed',
+      weight: 'bold',
+      align: 'justify',
+      flow: 'paged',
+    }
+    const readerSaved = await call('/me/workspace', 'POST', {
+      version: bookAdded.json().version,
+      action: { type: 'reader.preferences', reader },
+    })
+    expect(readerSaved.statusCode, readerSaved.body).toBe(200)
+    expect((await call('/me/workspace')).json().preferences.reader).toEqual(reader)
     const first = await call('/me/avatar', 'POST', { data: image })
     expect(first.statusCode, first.body).toBe(201)
     const second = await call('/me/avatar', 'POST', { data: image })
