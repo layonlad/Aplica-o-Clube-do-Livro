@@ -21,21 +21,21 @@ export function createNotificationDispatcher(pool: Pool, env: NodeJS.ProcessEnv 
         void (async () => {
           const client = await pool.connect()
           try {
+            // PgBouncer pins the connection for this transaction. Session locks would leak
+            // across pooled statements or be unlocked on a different PostgreSQL session.
+            await client.query('BEGIN')
             if (
-              !(await client.query('SELECT pg_try_advisory_lock(57291106) AS locked')).rows[0]
+              !(await client.query('SELECT pg_try_advisory_xact_lock(57291106) AS locked')).rows[0]
                 .locked
             )
               return
-            try {
-              for (let cycle = 0; cycle < 3; cycle++) {
-                again = false
-                await worker.run()
-                if (!again) break
-              }
-            } finally {
-              await client.query('SELECT pg_advisory_unlock(57291106)')
+            for (let cycle = 0; cycle < 3; cycle++) {
+              again = false
+              await worker.run()
+              if (!again) break
             }
           } finally {
+            await client.query('ROLLBACK').catch(() => {})
             client.release()
           }
         })()

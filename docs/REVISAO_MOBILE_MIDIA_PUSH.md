@@ -67,3 +67,7 @@ Não foram usados dados reais para testes nem testados recebimento push em apare
 6. Publicar API, testar as novas operações com arquivos/contas descartáveis e limpeza explícita, publicar Firebase e habilitar o workflow externo. Confirmar assinatura/recebimento no aparelho autorizado e atualizar a versão no mapa.
 
 Scripts de grants não criam identidades nem senhas. O configurador de CORS é dry-run por padrão. O workflow de notificações não faz operações enquanto as configurações autorizadas estiverem ausentes. Nada dessa lista foi executado em produção nesta etapa.
+
+## Preparação da liberação autorizada em 15/11/2026
+
+PR 13 incorporado; cópia privada adicional criada sem compute próprio, antes das migrations 017–018 e dos grants explícitos. Identidade do executor conferida sem DDL, criação de papéis, bypass de RLS, leitura dos textos privados ou estado dos espaços, exclusão de usuários e alteração da auditoria. A entrega rápida da API agora segura a trava dentro de uma transação: o PgBouncer mantém a mesma sessão durante o processamento e libera a trava automaticamente no fim, inclusive em falhas. A identidade externa usa conexão direta. Versões finais e resultados de produção serão registrados após concluir a publicação.
