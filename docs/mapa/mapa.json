@@ -6,10 +6,10 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Evolução móvel e push em revisão",
+    "fase": "Liberação móvel e push em andamento",
     "tom": "aguardando",
-    "resumo": "Produção continua em a66cbc2. Uma nova entrega prepara feed e imagens sem recorte, compositor simples, comentários compactos com fotos e edição, fundo personalizável, originais de fotos grandes e notificações push com fila e executor externo. O nome do aplicativo foi preservado.",
-    "proximoPasso": "Revisar o PR e os testes desta evolução. A próxima liberação exige autorização para banco, identidade restrita do executor, CORS, configuração privada de push/limpeza, API e Firebase. Nada dessa infraestrutura foi ativado nesta etapa.",
+    "resumo": "PR 13 incorporado. Banco atualizado até 018 e identidade restrita do executor criada após cópia privada de recuperação. Site e API ainda executam a66cbc2 enquanto a nova publicação é validada.",
+    "proximoPasso": "Concluir a publicação autorizada, verificar uploads diretos e executor externo, remover somente os dados sintéticos desta validação e registrar as versões efetivamente publicadas.",
     "pendencias": [
       "Ativar a evolução após aprovação: uploads diretos privados e limpeza de temporários, notificações push e agendador externo ainda estão somente no código em revisão. Recebimento físico e compatibilidade real do POST assinado no bucket aguardam teste autorizado.",
       "Os fluxos autenticados de capa GIF, capa do álbum e comentários foram testados localmente com contas e arquivos sintéticos. Nesta liberação, produção recebeu verificações sem escrita em contas reais; não foi testado um segundo aparelho físico.",
@@ -114,7 +114,7 @@
       "coluna": 4,
       "cor": "mint",
       "guarda": ["Perfis, clubes e membros", "Publicações, comentários e curtidas", "Fórum, encontros e álbuns", "Leituras sincronizadas e preferências", "Notificações, denúncias e moderação", "Histórico de auditoria e aceites de convites"],
-      "detalhe": "Migrations da versão publicada aplicadas, incluindo a referência aditiva de capa dos álbuns. A API usa clube_runtime com a matriz de permissões testada: sem DDL, leitura de migrations, exclusão de usuários ou alteração da auditoria. Privilégios CRUD legados e concessões automáticas do proprietário de migrations foram removidos e conferidos; nenhuma permissão extra para capas.",
+      "detalhe": "Migrations aplicadas até a evolução de fotografias e push, antes da publicação dos novos executáveis. A API usa clube_runtime com a matriz de permissões testada: sem DDL, leitura de migrations, exclusão de usuários ou alteração da auditoria. Privilégios CRUD legados e concessões automáticas do proprietário de migrations foram removidos e conferidos; nenhuma permissão extra para capas.",
       "link": "https://console.neon.tech/app/projects/wandering-block-99253816"
     },
     {
@@ -147,12 +147,12 @@
       "coluna": 4,
       "cor": "honey",
       "guarda": ["Pontos de recuperação do banco antes das liberações social e móvel"],
-      "detalhe": "Duas cópias privadas prontas, criadas antes das respectivas liberações de 14/11/2026, sem compute próprio. A mais recente precede a migration da capa dos álbuns e a reconciliação de permissões. Não incluem gravações posteriores nem substituem backup periódico. Restaurar sobre dados atuais ou excluir cópias exige autorização específica.",
+      "detalhe": "Três cópias privadas prontas, criadas antes das respectivas liberações em 14 e 15/11/2026, sem compute próprio. A mais recente precede a evolução de fotografias e notificações push. Não incluem gravações posteriores nem substituem backup periódico. Restaurar sobre dados atuais ou excluir cópias exige autorização específica.",
       "link": "https://console.neon.tech/app/projects/wandering-block-99253816"
     },
     {
       "id": "avisos",
-      "titulo": "Executor de notificações (em revisão)",
+      "titulo": "Executor de notificações (em configuração)",
       "servico": "GitHub Actions agendado e entrega Web Push",
       "plano": "Gratuito previsto para este repositório público",
       "coluna": 3,
@@ -161,7 +161,7 @@
         "Fila e tentativas no banco; execução fora do Render",
         "Configuração privada somente nos ambientes autorizados"
       ],
-      "detalhe": "Preparado, sem ativação em produção. Consulta metadados e permissões, envia aviso genérico aos serviços push dos navegadores e solicita limpeza limitada à API. Não recebe textos privados ou credenciais do bucket. Fila persistente, limites e retentativas; agendamento gratuito pode atrasar, sem garantia de horário exato.",
+      "detalhe": "Identidade restrita criada; ativação externa em andamento na liberação autorizada. Consulta metadados e permissões, envia aviso genérico aos serviços push dos navegadores e solicita limpeza limitada à API. Não recebe textos privados ou credenciais do bucket. Fila persistente, limites e retentativas; agendamento gratuito pode atrasar, sem garantia de horário exato.",
       "link": ""
     }
   ],
@@ -266,6 +266,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-15",
+      "autor": "Codex",
+      "titulo": "Liberação autorizada: recuperação, migrations e executor restrito",
+      "resumo": "PR 13 incorporado; terceira cópia privada sem compute criada e migrations 017–018 com grants explícitos aplicadas. Ajustada a trava da entrega rápida para conexões agrupadas. Publicação de API, site e ativação do executor em andamento; versões finais serão registradas após validação.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/14"
+    },
     {
       "data": "2026-11-15",
       "autor": "Codex",
