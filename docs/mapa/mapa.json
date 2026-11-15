@@ -251,7 +251,7 @@
       "autor": "Codex",
       "titulo": "Ajustes sociais móveis publicados com autorização",
       "resumo": "PR 11 mesclado; API Render e site Firebase publicados em a66cbc2, incluindo a correção de capa/GIF do Claude. Cópia privada pré-liberação criada, migration de capa dos álbuns aplicada e grants/defaults legados reconciliados. CI de main aprovado; 135 testes prévios e 61 de PostgreSQL repetidos após a correção. Validação de produção sem escrita em contas reais e navegador de 390/1440px sem transbordamento ou exceções.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/12"
     },
     {
       "data": "2026-11-14",
