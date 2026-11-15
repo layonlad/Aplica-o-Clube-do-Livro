@@ -104,17 +104,22 @@
   --font-ui: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-reading: 'Fraunces Variable', Georgia, 'Iowan Old Style', serif;
 
-  --text-display: clamp(2.5rem, 1.55rem + 4.2vw, 4.5rem);
-  --text-h1: clamp(2rem, 1.45rem + 2.3vw, 3.1rem);
-  --text-h2: clamp(1.45rem, 1.2rem + 1.1vw, 2rem);
-  --text-h3: 1.25rem;
-  --text-h4: 1.0625rem;
-  --text-subtitle: 1.0625rem;
+  /* Escala: tudo em rem, sobre um tamanho-base de 15 px (--text-scale × 16 px).
+   * A pessoa ajusta o tamanho-base em Perfil → Aparência; o app inteiro acompanha. */
+  --text-scale: 0.9375;
+  --text-display: clamp(2rem, 1.4rem + 3.2vw, 3.6rem);
+  --text-h1: clamp(1.6rem, 1.3rem + 1.6vw, 2.5rem);
+  --text-h2: clamp(1.3rem, 1.15rem + 0.8vw, 1.75rem);
+  --text-h3: 1.15rem;
+  --text-h4: 1.0333rem;
+  --text-subtitle: 1rem;
   --text-body: 1rem;
   --text-small: 0.875rem;
-  --text-caption: 0.75rem;
-  --text-button: 0.9375rem;
-  --text-overline: 0.6875rem;
+  --text-caption: 0.78rem;
+  --text-button: 0.9rem;
+  --text-overline: 0.72rem;
+  /* Campos de texto: no toque nunca abaixo de 16 px, senão o iOS amplia a página ao focar. */
+  --text-field: 1rem;
 
   --leading-tight: 1.05;
   --leading-snug: 1.25;
@@ -123,18 +128,30 @@
   --tracking-tight: -0.02em;
   --tracking-overline: 0.14em;
 
-  /* ── Espaço (base 4px) ── */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-16: 64px;
-  --gutter: clamp(16px, 4vw, 40px);
+  /* ── Espaço (base 4px × densidade) ──
+   * --density-user vem da Aparência (compacto, padrão, amplo); --density-screen aperta um pouco no celular. */
+  --density-user: 1;
+  --density-screen: 1;
+  --density: calc(var(--density-user) * var(--density-screen));
+  --space-1: calc(4px * var(--density));
+  --space-2: calc(8px * var(--density));
+  --space-3: calc(12px * var(--density));
+  --space-4: calc(16px * var(--density));
+  --space-5: calc(20px * var(--density));
+  --space-6: calc(24px * var(--density));
+  --space-8: calc(32px * var(--density));
+  --space-10: calc(40px * var(--density));
+  --space-12: calc(48px * var(--density));
+  --space-16: calc(64px * var(--density));
+  --gutter: clamp(14px, 4vw, 40px);
+
+  /* ── Controles (botões, campos, abas): altura e respiro acompanham só a densidade escolhida,
+   * nunca a da tela, para o toque continuar confortável no celular. ── */
+  --control-sm: calc(34px * var(--density-user));
+  --control-md: calc(40px * var(--density-user));
+  --control-lg: calc(44px * var(--density-user));
+  --field-pad-y: calc(9px * var(--density-user));
+  --field-pad-x: calc(13px * var(--density-user));
   --content-max: 1040px;
   --reading-max: 66ch;
 
@@ -147,6 +164,8 @@
   --radius-pill: 999px;
   --radius-book: 3px 10px 10px 3px;
   --radius-card: var(--radius-lg);
+  --radius-button: var(--radius-pill);
+  --radius-field: var(--radius-md);
 
   /* ── Profundidade (sombras quentes, tingidas de roxo) ── */
   --shadow-1: 0 1px 2px rgba(52, 31, 85, 0.06), 0 2px 8px rgba(52, 31, 85, 0.05);
@@ -230,6 +249,14 @@
   --shadow-3: 0 24px 60px rgba(0, 0, 0, 0.5);
 
   color-scheme: dark;
+}
+
+/* ── Telas pequenas: espaços um pouco mais justos (os controles mantêm a altura de toque) ── */
+@media (max-width: 600px) {
+  :root { --density-screen: 0.88; }
+}
+@media (pointer: coarse) {
+  :root { --text-field: max(16px, 1rem); }
 }
 
 /* ── Ambientes: cada área tem um acento próprio, sobre a mesma base ── */

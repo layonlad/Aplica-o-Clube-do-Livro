@@ -21,12 +21,13 @@ Branch: `claude/perfis-abertura-aparencia`, criada a partir de `codex/plataforma
 - **Perfil privado:** quem compartilha um clube vê nome, foto e as publicações do clube em comum. Quem não compartilha recebe "Perfil indisponível".
 
 ### 3. Abertura com livro (`src/app/BookOpening.tsx`)
-- **Sequência:** o livro de capa roxa surge, a capa abre, três folhas viram, o nome "Clube do Livro" aparece na página da direita e algumas páginas voam como pássaros (referência visual enviada). Depois, a transição leva ao app.
-- **Duração:** cerca de 2,6 s. Só CSS 3D (`transform` e `opacity`), sem vídeo nem biblioteca.
+- **Sequência:** um livro grande de capa roxa surge, a capa abre devagar, três folhas viram, o nome "Clube do Livro" aparece na página da direita e algumas páginas voam como pássaros (referência visual enviada). No fim, a câmera entra na página até o papel cobrir a tela inteira e se desfazer no app.
+- **Tamanho:** aberto, o livro ocupa quase toda a largura do celular. O zoom final é calculado para a tela de cada aparelho.
+- **Duração:** cerca de 4,8 s (atualizada em 15/11/2026; antes 2,6 s), com curvas de movimento mais suaves. Fica abaixo de 5 s porque movimento automático mais longo exigiria um controle de pausa (WCAG 2.2.2). Só CSS 3D (`transform` e `opacity`), sem vídeo nem biblioteca.
 - **Uma vez por sessão do navegador:** trocar de página não reinicia a abertura. O app carrega por baixo ao mesmo tempo, sem atraso artificial.
-- **Pular:** pelo botão "Pular abertura", com Esc, Enter ou espaço, ou clicando em qualquer lugar.
-- **Movimento reduzido:** livro já aberto, com só um esmaecimento de cerca de 0,7 s.
-- **Aparelhos com 2 núcleos ou menos, ou com economia de dados:** versão leve de cerca de 1,5 s, só com a capa abrindo.
+- **Sem botão de pular** (pedido do dono em 15/11/2026). Quem navega pelo teclado ainda pode encerrar com Esc.
+- **Movimento reduzido:** livro já aberto, com só um esmaecimento de cerca de 0,9 s.
+- **Aparelhos com 2 núcleos ou menos, ou com economia de dados:** versão leve de cerca de 2,8 s: a capa abre e a página cobre a tela, sem folhear.
 - **Sem clarão:** um script no `index.html` aplica o modo claro ou escuro salvo antes do primeiro desenho.
 
 ### 4. Aparência e personalização (`/app/theme`, acessível pelo card em "Meu perfil")

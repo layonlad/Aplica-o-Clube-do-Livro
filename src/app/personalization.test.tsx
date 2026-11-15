@@ -1,8 +1,9 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { appearanceTokens, contrast, defaultAppearance, ensureContrast, presetOptions } from './appearance'
-import { BookOpening, INTRO_KEY, introDuration, introVariant } from './BookOpening'
+import { appearanceTokens, contrast, defaultAppearance, ensureContrast, normalizeAppearance, presetOptions, sameAppearance } from './appearance'
+import { appearanceSchema } from '../../server/src/appearance-schema'
+import { BookOpening, INTRO_KEY, introDuration, introVariant, introZoom } from './BookOpening'
 import { UserAvatar, UserIdentity, initialsOf } from '../components/UserAvatar'
 import { avatarFileError } from '../components/AvatarUploader'
 import { coverFileError } from '../components/CoverUploader'
@@ -28,6 +29,30 @@ describe('cores e contraste', () => {
   })
 })
 
+describe('formatação: texto, espaçamento e formatos', () => {
+  it('converte as escolhas em tokens de escala, densidade, entrelinha e cantos', () => {
+    const { vars } = appearanceTokens({
+      ...defaultAppearance,
+      textSize: 'sm',
+      density: 'compact',
+      lineHeight: 'relaxed',
+      buttons: 'square',
+    })
+    expect(vars['--text-scale']).toBe('0.875')
+    expect(vars['--density-user']).toBe('0.88')
+    expect(vars['--leading-normal']).toBe('1.75')
+    expect(vars['--radius-button']).toBe('var(--radius-xs)')
+    expect(vars['--radius-field']).toBe('var(--radius-xs)')
+  })
+  it('preferências antigas, sem os campos novos, continuam válidas e equivalem ao padrão', () => {
+    const old = { preset: 'padrao', mode: 'light', accent: null, headingFont: 'fraunces', bodyFont: 'jakarta', radius: 'round' } as const
+    expect(appearanceSchema.safeParse(old).success).toBe(true)
+    expect(normalizeAppearance(old)).toEqual(defaultAppearance)
+    expect(sameAppearance(old, defaultAppearance)).toBe(true)
+    expect(appearanceSchema.safeParse({ ...old, textSize: 'gigante' }).success).toBe(false)
+  })
+})
+
 describe('abertura com livro', () => {
   beforeEach(() => {
     sessionStorage.clear()
@@ -41,15 +66,26 @@ describe('abertura com livro', () => {
     expect(introVariant({ seen: false, reducedMotion: false, cores: 2 })).toBe('lite')
     expect(introVariant({ seen: false, reducedMotion: false, saveData: true })).toBe('lite')
     expect(introVariant({ seen: false, reducedMotion: false, cores: 8 })).toBe('full')
-    expect(introDuration.full).toBeLessThanOrEqual(3000)
+    // Mais lenta, mas abaixo de 5 s (movimento automático mais longo pediria controle de pausa).
+    expect(introDuration.full).toBeGreaterThanOrEqual(4000)
+    expect(introDuration.full).toBeLessThan(5000)
   })
-  it('pode ser pulada e não se repete na mesma sessão', () => {
+  it('o zoom final faz a página cobrir a tela inteira, no celular e no computador', () => {
+    for (const viewport of [{ width: 375, height: 812 }, { width: 1440, height: 900 }]) {
+      const page = { width: 173, height: 245 }
+      const zoom = introZoom(page, viewport)
+      expect(page.width * zoom).toBeGreaterThanOrEqual(viewport.width)
+      expect(page.height * zoom).toBeGreaterThanOrEqual(viewport.height)
+    }
+  })
+  it('não tem botão de pular, fecha com Esc e não se repete na mesma sessão', () => {
     const { unmount } = render(<BookOpening />)
-    const skip = screen.getByRole('button', { name: 'Pular abertura' })
+    expect(screen.getByTestId('book-intro')).toBeInTheDocument()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(sessionStorage.getItem(INTRO_KEY)).toBe('1')
-    fireEvent.click(skip)
+    fireEvent.keyDown(document, { key: 'Escape' })
     act(() => void vi.advanceTimersByTime(400))
-    expect(screen.queryByRole('button', { name: 'Pular abertura' })).not.toBeInTheDocument()
+    expect(screen.queryByTestId('book-intro')).not.toBeInTheDocument()
     unmount()
     render(<BookOpening />)
     expect(screen.queryByTestId('book-intro')).not.toBeInTheDocument()
