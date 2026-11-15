@@ -297,7 +297,7 @@ describe('API com PostgreSQL real', () => {
       const initial=(await filesApp.inject({url:'/v1/me/workspace',headers:headers('file-owner')})).json<WorkspaceSnapshot>()
       const created=(await filesApp.inject({url:'/v1/me/workspace',method:'POST',headers:headers('file-owner'),payload:{version:initial.version,action:{type:'book.add',title:'Meu arquivo',author:'Autora',category:'',content:'Texto próprio.'}}})).json<WorkspaceSnapshot>()
       const bookId=created.state.books[0].id
-      const bytes=Buffer.from(zipSync({'mimetype':strToU8('application/epub+zip'),'META-INF/container.xml':strToU8('<rootfile full-path="book.opf"/>'),'book.opf':strToU8('<package/>')}))
+      const bytes=Buffer.from(zipSync({'mimetype':strToU8('application/epub+zip'),'META-INF/container.xml':strToU8('<container><rootfiles><rootfile full-path="book.opf"/></rootfiles></container>'),'book.opf':strToU8('<package/>')}))
       const payload={filename:'minha-leitura.epub',data:bytes.toString('base64')}
       const uploaded=await filesApp.inject({url:`/v1/me/book-files/${bookId}`,method:'POST',headers:headers('file-owner'),payload})
       expect(uploaded.statusCode).toBe(201);expect(uploaded.body).not.toContain('object_key');expect(uploaded.body).not.toContain('private-epub')

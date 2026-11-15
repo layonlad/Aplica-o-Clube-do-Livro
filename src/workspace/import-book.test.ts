@@ -1,9 +1,12 @@
-import { expect, it } from 'vitest'
+import { expect, it,vi,beforeAll } from 'vitest'
+import {webcrypto} from 'node:crypto'
+beforeAll(()=>vi.stubGlobal('crypto',webcrypto))
 import { strToU8, zipSync } from 'fflate'
 import { importBook } from './import-book'
 
 it('importa EPUB na ordem da publicação e remove código ativo',async()=>{
   const data=zipSync({
+    mimetype:strToU8('application/epub+zip'),
     'META-INF/container.xml':strToU8('<container><rootfiles><rootfile full-path="OEBPS/book.opf"/></rootfiles></container>'),
     'OEBPS/book.opf':strToU8('<package xmlns:dc="http://purl.org/dc/elements/1.1/"><metadata><dc:title>Minha obra</dc:title><dc:creator>Autora</dc:creator></metadata><manifest><item id="a" href="a.xhtml"/><item id="b" href="b.xhtml"/></manifest><spine><itemref idref="b"/><itemref idref="a"/></spine></package>'),
     'OEBPS/a.xhtml':strToU8('<html><head><style>CSS OCULTO</style></head><body><p>Segunda parte.</p><script>CODIGO INSEGURO</script></body></html>'),
