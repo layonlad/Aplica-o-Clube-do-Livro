@@ -297,7 +297,7 @@
       "autor": "Codex",
       "titulo": "Push ativado; EPUB privado, capas e entrelinha corrigidos em revisão",
       "resumo": "Render/GitHub configurados no plano gratuito; executor manual aprovado, mantendo código de produção 5b5a935. Leitor passa a aceitar ofuscação somente de fontes, importar capa, abrir pela estante e oferecer páginas/rolagem e controles próprios. Corrigido armazenamento no Safari e entrelinha dos posts; 182 testes locais aprovados e leitura sincronizada em contextos independentes. Novo código aguarda merge/publicação autorizados; nenhuma migration ou grant novo.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/19"
     },
     {
       "data": "2026-11-15",

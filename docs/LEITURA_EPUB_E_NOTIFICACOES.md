@@ -1,6 +1,6 @@
 # EPUB privado, entrelinha e notificações — 15/11/2026
 
-A configuração autorizada do Render/GitHub está ativa. As mudanças de leitura e entrelinha estão preparadas nesta branch; ainda precisam de aprovação do dono para merge e publicação.
+A configuração autorizada do Render/GitHub está ativa. As mudanças de leitura e entrelinha estão preparadas no [PR 19](https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/19); ainda precisam de aprovação do dono para merge e publicação.
 
 ## Configuração já aplicada
 
