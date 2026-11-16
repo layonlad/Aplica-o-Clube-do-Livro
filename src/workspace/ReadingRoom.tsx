@@ -1,9 +1,11 @@
 import { QuoteShare } from '../community/QuoteShare'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Bookmark, Highlighter, Search, Expand, Minimize } from 'lucide-react'
+import { Bookmark, Highlighter, Search, Expand, Minimize, Star, Check, ArrowLeft } from 'lucide-react'
 import { preferencesSchema } from '../../server/src/workspace-model'
-import { Button, Card, ProgressBar } from '../components/ui'
+import { Button, Card } from '../components/ui'
+import { rememberOpenedBook } from './CoverBackdrop'
+import { BookShare } from './BookShare'
 import { useWorkspace } from './WorkspaceProvider'
 import { pageAt, readingPages } from './reading-layout'
 import './reading-room.css'
@@ -36,6 +38,9 @@ export function ReadingRoom() {
   }, [])
   const { snapshot, act, busy, scope } = useWorkspace()
   const book = snapshot!.state.books.find((book) => book.id === id)
+  useEffect(() => {
+    if (book?.id) rememberOpenedBook(book.id)
+  }, [book?.id])
   const saved = id ? snapshot!.reading[id] : undefined
   const preferences = preferencesSchema.parse(snapshot!.preferences).reader
   const pages = useMemo(
@@ -196,8 +201,11 @@ export function ReadingRoom() {
       className={`reading-room reading-room--${preferences.theme} reading-room--${preferences.margin}`}
       style={readerStyle(preferences)}
     >
+      <div className="reading-progress" role="progressbar" aria-label="Progresso da leitura" aria-valuenow={saved?.percent ?? 0} aria-valuemin={0} aria-valuemax={100}>
+        <span style={{ width: `${saved?.percent ?? 0}%` }} />
+      </div>
       <Link className="reading-room-back" to="/app/library">
-        ← Minha biblioteca
+        <ArrowLeft size={17} aria-hidden="true" /> Biblioteca
       </Link>
       <Button
         className="reader-focus-toggle"
@@ -205,12 +213,14 @@ export function ReadingRoom() {
         onClick={() => setFocused((value) => !value)}
       >
         {focused ? <Minimize size={18} /> : <Expand size={18} />}{' '}
-        {focused ? 'Mostrar navegação' : 'Ler sem distrações'}
+        {focused ? 'Mostrar menu' : 'Tela cheia'}
       </Button>
       <header className="reading-room-title">
-        <span className="eyebrow">MEU ESPAÇO DE LEITURA</span>
         <h1>{book.title}</h1>
-        <p>{book.author}</p>
+        <p>
+          {book.author}
+          <span className="reading-room-percent">{saved?.percent ?? 0}% lido</span>
+        </p>
       </header>
       <ReaderSettings />
       {scope === 'personal' && (
@@ -223,7 +233,7 @@ export function ReadingRoom() {
               setOriginal(false)
             }}
           >
-            Texto simples
+            Texto
           </button>
           <button
             type="button"
@@ -233,12 +243,12 @@ export function ReadingRoom() {
               setOriginal(true)
             }}
           >
-            EPUB original
+            Livro original
           </button>
         </div>
       )}
       {original && scope === 'personal' ? (
-        <Suspense fallback={<p role="status">Abrindo leitor EPUB…</p>}>
+        <Suspense fallback={<p role="status" className="t-caption">Abrindo o livro…</p>}>
           <EpubReader key={book.id} bookId={book.id} title={book.title} author={book.author} />
         </Suspense>
       ) : pages.length > 0 ? (
@@ -402,87 +412,84 @@ export function ReadingRoom() {
             )}
           </nav>
         </>
-      ) : (
-        <p>
-          Livro cadastrado para leitura física ou em outro aplicativo. O progresso pode ser
-          registrado abaixo.
-        </p>
-      )}
-      <Card>
-        <form
-          className="workspace-form"
-          onSubmit={(e) => {
-            e.preventDefault()
-            void act({
-              type: 'reading.update',
-              id: book.id,
-              percent,
-              expectedRevision: saved?.revision ?? 0,
-            }).then((ok) => ok && setMessage('Progresso salvo.'))
-          }}
-        >
-          <label>
-            Progresso (%)
-            <input
-              aria-label="Progresso de leitura"
-              type="number"
-              required
-              min={0}
-              max={100}
-              value={percent}
-              onChange={(e) => setPercent(Number(e.target.value))}
-            />
-          </label>
-          <Button disabled={busy}>Salvar progresso</Button>
-        </form>
-        <Button
-          variant="secondary"
-          disabled={busy}
-          onClick={() =>
-            void act({
-              type: 'reading.update',
-              id: book.id,
-              percent: 100,
-              expectedRevision: saved?.revision ?? 0,
-            }).then((ok) => ok && setMessage('Leitura concluída e adicionada ao histórico.'))
-          }
-        >
-          Concluir leitura
-        </Button>
-        <label>
-          Sua avaliação
-          <select
-            aria-label="Sua avaliação"
-            value={saved?.rating ?? 0}
-            disabled={busy}
-            onChange={(e) =>
+      ) : null}
+      <Card className="reading-finish">
+        {!book.content && !original && (
+          <form
+            className="reading-manual"
+            onSubmit={(e) => {
+              e.preventDefault()
               void act({
                 type: 'reading.update',
                 id: book.id,
-                rating: Number(e.target.value),
+                percent,
                 expectedRevision: saved?.revision ?? 0,
-              })
+              }).then((ok) => ok && setMessage('Progresso salvo.'))
+            }}
+          >
+            <label>
+              Quanto você já leu?
+              <span className="reading-manual__row">
+                <input
+                  aria-label="Progresso de leitura"
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={percent}
+                  onChange={(e) => setPercent(Number(e.target.value))}
+                />
+                <output>{percent}%</output>
+              </span>
+            </label>
+            <Button disabled={busy || percent === (saved?.percent ?? 0)}>Salvar</Button>
+          </form>
+        )}
+        <div className="reading-finish__row">
+          <div className="star-rating" role="radiogroup" aria-label="Sua avaliação">
+            {[1, 2, 3, 4, 5].map((stars) => (
+              <button
+                key={stars}
+                type="button"
+                role="radio"
+                aria-checked={(saved?.rating ?? 0) === stars}
+                aria-label={`${stars} de 5`}
+                className={(saved?.rating ?? 0) >= stars ? 'is-on' : ''}
+                disabled={busy}
+                onClick={() =>
+                  void act({
+                    type: 'reading.update',
+                    id: book.id,
+                    rating: saved?.rating === stars ? 0 : stars,
+                    expectedRevision: saved?.revision ?? 0,
+                  })
+                }
+              >
+                <Star size={22} fill={(saved?.rating ?? 0) >= stars ? 'currentColor' : 'none'} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+          <BookShare compact book={{ id: book.id, title: book.title, author: book.author, coverUrl: book.metadata?.cover }} />
+          <Button
+            variant={saved?.percent === 100 ? 'ghost' : 'secondary'}
+            disabled={busy || saved?.percent === 100}
+            onClick={() =>
+              void act({
+                type: 'reading.update',
+                id: book.id,
+                percent: 100,
+                expectedRevision: saved?.revision ?? 0,
+              }).then((ok) => ok && setMessage('Leitura concluída!'))
             }
           >
-            <option value={0}>Sem avaliação</option>
-            {[1, 2, 3, 4, 5].map((stars) => (
-              <option key={stars} value={stars}>
-                {stars}/5
-              </option>
-            ))}
-          </select>
-        </label>
+            <Check size={17} aria-hidden="true" />
+            {saved?.percent === 100 ? 'Concluído' : 'Concluir'}
+          </Button>
+        </div>
       </Card>
-      <ProgressBar value={saved?.percent ?? 0} label="Seu progresso salvo" />
       {message && <p role="status">{message}</p>}
       <section className="stack-lg">
-        <h2>Destaques e anotações privadas</h2>
-        {!annotations.length && (
-          <p>
-            Selecione um pequeno trecho durante a leitura para guardar um destaque. Ele não será
-            publicado no clube ou na comunidade.
-          </p>
-        )}
+        <h2>Destaques</h2>
+        {!annotations.length && <p className="t-caption">Selecione um trecho do livro para destacar.</p>}
         {annotations.map((item) => (
           <Card key={item.id}>
             <blockquote>{item.quote}</blockquote>

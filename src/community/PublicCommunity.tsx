@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { readableError } from '../auth/api'
 import { Button, SkeletonPage } from '../components/ui'
 import { PostCard, PostComposer, kindLabels } from './ClubWall'
+import { SharedBookComposer } from './SharedBookComposer'
 import { socialRead } from './social-api'
 import './community.css'
 export function PublicCommunity() {
@@ -76,6 +77,7 @@ export function PublicCommunity() {
         <>
           {user?.emailVerified ? (
             <>
+              <SharedBookComposer clubId={null} onPublished={() => setRevision((value) => value + 1)} />
               <PostComposer clubId={null} onPublished={() => setRevision((value) => value + 1)} />
               <p className="t-caption">
                 As publicações usam seu{' '}

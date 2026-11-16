@@ -12,6 +12,7 @@
     "proximoPasso": "Acompanhar uso e alertas de R$ 70, testar push em aparelho físico e revisar as telas conectadas com o dono. Publicações futuras exigem autorização para seu escopo; não reativar o backend antigo em paralelo.",
     "pendencias": [
       "Validação do EPUB após a troca: abertura/capa funcionam, mas a retomada no Chrome móvel e desktop voltou uma página antes do ponto salvo. Diferença registrada para correção específica do leitor; o código do frontend foi preservado nesta migração.",
+      "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
       "Orçamento do projeto é de R$ 70/mês com alertas, sem corte automático de cobrança. Cloud SQL mínimo e instâncias Cloud Run limitadas; acompanhar uso antes de ampliar capacidade.",
       "Cloud Scheduler chama executor Cloud Run privado a cada quinze minutos; lote autenticado concluído com HTTP 200 e zero falhas. Recebimento push em aparelho físico ainda depende da escolha e permissão do usuário.",
       "Upload geral de fotografias foi confirmado como funcional pelo dono. Os testes da nova leitura usam EPUB, contas e capas sintéticos locais; nenhum arquivo específico do dono foi inspecionado.",
@@ -352,6 +353,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-16",
+      "autor": "Claude Code",
+      "titulo": "Biblioteca: EPUB salvo na conta, capa como fundo e compartilhar capa",
+      "resumo": "O EPUB importado vai para a conta uma vez só (com a capa) e abre em qualquer aparelho; livros antigos guardados só no navegador sobem sozinhos. Limite por quantidade de livros conforme o plano (30 gratuito; 50 e 100 previstos para assinatura e premium). Progresso enche sozinho, livro abre com animação até a página cobrir a tela, cartões e botões com resposta ao toque, compartilhar só a capa na comunidade, clubes ou outros apps, opção de usar a capa como fundo com as cores da história, e menos texto explicativo. A API precisa ir ao ar antes do site.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/25"
+    },
     {
       "data": "2026-11-16",
       "autor": "Codex",

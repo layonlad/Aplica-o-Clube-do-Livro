@@ -168,7 +168,7 @@
 .reading-room--dark .reader-mode button[aria-pressed='true'] { color: #1e1d21; background: #ede7df; }
 .reading-room-back { width: fit-content; color: inherit; font-size: var(--text-small); font-weight: 700; opacity: .75; }
 .reading-room-back:hover { opacity: 1; }
-.reading-room-title h1 { font-family: var(--font-display); font-size: clamp(1.8rem, 1.4rem + 1.6vw, 2.6rem); }
+.reading-room-title h1 { font-family: var(--font-display); font-size: clamp(1.5rem, 1.25rem + 1.3vw, 2.2rem); }
 .reader-file { padding-block: var(--space-3); border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent); }
 .reader-file p { margin: var(--space-2) 0 var(--space-3); font-size: var(--text-small); opacity: .75; }
 @media (max-width: 559px) {
@@ -211,3 +211,40 @@
 :root[data-reader-focus='true'] .reading-room { padding-block:8px; }
 :root[data-reader-focus='true'] .reading-room .reader-mode { display:none; }
 :root[data-reader-focus='true'] .reading-room-title { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip-path:inset(50%); }
+
+/* ── Progresso automático no topo e fim de leitura (15/11/2026) ── */
+.reading-progress { position: fixed; top: 0; left: 0; right: 0; z-index: 40; height: 3px; background: color-mix(in srgb, var(--brand) 10%, transparent); pointer-events: none; }
+.reading-progress span { display: block; height: 100%; background: linear-gradient(90deg, var(--brand), var(--accent)); border-radius: 0 3px 3px 0; transition: width 900ms var(--ease-out); }
+.reading-room-back { display: inline-flex; align-items: center; gap: 6px; }
+.reading-room-percent { margin-left: 10px; padding: 2px 8px; color: var(--brand-ink); background: var(--brand-soft); border-radius: 999px; font-family: var(--font-ui); font-size: var(--text-caption); font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
+.reading-finish { display: grid; gap: 14px; }
+.reading-finish > * + * { margin-top: 0 !important; }
+.reading-finish__row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.reading-finish__row > .button { margin-left: auto; }
+.reading-manual { display: grid; gap: 10px; }
+.reading-manual label { display: grid; gap: 6px; font-weight: 700; font-size: var(--text-small); }
+.reading-manual__row { display: flex; align-items: center; gap: 12px; }
+.reading-manual input[type='range'] { flex: 1; accent-color: var(--brand); }
+.reading-manual output { min-width: 3.2em; font-variant-numeric: tabular-nums; text-align: right; }
+.reading-manual .button { justify-self: start; }
+.star-rating { display: inline-flex; gap: 2px; }
+.star-rating button { display: grid; width: 40px; height: 40px; place-items: center; padding: 0; color: color-mix(in srgb, var(--text) 30%, transparent); background: none; border: 0; border-radius: 50%; cursor: pointer; transition: color var(--dur-fast) var(--ease-out), transform var(--dur-instant) var(--ease-out); }
+.star-rating button.is-on { color: var(--honey-500, #f4b942); }
+.star-rating button:active { transform: scale(0.85); }
+@media (hover: hover) and (pointer: fine) { .star-rating:hover button { color: var(--honey-500, #f4b942); } .star-rating button:hover ~ button { color: color-mix(in srgb, var(--text) 30%, transparent); } }
+.star-rating button.is-on svg { animation: heart-pop var(--dur-slow) var(--ease-spring); }
+
+/* Tela cheia: a página do livro vai de borda a borda no celular e no tablet,
+ * e a coluna de texto usa toda a altura disponível. */
+:root[data-reader-focus='true'] .page-content { width: 100%; max-width: none; padding: 0 !important; }
+:root[data-reader-focus='true'] .reading-room {
+  min-height: 100dvh;
+  padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  border-radius: 0;
+  box-shadow: none;
+}
+:root[data-reader-focus='true'] .reading-room .epub-prose--paged { height: calc(100dvh - 210px); min-height: 280px; }
+:root[data-reader-focus='true'] .reading-room .epub-page-viewport { max-width: 72ch; }
+@media (min-width: 1024px) {
+  :root[data-reader-focus='true'] .reading-room { padding-inline: max(32px, 6vw); }
+}

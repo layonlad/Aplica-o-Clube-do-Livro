@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
-import { localEpub, saveEpub } from './epub-storage'
-
 import { useWorkspace } from './WorkspaceProvider'
 import { CoverArt } from '../components/ui'
+import { BOOK_FILES_EVENT, bookCoverBlob } from './book-files'
+
+/**
+ * Capa do livro na biblioteca: a imagem do próprio EPUB (deste aparelho ou da conta).
+ * Sem imagem, mostra a capa tipográfica do app. Carrega só quando aparece na tela.
+ */
 export function PrivateBookCover({
   id,
   title,
@@ -42,64 +46,27 @@ export function PrivateBookCover({
   useEffect(() => {
     const changed = (event: Event) => {
       const detail = (event as CustomEvent).detail
-      if (detail?.namespace === namespace && detail?.bookId === id) setRevision((n) => n + 1)
+      if (!detail || (detail.namespace === namespace && detail.bookId === id)) setRevision((n) => n + 1)
     }
     window.addEventListener('clube-epub-saved', changed)
-    return () => window.removeEventListener('clube-epub-saved', changed)
+    window.addEventListener(BOOK_FILES_EVENT, changed)
+    return () => {
+      window.removeEventListener('clube-epub-saved', changed)
+      window.removeEventListener(BOOK_FILES_EVENT, changed)
+    }
   }, [namespace, id])
   useEffect(() => {
-    if (!visible) return
+    if (!visible || scope !== 'personal') return
     let live = true,
       href = ''
     const controller = new AbortController()
-    setUrl('')
-    void (async () => {
-      const record = await localEpub(namespace, id).catch(() => undefined)
-      let cover = record?.cover
-      if (!cover && record) {
-        const { readEpub } = await import('./epub-archive')
-        const archive = await readEpub(record.file),
-          image = archive.coverPath ? archive.images.get(archive.coverPath) : undefined
-        if (image) {
-          cover = new Blob([new Uint8Array(image.bytes)], { type: image.mime })
-          if (live)
-            void saveEpub(namespace, id, record.file, record.filename, cover).catch(() => {})
-        }
-      }
-      if (!cover && user?.emailVerified && scope === 'personal' && import.meta.env.VITE_API_URL) {
-        const token = await user.getIdToken()
-        const timeout = setTimeout(() => controller.abort(), 75000)
-        try {
-          for (let attempt = 0; attempt < 4 && live; attempt++) {
-            const response = await fetch(
-              `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/v1/me/book-files/${id}/cover`,
-              {
-                headers: { Authorization: 'Bearer ' + token },
-                signal: controller.signal,
-                cache: 'no-store',
-                credentials: 'omit',
-                referrerPolicy: 'no-referrer',
-              },
-            )
-            if (response.status === 429) {
-              await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)))
-              continue
-            }
-            if (response.ok && response.headers.get('content-type')?.startsWith('image/jpeg')) {
-              const blob = await response.blob()
-              if (blob.size <= 300000) cover = blob
-            }
-            break
-          }
-        } finally {
-          clearTimeout(timeout)
-        }
-      }
-      if (live && cover) {
+    void bookCoverBlob(user, id, controller.signal)
+      .then((cover) => {
+        if (!live || !cover) return
         href = URL.createObjectURL(cover)
         setUrl(href)
-      }
-    })().catch(() => {})
+      })
+      .catch(() => {})
     return () => {
       live = false
       controller.abort()

@@ -4,6 +4,7 @@ import { transaction } from './database.js'
 import { HttpError } from './errors.js'
 import { validateEpub, type PrivateStorage } from './private-storage.js'
 import { privateEpubCover } from './epub-cover.js'
+import { epubLimit } from './plans.js'
 interface FileRow {
   id: string
   book_id: string
@@ -31,6 +32,19 @@ export class PrivateFiles {
       [userId, JSON.stringify([{ id: bookId }])],
     )
     if (!result.rowCount) throw missing()
+  }
+  /** Quantos EPUBs a conta guarda, o limite do plano e quais livros já têm o arquivo. */
+  async usage(userId: string) {
+    const { rows } = await this.pool.query<{ book_id: string }>(
+      "SELECT book_id FROM private_book_files WHERE owner_user_id=$1 AND state IN ('active','pending') ORDER BY created_at",
+      [userId],
+    )
+    return {
+      enabled: !!this.storage,
+      ...epubLimit(userId),
+      used: rows.length,
+      bookIds: rows.map((row) => row.book_id),
+    }
   }
   async list(userId: string, bookId: string) {
     return transaction(this.pool, async (client) => {
@@ -62,15 +76,17 @@ export class PrivateFiles {
           'FILE_EXISTS',
           'Este livro ou arquivo já possui uma cópia na sua biblioteca. Não foi criada outra cópia.',
         )
-      const total = await client.query(
-        "SELECT COALESCE(sum(byte_size),0)::int AS bytes FROM private_book_files WHERE owner_user_id=$1 AND state IN ('active','pending','deleted')",
+      // Limite por quantidade de livros, conforme o plano (cada arquivo já é limitado a 10 MB).
+      const { limit, label } = epubLimit(userId)
+      const total = await client.query<{ files: number }>(
+        "SELECT count(*)::int AS files FROM private_book_files WHERE owner_user_id=$1 AND state IN ('active','pending')",
         [userId],
       )
-      if (total.rows[0].bytes + bytes.length > 50000000)
+      if (total.rows[0].files >= limit)
         throw new HttpError(
           409,
           'FILE_QUOTA',
-          'Sua conta atingiu a cota inicial de 50 MB de arquivos EPUB.',
+          `Você chegou ao limite de ${limit} livros do plano ${label}. Remova o arquivo de um livro para guardar outro.`,
         )
       await client.query(
         'INSERT INTO private_book_files(id,owner_user_id,book_id,object_key,filename,sha256,byte_size) VALUES($1,$2,$3,$4,$5,$6,$7)',

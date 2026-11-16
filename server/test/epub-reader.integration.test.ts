@@ -5,6 +5,7 @@ import { testDatabase } from './database.js'
 import { buildApp } from '../src/app.js'
 let db: Awaited<ReturnType<typeof testDatabase>>, app: Awaited<ReturnType<typeof buildApp>>
 const objects = new Map<string, Buffer>()
+let address = 0
 const request = (
   url: string,
   uid = 'epub-owner',
@@ -15,6 +16,8 @@ const request = (
     url: '/v1' + url,
     method: method as 'GET' | 'POST' | 'DELETE',
     headers: { authorization: 'Bearer ' + uid },
+    // Cada chamada vem de um endereço diferente, para o limite de envios por minuto não interferir.
+    remoteAddress: '127.0.' + Math.floor(++address / 250) + '.' + (address % 250),
     payload,
   })
 beforeAll(async () => {
@@ -131,4 +134,47 @@ it('sincroniza os controles de leitura e preserva as escolhas antigas', async ()
     ).statusCode,
   ).toBe(200)
   expect((await request('/me/workspace')).json().preferences.reader).toMatchObject(legacy)
+})
+it('limita a 30 EPUBs no plano gratuito e informa quais livros já têm o arquivo guardado', async () => {
+  const uid = 'epub-limit'
+  const epub = (n: number) =>
+    Buffer.from(
+      zipSync({
+        mimetype: strToU8('application/epub+zip'),
+        'META-INF/container.xml': strToU8(
+          '<container><rootfiles><rootfile full-path="OPS/book.opf"/></rootfiles></container>',
+        ),
+        'OPS/book.opf': strToU8(
+          '<package><metadata/><manifest><item id="body" href="body.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="body"/></spine></package>',
+        ),
+        'OPS/body.xhtml': strToU8(`<html><body><p>Livro sintético ${n}.</p></body></html>`),
+      }),
+    ).toString('base64')
+  const ids: string[] = []
+  for (let n = 0; n < 31; n++) {
+    const current = (await request('/me/workspace', uid)).json()
+    const added = await request('/me/workspace', uid, 'POST', {
+      version: current.version,
+      action: { type: 'book.add', title: `Livro ${n}`, author: 'Teste', category: '', content: '', metadata: {} },
+    })
+    expect(added.statusCode, added.body).toBe(200)
+    ids.push(added.json().state.books[0].id)
+  }
+  for (const [n, id] of ids.slice(0, 30).entries()) {
+    const upload = await request(`/me/book-files/${id}`, uid, 'POST', { filename: `livro-${n}.epub`, data: epub(n) })
+    expect(upload.statusCode, upload.body).toBe(201)
+  }
+  const usage = (await request('/me/book-files', uid)).json()
+  expect(usage).toMatchObject({ enabled: true, plan: 'gratuito', limit: 30, used: 30 })
+  expect(usage.bookIds).toHaveLength(30)
+  expect(usage.bookIds).toContain(ids[0])
+  const blocked = await request(`/me/book-files/${ids[30]}`, uid, 'POST', { filename: 'livro-30.epub', data: epub(30) })
+  expect(blocked.statusCode).toBe(409)
+  expect(blocked.json().error.code).toBe('FILE_QUOTA')
+  expect(blocked.json().error.message).toContain('30 livros')
+  // Remover o arquivo de um livro libera espaço para outro.
+  const first = (await request(`/me/book-files/${ids[0]}`, uid)).json().items[0]
+  expect((await request(`/me/files/${first.id}`, uid, 'DELETE')).statusCode).toBe(200)
+  expect((await request(`/me/book-files/${ids[30]}`, uid, 'POST', { filename: 'livro-30.epub', data: epub(30) })).statusCode).toBe(201)
+  expect((await request('/me/book-files', 'epub-stranger')).json()).toMatchObject({ used: 0, bookIds: [] })
 })

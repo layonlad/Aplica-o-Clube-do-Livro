@@ -1,4 +1,5 @@
 import { MediaCarousel } from './MediaCarousel'
+import { SharedBookComposer } from './SharedBookComposer'
 import { Sheet } from '../components/Sheet'
 import { ShareAction } from '../components/ShareAction'
 import { ConfirmAction } from './ConfirmAction'
@@ -114,7 +115,10 @@ function WallRoom({ clubId, name }: { clubId: string | null; name: string }) {
         <p>O mural de {name}. As publicações ficam com quem participa do grupo.</p>
       </header>
       {!selected && (
-        <PostComposer clubId={clubId} onPublished={() => setRevision((value) => value + 1)} />
+        <>
+          <SharedBookComposer clubId={clubId} onPublished={() => setRevision((value) => value + 1)} />
+          <PostComposer clubId={clubId} onPublished={() => setRevision((value) => value + 1)} />
+        </>
       )}
       <div className="wall-filters">
         <form

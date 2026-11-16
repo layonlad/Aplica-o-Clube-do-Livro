@@ -5,6 +5,7 @@ import { useWorkspace } from './WorkspaceProvider'
 import { Button } from '../components/ui'
 import { readEpub, epubPath, type EpubArchive } from './epub-archive'
 import { localEpub, saveEpub, removeEpub } from './epub-storage'
+import { uploadOriginal } from './book-files'
 import { preferencesSchema } from '../../server/src/workspace-model'
 import { QuoteShare } from '../community/QuoteShare'
 import { readerFont } from './ReaderSettings'
@@ -71,6 +72,11 @@ export function EpubReader({
       cover ? new Blob([new Uint8Array(cover.bytes)], { type: cover.mime }) : undefined,
     )
     setRevision((n) => n + 1)
+    // Escolhido uma vez aqui, o arquivo vai para a conta e não é pedido de novo em outro aparelho.
+    if (user?.emailVerified)
+      void uploadOriginal(user, bookId, file, filename).catch((err) =>
+        setMessage('Livro aberto, mas não foi salvo na conta: ' + readableError(err)),
+      )
   }
   useEffect(() => {
     let live = true
@@ -112,7 +118,7 @@ export function EpubReader({
           }
         }
         if (!record) {
-          if (live) setMessage('Escolha seu EPUB autorizado para abrir a edição original.')
+          if (live) setMessage('')
           return
         }
         const value = await readEpub(record.file)
@@ -141,9 +147,7 @@ export function EpubReader({
         } else setChapter(0)
         setUrls(images)
         setArchive(value)
-        setMessage(
-          'Edição original aberta. Imagens são lidas do arquivo; recursos externos ficam omitidos.',
-        )
+        setMessage('')
       } catch (err) {
         if (live) setError(err instanceof Error ? err.message : readableError(err))
       } finally {
@@ -247,7 +251,7 @@ export function EpubReader({
       setChapter(target)
       setSelected(null)
       setPendingOffset(offset)
-      setMessage('Posição EPUB salva na sua leitura.')
+      setMessage('')
     }
     return ok
   }
@@ -435,7 +439,7 @@ export function EpubReader({
       : []
   const fileButton = (
     <label className="file-button">
-      {archive ? 'Trocar EPUB deste leitor' : 'Abrir EPUB autorizado'}
+      {archive ? 'Trocar arquivo' : 'Escolher EPUB'}
       <input
         type="file"
         accept=".epub"
@@ -457,18 +461,18 @@ export function EpubReader({
   return (
     <section className="epub-original stack-lg">
       {!archive && (
-        <header>
-          <h2>Ler o EPUB original</h2>
-          <p>O arquivo é privado e fica separado das publicações.</p>
+        <header className="epub-original__empty">
+          <h2>Falta o arquivo deste livro</h2>
+          <p>Escolha o EPUB uma vez. Ele fica salvo{user?.emailVerified ? ' na sua conta' : ' neste aparelho'}.</p>
         </header>
       )}
-      {loading && <p role="status">Abrindo o EPUB e suas ilustrações…</p>}
+      {loading && <p role="status" className="t-caption">Abrindo o livro…</p>}
       {error && <p role="alert">{error}</p>}
       {!archive && fileButton}
       {archive && (
         <>
           <details ref={navigationTools} className="reader-navigation-tools">
-            <summary>Sumário e pesquisa</summary>
+            <summary>Sumário e busca</summary>
             <div className="reader-settings-grid reader-toolbar-grid">
               <label>
                 Sumário EPUB
@@ -721,10 +725,7 @@ export function EpubReader({
           ))}
           {confirmRemove ? (
             <div>
-              <p>
-                Remover a cópia deste navegador? Seu arquivo guardado na conta e suas anotações
-                continuam disponíveis.
-              </p>
+              <p className="t-caption">Apagar a cópia deste aparelho? Sua conta e anotações continuam.</p>
               <Button
                 variant="danger"
                 onClick={() =>
@@ -735,12 +736,12 @@ export function EpubReader({
                   })
                 }
               >
-                Confirmar remoção local
+                Apagar deste aparelho
               </Button>
             </div>
           ) : (
             <Button variant="ghost" onClick={() => setConfirmRemove(true)}>
-              Remover cópia EPUB deste navegador
+              Apagar cópia deste aparelho
             </Button>
           )}
         </>

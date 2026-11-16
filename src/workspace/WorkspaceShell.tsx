@@ -8,6 +8,8 @@ import { useTheme } from '../app/ThemeProvider'
 import { SkeletonPage } from '../components/ui'
 import { UserAvatar, useOwnAvatar } from '../components/UserAvatar'
 import { AppearanceSync } from '../app/AppearanceSettings'
+import { BookOpenerLayer } from './BookOpener'
+import { CoverBackdrop } from './CoverBackdrop'
 import { useWorkspace } from './WorkspaceProvider'
 import { motion } from 'framer-motion'
 import { pageTurn, settle } from '../design/motion'
@@ -138,6 +140,8 @@ export function WorkspaceShell() {
   return <div className={`app-frame workspace-app ${reading ? 'is-reading' : ''}`} data-keyboard={keyboardOpen?'open':'closed'} data-space={globalPage?'community':spaceFor(pathname, scope)}>
     <a className="skip-link" href="#conteudo" onClick={skip}>Pular para o conteúdo</a>
     <AppearanceSync />
+    <BookOpenerLayer />
+    <CoverBackdrop />
     <aside className="app-rail">
       <header className={`app-header ${scrolled ? 'is-scrolled' : ''}`}>
         <Link className="brand-lockup" to="/app" aria-label="Clube do Livro, início"><span className="brand-mark">{monogram}</span><span className="rail-brand-name rail-only"><strong>Clube do Livro</strong><small>Leituras que aproximam</small></span></Link>

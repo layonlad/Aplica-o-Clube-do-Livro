@@ -1,0 +1,59 @@
+/* Abertura de um livro da biblioteca (BookOpener.tsx). Só transform/opacity. */
+.book-opener {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 55% at 50% 50%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 72%),
+    var(--bg);
+  perspective: 1800px;
+}
+.book-opener__book {
+  position: absolute;
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+/* A página tem a cor do fundo do leitor, para a troca ser contínua. */
+.book-opener__page {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.07), transparent 10%), var(--reader-paper, #fbf4e8);
+  border-radius: 2px 6px 6px 2px;
+  box-shadow: 2px 2px 0 #ecdcc3, 4px 4px 0 #fbf4e8, 6px 7px 0 #ecdcc3, 14px 24px 44px rgba(38, 24, 61, 0.28);
+}
+.book-opener__lines {
+  position: absolute;
+  inset: 16% 14% 18% 14%;
+  background: repeating-linear-gradient(180deg, transparent 0 14px, rgba(70, 43, 112, 0.1) 14px 15px);
+}
+.book-opener__cover {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+}
+.book-opener__cover > img,
+.book-opener__drawn,
+.book-opener__inside {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 3px 8px 8px 3px;
+  backface-visibility: hidden;
+}
+.book-opener__cover > img { object-fit: cover; box-shadow: inset 8px 0 0 rgba(0, 0, 0, 0.12), 14px 24px 44px rgba(38, 24, 61, 0.3); }
+.book-opener__drawn {
+  display: grid;
+  place-items: center;
+  padding: 14%;
+  color: #fffbf4;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.2) 0 7%, transparent 9%), var(--brand);
+  font: 600 1.4rem/1.1 var(--font-display);
+  text-align: center;
+}
+.book-opener__inside { transform: rotateY(180deg); background: linear-gradient(270deg, rgba(0, 0, 0, 0.16), transparent 16%), #ead8c0; }

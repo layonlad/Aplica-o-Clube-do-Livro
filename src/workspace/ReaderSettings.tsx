@@ -158,10 +158,6 @@ export function ReaderSettings() {
           </select>
         </label>
       </div>
-      <p className="t-caption">
-        Suas escolhas ficam salvas neste navegador e, com conta, acompanham sua leitura em outros
-        aparelhos.
-      </p>
     </details>
   )
 }

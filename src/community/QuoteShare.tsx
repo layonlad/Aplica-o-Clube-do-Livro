@@ -87,10 +87,7 @@ export function QuoteShare({
                 onChange={(event) => setBody(event.target.value)}
               />
             </label>
-            <p>
-              Será publicado apenas este trecho curto com a referência. Sua anotação e o arquivo do
-              livro permanecem privados.
-            </p>
+            <p className="t-caption">Só o trecho é publicado; sua anotação fica com você.</p>
             <Button disabled={busy || !audience}>
               {audience === 'public'
                 ? 'Confirmar publicação pública'
@@ -102,8 +99,7 @@ export function QuoteShare({
           </form>
         ) : (
           <p>
-            <Link to="/account">Entre para escolher onde compartilhar</Link>. Seu destaque continua
-            privado.
+            <Link to="/account">Entre na sua conta</Link> para compartilhar.
           </p>
         ))}
       {error && <p role="alert">{error}</p>}
