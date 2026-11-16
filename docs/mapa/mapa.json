@@ -6,19 +6,19 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Produção migrada para Firebase e Google Cloud",
+    "fase": "Biblioteca EPUB publicada em produção",
     "tom": "ok",
-    "resumo": "Site, autenticação, API, PostgreSQL, arquivos privados e execução agendada estão no projeto gen-lang-client-0194308411, renomeado Projeto-clube-do-Livro. Cópia final conferida por checksums e hashes, com identidades preservadas. Render pausado e executor GitHub desativado; origens mantidas para recuperação.",
-    "proximoPasso": "Acompanhar uso e alertas de R$ 70, testar push em aparelho físico e revisar as telas conectadas com o dono. Publicações futuras exigem autorização para seu escopo; não reativar o backend antigo em paralelo.",
+    "resumo": "PR 25 publicado no commit 383541f: biblioteca guarda EPUB e capa na conta, informa uso de 30 arquivos, mostra progresso automático, abre em tela cheia e permite usar/compartilhar a capa. API e executor foram publicados antes dos dois sites Firebase no projeto Google atual; testes com identidade descartável concluídos.",
+    "proximoPasso": "Acompanhar uso e orçamento, revisar a retomada exata de página no Chrome e validar push em aparelho físico. Planos pagos do aplicativo continuam sem cobrança implementada; publicações futuras exigem autorização para o seu escopo.",
     "pendencias": [
-      "Validação do EPUB após a troca: abertura/capa funcionam, mas a retomada no Chrome móvel e desktop voltou uma página antes do ponto salvo. Diferença registrada para correção específica do leitor; o código do frontend foi preservado nesta migração.",
+      "Retomada exata de página no Chrome teve diferença de uma página no ensaio da migração. Esta liberação confirmou persistência de livro/capa e progresso automático no card; a diferença exata de retomada não foi revalidada.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
       "Orçamento do projeto é de R$ 70/mês com alertas, sem corte automático de cobrança. Cloud SQL mínimo e instâncias Cloud Run limitadas; acompanhar uso antes de ampliar capacidade.",
       "Cloud Scheduler chama executor Cloud Run privado a cada quinze minutos; lote autenticado concluído com HTTP 200 e zero falhas. Recebimento push em aparelho físico ainda depende da escolha e permissão do usuário.",
-      "Upload geral de fotografias foi confirmado como funcional pelo dono. Os testes da nova leitura usam EPUB, contas e capas sintéticos locais; nenhum arquivo específico do dono foi inspecionado.",
+      "Upload geral de fotos confirmado pelo dono. Nesta liberação, envio direto da capa à Comunidade foi testado de ponta a ponta em produção, com EPUB sintético e conta descartável; arquivos reais do dono não foram inspecionados.",
       "EPUB com fontes ofuscadas é aceito; texto ou imagens realmente criptografados exigem edição legível da loja/editora. Sem capa raster compatível, permanece uma ilustração de reserva.",
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
-      "Leitor de tela e aparelho físico não foram testados. Sincronização de capa, arquivo e preferências foi validada em contextos independentes de navegadores locais.",
+      "Leitor de tela e aparelho físico não foram testados. EPUB, capa e preferência de fundo foram recuperados em outro contexto de navegador conectado à produção; interface móvel conferida a 390 px.",
       "O modo conectado não oferece cache offline por service worker. Backups do banco são gerenciados; arquivos novos não têm cópia periódica independente. As origens antigas preservam a fotografia da migração, sem gravações posteriores.",
       "Estética \"Estante Rosa & Palha\" publicada com a ilustração de estante; falta a foto definitiva do dono. As telas conectadas com dados reais (comunidade, clubes, fórum, leitor) ainda não foram revisadas uma a uma no novo visual."
     ]
@@ -28,7 +28,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "9ad583c · Firebase Hosting publicado em 16/11/2026; frontend com o visual do Claude e API/Auth novos",
+      "versao": "383541f · PR 25 publicado em 16/11/2026; EPUB na conta, cota de livros, progresso automático e capa como fundo/compartilhamento",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -36,7 +36,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health",
-      "versao": "8f0ddd3 · imagem validada no PR 23, incorporado em 9ad583c; revisão clube-livro-api-00002-j59 publicada em 16/11/2026",
+      "versao": "383541f · revisão clube-livro-api-00003-cbz publicada em 16/11/2026, antes dos sites; executor clube-notifications-00002-q8q na mesma imagem",
       "atualizacao": "Cloud Build e deploy manual pelo digest no Cloud Run; mínimo zero, máximo uma instância",
       "tom": "ok"
     },
@@ -68,7 +68,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "Mesmo app conectado ao Firebase/Google novo; preserva o armazenamento do navegador neste endereço",
+      "versao": "383541f · mesmo build do site principal; API/Auth Google novos e armazenamento local preservado neste endereço",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -87,7 +87,7 @@
         "Aparência escolhida",
         "Sessão de login"
       ],
-      "detalhe": "Sem conta, biblioteca e leitura ficam neste navegador. EPUBs originais usam IndexedDB separado por visitante/conta. Apagar os dados do navegador pode apagar essas cópias. O modo conectado não registra cache offline por service worker. Desde a liberação EPUB, EPUB e capa são guardados como bytes portáveis, mantendo leitura de registros antigos; controles do leitor e posição são independentes da aparência geral.",
+      "detalhe": "Sem conta, biblioteca e EPUBs ficam neste navegador. IndexedDB separa visitante e conta; apagar dados do navegador pode apagar cópias locais. Com conta confirmada, EPUBs pessoais do espaço são sincronizados à nuvem dentro da cota. A capa pode virar fundo ou ser compartilhada explicitamente sem publicar o original. O modo conectado não tem cache offline por service worker.",
       "link": ""
     },
     {
@@ -100,7 +100,7 @@
       "guarda": [
         "Arquivos do app (HTML, CSS, JavaScript, fontes)"
       ],
-      "detalhe": "Entrega o frontend conectado e o mapa. API/Auth usam o projeto novo; a cópia no endereço anterior preserva o IndexedDB daquela origem. Livros apenas locais não são enviados automaticamente. O predeploy confere a saúde da API.",
+      "detalhe": "Frontend conectado e mapa no Firebase. Os dois endereços servem o mesmo build. Visitantes continuam locais; com conta confirmada, EPUBs pessoais novos e cópias antigas desse mesmo espaço são enviados automaticamente até a cota. O endereço anterior preserva seu IndexedDB; arquivos locais de outra origem não se transferem sozinhos. API validada antes do site.",
       "link": "https://gen-lang-client-0194308411.web.app"
     },
     {
@@ -129,7 +129,7 @@
         "Regras e permissões em execução",
         "Configuração privada no Secret Manager; identidade própria sem arquivo de chave"
       ],
-      "detalhe": "1 CPU/1 GiB, concorrência 2 e pool de 5 conexões. Valida autenticação, participação, bloqueios e moderação. Cloud SQL via conexão autenticada; mídia GCS privada por ADC. Manutenção habilitada. Imagem reproduzível no Cloud Build; Render antigo suspenso.",
+      "detalhe": "1 CPU/1 GiB, concorrência 2 e pool de 5 conexões. Valida autenticação, participação, bloqueios e moderação. Cloud SQL via conexão autenticada; mídia GCS privada por ADC. Manutenção habilitada. Imagem reproduzível no Cloud Build; Render antigo suspenso. PR 25 validado com as permissões existentes; nenhuma migration, grant ou identidade adicional.",
       "link": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health"
     },
     {
@@ -163,7 +163,7 @@
         "EPUBs originais guardados na conta",
         "Arquivos EPUB do acervo dos clubes"
       ],
-      "detalhe": "41 objetos migrados com mesmas chaves e hash SHA-256 conferido. Bucket com acesso público impedido e regras negando acesso direto por SDK; API usa IAM mínimo. POST assinado restringe chave, MIME, tamanho e validade. Privacidade, bloqueios, cotas e otimização preservados; EPUB pessoal e capa exigem titular. Testes reais de foto e EPUB sintéticos aprovados e removidos. Sem versões ou soft delete de originais temporários.",
+      "detalhe": "41 objetos migrados com mesmas chaves e hash SHA-256 conferido. Bucket com acesso público impedido e regras negando acesso direto por SDK; API usa IAM mínimo. POST assinado restringe chave, MIME, tamanho e validade. Privacidade, bloqueios, cotas e otimização preservados; EPUB pessoal e capa exigem titular. Testes reais de foto e EPUB sintéticos aprovados e removidos. Sem versões ou soft delete de originais temporários. Biblioteca pessoal usa cota por quantidade: 30 EPUBs ativos/pendentes no plano gratuito, cada arquivo limitado a 10 MB. Remover um original libera a quantidade. Compartilhamento cria apenas imagem da capa; o EPUB continua privado. Cotas de fotos e de acervo dos clubes permanecem separadas.",
       "link": "https://console.firebase.google.com/project/gen-lang-client-0194308411/storage"
     },
     {
@@ -208,7 +208,7 @@
         "Fila e tentativas no PostgreSQL",
         "Configuração privada no Secret Manager; identidade SQL própria"
       ],
-      "detalhe": "Scheduler a cada quinze minutos com OIDC e audiência exata. IAM permite somente sua identidade invocar o executor; validação adicional no app. 1 CPU/512 MiB, pool de 3, conexões fechadas após cada lote e trava de concorrência. Lote real HTTP 200, sem falhas. Workflow antigo desativado; avisos sem conteúdo privado e recebimento físico pendente.",
+      "detalhe": "Scheduler a cada quinze minutos com OIDC e audiência exata. IAM permite somente sua identidade invocar o executor; validação adicional no app. 1 CPU/512 MiB, pool de 3, conexões fechadas após cada lote e trava de concorrência. Lote real HTTP 200, sem falhas. Workflow antigo desativado; avisos sem conteúdo privado e recebimento físico pendente. Executor atualizado com o mesmo digest da API na revisão clube-notifications-00002-q8q; agendamento preservado.",
       "link": "https://console.cloud.google.com/cloudscheduler?project=gen-lang-client-0194308411"
     },
     {
@@ -247,14 +247,14 @@
     { "o_que": "E-mail, senha e login com Google", "onde": "auth", "privacidade": "Privado", "copia": "Gerenciado pelo Google" },
     { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Perfil público por escolha; colega ativo em comum pode ver somente cartão mínimo e clubes compartilhados", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON pessoal e persistência no banco; arquivos originais não entram no JSON" },
-    { "o_que": "Aparência do app e controles do leitor", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "Preferências no navegador e, com conta, no banco. Fontes, paginação e entrelinha do leitor publicadas em 644b10e, sem migration; sincronização conferida em contextos locais independentes." },
+    { "o_que": "Aparência do app e controles do leitor", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "Preferências no navegador e, com conta, no banco. coverBackdrop opcional salvo pela API e recuperado em outro contexto de navegador em produção; controles do leitor continuam separados." },
     { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Metadados de descoberta por escolha do clube; membros e gestão conforme papel; convites restritos aos autorizados", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Mural, fórum, encontros e álbuns dos clubes", "onde": "banco", "privacidade": "Só membros ativos", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Públicos enquanto perfil e conteúdo estiverem disponíveis; bloqueios e moderação são revalidados", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Notificações", "onde": "banco", "privacidade": "Privado do destinatário", "copia": "Manutenção da API e executor Google com limpeza autenticada em lotes, mantendo a retenção do app" },
     { "o_que": "Fotos e capas de perfil", "onde": "midia", "privacidade": "Titular; foto pública por escolha do perfil ou para colegas ativos em comum, respeitando bloqueios; capa só com perfil público", "copia": "Persistência no bucket privado; troca ou remoção revoga imediatamente o arquivo anterior" },
     { "o_que": "Fotos e vídeos de publicações e álbuns", "onde": "midia", "privacidade": "Permissões da publicação ou álbum; copiar foto de clube para a comunidade exige autorização explícita", "copia": "Persistência no bucket; arquivos não entram no backup JSON" },
-    { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Não entram no backup JSON; baixe o original separadamente. O envio de acervo ao clube exige origem e autorização." },
+    { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Pessoais: até 30 arquivos ativos/pendentes no plano gratuito, até 10 MB cada; livro e capa recuperados em outro contexto de navegador. Não entram no backup JSON; baixe o original separadamente. Compartilhar a capa não publica o arquivo. Acervo dos clubes mantém cotas e autorização próprias." },
     { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" },
     { "o_que": "Cópias de recuperação e fotografia da migração", "onde": "recuperacao", "privacidade": "Privadas; bucket operacional Google e origens antigas preservadas", "copia": "Dump e Auth finais verificados; fontes de build isoladas dos backups. Cloud SQL tem sete backups gerenciados; não sobrescrever dados novos sem conciliação." },
     {"o_que": "Assinaturas de aparelhos e fila push", "onde": "banco", "privacidade": "Privado; leitura e envio revalidam preferências, bloqueios e participação. Avisos externos não carregam conteúdo privado.", "copia": "Executor Cloud Run privado e Scheduler ativos, com lote real aprovado; recebimento físico ainda pendente."},
@@ -353,6 +353,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-16",
+      "autor": "Codex",
+      "titulo": "PR 25 publicado: biblioteca EPUB, capa e progresso validados",
+      "resumo": "Commit 383541f compilado pelo digest e publicado primeiro na API/executor, depois nos dois sites Firebase. 194 testes locais e CI aprovados; nenhuma migration ou permissão nova. Em produção, conta descartável confirmou 1 de 30 livros, capa/livro após recarga, progresso de 15%, abertura em tela cheia, fundo e cores, publicação somente da capa e recuperação em outro contexto. Conta, EPUB e imagem de teste removidos; sessão recusada e auditoria preservada.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/25"
+    },
     {
       "data": "2026-11-16",
       "autor": "Claude Code",
