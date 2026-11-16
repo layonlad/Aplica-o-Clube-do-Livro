@@ -8,7 +8,7 @@
   "estado": {
     "fase": "Leitor imersivo e perfil social publicados",
     "tom": "ok",
-    "resumo": "PR 27 publicado em aaef7fa: leitor sem menus permanentes, gestos, folha 3D, preferências e retomada corrigida; perfil com edição, solicitações, atividades e salvos privados. Backup privado, migration aditiva e grants mínimos confirmados; API/executor antes dos dois sites. 207 testes e CI aprovados; validação publicada com duas contas sintéticas removidas ao final.",
+    "resumo": "PR 27 publicado: API em aaef7fa e site em 1f84461, preservando também o modo noturno do Claude (PR 28). Leitor sem menus permanentes, gestos, folha 3D, preferências e retomada corrigida; perfil com edição, solicitações, atividades e salvos privados. Backup privado, migration aditiva e grants mínimos confirmados; API/executor antes dos dois sites. 207 testes e CI aprovados; validação publicada com duas contas sintéticas removidas ao final.",
     "proximoPasso": "Dono testar no celular físico: abrir EPUB, deslizar, ajustar Aa, voltar à leitura e conferir perfil/solicitações. Monitorar uso e orçamento; mudanças futuras exigem autorização correspondente.",
     "pendencias": [
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
@@ -27,7 +27,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "aaef7fa · PR 27 publicado em 16/11/2026; leitor imersivo e perfis sociais com solicitações, atividades e salvos privados",
+      "versao": "1f84461 · PR 27 + CSS noturno do PR 28 publicados em 16/11/2026; API permanece em aaef7fa",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -67,7 +67,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "aaef7fa · mesmo build do site principal, com 104 arquivos conferidos por hash; armazenamento local e API/Auth Google preservados",
+      "versao": "1f84461 · mesmo build do site principal (PR 27 + PR 28), com 104 arquivos conferidos por hash; armazenamento local e API/Auth preservados",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -387,7 +387,7 @@
       "data": "2026-11-16",
       "autor": "Codex",
       "titulo": "PR 27 publicado: leitor imersivo e perfis sociais validados",
-      "resumo": "Merge aaef7fa com CI aprovado e 207 testes. Backup privado confirmado; migration 019 e grants mínimos aplicados antes da API/executor e dos dois sites Firebase, com 104 arquivos iguais por hash. Validação publicada confirmou EPUB/capa, gestos, retomada, preferências, salvos, perfil, aprovação e bloqueio; seguidor não lê original nem salvos do titular. Executor agendado HTTP 200 e zero falhas. Duas identidades sintéticas e seus arquivos removidos; dados reais e auditoria preservados.",
+      "resumo": "API no merge aaef7fa com CI aprovado e 207 testes; site final 1f84461 inclui PR 27 e preserva o CSS noturno do Claude no PR 28. Backup privado confirmado; migration 019 e grants mínimos aplicados antes da API/executor e dos dois sites Firebase, com 104 arquivos iguais por hash. Validação publicada confirmou EPUB/capa, gestos, retomada, preferências, salvos, perfil, aprovação e bloqueio; seguidor não lê original nem salvos do titular. Executor agendado HTTP 200 e zero falhas. Duas identidades sintéticas e seus arquivos removidos; dados reais e auditoria preservados.",
       "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/27"
     },
     {
