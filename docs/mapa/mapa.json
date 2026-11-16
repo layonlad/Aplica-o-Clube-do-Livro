@@ -29,7 +29,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "383541f · PR 25 publicado em 16/11/2026; EPUB na conta, cota de livros, progresso automático e capa como fundo/compartilhamento",
+      "versao": "eb921fa · 383541f + correção do modo noturno do leitor (PR 28), publicado em 16/11/2026. O PR 27 está em main, mas ainda não foi publicado",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -69,7 +69,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "383541f · mesmo build do site principal; API/Auth Google novos e armazenamento local preservado neste endereço",
+      "versao": "eb921fa · mesmo build do site principal; API/Auth Google novos e armazenamento local preservado neste endereço",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -385,6 +385,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-16",
+      "autor": "Claude Code",
+      "titulo": "Modo noturno do leitor publicado nos dois sites (eb921fa)",
+      "resumo": "Com autorização do dono, só o site foi publicado: commit eb921fa = 383541f (versão em produção) + o CSS do PR 28. O PR 27 já está em main, mas exige migration e API antes do site, por isso ficou de fora. Build de produção a partir de cópia limpa, com o env do projeto Google novo e a API saudável no predeploy; site principal e compatibilidade servem o mesmo CSS, sem erros no console. API e banco não mudaram (seguem em 383541f).",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/28"
+    },
     {
       "data": "2026-11-16",
       "autor": "Claude Code",
