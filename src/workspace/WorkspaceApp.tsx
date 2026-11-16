@@ -4,7 +4,6 @@ import { Link, Navigate, Route, Routes, useNavigate, useParams, useSearchParams 
 import { ArrowRight, CalendarDays, ChevronRight, Clock, Heart, History, MapPin, Search, Sparkles, Star, UsersRound } from 'lucide-react'
 import { updateProfile } from 'firebase/auth'
 import { AuthProvider, useAuth } from '../auth/AuthProvider'
-import { OwnSocialProfile } from '../community/SocialProfile'
 import { AuthScreen, VerifyEmailScreen } from '../auth/AuthScreen'
 import { Protected, ClubList, ClubPage, InvitePage } from '../connected/ConnectedApp'
 import { WorkspaceShell } from './WorkspaceShell'
@@ -27,6 +26,7 @@ const Notifications=lazy(()=>import('../community/Notifications').then(module=>(
 const Moderation=lazy(()=>import('../community/Moderation').then(module=>({default:module.Moderation})))
 const PublicCommunity=lazy(()=>import('../community/PublicCommunity').then(module=>({default:module.PublicCommunity})))
 const SocialProfile=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.SocialProfile})))
+const OwnSocialProfile=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.OwnSocialProfile})))
 const SocialProfileEditor=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.SocialProfileEditor})))
 const Explore=lazy(()=>import('../community/Explore').then(module=>({default:module.Explore})))
 const ClubForum=lazy(()=>import('../forum/ClubForum').then(module=>({default:module.ClubForum})))

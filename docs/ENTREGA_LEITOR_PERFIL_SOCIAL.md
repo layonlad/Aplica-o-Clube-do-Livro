@@ -16,7 +16,7 @@ O projeto usa o renderizador EPUB próprio já existente, com whitelist de eleme
 
 ## Perfil e navegação
 
-`/app/profile` abre o perfil social da conta confirmada, inclusive se a biblioteca estiver temporariamente indisponível. A restauração da sessão mostra carregamento, evitando acesso a workspace nulo. Visitantes mantêm o perfil local. Conta, meta e backup continuam acessíveis em `/app/settings`.
+`/app/profile` abre o perfil social da conta confirmada, inclusive se a biblioteca estiver temporariamente indisponível. A restauração da sessão mostra carregamento, evitando acesso a workspace nulo. O módulo social é carregado sob demanda, evitando incluí-lo inteiro na entrada da biblioteca/leitor. Visitantes mantêm o perfil local. Conta, meta e backup continuam acessíveis em `/app/settings`.
 
 Cabeçalho com foto, identificador exclusivo, biografia multilinha, contadores e **Editar perfil abaixo da bio**. O editor existente mantém upload validado, recorte, capa e controle de versão; passa a explicitar perfil público/privado. O backend continua garantindo unicidade do identificador. Serviços de clubes, mural, comentários, fórum, encontros, álbuns e notificações resolvem o nome público e a foto atuais, sem copiar a foto para cada registro.
 

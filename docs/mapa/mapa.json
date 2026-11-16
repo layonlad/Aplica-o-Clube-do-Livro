@@ -389,7 +389,7 @@
       "data": "2026-11-16",
       "autor": "Codex",
       "titulo": "Leitor imersivo e perfil social com privacidade — em revisão",
-      "resumo": "EPUB com gestos, folha 3D, painéis, favoritos e retomada corrigida; perfil com edição, solicitações, atividades e salvos. Autorização separa perfil, seguidores e clubes; inclui evolução aditiva e grants mínimos ainda não aplicados. 207 testes locais aprovados, navegador Chrome/WebKit e auditoria de produção sem vulnerabilidades. Produção permanece em 383541f; merge e liberação aguardam nova aprovação.",
+      "resumo": "EPUB com gestos, folha 3D, painéis, favoritos e retomada corrigida; perfil com edição, solicitações, atividades e salvos, carregado sob demanda. Autorização separa perfil, seguidores e clubes; inclui evolução aditiva e grants mínimos ainda não aplicados. 207 testes locais aprovados, navegador Chrome/WebKit e auditoria de produção sem vulnerabilidades. Produção permanece em 383541f; merge e liberação aguardam nova aprovação.",
       "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/27"
     },
     {
