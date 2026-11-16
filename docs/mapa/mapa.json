@@ -390,7 +390,7 @@
       "autor": "Claude Code",
       "titulo": "Leitor de demonstração: modo noturno legível",
       "resumo": "No modo Noturno do leitor de demonstração, o título do capítulo e os ícones do topo ficavam escuros sobre o fundo escuro. Agora herdam o texto claro, e capítulo, citação, letra capitular e progresso usam o rosa claro; contraste mínimo de 7,4:1. Só CSS, sem mudança de API.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/28"
     },
     {
       "data": "2026-11-16",
