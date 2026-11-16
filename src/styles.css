@@ -90,6 +90,16 @@
 .no-results { padding: 30px 15px; color: var(--color-muted); text-align: center; }
 .reader-page { min-height: 100vh; color: #2d2723; background: #fbf7ee; transition: background 160ms ease, color 160ms ease; }
 .reader-page--night { color: #e8dfd5; background: #1d1a20; }
+/* Modo noturno: títulos e ícones herdam o texto claro; destaques usam o rosa claro (contraste AA sobre #1d1a20) */
+.reader-page--night .reader-text h1,
+.reader-page--night .reader-header .icon-button { color: inherit; }
+.reader-page--night .reader-text .eyebrow,
+.reader-page--night .reader-text blockquote,
+.reader-page--night .reader-text .dropcap::first-letter { color: var(--rosa-300); }
+.reader-page--night .reader-header small,
+.reader-page--night .reader-turn { color: #b3a7ad; }
+.reader-page--night .reader-progress { background: rgba(255,255,255,.12); }
+.reader-page--night .reader-progress span { background: var(--rosa-300); }
 .reader-header { position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: 44px 1fr 44px; min-height: 68px; padding: env(safe-area-inset-top) 10px 0; align-items: center; background: inherit; }
 .reader-header > div { display: flex; align-items: center; flex-direction: column; }
 .reader-header small { color: #7c7169; font-size: 0.66rem; }
