@@ -9,7 +9,7 @@
     "fase": "Leitor imersivo e perfil social em revisão",
     "tom": "atencao",
     "resumo": "Produção permanece no PR 25, commit 383541f. Em revisão: EPUB imersivo com gestos, folha 3D, painéis e retomada estável; perfil social com pedidos para seguir, atividades e salvos privados. Implementação e 207 testes locais aprovados, com ensaios em Chrome/WebKit. Nenhum merge, migration ou deploy de produção nesta tarefa.",
-    "proximoPasso": "Revisar o PR e seu CI. Com nova autorização do dono, aplicar a evolução aditiva e os grants mínimos, publicar API/executor antes dos dois sites Firebase e validar em aparelhos físicos.",
+    "proximoPasso": "Revisar o PR 27 e seu CI. Com nova autorização do dono, aplicar a evolução aditiva e os grants mínimos, publicar API/executor antes dos dois sites Firebase e validar em aparelhos físicos.",
     "pendencias": [
       "Leitor/perfil em revisão: aprovação do PR, evolução aditiva de solicitações e grants mínimos de API/executor pendentes. Seguir alguém não libera conteúdo de clubes; nenhuma dessas operações foi feita em produção.",
       "Retomada exata no Chrome corrigida e validada localmente em modo paginado e contínuo. A correção do leitor, a altura das capas e os novos perfis ainda não foram publicados; produção continua em 383541f.",
@@ -390,7 +390,7 @@
       "autor": "Codex",
       "titulo": "Leitor imersivo e perfil social com privacidade — em revisão",
       "resumo": "EPUB com gestos, folha 3D, painéis, favoritos e retomada corrigida; perfil com edição, solicitações, atividades e salvos. Autorização separa perfil, seguidores e clubes; inclui evolução aditiva e grants mínimos ainda não aplicados. 207 testes locais aprovados, navegador Chrome/WebKit e auditoria de produção sem vulnerabilidades. Produção permanece em 383541f; merge e liberação aguardam nova aprovação.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/27"
     },
     {
       "data": "2026-11-16",

@@ -1,6 +1,6 @@
 # Leitor imersivo e perfil social — entrega para revisão
 
-Implementação de 16/11/2026. **Sem merge e sem publicação em produção nesta tarefa.** A versão publicada permanece `383541f` (PR 25). O nome e a identidade visual existentes foram preservados. O [mapa](https://layonlad.github.io/Aplica-o-Clube-do-Livro/mapa/) reflete `main`; as mudanças descritas aqui dependem da aprovação do PR e de uma liberação posterior.
+Implementação de 16/11/2026 — [PR 27](https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/27). **Sem merge e sem publicação em produção nesta tarefa.** A versão publicada permanece `383541f` (PR 25). O nome e a identidade visual existentes foram preservados. O [mapa](https://layonlad.github.io/Aplica-o-Clube-do-Livro/mapa/) reflete `main`; as mudanças descritas aqui dependem da aprovação do PR e de uma liberação posterior.
 
 ## Leitor EPUB
 
