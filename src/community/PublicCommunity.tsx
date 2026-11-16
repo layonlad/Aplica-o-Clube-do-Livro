@@ -81,7 +81,7 @@ export function PublicCommunity() {
               <PostComposer clubId={null} onPublished={() => setRevision((value) => value + 1)} />
               <p className="t-caption">
                 As publicações usam seu{' '}
-                <Link to="/app/social-profile">perfil público e suas escolhas de privacidade</Link>.
+                <Link to="/app/social-profile">perfil e suas escolhas de privacidade</Link>.
                 Seus clubes e arquivos pessoais continuam privados.
               </p>
             </>

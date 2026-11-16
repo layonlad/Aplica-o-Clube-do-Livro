@@ -718,12 +718,12 @@
 .profile-club-list { grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); margin-bottom:20px; }
 .profile-club-list .card { display:grid; gap:10px; }
 .profile-activity-card { border-bottom:1px solid var(--border); padding:16px 0; display:grid; gap:8px; min-width:0; }
-.profile-activity-card time { font-size:12px; color:var(--muted); }
+.profile-activity-card time { font-size:12px; color:var(--text-muted); }
 .profile-activity-card p { white-space:pre-wrap; overflow-wrap:anywhere; }
 .profile-private-notice { border:1px solid var(--border); border-radius:16px; padding:16px; font-size:14px; }
 .follow-request { display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding-block:12px; border-bottom:1px solid var(--border); }
 .follow-request>a { flex:1 1 160px; display:grid; gap:4px; }
 .follow-request small { font-size:12px; }
 .profile-activity-author { display:flex; gap:10px; align-items:center; }
-.profile-activity-author>span { display:grid; gap:2px; }
+.profile-activity-author>span { display:grid; gap:2px; min-width:0; overflow-wrap:anywhere; }
 .profile-activity-author small { font-size:12px; }

@@ -288,13 +288,17 @@ it('descoberta e contador de comentários não revelam comentários de perfil pr
   })
   expect(post.statusCode, post.body).toBe(201)
   const id = post.json().id
-  expect(
-    (
-      await call('bruno', `/public/posts/${id}/comments`, 'POST', {
-        body: 'Comentário pessoal protegido',
-      })
-    ).statusCode,
-  ).toBe(201)
+  const comment = await call('bruno', `/public/posts/${id}/comments`, 'POST', {
+    body: 'Comentário pessoal protegido',
+  })
+  expect(comment.statusCode, comment.body).toBe(201)
+  const report = {
+    kind: 'comment',
+    targetId: comment.json().id,
+    reason: 'Denúncia sintética de teste',
+  }
+  expect((await call('carla', '/reports', 'POST', report)).statusCode).toBe(404)
+  expect((await call('bruno', '/reports', 'POST', report)).statusCode).toBe(201)
   for (const viewer of ['', 'carla']) {
     expect((await call(viewer, '/public/posts/' + id)).json().comments).toBe(0)
     const discover = (await call(viewer, '/public/discover')).json()

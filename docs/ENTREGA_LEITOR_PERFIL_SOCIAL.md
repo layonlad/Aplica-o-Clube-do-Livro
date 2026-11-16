@@ -41,9 +41,9 @@ Abas:
 | Conteúdo/atividade de clube privado | Não | Não | **Não por ser seguidor** | Apenas dos clubes autorizados em comum | Conforme associação atual |
 | Salvos, marcadores, notas e EPUB original | Não | Não | Não | Não | Sim |
 
-`audience='public'` continua identificando o ambiente da comunidade no banco; a visibilidade efetiva também depende do perfil, da relação aprovada, da disponibilidade do conteúdo e dos bloqueios. Comentários pessoais e suas mídias/contagens usam a mesma regra. Uma publicação pessoal privada não pode ser copiada para alcance público pelo endpoint de compartilhamento. As permissões de clubes continuam independentes.
+`audience='public'` continua identificando o ambiente da comunidade no banco; a visibilidade efetiva também depende do perfil, da relação aprovada, da disponibilidade do conteúdo e dos bloqueios. Comentários pessoais e suas mídias/contagens usam a mesma regra, inclusive na descoberta e no envio de denúncias por identificador direto. Uma publicação pessoal privada não pode ser copiada para alcance público pelo endpoint de compartilhamento. As permissões de clubes continuam independentes.
 
-Bloqueio em qualquer direção oculta o perfil e o conteúdo, cancela pedidos pendentes e desfaz relações nos dois sentidos. Desbloquear não reapróva ninguém. Suspensão impede novas relações e publicações e retira conteúdo pessoal da descoberta; não cria nem remove automaticamente associação a clubes. A existência de denúncia e os controles de moderação são preservados; esta entrega não concede a moderadores uma leitura geral de textos pessoais privados.
+Bloqueio em qualquer direção oculta o perfil e o conteúdo, cancela pedidos pendentes e desfaz relações nos dois sentidos. Desbloquear não reapróva ninguém. Suspensão impede novas relações e publicações e retira conteúdo pessoal da descoberta; não cria nem remove automaticamente associação a clubes. A existência de denúncia e os controles de moderação são preservados. A fila mantém a regra anterior: alvos pessoais privados aparecem sem prévia textual ampliada, e o papel autorizado continua podendo decidir a denúncia, com auditoria. Esta entrega não concede a moderadores uma leitura geral de textos pessoais privados.
 
 ## Relações e notificações
 
