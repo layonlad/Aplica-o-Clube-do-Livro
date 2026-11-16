@@ -128,7 +128,7 @@ describe('evolução compatível da biblioteca', () => {
 it('mantém posição e destaques EPUB privados, limita trechos e detecta revisão concorrente', () => {
   let state = withBook()
   const id = state.state.books[0].id,
-    locator = { hash: 'a'.repeat(64), chapter: 2, offset: 100 }
+    locator = { hash: 'a'.repeat(64), chapter: 2, offset: 100, element: 0 }
   state = act(state, {
     type: 'reading.update',
     id,

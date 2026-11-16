@@ -139,7 +139,7 @@ function ShareSheet({ book, onClose }: { book: ShareBook; onClose: () => void })
           <>
             <button type="button" role="listitem" className="share-target" disabled={!file} onClick={() => go('public')}>
               <span className="share-target__icon"><Globe2 size={20} aria-hidden="true" /></span>
-              <span><strong>Comunidade</strong><small>Todos os leitores</small></span>
+              <span><strong>Comunidade</strong><small>Conforme a privacidade do seu perfil</small></span>
               <ChevronRight size={18} aria-hidden="true" />
             </button>
             {clubs.map((club) => (

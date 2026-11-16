@@ -1,6 +1,8 @@
 # Liberação da plataforma social — plano e registro
 
-Estado atual: a liberação foi autorizada e executada em 14/11/2026. O [PR #2](https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/2) foi incorporado, incluindo os PRs #5–#7. API no Render e frontend no Firebase Hosting usam o código de `b64835d`; o CI desse commit passou. O plano abaixo registra a revisão anterior à publicação e serve de checklist para futuras liberações.
+> **Atualização de 16/11/2026:** produção permanece no commit `383541f`, com API/executor no Cloud Run, PostgreSQL no Cloud SQL e os dois sites Firebase. Os trechos de Render/Neon abaixo são o registro histórico de 14/11. O novo leitor imersivo e o perfil com solicitações estão apenas em revisão; veja [a entrega e a ordem de liberação](ENTREGA_LEITOR_PERFIL_SOCIAL.md). Exigem nova aprovação, migration 019 e grants mínimos antes de API/executor e frontend. Nenhuma dessas operações foi executada nesta tarefa.
+
+Registro histórico: a liberação foi autorizada e executada em 14/11/2026. O [PR #2](https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/2) foi incorporado, incluindo os PRs #5–#7. API no Render e frontend no Firebase Hosting usam o código de `b64835d`; o CI desse commit passou. O plano abaixo registra a revisão anterior à publicação e serve de checklist para futuras liberações.
 
 A cópia privada de recuperação foi preservada, as migrations 003–015 foram aplicadas, e Storage e manutenção foram configurados. Testes reais validaram acesso, fotos, aparência em nova sessão e EPUB privado; fixtures e contas sintéticas foram removidas. A validação entre sessões não representa teste em dois aparelhos físicos.
 

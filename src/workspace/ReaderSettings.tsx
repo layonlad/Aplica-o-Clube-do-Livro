@@ -1,6 +1,8 @@
-import { useEffect, type CSSProperties } from 'react'
+import { Sheet } from '../components/Sheet'
+import { useReaderChrome } from './ImmersiveReader'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { preferencesSchema, type ReadingPreferences } from '../../server/src/workspace-model'
-import { fontOptions } from '../app/appearance'
+import { fontOptions, contrast } from '../app/appearance'
 import { useWorkspace } from './WorkspaceProvider'
 export type ReaderPreferences = ReadingPreferences['reader']
 export const readerFont = (font: ReaderPreferences['font']) =>
@@ -11,28 +13,82 @@ export const readerFont = (font: ReaderPreferences['font']) =>
     merriweather: "'Merriweather Variable', Georgia, serif",
   })[font]
 export function readerStyle(reader: ReaderPreferences): CSSProperties {
+  const surface =
+    reader.background || { light: '#ffffff', dark: '#1e1d21', sepia: '#f1e5cf' }[reader.theme]
   return {
     '--reader-leading': String(
       { tight: 1.45, normal: 1.75, relaxed: 2 }[reader.lineHeight ?? 'normal'],
     ),
     '--reader-weight': reader.weight === 'bold' ? '600' : '400',
     '--reader-align': reader.align ?? 'left',
-    '--reader-surface': { light: '#ffffff', dark: '#1e1d21', sepia: '#f1e5cf' }[reader.theme],
+    '--reader-surface':
+      reader.background || { light: '#ffffff', dark: '#1e1d21', sepia: '#f1e5cf' }[reader.theme],
+    '--reader-paragraph': { compact: '.5em', normal: '1em', wide: '1.5em' }[
+      reader.paragraphSpacing ?? 'normal'
+    ],
+    '--reader-ink':
+      contrast('#302a23', surface) >= 4.5
+        ? '#302a23'
+        : contrast('#ffffff', surface) >= 4.5
+          ? '#ffffff'
+          : '#000000',
   } as CSSProperties
 }
 export function ReaderSettings() {
+  const chrome = useReaderChrome()
+  const [error, setError] = useState('')
   const { snapshot, act, busy } = useWorkspace(),
-    reader = preferencesSchema.parse(snapshot!.preferences).reader
+    reader = chrome?.preview ?? preferencesSchema.parse(snapshot!.preferences).reader
   useEffect(() => {
     if (reader.font === 'lora' || reader.font === 'merriweather')
       void fontOptions.find((option) => option.id === reader.font)?.load?.()
   }, [reader.font])
-  const update = (patch: Partial<ReaderPreferences>) =>
-    void act({ type: 'reader.preferences', reader: { ...reader, ...patch } })
-  return (
-    <details className="reader-settings">
+  const update = (patch: Partial<ReaderPreferences>) => {
+    const next = { ...reader, ...patch }
+    setError('')
+    chrome?.previewReader(next)
+    void act({ type: 'reader.preferences', reader: next }).then((ok) => {
+      chrome?.previewReader(null)
+      if (!ok) setError('Não foi possível salvar. Tente novamente.')
+    })
+  }
+  if (chrome && chrome.panel !== 'appearance') return null
+  const content = (
+    <details open={chrome ? true : undefined} className="reader-settings">
       <summary>Preferências de leitura</summary>
+      {error && <p role="alert">{error}</p>}
+      <h3>Texto e aparência</h3>
       <div className="reader-settings-grid">
+        <label>
+          Cor da página
+          <input
+            aria-label="Cor da página"
+            type="color"
+            disabled={busy}
+            value={
+              reader.background ||
+              { light: '#ffffff', dark: '#1e1d21', sepia: '#f1e5cf' }[reader.theme]
+            }
+            onChange={(e) => update({ background: e.target.value })}
+          />
+        </label>
+
+        <label>
+          Espaço entre parágrafos
+          <select
+            aria-label="Espaço entre parágrafos"
+            value={reader.paragraphSpacing ?? 'normal'}
+            disabled={busy}
+            onChange={(e) =>
+              update({ paragraphSpacing: e.target.value as ReaderPreferences['paragraphSpacing'] })
+            }
+          >
+            <option value="compact">Compacto</option>
+            <option value="normal">Normal</option>
+            <option value="wide">Amplo</option>
+          </select>
+        </label>
+
         <label>
           Tamanho da fonte
           <select
@@ -71,6 +127,7 @@ export function ReaderSettings() {
             onChange={(event) =>
               update({
                 theme: event.target.value as ReaderPreferences['theme'],
+                background: null,
               })
             }
           >
@@ -158,6 +215,38 @@ export function ReaderSettings() {
           </select>
         </label>
       </div>
+      <fieldset className="reader-settings-grid">
+        <legend>Navegação e gestos</legend>{' '}
+        <label className="workspace-check">
+          <input
+            type="checkbox"
+            checked={reader.pageAnimation !== false}
+            disabled={busy}
+            onChange={(e) => update({ pageAnimation: e.target.checked })}
+          />
+          Animação de virar página
+        </label>
+        <label className="workspace-check">
+          <input
+            type="checkbox"
+            checked={reader.edgeTaps !== false}
+            disabled={busy}
+            onChange={(e) => update({ edgeTaps: e.target.checked })}
+          />
+          Virar página com toques laterais
+        </label>
+      </fieldset>
     </details>
+  )
+  return chrome ? (
+    <Sheet
+      title="Aparência da leitura"
+      className="reader-sheet"
+      onClose={() => chrome.setPanel(null)}
+    >
+      {content}
+    </Sheet>
+  ) : (
+    content
   )
 }

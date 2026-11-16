@@ -1,3 +1,4 @@
+import { ImmersiveReader } from './ImmersiveReader'
 import { QuoteShare } from '../community/QuoteShare'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -31,7 +32,7 @@ export function ReadingRoom() {
   }, [focused])
   useEffect(() => {
     const escape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setFocused(false)
+      if (event.key === 'Escape' && !document.querySelector('.immersive-reader')) setFocused(false)
     }
     window.addEventListener('keydown', escape)
     return () => window.removeEventListener('keydown', escape)
@@ -196,6 +197,9 @@ export function ReadingRoom() {
     last = to
   }
   segments.push(text.slice(last))
+  if (original) return <ImmersiveReader title={book.title} preferences={preferences} onText={()=>{manualMode.current=true;setOriginal(false)}}>
+    <EpubReader bookId={book.id} title={book.title} author={book.author}/><ReaderSettings/>
+  </ImmersiveReader>
   return (
     <div
       className={`reading-room reading-room--${preferences.theme} reading-room--${preferences.margin}`}

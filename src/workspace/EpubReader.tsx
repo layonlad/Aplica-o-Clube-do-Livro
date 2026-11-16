@@ -1,3 +1,7 @@
+import { Sheet } from '../components/Sheet'
+import { useReaderChrome } from './ImmersiveReader'
+import { readingGesture, type ReadingGesture } from './reader-gestures'
+import { preparePageTurn } from './page-turn'
 import { Fragment, createElement, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
@@ -25,11 +29,14 @@ export function EpubReader({
   title: string
   author: string
 }) {
+  const chrome = useReaderChrome()
+  const gesture = useRef<ReadingGesture | null>(null),
+    turning = useRef(false)
   const { user } = useAuth(),
     { snapshot, act, busy } = useWorkspace(),
     namespace = user?.emailVerified ? user.uid : 'visitor',
     saved = snapshot!.reading[bookId],
-    prefs = preferencesSchema.parse(snapshot!.preferences).reader
+    prefs = chrome?.preview ?? preferencesSchema.parse(snapshot!.preferences).reader
   const [archive, setArchive] = useState<EpubArchive | null>(null),
     [urls, setUrls] = useState<Map<string, string>>(new Map()),
     [chapter, setChapter] = useState(0),
@@ -44,7 +51,7 @@ export function EpubReader({
       end: number
     } | null>(null),
     [note, setNote] = useState(''),
-    [pendingOffset, setPendingOffset] = useState<number | null>(null),
+    [pendingOffset, setPendingOffset] = useState<{ offset: number; element?: number } | null>(null),
     [confirmRemove, setConfirmRemove] = useState(false),
     [pendingFragment, setPendingFragment] = useState<string | null>(null)
   const article = useRef<HTMLElement>(null),
@@ -143,7 +150,7 @@ export function EpubReader({
         const position = latest.current?.epubLocator
         if (position?.hash === value.hash) {
           setChapter(Math.min(position.chapter, value.chapters.length - 1))
-          setPendingOffset(position.offset)
+          setPendingOffset({ offset: position.offset, element: position.element })
         } else setChapter(0)
         setUrls(images)
         setArchive(value)
@@ -161,24 +168,7 @@ export function EpubReader({
   }, [user?.uid, user?.emailVerified, namespace, bookId, revision])
   useEffect(() => {
     if (!archive || pendingOffset === null || !article.current) return
-    if (paged) {
-      pagination.revealOffset(pendingOffset)
-      setPendingOffset(null)
-      return
-    }
-    const walker = document.createTreeWalker(article.current, NodeFilter.SHOW_TEXT)
-    let offset = 0,
-      node: Node | null
-    while ((node = walker.nextNode())) {
-      if (offset + (node.textContent?.length ?? 0) >= pendingOffset) {
-        node.parentElement?.scrollIntoView({
-          block: 'center',
-          behavior: 'auto',
-        })
-        break
-      }
-      offset += node.textContent?.length ?? 0
-    }
+    pagination.revealOffset(pendingOffset.offset, pendingOffset.element)
     setPendingOffset(null)
   }, [archive, chapter, pendingOffset, paged, pagination.revealOffset])
   useEffect(() => {
@@ -193,7 +183,7 @@ export function EpubReader({
   useEffect(() => {
     const position = latest.current?.epubLocator
     if (archive && position?.hash === archive.hash && position.chapter === chapter)
-      setPendingOffset(position.offset)
+      setPendingOffset({ offset: position.offset, element: position.element })
   }, [
     archive,
     prefs.flow,
@@ -203,6 +193,7 @@ export function EpubReader({
     prefs.lineHeight,
     prefs.weight,
     prefs.align,
+    prefs.paragraphSpacing,
   ])
   function select() {
     const value = window.getSelection()
@@ -228,19 +219,25 @@ export function EpubReader({
       end: prefix.toString().length + quote.length,
     })
   }
-  async function position(target: number, offset = 0) {
+  async function position(target: number, offset = 0, element?: number) {
     if (!archive || !archive.chapters[target]) return false
     if (navigating.current) return false
     navigating.current = true
     const lengths = archive.chapters.map((c) => c.text.length),
       total = lengths.reduce((sum, n) => sum + n, 0),
-      done = lengths.slice(0, target).reduce((sum, n) => sum + n, 0) + offset
+      done =
+        lengths.slice(0, target).reduce((sum, n) => sum + n, 0) + Math.min(offset, lengths[target])
     let ok = false
     try {
       ok = await act({
         type: 'reading.update',
         id: bookId,
-        epubLocator: { hash: archive.hash, chapter: target, offset },
+        epubLocator: {
+          hash: archive.hash,
+          chapter: target,
+          offset,
+          ...(element === undefined ? {} : { element }),
+        },
         percent: Math.min(99, Math.round((done / Math.max(1, total)) * 100)),
         expectedRevision: latest.current?.revision ?? 0,
       })
@@ -250,31 +247,27 @@ export function EpubReader({
     if (ok) {
       setChapter(target)
       setSelected(null)
-      setPendingOffset(offset)
+      setPendingOffset({ offset, element })
       setMessage('')
     }
     return ok
   }
   function saveVisible() {
-    if (!archive || !article.current || navigating.current) return
+    if (!archive || !article.current || navigating.current || chrome?.panel) return
     if (document.querySelector('.reading-room .reader-settings[open]')) return
-    if (!paged) {
-      const rect = article.current.getBoundingClientRect()
-      if (rect.top >= window.innerHeight || rect.bottom < 80) return
-    }
-    const walker = document.createTreeWalker(article.current, NodeFilter.SHOW_TEXT)
-    let node: Node | null,
-      offset = 0
-    while ((node = walker.nextNode())) {
-      const range = document.createRange()
-      range.selectNodeContents(node)
-      if (range.getBoundingClientRect().bottom >= 80) break
-      offset += node.textContent?.length ?? 0
-    }
-    if (paged) offset = pagination.visibleOffset()
+    const point = pagination.visibleLocator(),
+      offset = point.offset
     const lengths = archive.chapters.map((c) => c.text.length),
       done = lengths.slice(0, chapter).reduce((sum, n) => sum + n, 0) + offset,
       total = lengths.reduce((sum, n) => sum + n, 0)
+    const previous = latest.current?.epubLocator
+    if (
+      previous?.hash === archive.hash &&
+      previous.chapter === chapter &&
+      previous.offset === offset &&
+      previous.element === point.element
+    )
+      return
     void act({
       type: 'reading.update',
       id: bookId,
@@ -282,6 +275,7 @@ export function EpubReader({
         hash: archive.hash,
         chapter,
         offset: Math.min(offset, 3000000),
+        ...(point.element === undefined ? {} : { element: point.element }),
       },
       percent: Math.min(99, Math.round((done / Math.max(1, total)) * 100)),
       expectedRevision: latest.current?.revision ?? 0,
@@ -304,19 +298,57 @@ export function EpubReader({
     }
   }, [archive, chapter, paged, pagination.visibleOffset])
   async function turnPage(direction: number) {
-    if (busy || navigating.current || !archive) return
+    if (busy || navigating.current || !archive) return false
     const next = pagination.page + direction
     if (next < 0) {
-      if (chapter > 0) await position(chapter - 1, archive.chapters[chapter - 1].text.length)
-      return
+      if (chapter > 0) return position(chapter - 1, 3000000)
+      return false
     }
     if (next >= pagination.count) {
-      if (chapter + 1 < archive.chapters.length) await position(chapter + 1)
-      return
+      if (chapter + 1 < archive.chapters.length) return position(chapter + 1)
+      return false
     }
     pagination.go(next)
-    await position(chapter, pagination.visibleOffset())
+    const point = pagination.visibleLocator()
+    return position(chapter, point.offset, point.element)
   }
+  async function navigatePage(direction: number) {
+    if (turning.current || !viewport.current || !article.current) return
+    turning.current = true
+    const finish = preparePageTurn(
+      viewport.current,
+      article.current,
+      direction,
+      prefs.pageAnimation !== false,
+    )
+    try {
+      const moved = await turnPage(direction)
+      finish(!!moved)
+    } finally {
+      window.setTimeout(() => {
+        turning.current = false
+      }, 300)
+    }
+  }
+  // Flush the latest stable visible point when leaving or hiding a book, without duplicate writes.
+  const saveRef = useRef(saveVisible)
+  saveRef.current = saveVisible
+  useEffect(() => {
+    const save = () => saveRef.current()
+    const visibility = () => {
+      if (document.visibilityState === 'hidden') save()
+    }
+    window.addEventListener('pagehide', save)
+    document.addEventListener('visibilitychange', visibility)
+    return () => {
+      save()
+      window.removeEventListener('pagehide', save)
+      document.removeEventListener('visibilitychange', visibility)
+    }
+  }, [bookId])
+  useEffect(() => {
+    if (chrome && archive) viewport.current?.focus({ preventScroll: true })
+  }, [archive])
   // Rendering creates only a small allowlist of React elements. EPUB scripts, styles,
   // event handlers, remote URLs and arbitrary attributes are never attached to DOM.
   const marks = (saved?.epubAnnotations ?? []).filter((mark) => mark.hash === archive?.hash)
@@ -463,73 +495,134 @@ export function EpubReader({
       {!archive && (
         <header className="epub-original__empty">
           <h2>Falta o arquivo deste livro</h2>
-          <p>Escolha o EPUB uma vez. Ele fica salvo{user?.emailVerified ? ' na sua conta' : ' neste aparelho'}.</p>
+          <p>
+            Escolha o EPUB uma vez. Ele fica salvo
+            {user?.emailVerified ? ' na sua conta' : ' neste aparelho'}.
+          </p>
         </header>
       )}
-      {loading && <p role="status" className="t-caption">Abrindo o livro…</p>}
+      {loading && (
+        <p role="status" className="t-caption">
+          Abrindo o livro…
+        </p>
+      )}
       {error && <p role="alert">{error}</p>}
       {!archive && fileButton}
       {archive && (
         <>
-          <details ref={navigationTools} className="reader-navigation-tools">
-            <summary>Sumário e busca</summary>
-            <div className="reader-settings-grid reader-toolbar-grid">
-              <label>
-                Sumário EPUB
-                <select
-                  aria-label="Sumário EPUB"
-                  value={chapter}
-                  disabled={busy}
-                  onChange={(event) =>
-                    void position(Number(event.target.value)).then((ok) => {
-                      if (ok && navigationTools.current) navigationTools.current.open = false
-                    })
-                  }
-                >
-                  {archive.chapters.map((c, index) => (
-                    <option value={index} key={c.path}>
-                      {c.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Pesquisar no EPUB
-                <input
-                  maxLength={100}
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-              </label>
-            </div>
-            {query.trim().length >= 2 && (
-              <div className="reader-search-results">
-                <p>
-                  {matches.length}
-                  {matches.length === 50 ? '+' : ''} resultado(s)
-                </p>
-                {matches.map((match, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      void position(match.chapter, match.offset)
-                      setQuery('')
-                      if (navigationTools.current) navigationTools.current.open = false
-                    }}
-                  >
-                    {match.text}
-                  </button>
-                ))}
-              </div>
-            )}
-          </details>
-          <p className="reader-chapter-label">
-            {archive.chapters[chapter]?.title} · capítulo {chapter + 1} de {archive.chapters.length}
-          </p>
+          {chrome && chrome.panel === 'contents' && (
+            <Sheet
+              title="Sumário e pesquisa"
+              className="reader-sheet"
+              onClose={() => chrome?.setPanel(null)}
+            >
+              <details open ref={navigationTools} className="reader-navigation-tools">
+                <summary>Sumário e busca</summary>
+                <div className="reader-settings-grid reader-toolbar-grid">
+                  <label>
+                    Sumário EPUB
+                    <select
+                      aria-label="Sumário EPUB"
+                      value={chapter}
+                      disabled={busy}
+                      onChange={(event) =>
+                        void position(Number(event.target.value)).then((ok) => {
+                          if (ok && navigationTools.current) navigationTools.current.open = false
+                        })
+                      }
+                    >
+                      {archive.chapters.map((c, index) => (
+                        <option value={index} key={c.path}>
+                          {c.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Pesquisar no EPUB
+                    <input
+                      maxLength={100}
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                    />
+                  </label>
+                </div>
+                {query.trim().length >= 2 && (
+                  <div className="reader-search-results">
+                    <p>
+                      {matches.length}
+                      {matches.length === 50 ? '+' : ''} resultado(s)
+                    </p>
+                    {matches.map((match, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          void position(match.chapter, match.offset)
+                          setQuery('')
+                          if (navigationTools.current) navigationTools.current.open = false
+                        }}
+                      >
+                        {match.text}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </details>
+            </Sheet>
+          )}
+          {!chrome && (
+            <p className="reader-chapter-label">
+              {archive.chapters[chapter]?.title} · capítulo {chapter + 1} de{' '}
+              {archive.chapters.length}
+            </p>
+          )}
           <div
             ref={viewport}
+            onPointerDown={(event) => {
+              if (
+                !chrome ||
+                !event.isPrimary ||
+                (event.target instanceof Element &&
+                  event.target.closest('a,button,input,select,textarea'))
+              ) {
+                gesture.current = null
+                return
+              }
+              const rect = event.currentTarget.getBoundingClientRect()
+              gesture.current = {
+                x: event.clientX - rect.left,
+                y: event.clientY,
+                at: performance.now(),
+                width: rect.width,
+              }
+            }}
+            onPointerCancel={() => {
+              gesture.current = null
+            }}
+            onPointerUp={(event) => {
+              const start = gesture.current
+              gesture.current = null
+              if (
+                !start ||
+                !chrome ||
+                turning.current ||
+                window.getSelection()?.isCollapsed === false
+              )
+                return
+              const action = readingGesture(
+                start,
+                {
+                  x: event.clientX - event.currentTarget.getBoundingClientRect().left,
+                  y: event.clientY,
+                  at: performance.now(),
+                },
+                paged && prefs.edgeTaps !== false && event.pointerType !== 'mouse',
+              )
+              if (action === 'controls') chrome.setControls(!chrome.controls)
+              else if (paged && action) void navigatePage(action === 'next' ? 1 : -1)
+            }}
             className={paged ? 'epub-page-viewport' : 'epub-scroll-viewport'}
-            tabIndex={paged ? 0 : undefined}
+            tabIndex={0}
             role="region"
             aria-label={paged ? 'Páginas do EPUB' : 'Texto do EPUB'}
             onKeyDown={(event) => {
@@ -541,7 +634,7 @@ export function EpubReader({
                 return
               if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
                 event.preventDefault()
-                void turnPage(event.key === 'ArrowRight' ? 1 : -1)
+                void navigatePage(event.key === 'ArrowRight' ? 1 : -1)
               }
             }}
           >
@@ -567,12 +660,12 @@ export function EpubReader({
               })()}
             </article>
           </div>
-          {paged && (
+          {paged && (!chrome || chrome.controls) && (
             <nav className="epub-page-controls" aria-label="Páginas EPUB">
               <Button
                 variant="ghost"
                 disabled={busy || (chapter === 0 && pagination.page === 0)}
-                onClick={() => void turnPage(-1)}
+                onClick={() => void navigatePage(-1)}
               >
                 ← Página anterior
               </Button>
@@ -586,7 +679,7 @@ export function EpubReader({
                   (chapter === archive.chapters.length - 1 &&
                     pagination.page === pagination.count - 1)
                 }
-                onClick={() => void turnPage(1)}
+                onClick={() => void navigatePage(1)}
               >
                 Próxima página →
               </Button>
@@ -598,8 +691,13 @@ export function EpubReader({
               seu conteúdo.
             </p>
           )}
+          {chrome && (
+            <span className="sr-only" role="status">
+              Capítulo {chapter + 1}, página {pagination.page + 1} de {pagination.count}
+            </span>
+          )}
           {selected && (
-            <div className="card workspace-form">
+            <SelectionPanel immersive={!!chrome} onClose={() => setSelected(null)}>
               <blockquote>{selected.quote}</blockquote>
               <label>
                 Anotação privada EPUB
@@ -638,115 +736,234 @@ export function EpubReader({
                 author={author}
                 source={`EPUB · ${archive.chapters[chapter].title}`}
               />
-            </div>
+            </SelectionPanel>
           )}
-          <nav className="workspace-actions" aria-label="Capítulos EPUB">
-            <Button disabled={busy || chapter === 0} onClick={() => void position(chapter - 1)}>
-              Capítulo anterior
-            </Button>
-            <Button
-              disabled={busy || chapter === archive.chapters.length - 1}
-              onClick={() => void position(chapter + 1)}
-            >
-              Próximo capítulo
-            </Button>
-            <Button disabled={busy} variant="secondary" onClick={saveVisible}>
-              Salvar posição atual
-            </Button>
-            <Button
-              disabled={busy}
-              variant="secondary"
-              onClick={() =>
-                void act({
-                  type: 'reading.update',
-                  id: bookId,
-                  epubBookmark: {
-                    hash: archive.hash,
-                    chapter,
-                    offset: latest.current?.epubLocator?.offset ?? 0,
-                  },
-                  expectedRevision: latest.current?.revision ?? 0,
-                })
-              }
-            >
-              Marcar posição EPUB
-            </Button>
-            {saved?.epubBookmark?.hash === archive.hash && (
+          {(!chrome || chrome.panel === 'tools') && (
+            <ReaderToolPanel immersive={!!chrome} onClose={() => chrome?.setPanel(null)}>
+              <p className="t-caption">
+                Capítulo {chapter + 1} de {archive.chapters.length} · {saved?.percent ?? 0}% lido
+              </p>
               <Button
                 disabled={busy}
-                variant="ghost"
+                variant="secondary"
+                aria-pressed={saved?.favorite === true}
                 onClick={() =>
-                  void position(saved.epubBookmark!.chapter, saved.epubBookmark!.offset)
-                }
-              >
-                Ir ao marcador EPUB
-              </Button>
-            )}
-          </nav>
-          <details className="reader-file">
-            <summary>Arquivo deste leitor</summary>
-            <p>O arquivo é privado e fica separado das publicações.</p>
-            {fileButton}
-          </details>
-          <h3>Destaques EPUB privados</h3>
-          {marks.map((mark) => (
-            <div className="card" key={mark.id}>
-              <blockquote>{mark.quote}</blockquote>
-              <p className="preserve-text">{mark.note}</p>
-              <div className="workspace-actions">
-                <Button
-                  disabled={busy}
-                  variant="secondary"
-                  onClick={() => void position(mark.chapter, mark.start)}
-                >
-                  Voltar ao destaque
-                </Button>
-                <Button
-                  disabled={busy}
-                  variant="ghost"
-                  onClick={() =>
-                    void act({
-                      type: 'reading.epub.annotation.remove',
-                      id: bookId,
-                      annotationId: mark.id,
-                    })
-                  }
-                >
-                  Excluir destaque EPUB
-                </Button>
-              </div>
-              <QuoteShare
-                quote={mark.quote}
-                title={title}
-                author={author}
-                source={`EPUB · ${archive.chapters[mark.chapter]?.title ?? 'Trecho'}`}
-              />
-            </div>
-          ))}
-          {confirmRemove ? (
-            <div>
-              <p className="t-caption">Apagar a cópia deste aparelho? Sua conta e anotações continuam.</p>
-              <Button
-                variant="danger"
-                onClick={() =>
-                  void removeEpub(namespace, bookId).then(() => {
-                    setArchive(null)
-                    setConfirmRemove(false)
-                    setMessage('Cópia local removida.')
+                  void act({
+                    type: 'reading.update',
+                    id: bookId,
+                    favorite: !saved?.favorite,
+                    expectedRevision: latest.current?.revision ?? 0,
                   })
                 }
               >
-                Apagar deste aparelho
+                {saved?.favorite ? 'Retirar dos favoritos' : 'Adicionar aos favoritos'}
               </Button>
-            </div>
-          ) : (
-            <Button variant="ghost" onClick={() => setConfirmRemove(true)}>
-              Apagar cópia deste aparelho
-            </Button>
+              <nav className="workspace-actions" aria-label="Capítulos EPUB">
+                <Button disabled={busy || chapter === 0} onClick={() => void position(chapter - 1)}>
+                  Capítulo anterior
+                </Button>
+                <Button
+                  disabled={busy || chapter === archive.chapters.length - 1}
+                  onClick={() => void position(chapter + 1)}
+                >
+                  Próximo capítulo
+                </Button>
+                <Button disabled={busy} variant="secondary" onClick={saveVisible}>
+                  Salvar posição atual
+                </Button>
+                <Button
+                  disabled={busy}
+                  variant="secondary"
+                  onClick={() =>
+                    void act({
+                      type: 'reading.update',
+                      id: bookId,
+                      epubBookmark: {
+                        hash: archive.hash,
+                        chapter,
+                        ...pagination.visibleLocator(),
+                      },
+                      expectedRevision: latest.current?.revision ?? 0,
+                    })
+                  }
+                >
+                  Marcar posição EPUB
+                </Button>
+                {saved?.epubBookmark?.hash === archive.hash && (
+                  <>
+                    <Button
+                      disabled={busy}
+                      variant="ghost"
+                      onClick={() =>
+                        void position(
+                          saved.epubBookmark!.chapter,
+                          saved.epubBookmark!.offset,
+                          saved.epubBookmark!.element,
+                        )
+                      }
+                    >
+                      Ir ao marcador EPUB
+                    </Button>
+                    <Button
+                      disabled={busy}
+                      variant="ghost"
+                      onClick={() =>
+                        void act({
+                          type: 'reading.update',
+                          id: bookId,
+                          epubBookmark: null,
+                          expectedRevision: latest.current?.revision ?? 0,
+                        })
+                      }
+                    >
+                      Remover marcador EPUB
+                    </Button>
+                  </>
+                )}
+              </nav>
+              <details className="reader-file">
+                <summary>Arquivo deste leitor</summary>
+                <p>O arquivo é privado e fica separado das publicações.</p>
+                {fileButton}
+              </details>
+              <fieldset>
+                <legend>Sua leitura</legend>
+                <Button
+                  onClick={() =>
+                    void act({
+                      type: 'reading.update',
+                      id: bookId,
+                      percent: 100,
+                      expectedRevision: latest.current?.revision ?? 0,
+                    })
+                  }
+                >
+                  Concluir leitura
+                </Button>
+                <label>
+                  Avaliação
+                  <select
+                    aria-label="Avaliação da leitura"
+                    value={saved?.rating ?? 0}
+                    onChange={(e) =>
+                      void act({
+                        type: 'reading.update',
+                        id: bookId,
+                        rating: Number(e.target.value),
+                        expectedRevision: latest.current?.revision ?? 0,
+                      })
+                    }
+                  >
+                    {[0, 1, 2, 3, 4, 5].map((n) => (
+                      <option key={n} value={n}>
+                        {n ? `${n} estrelas` : 'Sem avaliação'}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </fieldset>
+              <h3>Destaques EPUB privados</h3>
+              {marks.map((mark) => (
+                <div className="card" key={mark.id}>
+                  <blockquote>{mark.quote}</blockquote>
+                  <p className="preserve-text">{mark.note}</p>
+                  <div className="workspace-actions">
+                    <Button
+                      disabled={busy}
+                      variant="secondary"
+                      onClick={() => void position(mark.chapter, mark.start)}
+                    >
+                      Voltar ao destaque
+                    </Button>
+                    <Button
+                      disabled={busy}
+                      variant="ghost"
+                      onClick={() =>
+                        void act({
+                          type: 'reading.epub.annotation.remove',
+                          id: bookId,
+                          annotationId: mark.id,
+                        })
+                      }
+                    >
+                      Excluir destaque EPUB
+                    </Button>
+                  </div>
+                  <QuoteShare
+                    quote={mark.quote}
+                    title={title}
+                    author={author}
+                    source={`EPUB · ${archive.chapters[mark.chapter]?.title ?? 'Trecho'}`}
+                  />
+                </div>
+              ))}
+              {confirmRemove ? (
+                <div>
+                  <p className="t-caption">
+                    Apagar a cópia deste aparelho? Sua conta e anotações continuam.
+                  </p>
+                  <Button
+                    variant="danger"
+                    onClick={() =>
+                      void removeEpub(namespace, bookId).then(() => {
+                        setArchive(null)
+                        setConfirmRemove(false)
+                        setMessage('Cópia local removida.')
+                      })
+                    }
+                  >
+                    Apagar deste aparelho
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="ghost" onClick={() => setConfirmRemove(true)}>
+                  Apagar cópia deste aparelho
+                </Button>
+              )}
+            </ReaderToolPanel>
           )}
         </>
       )}
-      {message && <p role="status">{message}</p>}
+      {message && (
+        <p className={chrome && !chrome.controls ? 'sr-only' : undefined} role="status">
+          {message}
+        </p>
+      )}
     </section>
+  )
+}
+
+function ReaderToolPanel({
+  immersive,
+  onClose,
+  children,
+}: {
+  immersive: boolean
+  onClose: () => void
+  children: ReactNode
+}) {
+  return immersive ? (
+    <Sheet title="Ferramentas de leitura" className="reader-sheet" onClose={onClose}>
+      {children}
+    </Sheet>
+  ) : (
+    <>{children}</>
+  )
+}
+function SelectionPanel({
+  immersive,
+  onClose,
+  children,
+}: {
+  immersive: boolean
+  onClose: () => void
+  children: ReactNode
+}) {
+  return immersive ? (
+    <Sheet title="Destaque e anotação" className="reader-sheet" onClose={onClose}>
+      <div className="workspace-form">{children}</div>
+    </Sheet>
+  ) : (
+    <div className="card workspace-form">{children}</div>
   )
 }

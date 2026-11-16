@@ -1,7 +1,8 @@
 import {
   notBlocked,
   visiblePublicPost,
-  requirePublicProfile,
+  requireSocialProfile,
+  visibleProfile,
   publicMissing,
 } from './public-policy.js'
 import { decodeCursor, pageOf } from './pagination.js'
@@ -44,7 +45,7 @@ export class MediaService {
   ) {
     if (clubId === null) {
       // A foto do perfil pertence a toda conta confirmada; publicar na comunidade continua exigindo perfil público.
-      if (!read && !profilePhoto) await requirePublicProfile(client, userId)
+      if (!read && !profilePhoto) await requireSocialProfile(client, userId)
       return { role: 'member' as const }
     }
     try {
@@ -231,7 +232,7 @@ export class MediaService {
     }
     if (file.owner_user_id === userId) return
     const visible = await client.query(
-      `SELECT 1 WHERE EXISTS(SELECT 1 FROM comment_media cm JOIN post_comments pc ON pc.id=cm.comment_id JOIN social_posts p ON p.id=pc.post_id JOIN profiles cp ON cp.user_id=pc.author_user_id WHERE cm.media_id=$1 AND pc.deleted_at IS NULL AND cp.is_public AND ${notBlocked('pc.author_user_id', '$2')} AND ${visiblePublicPost('p', '$2')}) OR EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=$1 AND ${visiblePublicPost('p', '$2')}) OR EXISTS(SELECT 1 FROM profiles pr WHERE (pr.avatar_id=$1 OR pr.cover_id=$1) AND pr.is_public AND ${notBlocked('pr.user_id', '$2')})
+      `SELECT 1 WHERE EXISTS(SELECT 1 FROM comment_media cm JOIN post_comments pc ON pc.id=cm.comment_id JOIN social_posts p ON p.id=pc.post_id JOIN profiles cp ON cp.user_id=pc.author_user_id WHERE cm.media_id=$1 AND pc.deleted_at IS NULL AND (${visibleProfile('cp.user_id', '$2')}) AND ${notBlocked('pc.author_user_id', '$2')} AND ${visiblePublicPost('p', '$2')}) OR EXISTS(SELECT 1 FROM post_media pm JOIN social_posts p ON p.id=pm.post_id WHERE pm.media_id=$1 AND ${visiblePublicPost('p', '$2')}) OR EXISTS(SELECT 1 FROM profiles pr WHERE (pr.avatar_id=$1 OR pr.cover_id=$1) AND (${visibleProfile('pr.user_id', '$2')}))
       OR EXISTS(SELECT 1 FROM profiles pr WHERE pr.avatar_id=$1 AND $2::uuid IS NOT NULL AND ${notBlocked('pr.user_id', '$2')} AND EXISTS(SELECT 1 FROM club_memberships mine JOIN club_memberships theirs ON theirs.club_id=mine.club_id WHERE mine.user_id=$2 AND mine.status='active' AND theirs.user_id=pr.user_id AND theirs.status='active'))`,
       [file.id, userId],
     )

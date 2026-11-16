@@ -1,6 +1,8 @@
 import {
   notBlocked,
   visiblePublicPost,
+  visibleProfile,
+  requireSocialProfile,
   requirePublicProfile,
   publicScope,
   publicMissing,
@@ -44,10 +46,10 @@ export interface PostQuery {
 }
 const missing = () => new HttpError(404, 'POST_NOT_FOUND', 'Esta publicação não está disponível.')
 const columns = `p.id,p.kind,p.body,p.book_title AS "bookTitle",p.book_author AS "bookAuthor",p.quote,p.source,p.version,p.created_at AS "createdAt",p.updated_at AS "updatedAt",p.created_at::text AS "sortTime",
-  jsonb_build_object('id',u.id,'name',CASE WHEN p.audience='public' THEN (SELECT display_name FROM profiles WHERE user_id=u.id) ELSE u.name END,'avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) AS author,
+  jsonb_build_object('id',u.id,'name',COALESCE((SELECT display_name FROM profiles WHERE user_id=u.id),u.name),'avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) AS author,
   CASE WHEN EXISTS(SELECT 1 FROM social_posts original WHERE original.id=p.shared_post_id AND ${visiblePublicPost('original')}) THEN p.shared_post_id ELSE NULL END AS "sharedPostId",
   (SELECT count(*)::int FROM post_likes l WHERE l.post_id=p.id) AS likes,
-  (SELECT count(*)::int FROM post_comments c WHERE c.post_id=p.id AND c.deleted_at IS NULL) AS comments,
+  (SELECT count(*)::int FROM post_comments c WHERE c.post_id=p.id AND c.deleted_at IS NULL AND ${notBlocked('c.author_user_id','$2')} AND (p.club_id IS NOT NULL OR (${visibleProfile('c.author_user_id','$2')}))) AS comments,
   EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id=p.id AND l.user_id=$2) AS liked,
   EXISTS(SELECT 1 FROM saved_posts s WHERE s.post_id=p.id AND s.user_id=$2) AS saved,
   COALESCE((SELECT jsonb_agg(jsonb_build_object('id',m.id,'kind',m.kind,'width',m.width,'height',m.height,'duration',m.duration) ORDER BY pm.position) FROM post_media pm JOIN media_objects m ON m.id=pm.media_id WHERE pm.post_id=p.id AND m.state='active'),'[]') AS media,
@@ -216,7 +218,7 @@ export class PostService {
   ) {
     return transaction(this.pool, async (client) => {
       const club = await this.access(client, user, clubId)
-      if (clubId === null) await requirePublicProfile(client, user.id)
+      if (clubId === null) await requireSocialProfile(client, user.id)
       await beforeCreate?.(client)
       if (
         input.kind === 'announcement' &&
@@ -319,7 +321,7 @@ export class PostService {
       const {
         rows: [source],
       } = await client.query(
-        `SELECT book_title,book_author FROM social_posts p WHERE p.id=$1 AND ${visiblePublicPost('p', '$2')}`,
+        `SELECT book_title,book_author FROM social_posts p WHERE p.id=$1 AND ${visiblePublicPost('p', '$2')} AND EXISTS(SELECT 1 FROM profiles original_author WHERE original_author.user_id=p.author_user_id AND original_author.is_public)`,
         [id, user.id],
       )
       if (!source) throw publicMissing()
@@ -429,12 +431,12 @@ export class PostService {
       const cursor = decodeCursor(input.cursor)
       const { rows } = await client.query(
         `SELECT c.id,c.parent_id AS "parentId",CASE WHEN c.deleted_at IS NULL THEN c.body ELSE '' END AS body,c.version,c.created_at AS "createdAt",c.created_at::text AS "sortTime",c.deleted_at IS NOT NULL AS deleted,
-      CASE WHEN c.deleted_at IS NULL THEN jsonb_build_object('id',u.id,'name',CASE WHEN $7::boolean THEN u.name ELSE (SELECT display_name FROM profiles WHERE user_id=u.id) END,'avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) ELSE NULL END AS author,
+      CASE WHEN c.deleted_at IS NULL THEN jsonb_build_object('id',u.id,'name',COALESCE((SELECT display_name FROM profiles WHERE user_id=u.id),u.name),'avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) ELSE NULL END AS author,
       (SELECT count(*)::int FROM comment_likes l WHERE l.comment_id=c.id) AS likes,EXISTS(SELECT 1 FROM comment_likes l WHERE l.comment_id=c.id AND l.user_id=$2) AS liked,
       (c.author_user_id=$2 OR $6::boolean) AND c.deleted_at IS NULL AS "canDelete",
       c.author_user_id=$2 AND c.deleted_at IS NULL AS "canEdit",
       CASE WHEN c.deleted_at IS NULL THEN COALESCE((SELECT jsonb_agg(jsonb_build_object('id',m.id,'kind',m.kind,'width',m.width,'height',m.height,'duration',m.duration) ORDER BY cm.position) FROM comment_media cm JOIN media_objects m ON m.id=cm.media_id WHERE cm.comment_id=c.id AND m.state='active'),'[]') ELSE '[]'::jsonb END AS media
-      FROM post_comments c JOIN users u ON u.id=c.author_user_id WHERE c.post_id=$1 AND ${notBlocked('c.author_user_id', '$2')} AND ($8::uuid IS NULL OR c.id=$8) AND ($7::boolean OR (EXISTS(SELECT 1 FROM profiles pr WHERE pr.user_id=c.author_user_id AND pr.is_public) AND ${notBlocked('c.author_user_id', '$2')})) AND ($3::timestamptz IS NULL OR (c.created_at,c.id)<($3,$4::uuid)) ORDER BY c.created_at DESC,c.id DESC LIMIT $5`,
+      FROM post_comments c JOIN users u ON u.id=c.author_user_id WHERE c.post_id=$1 AND ${notBlocked('c.author_user_id', '$2')} AND ($8::uuid IS NULL OR c.id=$8) AND ($7::boolean OR ((${visibleProfile('c.author_user_id', '$2')}) AND ${notBlocked('c.author_user_id', '$2')})) AND ($3::timestamptz IS NULL OR (c.created_at,c.id)<($3,$4::uuid)) ORDER BY c.created_at DESC,c.id DESC LIMIT $5`,
         [
           id,
           user?.id ?? null,
@@ -458,7 +460,7 @@ export class PostService {
     return transaction(this.pool, async (client) => {
       await this.access(client, user, clubId)
       await this.post(client, clubId, id, user.id)
-      if (clubId === null) await requirePublicProfile(client, user.id)
+      if (clubId === null) await requireSocialProfile(client, user.id)
       const requestHash = createHash('sha256')
         .update(JSON.stringify([id, input.body, input.parentId ?? null, input.mediaIds ?? []]))
         .digest('hex')
@@ -475,7 +477,7 @@ export class PostService {
           clubId === null &&
           !(
             await client.query(
-              `SELECT 1 FROM profiles WHERE user_id=$1 AND is_public AND ${notBlocked('user_id', '$2')}`,
+              `SELECT 1 WHERE ${visibleProfile('$1', '$2')}`,
               [parent.author_user_id, user.id],
             )
           ).rowCount
@@ -638,7 +640,7 @@ export class PostService {
       await this.access(client, user, clubId)
       await this.post(client, clubId, id, user.id)
       const comment = await client.query(
-        `SELECT 1 FROM post_comments c WHERE c.id=$1 AND c.post_id=$2 AND c.deleted_at IS NULL AND ($3::boolean OR (EXISTS(SELECT 1 FROM profiles pr WHERE pr.user_id=c.author_user_id AND pr.is_public) AND ${notBlocked('c.author_user_id', '$4')}))`,
+        `SELECT 1 FROM post_comments c WHERE c.id=$1 AND c.post_id=$2 AND c.deleted_at IS NULL AND ($3::boolean OR ((${visibleProfile('c.author_user_id', '$4')}) AND ${notBlocked('c.author_user_id', '$4')}))`,
         [commentId, id, clubId !== null, user.id],
       )
       if (!comment.rowCount) throw missing()

@@ -1,0 +1,208 @@
+.reading-room.immersive-reader {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  height: var(--immersive-height, 100dvh);
+  max-width: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: max(14px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right))
+    max(14px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  overflow: hidden;
+  background: var(--reader-surface);
+  color: var(--reader-ink, #302a23);
+  box-shadow: none;
+}
+:root[data-reader-focus='true'] .reading-room.immersive-reader {
+  padding-block: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-bottom));
+}
+.immersive-reader .epub-original {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+  width: 100%;
+}
+.immersive-reader .epub-original > * {
+  flex-shrink: 0;
+}
+.immersive-reader .epub-page-viewport,
+.immersive-reader .epub-scroll-viewport {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 76ch;
+}
+.immersive-reader .epub-page-viewport {
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+.immersive-reader .epub-scroll-viewport {
+  overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y pinch-zoom;
+}
+.immersive-reader.reading-room--comfortable :is(.epub-page-viewport, .epub-scroll-viewport) {
+  width: 94%;
+}
+.immersive-reader.reading-room--wide :is(.epub-page-viewport, .epub-scroll-viewport) {
+  width: 84%;
+}
+:root[data-reader-focus='true'] .reading-room.immersive-reader .epub-prose--paged {
+  height: 100%;
+  min-height: 0;
+}
+.immersive-reader .epub-prose--paged :is(img, figure) {
+  max-height: var(--epub-page-height, calc(var(--immersive-height, 100dvh) - 60px));
+  margin-block: 0;
+}
+.immersive-reader .reader-prose p {
+  margin-block: 0 var(--reader-paragraph, 1em);
+}
+.immersive-reader .epub-scroll-viewport .reader-prose {
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+.immersive-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  min-height: 52px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #98867544;
+  color: inherit;
+}
+.immersive-toolbar > span {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  min-width: 0;
+}
+.immersive-reader .icon-button {
+  color: inherit;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+}
+.immersive-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.immersive-reader .epub-page-controls {
+  position: static;
+  flex-shrink: 0;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.reader-sheet {
+  color: var(--text);
+}
+.reader-sheet .reader-settings {
+  border: 0;
+}
+.reader-sheet .reader-settings > summary {
+  display: none;
+}
+.reader-sheet .reader-settings-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+}
+.reader-flip-layer.reading-room {
+  position: fixed;
+  display: block;
+  z-index: 45;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  pointer-events: none;
+  overflow: visible;
+  background: transparent;
+}
+.reader-flip-leaf {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--reader-surface);
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+.reader-flip-leaf::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #0000 20%, #0001 75%, #0003);
+  pointer-events: none;
+}
+.reader-flip-leaf .reader-prose :is(p, span, div) {
+  font-family: inherit;
+  font-size: inherit;
+}
+.reader-flip-leaf .epub-prose--paged :is(img, figure) {
+  max-height: var(--epub-page-height);
+  margin-block: 0;
+}
+@media (max-width: 400px) {
+  .immersive-toolbar .icon-button {
+    min-width: 40px;
+    padding: 7px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reader-flip-layer {
+    display: none;
+  }
+}
+/* Parent route transforms distort DOM Range coordinates during restore and contain fixed children. */
+.route-view.route-view--reader {
+  transform: none !important;
+  perspective: none !important;
+}
+.reader-sheet .sheet-surface {
+  padding: 0 18px 22px;
+}
+.reader-sheet .reader-settings-grid {
+  display: grid;
+  gap: 16px;
+  margin-block: 16px;
+}
+.reader-sheet label:not(.workspace-check) {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.reader-sheet :is(select, input:not([type='checkbox'])) {
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font: inherit;
+}
+.reader-sheet input[type='color'] {
+  min-width: 80px;
+  max-width: 140px;
+  padding: 4px;
+}
+.reader-sheet .workspace-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}

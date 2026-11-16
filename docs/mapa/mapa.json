@@ -6,12 +6,13 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Biblioteca EPUB publicada em produção",
-    "tom": "ok",
-    "resumo": "PR 25 publicado no commit 383541f: biblioteca guarda EPUB e capa na conta, informa uso de 30 arquivos, mostra progresso automático, abre em tela cheia e permite usar/compartilhar a capa. API e executor foram publicados antes dos dois sites Firebase no projeto Google atual; testes com identidade descartável concluídos.",
-    "proximoPasso": "Acompanhar uso e orçamento, revisar a retomada exata de página no Chrome e validar push em aparelho físico. Planos pagos do aplicativo continuam sem cobrança implementada; publicações futuras exigem autorização para o seu escopo.",
+    "fase": "Leitor imersivo e perfil social em revisão",
+    "tom": "atencao",
+    "resumo": "Produção permanece no PR 25, commit 383541f. Em revisão: EPUB imersivo com gestos, folha 3D, painéis e retomada estável; perfil social com pedidos para seguir, atividades e salvos privados. Implementação e 207 testes locais aprovados, com ensaios em Chrome/WebKit. Nenhum merge, migration ou deploy de produção nesta tarefa.",
+    "proximoPasso": "Revisar o PR 27 e seu CI. Com nova autorização do dono, aplicar a evolução aditiva e os grants mínimos, publicar API/executor antes dos dois sites Firebase e validar em aparelhos físicos.",
     "pendencias": [
-      "Retomada exata de página no Chrome teve diferença de uma página no ensaio da migração. Esta liberação confirmou persistência de livro/capa e progresso automático no card; a diferença exata de retomada não foi revalidada.",
+      "Leitor/perfil em revisão: aprovação do PR, evolução aditiva de solicitações e grants mínimos de API/executor pendentes. Seguir alguém não libera conteúdo de clubes; nenhuma dessas operações foi feita em produção.",
+      "Retomada exata no Chrome corrigida e validada localmente em modo paginado e contínuo. A correção do leitor, a altura das capas e os novos perfis ainda não foram publicados; produção continua em 383541f.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
       "Orçamento do projeto é de R$ 70/mês com alertas, sem corte automático de cobrança. Cloud SQL mínimo e instâncias Cloud Run limitadas; acompanhar uso antes de ampliar capacidade.",
       "Cloud Scheduler chama executor Cloud Run privado a cada quinze minutos; lote autenticado concluído com HTTP 200 e zero falhas. Recebimento push em aparelho físico ainda depende da escolha e permissão do usuário.",
@@ -60,7 +61,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Cada worktree pode estar em um commit diferente; confira a branch e o mapa antes de trabalhar.",
+      "versao": "Branch codex/leitor-perfil-social: leitor e perfis em revisão, Auth Emulator, PostgreSQL e arquivos sintéticos isolados; sem alterações de produção.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -87,7 +88,7 @@
         "Aparência escolhida",
         "Sessão de login"
       ],
-      "detalhe": "Sem conta, biblioteca e EPUBs ficam neste navegador. IndexedDB separa visitante e conta; apagar dados do navegador pode apagar cópias locais. Com conta confirmada, EPUBs pessoais do espaço são sincronizados à nuvem dentro da cota. A capa pode virar fundo ou ser compartilhada explicitamente sem publicar o original. O modo conectado não tem cache offline por service worker.",
+      "detalhe": "Sem conta, biblioteca e EPUBs ficam neste navegador. IndexedDB separa visitante e conta; apagar dados do navegador pode apagar cópias locais. Com conta confirmada, EPUBs pessoais do espaço são sincronizados à nuvem dentro da cota. A capa pode virar fundo ou ser compartilhada explicitamente sem publicar o original. O modo conectado não tem cache offline por service worker. Em revisão: leitor sem controles permanentes, gestos, painéis separados, âncora textual e marcador de página com imagem; preferências no armazenamento já existente.",
       "link": ""
     },
     {
@@ -129,7 +130,7 @@
         "Regras e permissões em execução",
         "Configuração privada no Secret Manager; identidade própria sem arquivo de chave"
       ],
-      "detalhe": "1 CPU/1 GiB, concorrência 2 e pool de 5 conexões. Valida autenticação, participação, bloqueios e moderação. Cloud SQL via conexão autenticada; mídia GCS privada por ADC. Manutenção habilitada. Imagem reproduzível no Cloud Build; Render antigo suspenso. PR 25 validado com as permissões existentes; nenhuma migration, grant ou identidade adicional.",
+      "detalhe": "1 CPU/1 GiB, concorrência 2 e pool de 5 conexões. Valida autenticação, participação, bloqueios e moderação. Cloud SQL via conexão autenticada; mídia GCS privada por ADC. Manutenção habilitada. Imagem reproduzível no Cloud Build; Render antigo suspenso. PR 25 validado com as permissões existentes; nenhuma migration, grant ou identidade adicional. A revisão atual acrescenta pedidos para seguir, autorização de perfis privados e atividades paginadas. Exige evolução aditiva e grants mínimos antes da API; ainda não publicada.",
       "link": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health"
     },
     {
@@ -147,7 +148,7 @@
         "Notificações, denúncias e moderação",
         "Histórico de auditoria e aceites de convites"
       ],
-      "detalhe": "Região us-central1; dezoito migrations preservadas, sem migration nova. Cópia final de 50 tabelas e 140 registros, com checksums e sequências iguais. Papéis de API e executor continuam restritos, sem superusuário/DDL/bypass. Acesso por conector autenticado, sem redes públicas autorizadas. Sete backups, proteção contra exclusão e crescimento automático de disco desligado.",
+      "detalhe": "Região us-central1; dezoito migrations preservadas, sem migration nova. Cópia final de 50 tabelas e 140 registros, com checksums e sequências iguais. Papéis de API e executor continuam restritos, sem superusuário/DDL/bypass. Acesso por conector autenticado, sem redes públicas autorizadas. Sete backups, proteção contra exclusão e crescimento automático de disco desligado. Código em revisão acrescenta pedidos para seguir e índices de atividade, preservando seguidores aprovados e clubes. A nova evolução ainda não foi aplicada em produção.",
       "link": "https://console.cloud.google.com/sql/instances/clube-livro-postgres/overview?project=gen-lang-client-0194308411"
     },
     {
@@ -163,7 +164,7 @@
         "EPUBs originais guardados na conta",
         "Arquivos EPUB do acervo dos clubes"
       ],
-      "detalhe": "41 objetos migrados com mesmas chaves e hash SHA-256 conferido. Bucket com acesso público impedido e regras negando acesso direto por SDK; API usa IAM mínimo. POST assinado restringe chave, MIME, tamanho e validade. Privacidade, bloqueios, cotas e otimização preservados; EPUB pessoal e capa exigem titular. Testes reais de foto e EPUB sintéticos aprovados e removidos. Sem versões ou soft delete de originais temporários. Biblioteca pessoal usa cota por quantidade: 30 EPUBs ativos/pendentes no plano gratuito, cada arquivo limitado a 10 MB. Remover um original libera a quantidade. Compartilhamento cria apenas imagem da capa; o EPUB continua privado. Cotas de fotos e de acervo dos clubes permanecem separadas.",
+      "detalhe": "41 objetos migrados com mesmas chaves e hash SHA-256 conferido. Bucket com acesso público impedido e regras negando acesso direto por SDK; API usa IAM mínimo. POST assinado restringe chave, MIME, tamanho e validade. Privacidade, bloqueios, cotas e otimização preservados; EPUB pessoal e capa exigem titular. Testes reais de foto e EPUB sintéticos aprovados e removidos. Sem versões ou soft delete de originais temporários. Biblioteca pessoal usa cota por quantidade: 30 EPUBs ativos/pendentes no plano gratuito, cada arquivo limitado a 10 MB. Remover um original libera a quantidade. Compartilhamento cria apenas imagem da capa; o EPUB continua privado. Cotas de fotos e de acervo dos clubes permanecem separadas. Revisão pendente permite imagens de perfil e comunidade privada a seguidores aprovados, sem liberar clubes nem arquivos pessoais. Não requer alteração do bucket.",
       "link": "https://console.firebase.google.com/project/gen-lang-client-0194308411/storage"
     },
     {
@@ -208,7 +209,7 @@
         "Fila e tentativas no PostgreSQL",
         "Configuração privada no Secret Manager; identidade SQL própria"
       ],
-      "detalhe": "Scheduler a cada quinze minutos com OIDC e audiência exata. IAM permite somente sua identidade invocar o executor; validação adicional no app. 1 CPU/512 MiB, pool de 3, conexões fechadas após cada lote e trava de concorrência. Lote real HTTP 200, sem falhas. Workflow antigo desativado; avisos sem conteúdo privado e recebimento físico pendente. Executor atualizado com o mesmo digest da API na revisão clube-notifications-00002-q8q; agendamento preservado.",
+      "detalhe": "Scheduler a cada quinze minutos com OIDC e audiência exata. IAM permite somente sua identidade invocar o executor; validação adicional no app. 1 CPU/512 MiB, pool de 3, conexões fechadas após cada lote e trava de concorrência. Lote real HTTP 200, sem falhas. Workflow antigo desativado; avisos sem conteúdo privado e recebimento físico pendente. Executor atualizado com o mesmo digest da API na revisão clube-notifications-00002-q8q; agendamento preservado. Revisão pendente integra solicitações e aprovações com a fila atual; requer somente leitura adicional de metadados de privacidade e relações aprovadas.",
       "link": "https://console.cloud.google.com/cloudscheduler?project=gen-lang-client-0194308411"
     },
     {
@@ -245,20 +246,26 @@
     { "o_que": "Leituras de quem usa sem conta", "onde": "pessoa", "privacidade": "Só no aparelho", "copia": "Backup JSON exportado pelo Perfil; originais e mídias baixados separadamente" },
     { "o_que": "EPUB original e capa guardados neste navegador", "onde": "pessoa", "privacidade": "Cópias locais separadas por visitante ou conta", "copia": "IndexedDB; guardar no navegador não equivale a enviar o arquivo para a nuvem" },
     { "o_que": "E-mail, senha e login com Google", "onde": "auth", "privacidade": "Privado", "copia": "Gerenciado pelo Google" },
-    { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Perfil público por escolha; colega ativo em comum pode ver somente cartão mínimo e clubes compartilhados", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
+    { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Perfil público por escolha; colega ativo em comum pode ver somente cartão mínimo e clubes compartilhados; em revisão: cartão privado autenticado, conteúdo pessoal só do titular/aprovados e clubes com autorização independente.", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON pessoal e persistência no banco; arquivos originais não entram no JSON" },
-    { "o_que": "Aparência do app e controles do leitor", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "Preferências no navegador e, com conta, no banco. coverBackdrop opcional salvo pela API e recuperado em outro contexto de navegador em produção; controles do leitor continuam separados." },
+    { "o_que": "Aparência do app e controles do leitor", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "Preferências no navegador e, com conta, no banco. coverBackdrop opcional salvo pela API e recuperado em outro contexto de navegador em produção; controles do leitor continuam separados. Em revisão: gestos, animação, fundo e espaçamento do leitor persistem no mesmo mecanismo, com prévia imediata." },
     { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Metadados de descoberta por escolha do clube; membros e gestão conforme papel; convites restritos aos autorizados", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Mural, fórum, encontros e álbuns dos clubes", "onde": "banco", "privacidade": "Só membros ativos", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
-    { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Públicos enquanto perfil e conteúdo estiverem disponíveis; bloqueios e moderação são revalidados", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
+    { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Públicos enquanto perfil e conteúdo estiverem disponíveis; bloqueios e moderação são revalidados; em revisão: perfil privado também publica para seguidores aprovados, sem permitir cópia para alcance público.", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Notificações", "onde": "banco", "privacidade": "Privado do destinatário", "copia": "Manutenção da API e executor Google com limpeza autenticada em lotes, mantendo a retenção do app" },
-    { "o_que": "Fotos e capas de perfil", "onde": "midia", "privacidade": "Titular; foto pública por escolha do perfil ou para colegas ativos em comum, respeitando bloqueios; capa só com perfil público", "copia": "Persistência no bucket privado; troca ou remoção revoga imediatamente o arquivo anterior" },
+    { "o_que": "Fotos e capas de perfil", "onde": "midia", "privacidade": "Titular; foto pública por escolha do perfil ou para colegas ativos em comum, respeitando bloqueios; capa só com perfil público; em revisão: seguidores aprovados também recebem foto e capa privadas, sem alterar a regra de associação dos clubes.", "copia": "Persistência no bucket privado; troca ou remoção revoga imediatamente o arquivo anterior" },
     { "o_que": "Fotos e vídeos de publicações e álbuns", "onde": "midia", "privacidade": "Permissões da publicação ou álbum; copiar foto de clube para a comunidade exige autorização explícita", "copia": "Persistência no bucket; arquivos não entram no backup JSON" },
     { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Pessoais: até 30 arquivos ativos/pendentes no plano gratuito, até 10 MB cada; livro e capa recuperados em outro contexto de navegador. Não entram no backup JSON; baixe o original separadamente. Compartilhar a capa não publica o arquivo. Acervo dos clubes mantém cotas e autorização próprias." },
     { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" },
     { "o_que": "Cópias de recuperação e fotografia da migração", "onde": "recuperacao", "privacidade": "Privadas; bucket operacional Google e origens antigas preservadas", "copia": "Dump e Auth finais verificados; fontes de build isoladas dos backups. Cloud SQL tem sete backups gerenciados; não sobrescrever dados novos sem conciliação." },
     {"o_que": "Assinaturas de aparelhos e fila push", "onde": "banco", "privacidade": "Privado; leitura e envio revalidam preferências, bloqueios e participação. Avisos externos não carregam conteúdo privado.", "copia": "Executor Cloud Run privado e Scheduler ativos, com lote real aprovado; recebimento físico ainda pendente."},
-    {"o_que": "Originais temporários de fotografias", "onde": "midia", "privacidade": "POST assinado por arquivo, chave, tipo e tamanho; bucket continua privado.", "copia": "Sem original permanente: versões otimizadas e cota da conta; limpeza imediata e após expiração, com diagnóstico e limite de temporários."}
+    {"o_que": "Originais temporários de fotografias", "onde": "midia", "privacidade": "POST assinado por arquivo, chave, tipo e tamanho; bucket continua privado.", "copia": "Sem original permanente: versões otimizadas e cota da conta; limpeza imediata e após expiração, com diagnóstico e limite de temporários."},
+    {
+      "o_que": "Pedidos para seguir, atividades e salvos do perfil (em revisão)",
+      "onde": "banco",
+      "privacidade": "Pedido só entre solicitante e destinatário; atividades revalidam perfil, bloqueios e associação atual ao clube; salvos apenas do titular. Seguidor nunca recebe acesso automático a clube.",
+      "copia": "Evolução aditiva pendente de aprovação. Relações aprovadas existentes são preservadas; atividades são consultadas nas fontes atuais, sem cópia pública de conteúdo privado."
+    }
   ],
   "fluxoPublicacao": [
     { "titulo": "Você pede uma mudança", "onde": "Conversa com Claude ou Codex", "texto": "Claude cuida de visual e telas; Codex de backend, banco e regras.", "modo": "voce" },
@@ -268,7 +275,7 @@
     { "titulo": "CI valida", "onde": "GitHub Actions — Validar aplicação e API", "texto": "Roda todos os testes, builds, imagem Docker e auditoria de segurança.", "modo": "auto" },
     { "titulo": "Você aprova o merge", "onde": "Conversa ou GitHub", "texto": "O agente incorpora o PR após o seu sim. Uma autorização já concedida não precisa ser pedida novamente para a mesma ação.", "modo": "voce" },
     { "titulo": "Prévia e mapa atualizam", "onde": "GitHub Pages", "texto": "Cada push em main republica a prévia (demonstração) e este mapa.", "modo": "auto" },
-    { "titulo": "Liberação em produção", "onde": "Cloud Build, Cloud Run, Cloud SQL e Firebase Hosting", "texto": "Com autorização: conferir commit e CI, preservar recuperação, aplicar migrations/grants como proprietário quando houver, compilar imagem sem segredos, publicar API/executor pelo digest e testar. Publicar o frontend depois, preservando limites, identidades, CORS e Scheduler. Merge não dispara produção.", "modo": "aprovacao" },
+    { "titulo": "Liberação em produção", "onde": "Cloud Build, Cloud Run, Cloud SQL e Firebase Hosting", "texto": "Com autorização: conferir commit e CI, preservar recuperação, aplicar migrations/grants como proprietário quando houver, compilar imagem sem segredos, publicar API/executor pelo digest e testar. Publicar o frontend depois, preservando limites, identidades, CORS e Scheduler. Merge não dispara produção. Para a revisão do leitor/perfil, aplicar primeiro a evolução aditiva de solicitações e os dois scripts de grants mínimos; o site depende da API nova.", "modo": "aprovacao" },
     { "titulo": "Validar e registrar o que foi publicado", "onde": "API, Firebase Hosting e mapa", "texto": "Testar acesso e arquivos, limpar somente dados sintéticos autorizados e preservar a auditoria. Atualizar no mapa as versões realmente publicadas e o histórico; mudanças futuras aguardam nova aprovação.", "modo": "auto" }
   ],
   "jornadas": [
@@ -333,6 +340,31 @@
           "texto": "Conta sincroniza preferências e posição, sem publicar o livro"
         }
       ]
+    },
+    {
+      "titulo": "Seguir um perfil privado (em revisão)",
+      "passos": [
+        {
+          "camada": "pessoa",
+          "texto": "Visita o cartão do perfil e solicita para seguir"
+        },
+        {
+          "camada": "api",
+          "texto": "Registra um pedido pendente e notifica o destinatário"
+        },
+        {
+          "camada": "pessoa",
+          "texto": "Dono aceita ou recusa; solicitante pode cancelar"
+        },
+        {
+          "camada": "banco",
+          "texto": "Só após aprovação existe relação autorizada; bloquear revoga a relação"
+        },
+        {
+          "camada": "api",
+          "texto": "Conteúdo pessoal segue a relação; clubes exigem participação ativa independente"
+        }
+      ]
     }
   ],
   "agentes": [
@@ -353,6 +385,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-16",
+      "autor": "Codex",
+      "titulo": "Leitor imersivo e perfil social com privacidade — em revisão",
+      "resumo": "EPUB com gestos, folha 3D, painéis, favoritos e retomada corrigida; perfil com edição, solicitações, atividades e salvos, carregado sob demanda. Autorização separa perfil, seguidores e clubes, inclusive contadores e denúncias; inclui evolução aditiva e grants mínimos ainda não aplicados. 207 testes locais aprovados, navegador Chrome/WebKit e auditoria de produção sem vulnerabilidades. Produção permanece em 383541f; merge e liberação aguardam nova aprovação.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/27"
+    },
     {
       "data": "2026-11-16",
       "autor": "Codex",

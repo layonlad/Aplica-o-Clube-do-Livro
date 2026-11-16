@@ -1,5 +1,6 @@
+import { ProfileActivityFeed, FollowRequests, SavedReading } from './ProfileActivity'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import type { PostDto, PostMedia, Page } from '../../server/src/community-contracts'
 import { useAuth } from '../auth/AuthProvider'
@@ -10,7 +11,6 @@ import { AvatarUploader } from '../components/AvatarUploader'
 import { CoverUploader } from '../components/CoverUploader'
 import { MediaPicker, PrivateMedia } from './PrivateMedia'
 import { socialRead } from './social-api'
-import { useWorkspace } from '../workspace/WorkspaceProvider'
 import { ConfirmAction, PostCard } from './ClubWall'
 import { ReportAction } from './ReportAction'
 import './community.css'
@@ -30,15 +30,22 @@ export interface SocialProfileDto {
   version: number
   suspended?: boolean
   following?: boolean
-  followers?: number
-  follows?: number
+  canSeeContent?: boolean
+  isSelf?: boolean
+  requested?: boolean
+  relation?: string
+  posts?: number | null
+  pendingRequests?: number
+  followers?: number | null
+  follows?: number | null
   library?: { title: string; author: string; status: string }[]
   stats?: { books: number; completed: number } | null
-  clubs?: { id: string; name: string }[]
+  clubs?: { id: string; name: string; role?: string; visibility?: string; shared?: boolean }[]
 }
 /** Capa no topo do perfil: imagem completa (GIF animado incluso); com movimento reduzido, só o primeiro quadro. */
 function Photo({ id, alt }: { id: string; alt: string }) {
-  const still = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  const still =
+    typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   return (
     <PrivateMedia
       publicMedia
@@ -57,7 +64,7 @@ interface PersonCard {
   sharedClubs: { id: string; name: string }[]
 }
 type ClubPost = PostDto & { club: { id: string; name: string } }
-type Tab = 'public' | 'clubs' | 'about'
+type Tab = 'public' | 'clubs' | 'about' | 'activity' | 'saved'
 const statusLabels: Record<string, string> = {
   completed: 'Concluído',
   reading: 'Lendo',
@@ -95,14 +102,22 @@ function ProfilePostList({
     setBusy(true)
     try {
       const next = await load(page.nextCursor)
-      setPage((value) => ({ items: [...(value?.items ?? []), ...next.items], nextCursor: next.nextCursor }))
+      setPage((value) => ({
+        items: [...(value?.items ?? []), ...next.items],
+        nextCursor: next.nextCursor,
+      }))
     } catch (err) {
       setError(readableError(err))
     } finally {
       setBusy(false)
     }
   }
-  if (error) return <p role="alert" className="access-error">{error}</p>
+  if (error)
+    return (
+      <p role="alert" className="access-error">
+        {error}
+      </p>
+    )
   if (!page) return <SkeletonPage label="Abrindo publicações…" />
   if (!page.items.length) return <p className="empty-inline profile-empty">{empty}</p>
   return (
@@ -130,18 +145,23 @@ function ProfilePostList({
               post={post}
               clubId={club?.id ?? null}
               onChanged={(value) =>
-                setPage((current) =>
-                  current && {
-                    ...current,
-                    items: current.items.map((item) =>
-                      item.id === value.id ? { ...value, ...(club ? { club } : {}) } : item,
-                    ),
-                  },
+                setPage(
+                  (current) =>
+                    current && {
+                      ...current,
+                      items: current.items.map((item) =>
+                        item.id === value.id ? { ...value, ...(club ? { club } : {}) } : item,
+                      ),
+                    },
                 )
               }
               onRemoved={() =>
-                setPage((current) =>
-                  current && { ...current, items: current.items.filter((item) => item.id !== post.id) },
+                setPage(
+                  (current) =>
+                    current && {
+                      ...current,
+                      items: current.items.filter((item) => item.id !== post.id),
+                    },
                 )
               }
             />
@@ -162,9 +182,12 @@ function ProfilePostList({
  * A aba "Publicações dos Clubes" usa /people/:id/club-posts, que o servidor limita aos clubes
  * em que o visitante também participa.
  */
-export function SocialProfile() {
-  const { id } = useParams(),
-    navigate = useNavigate(),
+export function SocialProfile({ profileId }: { profileId?: string } = {}) {
+  const params = useParams(),
+    id = profileId ?? params.id,
+    [search] = useSearchParams(),
+    [requests, setRequests] = useState(search.get('requests') === '1')
+  const navigate = useNavigate(),
     { user } = useAuth(),
     [profile, setProfile] = useState<SocialProfileDto | null>(null),
     [person, setPerson] = useState<PersonCard | null>(null),
@@ -172,8 +195,7 @@ export function SocialProfile() {
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
     [revision, setRevision] = useState(0),
-    [tab, setTab] = useState<Tab>('public'),
-    { snapshot } = useWorkspace()
+    [tab, setTab] = useState<Tab>('public')
   const verified = !!user?.emailVerified
   useEffect(() => {
     let live = true
@@ -247,17 +269,19 @@ export function SocialProfile() {
     )
   const name = profile?.displayName ?? person!.name
   const avatarId = profile?.avatarId ?? person?.avatarId ?? null
-  const isSelf = verified && !!snapshot && snapshot.actorId === id
+  const isSelf = verified && profile?.isSelf === true
   const shared = person?.sharedClubs ?? []
   const tabs: { id: Tab; label: string }[] = [
-    ...(profile ? [{ id: 'public' as Tab, label: 'Publicações Públicas' }] : []),
-    ...(verified && (shared.length || isSelf)
-      ? [{ id: 'clubs' as Tab, label: 'Publicações dos Clubes' }]
-      : []),
-    ...(profile && (profile.stats || profile.library?.length || profile.clubs?.length || profile.genres.length)
-      ? [{ id: 'about' as Tab, label: 'Sobre' }]
-      : []),
+    ...(profile ? [{ id: 'public' as Tab, label: 'Publicações' }] : []),
+    ...(verified ? [{ id: 'clubs' as Tab, label: 'Clubes' }] : []),
   ]
+  if (verified) tabs.push({ id: 'activity', label: 'Atividades' })
+  if (isSelf) tabs.push({ id: 'saved', label: 'Salvos' })
+  if (
+    profile &&
+    (profile.stats || profile.library?.length || profile.clubs?.length || profile.genres.length)
+  )
+    tabs.push({ id: 'about', label: 'Sobre' })
   const current = tabs.some((item) => item.id === tab) ? tab : tabs[0]?.id
   return (
     <div className="social-room profile-page">
@@ -286,10 +310,13 @@ export function SocialProfile() {
             {profile && (
               <p className="profile-header__stats">
                 <span>
-                  <strong>{profile.followers ?? 0}</strong> seguidor(es)
+                  <strong>{profile.posts ?? '—'}</strong> publicações
                 </span>
                 <span>
-                  <strong>{profile.follows ?? 0}</strong> seguindo
+                  <strong>{profile.followers ?? '—'}</strong> seguidor(es)
+                </span>
+                <span>
+                  <strong>{profile.follows ?? '—'}</strong> seguindo
                 </span>
                 {profile.stats && (
                   <span>
@@ -298,7 +325,7 @@ export function SocialProfile() {
                 )}
               </p>
             )}
-            {shared.length > 0 && (
+            {!isSelf && shared.length > 0 && (
               <p className="profile-header__shared">
                 Em comum:{' '}
                 {shared.map((club) => (
@@ -312,8 +339,17 @@ export function SocialProfile() {
         </div>
         {profile && verified && !isSelf && (
           <div className="workspace-actions profile-header__actions">
-            <Button disabled={busy} onClick={() => void relation('follow', !profile.following)}>
-              {profile.following ? 'Deixar de seguir' : 'Seguir leitor'}
+            <Button
+              disabled={busy}
+              onClick={() => void relation('follow', !(profile.following || profile.requested))}
+            >
+              {profile.following
+                ? 'Deixar de seguir'
+                : profile.requested
+                  ? 'Cancelar solicitação'
+                  : profile.isPublic
+                    ? 'Seguir'
+                    : 'Solicitar para seguir'}
             </Button>
             <ConfirmAction
               label="Bloquear leitor"
@@ -326,13 +362,30 @@ export function SocialProfile() {
         )}
         {isSelf && (
           <div className="workspace-actions profile-header__actions">
-            <Link className="button-link" to="/app/profile">
-              Editar meu perfil
+            <Link className="button-link" to="/app/social-profile">
+              Editar perfil
             </Link>
+            <Link className="button-link" to="/app/settings">
+              Configurações da conta
+            </Link>
+            <Button variant="secondary" onClick={() => setRequests(!requests)}>
+              Solicitações ({profile?.pendingRequests ?? 0})
+            </Button>
           </div>
         )}
       </header>
-      {error && <p role="alert" className="access-error">{error}</p>}
+      {isSelf && requests && <FollowRequests onResolved={() => setRevision((n) => n + 1)} />}
+      {profile?.canSeeContent === false && (
+        <p className="profile-private-notice">
+          Perfil privado. Solicite para seguir para acessar as publicações pessoais. A participação
+          em clubes é autorizada separadamente.
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="access-error">
+          {error}
+        </p>
+      )}
       {tabs.length > 0 && (
         <div className="profile-tabs" role="tablist" aria-label="Seções do perfil">
           {tabs.map((item) => (
@@ -374,14 +427,43 @@ export function SocialProfile() {
           key={current}
         >
           {current === 'public' && (
-            <ProfilePostList load={loadPublic} empty={`${name} ainda não publicou na comunidade.`} />
+            <ProfilePostList
+              load={loadPublic}
+              empty={`${name} ainda não publicou na comunidade.`}
+            />
           )}
           {current === 'clubs' && (
-            <ProfilePostList
-              load={loadClubs}
-              clubLabel
-              empty="Nenhuma publicação nos murais dos clubes que vocês compartilham."
-            />
+            <>
+              <div className="profile-club-list">
+                {profile?.clubs?.map((club) => (
+                  <article className="card" key={club.id}>
+                    <strong>{club.name}</strong>
+                    <small>
+                      {club.visibility === 'private' ? 'Clube privado' : 'Clube público'}
+                      {['owner', 'admin'].includes(club.role ?? '') ? ' · Administração' : ''}
+                    </small>
+                    <Link to={club.shared || isSelf ? `/space/${club.id}` : '/app/explore'}>
+                      Ver clube
+                    </Link>
+                  </article>
+                ))}
+              </div>
+              <ProfilePostList
+                load={loadClubs}
+                clubLabel
+                empty="Nenhuma publicação nos murais dos clubes que vocês compartilham."
+              />
+            </>
+          )}
+          {current === 'activity' && id && (
+            <ProfileActivityFeed id={id} author={{ name, handle: profile?.handle, avatarId }} />
+          )}
+          {current === 'saved' && isSelf && id && (
+            <>
+              <SavedReading />
+              <h2>Publicações salvas</h2>
+              <ProfileActivityFeed id={id} saved />
+            </>
           )}
           {current === 'about' && profile && (
             <div className="profile-about">
@@ -401,8 +483,8 @@ export function SocialProfile() {
                 <section>
                   <h2>Entre livros</h2>
                   <p>
-                    {profile.stats.completed} leitura(s) concluída(s) · {profile.stats.books} livro(s)
-                    na biblioteca{profile.goal ? ` · meta anual: ${profile.goal}` : ''}
+                    {profile.stats.completed} leitura(s) concluída(s) · {profile.stats.books}{' '}
+                    livro(s) na biblioteca{profile.goal ? ` · meta anual: ${profile.goal}` : ''}
                   </p>
                 </section>
               )}
@@ -441,7 +523,9 @@ export function SocialProfile() {
         </section>
       )}
       {!tabs.length && (
-        <p className="empty-inline profile-empty">Este leitor ainda não compartilhou publicações com você.</p>
+        <p className="empty-inline profile-empty">
+          Este leitor ainda não compartilhou publicações com você.
+        </p>
       )}
     </div>
   )
@@ -539,8 +623,8 @@ export function SocialProfileEditor() {
         <span className="eyebrow">SUA IDENTIDADE NA COMUNIDADE</span>
         <h1>Como você quer se apresentar?</h1>
         <p>
-          Seu perfil começa privado. Fotos e informações só aparecem na comunidade quando você ativa
-          a opção abaixo.
+          Escolha como se apresentar. Em perfil privado, suas publicações pessoais ficam disponíveis
+          somente aos seguidores aprovados; os clubes mantêm suas próprias permissões.
         </p>
       </header>
       <div className="card">
@@ -618,10 +702,27 @@ export function SocialProfileEditor() {
           />
         </label>
         <fieldset>
-          <legend>Privacidade</legend>
+          <legend>Privacidade do perfil</legend>
+          <label className="workspace-check">
+            <input
+              type="radio"
+              name="profilePrivacy"
+              checked={profile.isPublic}
+              onChange={() => setProfile({ ...profile, isPublic: true })}
+            />
+            Público — seguir sem aprovação
+          </label>
+          <label className="workspace-check">
+            <input
+              type="radio"
+              name="profilePrivacy"
+              checked={!profile.isPublic}
+              onChange={() => setProfile({ ...profile, isPublic: false })}
+            />
+            Privado — aprovar solicitações para seguir
+          </label>
           {profile.suspended && <p role="alert">Seu perfil público foi suspenso pela moderação.</p>}
           {[
-            ['isPublic', 'Ativar perfil público e permitir publicações na comunidade'],
             ['showLibrary', 'Exibir títulos e status da minha biblioteca pessoal'],
             ['showStats', 'Exibir estatísticas e meta de leitura'],
             ['showClubs', 'Exibir os clubes públicos dos quais participo'],
@@ -638,7 +739,8 @@ export function SocialProfileEditor() {
         </fieldset>
         <p className="t-caption">
           Arquivos EPUB, anotações, destaques e clubes privados permanecem pessoais. Ao desativar o
-          perfil, suas publicações e fotos deixam de aparecer em novas consultas públicas.
+          perfil público, seus seguidores aprovados são preservados. Clubes privados nunca são
+          liberados por seguir alguém.
         </p>
         <div className="workspace-actions">
           <Button disabled={busy || uploading}>Salvar perfil e privacidade</Button>
@@ -679,7 +781,26 @@ export function SocialProfileEditor() {
           <Button onClick={() => void loadBlocks(blocks.nextCursor!)}>Mais leitores</Button>
         )}
       </details>
-      <Link to="/app/profile">Conta e backup pessoal →</Link>
+      <Link to="/app/profile">Voltar ao meu perfil →</Link>
+      <Link to="/app/settings">Conta e backup pessoal →</Link>
     </div>
   )
+}
+
+export function OwnSocialProfile() {
+  const { user } = useAuth(),
+    [id, setId] = useState<string | null>(null),
+    [error, setError] = useState('')
+  useEffect(() => {
+    let live = true
+    if (user)
+      void apiRequest<{ id: string }>(user, '/me/profile')
+        .then((p) => live && setId(p.id))
+        .catch((e) => live && setError(readableError(e)))
+    return () => {
+      live = false
+    }
+  }, [user?.uid])
+  if (error) return <p role="alert">{error}</p>
+  return id ? <SocialProfile profileId={id} /> : <SkeletonPage label="Abrindo seu perfil…" />
 }

@@ -25,9 +25,74 @@ vi.mock('../auth/api', async (original) => ({
   apiRequest: vi.fn(),
 }))
 beforeEach(() => {
+  state.loading = false
   state.user = { uid: 'expired-local-reader', email: 'local@example.com', emailVerified: true }
   state.signOut.mockReset()
   vi.mocked(apiRequest).mockReset()
+})
+
+it('aguarda a restauração da sessão ao abrir diretamente o perfil, sem acessar um workspace nulo', () => {
+  state.user = null
+  state.loading = true
+  render(
+    <MemoryRouter initialEntries={['/app/profile']}>
+      <ThemeProvider>
+        <WorkspaceApp />
+      </ThemeProvider>
+    </MemoryRouter>,
+  )
+  expect(screen.getByText('Abrindo seu perfil…')).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Meu perfil' })).not.toBeInTheDocument()
+})
+
+it('abre o próprio perfil social mesmo se a biblioteca pessoal estiver temporariamente indisponível', async () => {
+  const profile = {
+    id: 'account-reader',
+    displayName: 'Leitora do perfil',
+    handle: 'leitora',
+    bio: 'Histórias e encontros.',
+    genres: [],
+    isPublic: false,
+    isSelf: true,
+    canSeeContent: true,
+    posts: 0,
+    followers: 0,
+    follows: 0,
+    clubs: [],
+    library: [],
+    avatarId: null,
+    coverId: null,
+  }
+  vi.mocked(apiRequest).mockImplementation((_user, path) => {
+    if (path === '/me')
+      return Promise.resolve({ user: { id: 'account-reader', name: 'Leitora' }, clubs: [] })
+    if (path === '/me/profile' || path === '/public/profiles/account-reader')
+      return Promise.resolve(profile)
+    if (path === '/people/account-reader')
+      return Promise.resolve({
+        id: 'account-reader',
+        name: 'Leitora do perfil',
+        sharedClubs: [],
+        avatarId: null,
+      })
+    if (path.startsWith('/public/posts')) return Promise.resolve({ items: [], nextCursor: null })
+    return Promise.reject(
+      new ApiError(503, 'WORKSPACE_UNAVAILABLE', 'Biblioteca temporariamente indisponível.'),
+    )
+  })
+  render(
+    <MemoryRouter initialEntries={['/app/profile']}>
+      <ThemeProvider>
+        <WorkspaceApp />
+      </ThemeProvider>
+    </MemoryRouter>,
+  )
+  expect(await screen.findByRole('heading', { name: 'Leitora do perfil' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Editar perfil' })).toHaveAttribute(
+    'href',
+    '/app/social-profile',
+  )
+  expect(screen.getByRole('tab', { name: 'Salvos' })).toBeInTheDocument()
 })
 it('permite entrar novamente quando a API rejeita a sessão antes de carregar o espaço', async () => {
   const user = userEvent.setup()

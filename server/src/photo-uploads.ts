@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { transaction } from './database.js'
 import { HttpError } from './errors.js'
 import { authorize } from './service.js'
-import { requirePublicProfile } from './public-policy.js'
+import { requireSocialProfile } from './public-policy.js'
 import type { UserProfile } from './contracts.js'
 import type { PrivateStorage } from './private-storage.js'
 import { processPhotoFile } from './media-processing.js'
@@ -34,7 +34,7 @@ export class PhotoUploads {
   ) {}
   private async access(client: PoolClient, userId: string, clubId: string | null) {
     if (clubId) await authorize(client, clubId, userId, false, 'update')
-    else await requirePublicProfile(client, userId)
+    else await requireSocialProfile(client, userId)
   }
   async prepare(
     user: UserProfile,

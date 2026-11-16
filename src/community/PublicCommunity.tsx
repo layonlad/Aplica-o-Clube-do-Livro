@@ -66,7 +66,7 @@ export function PublicCommunity() {
       <header className="social-heading">
         <span className="eyebrow">COMUNIDADE LITERÁRIA</span>
         <h1>As leituras nos encontram</h1>
-        <p>Ideias, livros e pessoas para além de um só clube. Este espaço é público.</p>
+        <p>Ideias, livros e pessoas para além de um só clube. Publicações de perfis privados aparecem só para seguidores aprovados.</p>
         <Link className="text-link" to="/app/explore">
           <Compass size={17} /> Explorar leitores e livros
         </Link>
@@ -81,7 +81,7 @@ export function PublicCommunity() {
               <PostComposer clubId={null} onPublished={() => setRevision((value) => value + 1)} />
               <p className="t-caption">
                 As publicações usam seu{' '}
-                <Link to="/app/social-profile">perfil público e suas escolhas de privacidade</Link>.
+                <Link to="/app/social-profile">perfil e suas escolhas de privacidade</Link>.
                 Seus clubes e arquivos pessoais continuam privados.
               </p>
             </>

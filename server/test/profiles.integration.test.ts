@@ -374,7 +374,19 @@ it('aplica a cota ao avatar e não reativa perfil suspenso', async () => {
   }
 })
 
-it('mostra a foto atual de quem gerou a notificação', async () => {
+it('mostra a foto e o nome público atuais de quem gerou a notificação no clube', async () => {
+  const {
+    id: profileId,
+    suspended,
+    ...profile
+  } = (await app.inject({ url: '/v1/me/profile', headers: headers('maria') })).json()
+  const renamed = await app.inject({
+    url: '/v1/me/profile',
+    headers: headers('maria'),
+    method: 'POST',
+    payload: { ...profile, displayName: 'Maria Leitora' },
+  })
+  expect(renamed.statusCode, renamed.body).toBe(200)
   const uploaded = await app.inject({
     remoteAddress: '127.0.0.' + ++avatarRequest,
     url: '/v1/me/avatar',
@@ -395,17 +407,30 @@ it('mostra a foto atual de quem gerou a notificação', async () => {
     await app.inject({ url: '/v1/me/notifications', headers: headers('joao') })
   ).json<Page<{ actorName: string; actorAvatarId: string | null }>>()
   const fromMaria = notices.items.find((item) => item.actorAvatarId === avatarId)
-  expect(fromMaria?.actorName).toBe('maria')
+  expect(fromMaria?.actorName).toBe('Maria Leitora')
+  const comments = (
+    await app.inject({
+      url: `/v1/clubs/${clubA.id}/posts/${id}/comments`,
+      headers: headers('joao'),
+    })
+  ).json()
+  expect(comments.items[0].author.name).toBe('Maria Leitora')
   expect(JSON.stringify(notices)).not.toMatch(/@example.com|object_key/)
 })
 
 it('salva a capa na hora, aceita GIF animado e só a mostra com perfil público', async () => {
   const frame = (color: string) =>
-    sharp({ create: { width: 800, height: 250, channels: 3, background: color } }).png().toBuffer()
-  const gif = await sharp([await frame('#462b70'), await frame('#b9e6c9')], { join: { animated: true } })
+    sharp({ create: { width: 800, height: 250, channels: 3, background: color } })
+      .png()
+      .toBuffer()
+  const gif = await sharp([await frame('#462b70'), await frame('#b9e6c9')], {
+    join: { animated: true },
+  })
     .gif({ delay: [150, 150] })
     .toBuffer()
-  await db.pool.query('UPDATE profiles SET is_public=false,suspended=false WHERE user_id=$1', [ids.joao])
+  await db.pool.query('UPDATE profiles SET is_public=false,suspended=false WHERE user_id=$1', [
+    ids.joao,
+  ])
   const first = await app.inject({
     remoteAddress: '127.0.0.' + ++avatarRequest,
     url: '/v1/me/cover',
@@ -415,7 +440,9 @@ it('salva a capa na hora, aceita GIF animado e só a mostra com perfil público'
   })
   expect(first.statusCode, first.body).toBe(201)
   const firstId = first.json<{ coverId: string }>().coverId
-  expect((await app.inject({ url: '/v1/me/profile', headers: headers('joao') })).json().coverId).toBe(firstId)
+  expect(
+    (await app.inject({ url: '/v1/me/profile', headers: headers('joao') })).json().coverId,
+  ).toBe(firstId)
   // Perfil privado: a capa fica guardada, mas não é entregue a quem não é o dono.
   expect((await avatarContent(firstId, 'joao')).statusCode).toBe(200)
   expect((await avatarContent(firstId, 'estranho')).statusCode).toBe(404)
@@ -444,7 +471,11 @@ it('salva a capa na hora, aceita GIF animado e só a mostra com perfil público'
   expect(saved.statusCode, saved.body).toBe(200)
   expect((await avatarContent(gifId, 'estranho')).statusCode).toBe(200)
 
-  const removed = await app.inject({ url: '/v1/me/cover', method: 'DELETE', headers: headers('joao') })
+  const removed = await app.inject({
+    url: '/v1/me/cover',
+    method: 'DELETE',
+    headers: headers('joao'),
+  })
   expect(removed.json()).toEqual({ coverId: null })
   expect((await avatarContent(gifId, 'estranho')).statusCode).toBe(404)
 })

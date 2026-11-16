@@ -4,7 +4,7 @@ import { transaction } from './database.js'
 import { authorize } from './service.js'
 import { can } from './permissions.js'
 import { decodeCursor, pageOf } from './pagination.js'
-import { notBlocked, publicMissing, visiblePublicPost } from './public-policy.js'
+import { notBlocked, publicMissing, visiblePublicPost, visibleProfile } from './public-policy.js'
 import { HttpError } from './errors.js'
 export type ReportKind = 'post' | 'comment' | 'profile' | 'topic' | 'reply'
 export class ModerationService {
@@ -46,7 +46,7 @@ export class ModerationService {
         if (
           !(
             await client.query(
-              `SELECT 1 FROM profiles WHERE user_id=$1 AND is_public AND ${notBlocked('user_id', '$2')}`,
+              `SELECT 1 FROM profiles WHERE user_id=$1 AND NOT suspended AND ${notBlocked('user_id', '$2')}`,
               [id, user.id],
             )
           ).rowCount
@@ -69,6 +69,17 @@ export class ModerationService {
             await client.query(
               `SELECT 1 FROM social_posts p WHERE p.id=$1 AND ${visiblePublicPost('p', '$2')}`,
               [post.id, user.id],
+            )
+          ).rowCount
+        )
+          throw publicMissing()
+        if (
+          kind === 'comment' &&
+          !clubId &&
+          !(
+            await client.query(
+              `SELECT 1 FROM post_comments c WHERE c.id=$1 AND ${visibleProfile('c.author_user_id', '$2')}`,
+              [id, user.id],
             )
           ).rowCount
         )

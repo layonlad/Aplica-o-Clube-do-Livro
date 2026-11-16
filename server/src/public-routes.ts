@@ -1,3 +1,5 @@
+import { FollowService } from './follow-service.js'
+import { ProfileActivity } from './profile-activity.js'
 import { PublicDiscovery } from './public-discovery.js'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import type { Pool } from 'pg'
@@ -123,7 +125,36 @@ export async function registerPublicMutations(
     media = new MediaService(pool, storage)
   const appearance = new AppearanceService(pool)
   api.get('/me/profile', (request) => profiles.mine(request.user))
-  // Foto de perfil: disponível para toda conta confirmada, mesmo com perfil público desativado.
+  const follows = new FollowService(pool),
+    activity = new ProfileActivity(pool)
+  api.get('/me/follow-requests', (request) =>
+    follows.incoming(request.user, pageInput.strict().parse(request.query)),
+  )
+  api.post('/me/follow-requests/:id', (request) =>
+    follows.decide(
+      request.user,
+      idParams.parse(request.params).id,
+      z
+        .object({ decision: z.enum(['approve', 'decline']) })
+        .strict()
+        .parse(request.body).decision === 'approve',
+    ),
+  )
+  api.get('/people/:id/activity', (request) =>
+    activity.list(
+      request.user,
+      idParams.parse(request.params).id,
+      pageInput.strict().parse(request.query),
+    ),
+  )
+  api.get('/me/profile/saved', (request) =>
+    activity.saved(request.user, pageInput.strict().parse(request.query)),
+  )
+  api.get('/me/profile/reading-saved', (request) => {
+    z.object({}).strict().parse(request.query)
+    return activity.readingSaved(request.user)
+  })
+
   // Foto e capa do perfil: disponíveis para toda conta confirmada, mesmo com perfil público desativado.
   // JPEG/PNG/WebP até 5 MB e GIF (animado) até 8 MB; base64 de 8 MB ≈ 10,7 milhões de caracteres.
   const profileImage = z

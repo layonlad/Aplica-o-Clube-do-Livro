@@ -65,7 +65,7 @@ export function WorkspaceShell() {
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const unread = params.get('notice')
   const personal = scope === 'personal'
-  const globalPage=['/app/community','/app/explore','/app/people/','/app/social-profile','/app/notifications','/app/downloads','/app/moderation'].some(path=>pathname.startsWith(path))
+  const globalPage=['/app/community','/app/explore','/app/people/','/app/social-profile','/app/profile','/app/settings','/app/notifications','/app/downloads','/app/moderation'].some(path=>pathname.startsWith(path))
   const monogram = theme.monogram === 'CA' ? 'CL' : theme.monogram
 
   const nav: NavItem[] = [
@@ -172,7 +172,7 @@ export function WorkspaceShell() {
       {unread && <p className="toast-status" role="status">{unread}</p>}
       {error && <div role="alert" className="access-error">{error} {['AUTH_REQUIRED','EMAIL_NOT_VERIFIED'].includes(errorCode)?<button type="button" onClick={()=>void reenter()}>Entrar novamente</button>:<button type="button" onClick={() => void refresh()}>Recarregar</button>}</div>}
       {accountError&&<p role="alert">{accountError}</p>}
-      {loading&&!globalPage ? <SkeletonPage label="Abrindo seu espaço…" /> : snapshot||globalPage ? <motion.div key={pathname} className="route-view" variants={pageTurn} initial="initial" animate="enter"><Suspense fallback={<SkeletonPage label="Abrindo esta página…"/>}><Outlet /></Suspense></motion.div> : !error ? <p role="status">Escolha seu espaço para começar.</p> : null}
+      {loading&&!globalPage ? <SkeletonPage label="Abrindo seu espaço…" /> : snapshot||globalPage ? <motion.div key={pathname} className={pathname.startsWith('/app/reader')?'route-view route-view--reader':'route-view'} variants={pathname.startsWith('/app/reader')?undefined:pageTurn} initial={pathname.startsWith('/app/reader')?false:'initial'} animate={pathname.startsWith('/app/reader')?undefined:'enter'}><Suspense fallback={<SkeletonPage label="Abrindo esta página…"/>}><Outlet /></Suspense></motion.div> : !error ? <p role="status">Escolha seu espaço para começar.</p> : null}
     </main>
 
     {menu && <div className="drawer-layer" onMouseDown={() => setMenu(false)}>

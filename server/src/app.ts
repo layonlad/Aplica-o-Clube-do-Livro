@@ -74,7 +74,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     request.log.error({ requestId: request.id, route: request.routeOptions.url }, 'Falha interna na API')
     return reply.code(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Não foi possível concluir a operação.' } })
   })
-  if(options.afterSocialMutation)app.addHook('onResponse',async(request,reply)=>{if(reply.statusCode<300&&request.method!=='GET'&&/\/(posts|forum|events|invites|follow|join-requests|invitations)(?:[/?]|$)/.test(request.url))options.afterSocialMutation!()})
+  if(options.afterSocialMutation)app.addHook('onResponse',async(request,reply)=>{if(reply.statusCode<300&&request.method!=='GET'&&/\/(posts|forum|events|invites|follow|follow-requests|join-requests|invitations)(?:[/?]|$)/.test(request.url))options.afterSocialMutation!()})
   registerPhotoMaintenance(app,options.pool,options.storage,options.photoCleanupToken)
   app.get('/health', async () => {
     try { await options.pool.query('SELECT 1'); return { status: 'ok' } }
