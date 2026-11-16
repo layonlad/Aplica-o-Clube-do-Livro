@@ -1,0 +1,23 @@
+{
+  "projectId": "gen-lang-client-0194308411",
+  "displayName": "Projeto-clube-do-Livro",
+  "region": "us-central1",
+  "database": {
+    "instance": "clube-livro-postgres",
+    "name": "clube_do_livro",
+    "version": "POSTGRES_17",
+    "edition": "ENTERPRISE",
+    "tier": "db-f1-micro",
+    "diskType": "PD_HDD",
+    "diskGb": 10,
+    "automaticStorageIncrease": false,
+    "backupsRetained": 7,
+    "deletionProtection": true
+  },
+  "api": { "name": "clube-livro-api", "memory": "1Gi", "cpu": "1", "minInstances": 0, "maxInstances": 1, "concurrency": 2, "poolMax": 5 },
+  "notifications": { "name": "clube-notifications", "memory": "512Mi", "cpu": "1", "minInstances": 0, "maxInstances": 1, "concurrency": 1, "poolMax": 3, "schedule": "7,22,37,52 * * * *", "timezone": "UTC" },
+  "mediaBucket": "gen-lang-client-0194308411.firebasestorage.app",
+  "operationsBucket": "gen-lang-client-0194308411-clube-ops",
+  "budget": { "currency": "BRL", "monthly": 70, "actualThresholds": [0.5, 0.8, 1], "forecastThreshold": 1, "hardCap": false },
+  "legacyHostingProject": "project-acb850f4-4bb8-45de-a84"
+}

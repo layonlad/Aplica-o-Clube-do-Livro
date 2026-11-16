@@ -6,11 +6,12 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "No ar; nova estética Estante Rosa & Palha publicada",
-    "tom": "ok",
-    "resumo": "Site Firebase republicado em 15/11/2026 a partir de fa98171 (PR 21) com a nova estética Estante Rosa & Palha. API Render e site Firebase publicados antes em 15/11/2026 a partir de 644b10e (PR 19), após autorização do dono. Leitura EPUB privada com capas e controles próprios, armazenamento compatível com Safari e entrelinha das publicações corrigidos. CI aprovado; banco continua em 018 e permissões restritas preservadas. Push e executor externo configurados no plano gratuito.",
-    "proximoPasso": "O dono pode conferir seu EPUB na versão publicada. Recebimento push em aparelho físico depende de habilitação explícita no Perfil e permissão do sistema; ainda não foi comprovado. Melhorias futuras seguem o fluxo de PR e aprovação.",
+    "fase": "Migração integral Google em validação",
+    "tom": "aguardando",
+    "resumo": "O dono autorizou migrar site, API, PostgreSQL, arquivos, autenticação e executor para gen-lang-client-0194308411, com nome Projeto-clube-do-Livro e orçamento mensal de até R$ 70. Banco, arquivos e logins já têm cópia ensaiada no destino. A instalação antiga continua ativa até a fotografia final e a validação da troca.",
+    "proximoPasso": "Concluir CI e imagem; validar API e executor privados no destino. Em seguida isolar os escritores antigos, fazer cópia final, publicar o site e ativar o Scheduler no Google, registrando versões efetivamente publicadas. Não apagar origens ou sobrescrever gravações novas.",
     "pendencias": [
+      "Migração autorizada em andamento: recursos do destino provisionados; API/site e troca final ainda pendentes. Orçamento é alerta, sem bloqueio automático de cobrança; capacidade inicial pequena e ajustável.",
       "Push e executor externo configurados e ativos; execução manual concluída sem falhas. Recebimento em aparelho físico ainda não foi testado; depende da escolha e permissão do usuário. Agendamento gratuito pode atrasar.",
       "Upload geral de fotografias foi confirmado como funcional pelo dono. Os testes da nova leitura usam EPUB, contas e capas sintéticos locais; nenhum arquivo específico do dono foi inspecionado.",
       "EPUB com fontes ofuscadas é aceito; texto ou imagens realmente criptografados exigem edição legível da loja/editora. Sem capa raster compatível, permanece uma ilustração de reserva.",
@@ -60,6 +61,14 @@
       "versao": "Cada worktree pode estar em um commit diferente; confira a branch e o mapa antes de trabalhar.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
+    },
+    {
+      "id": "migracao-google",
+      "nome": "Destino Google em validação",
+      "url": "https://console.firebase.google.com/project/gen-lang-client-0194308411/overview",
+      "versao": "Projeto-clube-do-Livro · cópia ensaiada; publicação final pendente",
+      "atualizacao": "Migração autorizada pelo dono; preservar origem até concluir a troca",
+      "tom": "aguardando"
     }
   ],
   "camadas": [
@@ -70,7 +79,12 @@
       "plano": "—",
       "coluna": 1,
       "cor": "coral",
-      "guarda": ["Biblioteca e leituras do visitante (sem conta)", "EPUB original no IndexedDB", "Aparência escolhida", "Sessão de login"],
+      "guarda": [
+        "Biblioteca e leituras do visitante (sem conta)",
+        "EPUB original no IndexedDB",
+        "Aparência escolhida",
+        "Sessão de login"
+      ],
       "detalhe": "Sem conta, biblioteca e leitura ficam neste navegador. EPUBs originais usam IndexedDB separado por visitante/conta. Apagar os dados do navegador pode apagar essas cópias. O modo conectado não registra cache offline por service worker. Desde a liberação EPUB, EPUB e capa são guardados como bytes portáveis, mantendo leitura de registros antigos; controles do leitor e posição são independentes da aparência geral.",
       "link": ""
     },
@@ -81,7 +95,9 @@
       "plano": "Gratuito",
       "coluna": 2,
       "cor": "plum",
-      "guarda": ["Arquivos do app (HTML, CSS, JavaScript, fontes)"],
+      "guarda": [
+        "Arquivos do app (HTML, CSS, JavaScript, fontes)"
+      ],
       "detalhe": "Entrega os arquivos do app conectado. Bibliotecas e conteúdo dos usuários ficam no navegador, banco e bucket, não no Hosting. O deploy manual valida a API antes de publicar.",
       "link": "https://project-acb850f4-4bb8-45de-a84.web.app"
     },
@@ -92,7 +108,11 @@
       "plano": "Gratuito",
       "coluna": 2,
       "cor": "honey",
-      "guarda": ["Identidade da conta e credencial de acesso", "Login com Google", "Estado de confirmação e revogação da conta"],
+      "guarda": [
+        "Identidade da conta e credencial de acesso",
+        "Login com Google",
+        "Estado de confirmação e revogação da conta"
+      ],
       "detalhe": "E-mail/senha e Google estão habilitados. O formulário envia a senha ao Firebase; a API do app não a recebe nem armazena. A API valida a identidade e consulta a conta para recusar sessões revogadas ou desativadas, sem chave de service account.",
       "link": "https://console.firebase.google.com/project/project-acb850f4-4bb8-45de-a84/authentication"
     },
@@ -103,7 +123,10 @@
       "plano": "Free · pode dormir após 15 min sem uso",
       "coluna": 3,
       "cor": "blue",
-      "guarda": ["Regras e permissões em execução", "Configuração privada em segredos do Render; sem arquivos permanentes de usuários no disco"],
+      "guarda": [
+        "Regras e permissões em execução",
+        "Configuração privada em segredos do Render; sem arquivos permanentes de usuários no disco"
+      ],
       "detalhe": "Valida autenticação, associação ativa, bloqueios e moderação antes de acessar banco ou arquivos. Segredos ficam somente no servidor. A manutenção em lotes está habilitada enquanto a API está acordada; não há cron pago. Autodeploy desligado.",
       "link": "https://clube-livro-api.onrender.com/health"
     },
@@ -114,7 +137,14 @@
       "plano": "Free · região us-east-1",
       "coluna": 4,
       "cor": "mint",
-      "guarda": ["Perfis, clubes e membros", "Publicações, comentários e curtidas", "Fórum, encontros e álbuns", "Leituras sincronizadas e preferências", "Notificações, denúncias e moderação", "Histórico de auditoria e aceites de convites"],
+      "guarda": [
+        "Perfis, clubes e membros",
+        "Publicações, comentários e curtidas",
+        "Fórum, encontros e álbuns",
+        "Leituras sincronizadas e preferências",
+        "Notificações, denúncias e moderação",
+        "Histórico de auditoria e aceites de convites"
+      ],
       "detalhe": "Migrations aplicadas até a evolução de fotografias e push, antes da publicação dos novos executáveis. A API usa clube_runtime com a matriz de permissões testada: sem DDL, leitura de migrations, exclusão de usuários ou alteração da auditoria. Privilégios CRUD legados e concessões automáticas do proprietário de migrations foram removidos e conferidos; nenhuma permissão extra para capas.",
       "link": "https://console.neon.tech/app/projects/wandering-block-99253816"
     },
@@ -125,7 +155,12 @@
       "plano": "Free · limites de uso também impostos pelo app",
       "coluna": 4,
       "cor": "rose",
-      "guarda": ["Fotos e capas de perfil (GIF animado vira WebP animado)", "Fotos e vídeos de publicações e álbuns", "EPUBs originais guardados na conta", "Arquivos EPUB do acervo dos clubes"],
+      "guarda": [
+        "Fotos e capas de perfil (GIF animado vira WebP animado)",
+        "Fotos e vídeos de publicações e álbuns",
+        "EPUBs originais guardados na conta",
+        "Arquivos EPUB do acervo dos clubes"
+      ],
       "detalhe": "Acesso direto anônimo ao bucket é negado. A API entrega conteúdo público quando explicitamente permitido e conteúdo privado somente a quem tem acesso; fotos privadas do perfil exigem titular ou colega ativo em comum, respeitando bloqueios. As cotas de mídia por conta, EPUBs pessoais e EPUBs por clube são separadas. Gravação, leitura e remoção reais foram validadas na liberação. Desde a liberação EPUB, a API deriva a capa pessoal do original após conferir titularidade, sem novo objeto permanente; o bucket privado atual atende sem mudanças.",
       "link": ""
     },
@@ -136,7 +171,12 @@
       "plano": "Gratuito",
       "coluna": 0,
       "cor": "ink",
-      "guarda": ["Todo o código e a documentação", "Pull requests e revisões", "Testes automáticos (CI)", "Prévia pública e este mapa (GitHub Pages)"],
+      "guarda": [
+        "Todo o código e a documentação",
+        "Pull requests e revisões",
+        "Testes automáticos (CI)",
+        "Prévia pública e este mapa (GitHub Pages)"
+      ],
       "detalhe": "Repositório público: nunca guardar senhas, chaves ou dados de usuários aqui.",
       "link": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
     },
@@ -147,14 +187,16 @@
       "plano": "Na franquia Free · sem compute próprio",
       "coluna": 4,
       "cor": "honey",
-      "guarda": ["Pontos de recuperação do banco antes das liberações social e móvel"],
+      "guarda": [
+        "Pontos de recuperação do banco antes das liberações social e móvel"
+      ],
       "detalhe": "Três cópias privadas prontas, criadas antes das respectivas liberações em 14 e 15/11/2026, sem compute próprio. A mais recente precede a evolução de fotografias e notificações push. Não incluem gravações posteriores nem substituem backup periódico. Restaurar sobre dados atuais ou excluir cópias exige autorização específica.",
       "link": "https://console.neon.tech/app/projects/wandering-block-99253816"
     },
     {
       "id": "avisos",
-      "titulo": "Executor de notificações ativo",
-      "servico": "GitHub Actions agendado e entrega Web Push",
+      "titulo": "Executor de notificações em migração",
+      "servico": "GitHub Actions (origem) para Cloud Scheduler/Cloud Run (destino)",
       "plano": "Gratuito neste repositório público",
       "coluna": 3,
       "cor": "blue",
@@ -162,8 +204,23 @@
         "Fila e tentativas no banco; execução fora do Render",
         "Configuração privada somente nos ambientes autorizados"
       ],
-      "detalhe": "Configurações privadas presentes no Render/GitHub; executor manual concluído com sucesso em 15/11/2026. Identidade restrita consulta metadados/permissões e solicita limpeza limitada à API. Envia aviso genérico após escolha explícita do usuário, sem textos privados ou credenciais do bucket. Fila persistente e retentativas; agendamento pode atrasar e recebimento físico ainda não foi testado.",
+      "detalhe": "Fila persistente e identidade SQL restrita preservadas na cópia. O agendamento antigo será interrompido antes da fotografia final; o Scheduler novo só será ativado após validar a cópia final, evitando dois executores graváveis em paralelo. Avisos não carregam textos privados e o recebimento físico segue pendente.",
       "link": ""
+    },
+    {
+      "id": "destino-google",
+      "titulo": "Destino da migração",
+      "servico": "Firebase Hosting/Auth/Storage, Cloud Run, Cloud SQL e Scheduler",
+      "plano": "Orçamento autorizado de até R$ 70/mês; alertas, sem corte automático",
+      "coluna": 4,
+      "cor": "mint",
+      "guarda": [
+        "Cópia ensaiada do PostgreSQL e dos arquivos",
+        "Identidades importadas com UIDs preservados",
+        "Configurações privadas no Secret Manager"
+      ],
+      "detalhe": "Destino gen-lang-client-0194308411, região us-central1, separado da instalação antiga. Ensaio do banco e comparação de arquivos aprovados; login da conta sintética com senha importada conferido. API e site só serão registrados como produção depois da validação. Nenhuma conta real foi excluída.",
+      "link": "https://console.firebase.google.com/project/gen-lang-client-0194308411/overview"
     }
   ],
   "ligacoes": [
@@ -292,6 +349,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-16",
+      "autor": "Codex",
+      "titulo": "Migração integral para Firebase/Google provisionada e ensaiada",
+      "resumo": "Projeto de destino renomeado e Firebase ativado, com faturamento confirmado e orçamento de R$ 70 autorizado. PostgreSQL mínimo, identidades restritas, bucket privado, build e alertas configurados. Ensaio compara 50 tabelas, 140 registros e sequências; 41 arquivos verificados por hash. Contas importadas com UIDs preservados e senha sintética testada. Origem continua ativa; publicação e cópia final em preparação.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/23"
+    },
     {
       "data": "2026-11-15",
       "autor": "Claude Code",

@@ -4,10 +4,12 @@ import { z } from 'zod'
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   DATABASE_URL: z.string().url(),
+  DB_POOL_MAX: z.coerce.number().int().min(1).max(10).default(10),
   FIREBASE_PROJECT_ID: z.string().min(3),
   FIREBASE_WEB_API_KEY: z.string().min(1).optional(),
   FIREBASE_AUTH_EMULATOR_HOST: z.string().optional(),
   FRONTEND_ORIGIN: z.string().url(),
+  FRONTEND_EXTRA_ORIGINS: z.string().default('').transform(value => value.split(',').map(item => item.trim()).filter(Boolean)),
   MEDIA_CLEANUP_ENABLED:z.enum(['true','false']).default('false').transform(value=>value==='true'),
   PLATFORM_MODERATOR_UIDS: z.string().default('').transform(value=>value.split(',').map(id=>id.trim()).filter(Boolean)).refine(ids=>ids.length<=10&&ids.every(id=>/^[A-Za-z0-9_-]{1,128}$/.test(id))),
   PHOTO_CLEANUP_TOKEN:z.string().regex(/^[A-Za-z0-9_-]{43}$/).optional(),
@@ -23,6 +25,10 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   if (origin.origin !== config.FRONTEND_ORIGIN || origin.username || origin.password) {
     throw new Error('FRONTEND_ORIGIN deve conter somente a origem, sem caminho ou barra final.')
   }
+  if (config.FRONTEND_EXTRA_ORIGINS.length > 3 || config.FRONTEND_EXTRA_ORIGINS.some(value => {
+    try { const url = new URL(value); return url.origin !== value || !!url.username || !!url.password || url.protocol !== 'https:' }
+    catch { return true }
+  })) throw new Error('Origens adicionais exigem até três origens HTTPS exatas.')
   if (!['postgres:', 'postgresql:'].includes(new URL(config.DATABASE_URL).protocol)) {
     throw new Error('DATABASE_URL deve apontar para PostgreSQL.')
   }

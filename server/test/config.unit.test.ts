@@ -17,3 +17,8 @@ describe('configuração segura', () => {
     expect(() => readConfig({ ...base, FRONTEND_ORIGIN: 'https://clube.example/path' })).toThrow()
   })
 })
+it('restringe conexões e origens adicionais da migração', () => {
+  expect(readConfig({ ...base, DB_POOL_MAX: '5', FRONTEND_EXTRA_ORIGINS: 'https://legacy.web.app' }).DB_POOL_MAX).toBe(5)
+  for (const DB_POOL_MAX of ['0', '11', 'NaN']) expect(() => readConfig({ ...base, DB_POOL_MAX })).toThrow()
+  for (const FRONTEND_EXTRA_ORIGINS of ['http://legacy.web.app', 'https://user:pass@legacy.web.app', 'https://legacy.web.app/path', '*', 'https://a.test,https://b.test,https://c.test,https://d.test']) expect(() => readConfig({ ...base, FRONTEND_EXTRA_ORIGINS })).toThrow()
+})

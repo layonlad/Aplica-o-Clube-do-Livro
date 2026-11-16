@@ -1,50 +1,14 @@
-name: Processar notificações
+name: Notificações — migradas para Google Cloud
 on:
-  schedule:
-    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
 permissions:
   contents: read
-concurrency:
-  group: notification-worker
-  cancel-in-progress: false
 jobs:
-  deliver:
-    if: github.ref == 'refs/heads/main'
+  location:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
     steps:
-      - name: Conferir ativação
-        id: configured
-        env:
-          NOTIFICATION_DATABASE_URL: ${{ secrets.NOTIFICATION_DATABASE_URL }}
-          PUSH_PUBLIC_KEY: ${{ secrets.PUSH_PUBLIC_KEY }}
-          PUSH_PRIVATE_KEY: ${{ secrets.PUSH_PRIVATE_KEY }}
+      - name: Local do executor de produção
         run: |
-          if [ -n "$NOTIFICATION_DATABASE_URL" ] && [ -n "$PUSH_PUBLIC_KEY" ] && [ -n "$PUSH_PRIVATE_KEY" ]; then
-            echo 'enabled=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'enabled=false' >> "$GITHUB_OUTPUT"
-            echo 'Executor aguardando configuração autorizada; nenhuma alteração realizada.'
-          fi
-      - uses: actions/checkout@v5
-        with:
-          ref: main
-        if: steps.configured.outputs.enabled == 'true'
-      - uses: actions/setup-node@v5
-        if: steps.configured.outputs.enabled == 'true'
-        with:
-          node-version: '24'
-          cache: npm
-      - run: npm ci
-        if: steps.configured.outputs.enabled == 'true'
-      - name: Entregar fila e preparar lembretes
-        if: steps.configured.outputs.enabled == 'true'
-        env:
-          NOTIFICATION_DATABASE_URL: ${{ secrets.NOTIFICATION_DATABASE_URL }}
-          PUSH_PUBLIC_KEY: ${{ secrets.PUSH_PUBLIC_KEY }}
-          PUSH_PRIVATE_KEY: ${{ secrets.PUSH_PRIVATE_KEY }}
-          PUSH_SUBJECT: ${{ vars.PUSH_SUBJECT }}
-          PHOTO_CLEANUP_URL: ${{ vars.PHOTO_CLEANUP_URL }}
-          PHOTO_CLEANUP_TOKEN: ${{ secrets.PHOTO_CLEANUP_TOKEN }}
-        run: npm run notifications:work --workspace server
+          echo 'A fila é processada pelo Cloud Scheduler e serviço privado clube-notifications no Google Cloud.'
+          echo 'Projeto: gen-lang-client-0194308411. Consulte docs/migracao/FIREBASE_GOOGLE.md.'
+          echo 'Este workflow não acessa bancos, mídia ou segredos de produção.'

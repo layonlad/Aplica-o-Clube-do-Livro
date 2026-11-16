@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Conteúdo passa pela API; somente o POST assinado pode enviar diretamente.
+      // A API e o executor usam IAM, sem acesso público ou tokens de download.
+      allow read, write: if false;
+    }
+  }
+}
