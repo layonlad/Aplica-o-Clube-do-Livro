@@ -11,6 +11,7 @@ import {
 } from '@aws-sdk/client-s3'
 import { openEpubPackage } from './epub-package.js'
 import { HttpError } from './errors.js'
+import { createGoogleStorage } from './google-storage.js'
 export interface PrivateStorage {
   put(key: string, bytes: Buffer, contentType?: string): Promise<void>
   get(key: string): Promise<Uint8Array>
@@ -32,6 +33,8 @@ export function createPrivateStorage(
   env: NodeJS.ProcessEnv = process.env,
 ): PrivateStorage | undefined {
   if (!env.MEDIA_BUCKET) return undefined
+  if (env.MEDIA_PROVIDER === 'gcs') return createGoogleStorage(env.MEDIA_BUCKET)
+  if (env.MEDIA_PROVIDER && env.MEDIA_PROVIDER !== 's3') throw Error('Provedor de armazenamento inválido.')
   for (const key of [
     'AWS_ENDPOINT_URL_S3',
     'AWS_REGION',

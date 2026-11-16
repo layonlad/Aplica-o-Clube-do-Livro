@@ -43,7 +43,9 @@ exige(datas.every((d, i) => i === 0 || d <= datas[i - 1]), 'atualizacoes: manten
 // O mapa e o site são públicos: nada de e-mails, chaves ou URLs com credenciais.
 const bruto = JSON.stringify(mapa)
 exige(!/[\w.+-]+@[\w-]+\.[\w.]+/.test(bruto.replace(/@usuário/g, '')), 'O mapa não pode conter e-mails (o repositório é público).')
-exige(!/(api[_-]?key|secret|password|senha=|token=|postgres(ql)?:\/\/)/i.test(bruto), 'O mapa parece conter credenciais ou URLs de banco.')
+// O nome do serviço Google não é um valor de credencial.
+const semNomeDeServico = bruto.replace(/\bSecret Manager\b/gi, '')
+exige(!/(api[_-]?key|secret|password|senha=|token=|postgres(ql)?:\/\/)/i.test(semNomeDeServico), 'O mapa parece conter credenciais ou URLs de banco.')
 if (erros.length) {
   console.error('Mapa do projeto inválido:\n- ' + erros.join('\n- '))
   process.exit(1)

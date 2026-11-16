@@ -17,3 +17,8 @@ if (!response.ok || (await response.json()).status !== 'ok') throw new Error('A 
 const result = spawnSync('npm', ['run', 'build'], { stdio: 'inherit', env: { ...process.env, VITE_APP_MODE: 'connected' } })
 if (result.error) throw result.error
 process.exitCode = result.status ?? 1
+if (!process.exitCode) {
+  const map = spawnSync(process.execPath, ['scripts/mapa/build.mjs', '--out', 'dist/mapa'], { stdio: 'inherit' })
+  if (map.error) throw map.error
+  process.exitCode = map.status ?? 1
+}

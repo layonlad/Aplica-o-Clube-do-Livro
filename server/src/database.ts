@@ -1,7 +1,8 @@
 import { Pool, type PoolClient } from 'pg'
 
-export function createPool(connectionString: string) {
-  const pool = new Pool({ connectionString, max: 10, connectionTimeoutMillis: 5000, idleTimeoutMillis: 30000, statement_timeout: 10000 })
+export function createPool(connectionString: string, max = 10) {
+  if (!Number.isInteger(max) || max < 1 || max > 10) throw Error('Limite de conexões deve estar entre 1 e 10.')
+  const pool = new Pool({ connectionString, max, connectionTimeoutMillis: 5000, idleTimeoutMillis: 30000, statement_timeout: 10000 })
   pool.on('error', () => { console.error('Conexão ociosa com o banco interrompida.') })
   return pool
 }

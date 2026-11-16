@@ -1,0 +1,15 @@
+# Usar --substitutions=COMMIT_SHA=<commit aprovado> ao enviar o código.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --pull
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/clube-livro/api:$COMMIT_SHA
+      - .
+images:
+  - us-central1-docker.pkg.dev/$PROJECT_ID/clube-livro/api:$COMMIT_SHA
+serviceAccount: projects/$PROJECT_ID/serviceAccounts/clube-build@$PROJECT_ID.iam.gserviceaccount.com
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s
