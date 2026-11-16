@@ -6,18 +6,19 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Migração integral Google em validação",
-    "tom": "aguardando",
-    "resumo": "O dono autorizou migrar site, API, PostgreSQL, arquivos, autenticação e executor para gen-lang-client-0194308411, com nome Projeto-clube-do-Livro e orçamento mensal de até R$ 70. Banco, arquivos e logins já têm cópia ensaiada no destino. A instalação antiga continua ativa até a fotografia final e a validação da troca.",
-    "proximoPasso": "Concluir CI e imagem; validar API e executor privados no destino. Em seguida isolar os escritores antigos, fazer cópia final, publicar o site e ativar o Scheduler no Google, registrando versões efetivamente publicadas. Não apagar origens ou sobrescrever gravações novas.",
+    "fase": "Produção migrada para Firebase e Google Cloud",
+    "tom": "ok",
+    "resumo": "Site, autenticação, API, PostgreSQL, arquivos privados e execução agendada estão no projeto gen-lang-client-0194308411, renomeado Projeto-clube-do-Livro. Cópia final conferida por checksums e hashes, com identidades preservadas. Render pausado e executor GitHub desativado; origens mantidas para recuperação.",
+    "proximoPasso": "Acompanhar uso e alertas de R$ 70, testar push em aparelho físico e revisar as telas conectadas com o dono. Publicações futuras exigem autorização para seu escopo; não reativar o backend antigo em paralelo.",
     "pendencias": [
-      "Migração autorizada em andamento: recursos do destino provisionados; API/site e troca final ainda pendentes. Orçamento é alerta, sem bloqueio automático de cobrança; capacidade inicial pequena e ajustável.",
-      "Push e executor externo configurados e ativos; execução manual concluída sem falhas. Recebimento em aparelho físico ainda não foi testado; depende da escolha e permissão do usuário. Agendamento gratuito pode atrasar.",
+      "Validação do EPUB após a troca: abertura/capa funcionam, mas a retomada no Chrome móvel e desktop voltou uma página antes do ponto salvo. Diferença registrada para correção específica do leitor; o código do frontend foi preservado nesta migração.",
+      "Orçamento do projeto é de R$ 70/mês com alertas, sem corte automático de cobrança. Cloud SQL mínimo e instâncias Cloud Run limitadas; acompanhar uso antes de ampliar capacidade.",
+      "Cloud Scheduler chama executor Cloud Run privado a cada quinze minutos; lote autenticado concluído com HTTP 200 e zero falhas. Recebimento push em aparelho físico ainda depende da escolha e permissão do usuário.",
       "Upload geral de fotografias foi confirmado como funcional pelo dono. Os testes da nova leitura usam EPUB, contas e capas sintéticos locais; nenhum arquivo específico do dono foi inspecionado.",
       "EPUB com fontes ofuscadas é aceito; texto ou imagens realmente criptografados exigem edição legível da loja/editora. Sem capa raster compatível, permanece uma ilustração de reserva.",
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
       "Leitor de tela e aparelho físico não foram testados. Sincronização de capa, arquivo e preferências foi validada em contextos independentes de navegadores locais.",
-      "O modo conectado não oferece cache offline por service worker. As cópias privadas de recuperação são anteriores às respectivas liberações, sem gravações posteriores.",
+      "O modo conectado não oferece cache offline por service worker. Backups do banco são gerenciados; arquivos novos não têm cópia periódica independente. As origens antigas preservam a fotografia da migração, sem gravações posteriores.",
       "Estética \"Estante Rosa & Palha\" publicada com a ilustração de estante; falta a foto definitiva do dono. As telas conectadas com dados reais (comunidade, clubes, fórum, leitor) ainda não foram revisadas uma a uma no novo visual."
     ]
   },
@@ -25,17 +26,17 @@
     {
       "id": "producao",
       "nome": "Produção",
-      "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "fa98171 · site publicado em 15/11/2026 no Firebase Hosting com a estética Estante Rosa & Palha (API segue em 644b10e)",
-      "atualizacao": "Manual, com autorização do dono; merge em main não publica o Firebase",
+      "url": "https://gen-lang-client-0194308411.web.app",
+      "versao": "9ad583c · Firebase Hosting publicado em 16/11/2026; frontend com o visual do Claude e API/Auth novos",
+      "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
     {
       "id": "api-producao",
       "nome": "API de produção",
-      "url": "https://clube-livro-api.onrender.com/health",
-      "versao": "644b10e · Docker no Render · publicado em 15/11/2026; push e limpeza ativos",
-      "atualizacao": "Deploy manual do commit aprovado; autodeploy desligado",
+      "url": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health",
+      "versao": "8f0ddd3 · imagem validada no PR 23, incorporado em 9ad583c; revisão clube-livro-api-00002-j59 publicada em 16/11/2026",
+      "atualizacao": "Cloud Build e deploy manual pelo digest no Cloud Run; mínimo zero, máximo uma instância",
       "tom": "ok"
     },
     {
@@ -63,12 +64,12 @@
       "tom": "neutro"
     },
     {
-      "id": "migracao-google",
-      "nome": "Destino Google em validação",
-      "url": "https://console.firebase.google.com/project/gen-lang-client-0194308411/overview",
-      "versao": "Projeto-clube-do-Livro · cópia ensaiada; publicação final pendente",
-      "atualizacao": "Migração autorizada pelo dono; preservar origem até concluir a troca",
-      "tom": "aguardando"
+      "id": "compatibilidade",
+      "nome": "Endereço anterior em compatibilidade",
+      "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
+      "versao": "Mesmo app conectado ao Firebase/Google novo; preserva o armazenamento do navegador neste endereço",
+      "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
+      "tom": "ok"
     }
   ],
   "camadas": [
@@ -92,20 +93,20 @@
       "id": "site",
       "titulo": "Site do app",
       "servico": "Firebase Hosting",
-      "plano": "Gratuito",
+      "plano": "Blaze · franquia e cobrança por uso",
       "coluna": 2,
       "cor": "plum",
       "guarda": [
         "Arquivos do app (HTML, CSS, JavaScript, fontes)"
       ],
-      "detalhe": "Entrega os arquivos do app conectado. Bibliotecas e conteúdo dos usuários ficam no navegador, banco e bucket, não no Hosting. O deploy manual valida a API antes de publicar.",
-      "link": "https://project-acb850f4-4bb8-45de-a84.web.app"
+      "detalhe": "Entrega o frontend conectado e o mapa. API/Auth usam o projeto novo; a cópia no endereço anterior preserva o IndexedDB daquela origem. Livros apenas locais não são enviados automaticamente. O predeploy confere a saúde da API.",
+      "link": "https://gen-lang-client-0194308411.web.app"
     },
     {
       "id": "auth",
       "titulo": "Contas e login",
       "servico": "Firebase Authentication",
-      "plano": "Gratuito",
+      "plano": "Firebase no projeto novo · cobrança conforme uso",
       "coluna": 2,
       "cor": "honey",
       "guarda": [
@@ -113,28 +114,28 @@
         "Login com Google",
         "Estado de confirmação e revogação da conta"
       ],
-      "detalhe": "E-mail/senha e Google estão habilitados. O formulário envia a senha ao Firebase; a API do app não a recebe nem armazena. A API valida a identidade e consulta a conta para recusar sessões revogadas ou desativadas, sem chave de service account.",
-      "link": "https://console.firebase.google.com/project/project-acb850f4-4bb8-45de-a84/authentication"
+      "detalhe": "Google e e-mail/senha habilitados. Contas importadas com UIDs, provedores e hashes preservados; novo login pode ser necessário. API usa ADC e verifica identidade, revogação e desativação sem chave privada. Cadastros na origem antiga foram desabilitados; contas reais não foram excluídas.",
+      "link": "https://console.firebase.google.com/project/gen-lang-client-0194308411/authentication"
     },
     {
       "id": "api",
       "titulo": "API (servidor)",
-      "servico": "Render — serviço clube-livro-api (Docker)",
-      "plano": "Free · pode dormir após 15 min sem uso",
+      "servico": "Cloud Run — clube-livro-api (Docker)",
+      "plano": "Por uso · mínimo zero, máximo uma instância",
       "coluna": 3,
       "cor": "blue",
       "guarda": [
         "Regras e permissões em execução",
-        "Configuração privada em segredos do Render; sem arquivos permanentes de usuários no disco"
+        "Configuração privada no Secret Manager; identidade própria sem arquivo de chave"
       ],
-      "detalhe": "Valida autenticação, associação ativa, bloqueios e moderação antes de acessar banco ou arquivos. Segredos ficam somente no servidor. A manutenção em lotes está habilitada enquanto a API está acordada; não há cron pago. Autodeploy desligado.",
-      "link": "https://clube-livro-api.onrender.com/health"
+      "detalhe": "1 CPU/1 GiB, concorrência 2 e pool de 5 conexões. Valida autenticação, participação, bloqueios e moderação. Cloud SQL via conexão autenticada; mídia GCS privada por ADC. Manutenção habilitada. Imagem reproduzível no Cloud Build; Render antigo suspenso.",
+      "link": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health"
     },
     {
       "id": "banco",
       "titulo": "Banco de dados",
-      "servico": "Neon PostgreSQL 17 — banco clube_do_livro",
-      "plano": "Free · região us-east-1",
+      "servico": "Cloud SQL PostgreSQL 17 — clube-livro-postgres",
+      "plano": "Enterprise mínimo · db-f1-micro, HDD 10 GiB, zona única",
       "coluna": 4,
       "cor": "mint",
       "guarda": [
@@ -145,14 +146,14 @@
         "Notificações, denúncias e moderação",
         "Histórico de auditoria e aceites de convites"
       ],
-      "detalhe": "Migrations aplicadas até a evolução de fotografias e push, antes da publicação dos novos executáveis. A API usa clube_runtime com a matriz de permissões testada: sem DDL, leitura de migrations, exclusão de usuários ou alteração da auditoria. Privilégios CRUD legados e concessões automáticas do proprietário de migrations foram removidos e conferidos; nenhuma permissão extra para capas.",
-      "link": "https://console.neon.tech/app/projects/wandering-block-99253816"
+      "detalhe": "Região us-central1; dezoito migrations preservadas, sem migration nova. Cópia final de 50 tabelas e 140 registros, com checksums e sequências iguais. Papéis de API e executor continuam restritos, sem superusuário/DDL/bypass. Acesso por conector autenticado, sem redes públicas autorizadas. Sete backups, proteção contra exclusão e crescimento automático de disco desligado.",
+      "link": "https://console.cloud.google.com/sql/instances/clube-livro-postgres/overview?project=gen-lang-client-0194308411"
     },
     {
       "id": "midia",
       "titulo": "Fotos, vídeos e EPUBs",
-      "servico": "Neon Object Storage — bucket privado clube-livro-media",
-      "plano": "Free · limites de uso também impostos pelo app",
+      "servico": "Cloud Storage for Firebase — bucket privado padrão",
+      "plano": "STANDARD us-central1 · por uso e cotas do app",
       "coluna": 4,
       "cor": "rose",
       "guarda": [
@@ -161,8 +162,8 @@
         "EPUBs originais guardados na conta",
         "Arquivos EPUB do acervo dos clubes"
       ],
-      "detalhe": "Acesso direto anônimo ao bucket é negado. A API entrega conteúdo público quando explicitamente permitido e conteúdo privado somente a quem tem acesso; fotos privadas do perfil exigem titular ou colega ativo em comum, respeitando bloqueios. As cotas de mídia por conta, EPUBs pessoais e EPUBs por clube são separadas. Gravação, leitura e remoção reais foram validadas na liberação. Desde a liberação EPUB, a API deriva a capa pessoal do original após conferir titularidade, sem novo objeto permanente; o bucket privado atual atende sem mudanças.",
-      "link": ""
+      "detalhe": "41 objetos migrados com mesmas chaves e hash SHA-256 conferido. Bucket com acesso público impedido e regras negando acesso direto por SDK; API usa IAM mínimo. POST assinado restringe chave, MIME, tamanho e validade. Privacidade, bloqueios, cotas e otimização preservados; EPUB pessoal e capa exigem titular. Testes reais de foto e EPUB sintéticos aprovados e removidos. Sem versões ou soft delete de originais temporários.",
+      "link": "https://console.firebase.google.com/project/gen-lang-client-0194308411/storage"
     },
     {
       "id": "github",
@@ -182,44 +183,46 @@
     },
     {
       "id": "recuperacao",
-      "titulo": "Recuperação pré-liberação",
-      "servico": "Branch privada no Neon, criada em 14/11/2026",
-      "plano": "Na franquia Free · sem compute próprio",
+      "titulo": "Recuperação e backups",
+      "servico": "Backups Cloud SQL e bucket operacional privado; origens antigas preservadas",
+      "plano": "Sete backups do banco; cópias operacionais com retenção de trinta dias",
       "coluna": 4,
       "cor": "honey",
       "guarda": [
-        "Pontos de recuperação do banco antes das liberações social e móvel"
+        "Snapshots privados do banco e exportação Auth da migração",
+        "Backups gerenciados do Cloud SQL",
+        "Fotografia antiga do banco e mídia no Neon"
       ],
-      "detalhe": "Três cópias privadas prontas, criadas antes das respectivas liberações em 14 e 15/11/2026, sem compute próprio. A mais recente precede a evolução de fotografias e notificações push. Não incluem gravações posteriores nem substituem backup periódico. Restaurar sobre dados atuais ou excluir cópias exige autorização específica.",
-      "link": "https://console.neon.tech/app/projects/wandering-block-99253816"
+      "detalhe": "Cópias finais verificadas no bucket operacional separado. Identidade de build lê somente o prefixo de fontes, sem acesso a backups. Neon, bucket antigo e contas reais anteriores permanecem preservados; Render suspenso e fila antiga desativada. Recuperação após novas gravações exige conciliação; não restaurar cegamente nem reativar dois escritores. Arquivos novos ainda não têm backup periódico independente.",
+      "link": "https://console.cloud.google.com/storage/browser/gen-lang-client-0194308411-clube-ops?project=gen-lang-client-0194308411"
     },
     {
       "id": "avisos",
-      "titulo": "Executor de notificações em migração",
-      "servico": "GitHub Actions (origem) para Cloud Scheduler/Cloud Run (destino)",
-      "plano": "Gratuito neste repositório público",
+      "titulo": "Executor de notificações",
+      "servico": "Cloud Scheduler e Cloud Run privado — clube-notifications",
+      "plano": "Por uso · mínimo zero e uma instância máxima",
       "coluna": 3,
       "cor": "blue",
       "guarda": [
-        "Fila e tentativas no banco; execução fora do Render",
-        "Configuração privada somente nos ambientes autorizados"
+        "Fila e tentativas no PostgreSQL",
+        "Configuração privada no Secret Manager; identidade SQL própria"
       ],
-      "detalhe": "Fila persistente e identidade SQL restrita preservadas na cópia. O agendamento antigo será interrompido antes da fotografia final; o Scheduler novo só será ativado após validar a cópia final, evitando dois executores graváveis em paralelo. Avisos não carregam textos privados e o recebimento físico segue pendente.",
-      "link": ""
+      "detalhe": "Scheduler a cada quinze minutos com OIDC e audiência exata. IAM permite somente sua identidade invocar o executor; validação adicional no app. 1 CPU/512 MiB, pool de 3, conexões fechadas após cada lote e trava de concorrência. Lote real HTTP 200, sem falhas. Workflow antigo desativado; avisos sem conteúdo privado e recebimento físico pendente.",
+      "link": "https://console.cloud.google.com/cloudscheduler?project=gen-lang-client-0194308411"
     },
     {
       "id": "destino-google",
-      "titulo": "Destino da migração",
-      "servico": "Firebase Hosting/Auth/Storage, Cloud Run, Cloud SQL e Scheduler",
-      "plano": "Orçamento autorizado de até R$ 70/mês; alertas, sem corte automático",
+      "titulo": "Projeto e entregas no Google",
+      "servico": "Projeto-clube-do-Livro · Cloud Build, Artifact Registry e Secret Manager",
+      "plano": "Até R$ 70/mês autorizados · orçamento com alertas, sem bloqueio automático",
       "coluna": 4,
       "cor": "mint",
       "guarda": [
-        "Cópia ensaiada do PostgreSQL e dos arquivos",
-        "Identidades importadas com UIDs preservados",
-        "Configurações privadas no Secret Manager"
+        "Imagens construídas a partir de commits aprovados",
+        "Configurações privadas com acesso separado por identidade",
+        "Alertas de orçamento e limites de capacidade"
       ],
-      "detalhe": "Destino gen-lang-client-0194308411, região us-central1, separado da instalação antiga. Ensaio do banco e comparação de arquivos aprovados; login da conta sintética com senha importada conferido. API e site só serão registrados como produção depois da validação. Nenhuma conta real foi excluída.",
+      "detalhe": "Projeto gen-lang-client-0194308411, região us-central1. API, executor e build têm identidades distintas, sem arquivos de chave. Build não acessa banco, dados de usuários, backups ou configurações privadas do app. Alertas em 50%, 80%, 100% e previsão de ultrapassagem; acompanhar consumo.",
       "link": "https://console.firebase.google.com/project/gen-lang-client-0194308411/overview"
     }
   ],
@@ -230,9 +233,9 @@
     { "de": "api", "para": "auth", "texto": "valida identidade e estado atual da conta" },
     { "de": "api", "para": "banco", "texto": "lê e grava dados" },
     { "de": "api", "para": "midia", "texto": "processa e entrega arquivos conforme autorização" },
-    { "de": "banco", "para": "recuperacao", "texto": "cópia isolada anterior à liberação" },
+    { "de": "banco", "para": "recuperacao", "texto": "backups gerenciados e fotografia privada da migração" },
     { "de": "github", "para": "site", "texto": "código aprovado; publicação manual no Firebase" },
-    { "de": "github", "para": "api", "texto": "commit aprovado; deploy manual no Render" },
+    { "de": "github", "para": "api", "texto": "commit aprovado; Cloud Build e deploy manual no Cloud Run" },
     {"de": "avisos", "para": "banco", "texto": "ativo: fila, permissões e lembretes"},
     {"de": "avisos", "para": "pessoa", "texto": "ativo: aviso genérico após escolha explícita"},
     {"de": "avisos", "para": "api", "texto": "ativo: limpeza limitada autenticada"}
@@ -241,19 +244,19 @@
     { "o_que": "Leituras de quem usa sem conta", "onde": "pessoa", "privacidade": "Só no aparelho", "copia": "Backup JSON exportado pelo Perfil; originais e mídias baixados separadamente" },
     { "o_que": "EPUB original e capa guardados neste navegador", "onde": "pessoa", "privacidade": "Cópias locais separadas por visitante ou conta", "copia": "IndexedDB; guardar no navegador não equivale a enviar o arquivo para a nuvem" },
     { "o_que": "E-mail, senha e login com Google", "onde": "auth", "privacidade": "Privado", "copia": "Gerenciado pelo Google" },
-    { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Perfil público por escolha; colega ativo em comum pode ver somente cartão mínimo e clubes compartilhados", "copia": "Persistência no banco; a cópia pré-liberação não cobre mudanças posteriores" },
+    { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Perfil público por escolha; colega ativo em comum pode ver somente cartão mínimo e clubes compartilhados", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON pessoal e persistência no banco; arquivos originais não entram no JSON" },
     { "o_que": "Aparência do app e controles do leitor", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "Preferências no navegador e, com conta, no banco. Fontes, paginação e entrelinha do leitor publicadas em 644b10e, sem migration; sincronização conferida em contextos locais independentes." },
-    { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Metadados de descoberta por escolha do clube; membros e gestão conforme papel; convites restritos aos autorizados", "copia": "Banco" },
-    { "o_que": "Mural, fórum, encontros e álbuns dos clubes", "onde": "banco", "privacidade": "Só membros ativos", "copia": "Banco" },
-    { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Públicos enquanto perfil e conteúdo estiverem disponíveis; bloqueios e moderação são revalidados", "copia": "Banco" },
-    { "o_que": "Notificações", "onde": "banco", "privacidade": "Privado do destinatário", "copia": "Rotina habilitada remove itens com mais de 90 dias em lotes, enquanto a API está acordada" },
+    { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Metadados de descoberta por escolha do clube; membros e gestão conforme papel; convites restritos aos autorizados", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
+    { "o_que": "Mural, fórum, encontros e álbuns dos clubes", "onde": "banco", "privacidade": "Só membros ativos", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
+    { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Públicos enquanto perfil e conteúdo estiverem disponíveis; bloqueios e moderação são revalidados", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
+    { "o_que": "Notificações", "onde": "banco", "privacidade": "Privado do destinatário", "copia": "Manutenção da API e executor Google com limpeza autenticada em lotes, mantendo a retenção do app" },
     { "o_que": "Fotos e capas de perfil", "onde": "midia", "privacidade": "Titular; foto pública por escolha do perfil ou para colegas ativos em comum, respeitando bloqueios; capa só com perfil público", "copia": "Persistência no bucket privado; troca ou remoção revoga imediatamente o arquivo anterior" },
     { "o_que": "Fotos e vídeos de publicações e álbuns", "onde": "midia", "privacidade": "Permissões da publicação ou álbum; copiar foto de clube para a comunidade exige autorização explícita", "copia": "Persistência no bucket; arquivos não entram no backup JSON" },
     { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Não entram no backup JSON; baixe o original separadamente. O envio de acervo ao clube exige origem e autorização." },
     { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" },
-    { "o_que": "Ponto de recuperação anterior à liberação", "onde": "recuperacao", "privacidade": "Privado no mesmo projeto Neon", "copia": "Cópias de 14/11/2026 antes das liberações social e móvel; sem escritas posteriores; mantidas até decisão do dono" },
-    {"o_que": "Assinaturas de aparelhos e fila push", "onde": "banco", "privacidade": "Privado; leitura e envio revalidam preferências, bloqueios e participação. Avisos externos não carregam conteúdo privado.", "copia": "Executor externo ativado e conferido sem falhas. Retenção e revogação implementadas; recebimento físico ainda pendente."},
+    { "o_que": "Cópias de recuperação e fotografia da migração", "onde": "recuperacao", "privacidade": "Privadas; bucket operacional Google e origens antigas preservadas", "copia": "Dump e Auth finais verificados; fontes de build isoladas dos backups. Cloud SQL tem sete backups gerenciados; não sobrescrever dados novos sem conciliação." },
+    {"o_que": "Assinaturas de aparelhos e fila push", "onde": "banco", "privacidade": "Privado; leitura e envio revalidam preferências, bloqueios e participação. Avisos externos não carregam conteúdo privado.", "copia": "Executor Cloud Run privado e Scheduler ativos, com lote real aprovado; recebimento físico ainda pendente."},
     {"o_que": "Originais temporários de fotografias", "onde": "midia", "privacidade": "POST assinado por arquivo, chave, tipo e tamanho; bucket continua privado.", "copia": "Sem original permanente: versões otimizadas e cota da conta; limpeza imediata e após expiração, com diagnóstico e limite de temporários."}
   ],
   "fluxoPublicacao": [
@@ -264,7 +267,7 @@
     { "titulo": "CI valida", "onde": "GitHub Actions — Validar aplicação e API", "texto": "Roda todos os testes, builds, imagem Docker e auditoria de segurança.", "modo": "auto" },
     { "titulo": "Você aprova o merge", "onde": "Conversa ou GitHub", "texto": "O agente incorpora o PR após o seu sim. Uma autorização já concedida não precisa ser pedida novamente para a mesma ação.", "modo": "voce" },
     { "titulo": "Prévia e mapa atualizam", "onde": "GitHub Pages", "texto": "Cada push em main republica a prévia (demonstração) e este mapa.", "modo": "auto" },
-    { "titulo": "Liberação em produção", "onde": "Render (API) e Firebase Hosting (site)", "texto": "Com autorização: conferir o commit e CI; criar a cópia de recuperação; aplicar migrations e grants como proprietário; configurar segredos; publicar e testar API; só depois publicar o site conectado. Não fazer downgrade cego do banco.", "modo": "aprovacao" },
+    { "titulo": "Liberação em produção", "onde": "Cloud Build, Cloud Run, Cloud SQL e Firebase Hosting", "texto": "Com autorização: conferir commit e CI, preservar recuperação, aplicar migrations/grants como proprietário quando houver, compilar imagem sem segredos, publicar API/executor pelo digest e testar. Publicar o frontend depois, preservando limites, identidades, CORS e Scheduler. Merge não dispara produção.", "modo": "aprovacao" },
     { "titulo": "Validar e registrar o que foi publicado", "onde": "API, Firebase Hosting e mapa", "texto": "Testar acesso e arquivos, limpar somente dados sintéticos autorizados e preservar a auditoria. Atualizar no mapa as versões realmente publicadas e o histórico; mudanças futuras aguardam nova aprovação.", "modo": "auto" }
   ],
   "jornadas": [
@@ -349,6 +352,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-16",
+      "autor": "Codex",
+      "titulo": "Migração integral publicada no Firebase e Google Cloud",
+      "resumo": "PR 23 incorporado em 9ad583c com CI aprovado. Site principal e compatibilidade publicados; API e executor no Cloud Run, PostgreSQL no Cloud SQL e arquivos privados no Firebase Storage. Cópia final de 50 tabelas, 140 registros e 41 arquivos conferida; quatro contas reais preservadas. Scheduler testado com HTTP 200; conta/arquivos sintéticos removidos e sessão excluída recusada. Render e fila antigos pausados; recuperação e alertas de R$ 70 mantidos.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/24"
+    },
     {
       "data": "2026-11-16",
       "autor": "Codex",

@@ -2,6 +2,12 @@
 
 Destino autorizado: `gen-lang-client-0194308411`, nome de exibição `Projeto-clube-do-Livro`, região `us-central1`. O dono autorizou até R$ 70/mês para preservar PostgreSQL. O identificador do projeto foi preservado.
 
+## Resultado da troca — 16/11/2026
+
+PR 23 incorporado em `9ad583c` com CI aprovado. [Site novo](https://gen-lang-client-0194308411.web.app/#/app) e [compatibilidade](https://project-acb850f4-4bb8-45de-a84.web.app/#/app) publicados usando API/Auth do destino. A API está na revisão `clube-livro-api-00002-j59`; o executor privado na `clube-notifications-00001-sxb`. Imagem construída de `8f0ddd3`, digest e verificações em [PUBLICACAO.md](../PUBLICACAO.md).
+
+A cópia final confirmou as mesmas 50 tabelas, 140 registros, sequências e 41 objetos do ensaio. Contas reais preservadas; fixture de senha, seus registros e objetos removidos, com token excluído recusado. Lote Scheduler HTTP 200 e zero falhas. Render suspenso, workflow antigo desativado e novos cadastros no Auth anterior bloqueados; origens mantidas para recuperação.
+
 ## Arquitetura e custo
 
 - Firebase Hosting: frontend conectado e mapa em `/mapa/`.
@@ -9,7 +15,7 @@ Destino autorizado: `gen-lang-client-0194308411`, nome de exibição `Projeto-cl
 - Cloud Run: API usando a imagem Docker do repositório, identidade própria, mínimo zero, máximo uma instância, concorrência 2, 1 CPU/1 GiB e pool de 5 conexões.
 - Cloud SQL PostgreSQL 17: Enterprise, `db-f1-micro`, zona única, HDD de 10 GiB, sem aumento automático de disco, proteção contra exclusão e sete backups. A configuração inicial é pequena e não inclui alta disponibilidade.
 - Cloud Storage for Firebase: bucket privado padrão, sem ACL pública, sem versões/soft delete de originais temporários. Upload direto por política POST V4 limita chave, MIME, tamanho exato e validade; geração da leitura fixada, CRC32C e limites de bytes preservados.
-- Cloud Scheduler: mesmo intervalo aproximado de quinze minutos; chama executor HTTP privado no Cloud Run. IAM e token Google com audiência e identidade exatas são conferidos antes de tocar na fila. Uma identidade SQL separada continua sem acesso aos textos privados. O executor abre/fecha o pool por lote e solicita limpeza limitada à API.
+- Cloud Scheduler: executor com 1 CPU/512 MiB (mínimo do ambiente Gen2), mínimo zero, máximo uma instância e pool de 3 conexões. Mesmo intervalo aproximado de quinze minutos; chama executor HTTP privado no Cloud Run. IAM e token Google com audiência e identidade exatas são conferidos antes de tocar na fila. Uma identidade SQL separada continua sem acesso aos textos privados. O executor abre/fecha o pool por lote e solicita limpeza limitada à API.
 - Artifact Registry e Cloud Build: imagem do commit revisado, sem segredos no código-fonte enviado. A identidade de build lê somente o prefixo de fontes do bucket operacional, sem acesso aos backups, banco, mídia ou segredos da aplicação.
 - Secret Manager: configurações privadas fora de `VITE_*`, código e mapa. Identidades de serviço sem arquivos de chave.
 

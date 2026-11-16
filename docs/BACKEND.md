@@ -1,5 +1,7 @@
 # Aplicativo, autenticação e espaços de leitura
 
+> Produção desde 16/11/2026: Firebase Hosting/Auth/Storage e Google Cloud Run/SQL/Scheduler no projeto `gen-lang-client-0194308411`. Veja [publicação atual](PUBLICACAO.md) e [migração/recuperação](migracao/FIREBASE_GOOGLE.md). As seções iniciais abaixo documentam a primeira entrega; capacidades de mídia/EPUB evoluíram nas entregas posteriores, registradas no mapa.
+
 ## Entrega funcional
 
 O app publicado abre em `/app`, sem exigir cadastro ou participação em clube. Biblioteca, leitor, progresso, avaliações, histórico, agenda, fotos dos encontros, anotações, indicações, sorteio, perfil e aparência estão disponíveis no espaço pessoal. Visitantes persistem seus registros em IndexedDB neste navegador, com exportação/importação de backup JSON no Perfil. A aparência e a meta anual ficam neste aparelho.

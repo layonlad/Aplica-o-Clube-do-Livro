@@ -1,6 +1,6 @@
 # Clube do Livro
 
-Aplicação mobile-first para leitura individual e clubes. [Abrir aplicativo](https://project-acb850f4-4bb8-45de-a84.web.app). A entrada é livre, sem cadastro e sem exigir participação em clube.
+Aplicação mobile-first para leitura individual e clubes. [Abrir aplicativo](https://gen-lang-client-0194308411.web.app). A entrada é livre, sem cadastro e sem exigir participação em clube.
 
 Há dois modos explícitos:
 
@@ -63,4 +63,4 @@ Uma galeria de capturas reais da interface está disponível em [`docs/PREVIA.md
 - Remoção de membro bloqueia imediatamente novas operações; não exclui a conta Firebase.
 - Credenciais privadas somente no servidor, fora do repositório. Variáveis de frontend contêm apenas configuração pública.
 - Cache privado desabilitado; service worker limitado ao modo demonstrativo.
-- Firebase Hosting/Auth, Render Free e Neon Free estão configurados. [Publicação e operação](docs/PUBLICACAO.md).
+- Produção no projeto Google `gen-lang-client-0194308411` (Projeto-clube-do-Livro): Firebase Hosting/Auth/Storage, Cloud Run, Cloud SQL PostgreSQL e Cloud Scheduler. [Publicação e operação](docs/PUBLICACAO.md) e [migração/recuperação](docs/migracao/FIREBASE_GOOGLE.md).
