@@ -354,7 +354,7 @@
       "autor": "Codex",
       "titulo": "Migração integral para Firebase/Google provisionada e ensaiada",
       "resumo": "Projeto de destino renomeado e Firebase ativado, com faturamento confirmado e orçamento de R$ 70 autorizado. PostgreSQL mínimo, identidades restritas, bucket privado, build e alertas configurados. Ensaio compara 50 tabelas, 140 registros e sequências; 41 arquivos verificados por hash. Contas importadas com UIDs preservados e senha sintética testada. Origem continua ativa; publicação e cópia final em preparação.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/23"
     },
     {
       "data": "2026-11-15",
