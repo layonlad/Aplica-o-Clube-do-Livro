@@ -6,8 +6,28 @@ export function DemoBadge() {
   return <span className="demo-badge">Demonstração</span>
 }
 
-export function Button({ variant = 'primary', className = '', ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'accent' }) {
-  return <button className={`button button--${variant} ${className}`} {...props} />
+export function Button({ variant = 'primary', className = '', onPointerDown, onAnimationEnd, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'accent' }) {
+  return (
+    <button
+      className={`button button--${variant} ${className}`}
+      onPointerDown={(event) => {
+        // Onda de toque a partir do ponto tocado/clicado (CSS em components.css).
+        const target = event.currentTarget
+        const rect = target.getBoundingClientRect()
+        target.style.setProperty('--press-x', `${event.clientX - rect.left}px`)
+        target.style.setProperty('--press-y', `${event.clientY - rect.top}px`)
+        target.classList.remove('is-pressed')
+        void target.offsetWidth
+        target.classList.add('is-pressed')
+        onPointerDown?.(event)
+      }}
+      onAnimationEnd={(event) => {
+        if (event.animationName === 'press-wave') event.currentTarget.classList.remove('is-pressed')
+        onAnimationEnd?.(event)
+      }}
+      {...props}
+    />
+  )
 }
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {

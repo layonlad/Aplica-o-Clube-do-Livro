@@ -131,6 +131,7 @@ export const defaultAppearance: Appearance = {
   density: 'regular',
   lineHeight: 'normal',
   buttons: 'pill',
+  coverBackdrop: false,
 }
 
 /** Completa preferências antigas (sem os campos novos) e mantém a ordem das chaves, para comparar com segurança. */
@@ -147,6 +148,7 @@ export function normalizeAppearance(value: Appearance): Appearance {
     density: value.density ?? 'regular',
     lineHeight: value.lineHeight ?? 'normal',
     buttons: value.buttons ?? 'pill',
+    coverBackdrop: value.coverBackdrop ?? false,
   }
 }
 export function sameAppearance(a: Appearance, b: Appearance) {

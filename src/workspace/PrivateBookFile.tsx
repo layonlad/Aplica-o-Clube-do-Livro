@@ -2,6 +2,7 @@ import { localEpub, removeEpub } from './epub-storage'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
+import { announceBookFiles, uploadOriginal } from './book-files'
 import { Button } from '../components/ui'
 interface StoredFile {
   id: string
@@ -30,21 +31,14 @@ export function PrivateBookFile({ bookId }: { bookId: string }) {
   async function upload(file: File) {
     if (!user) return
     if (file.size > 10000000 || !/\.epub$/i.test(file.name)) {
-      setError('Selecione um EPUB de até 10 MB.')
+      setError('Escolha um EPUB de até 10 MB.')
       return
     }
     setBusy(true)
     setError('')
     try {
-      const bytes = new Uint8Array(await file.arrayBuffer())
-      let binary = ''
-      for (let i = 0; i < bytes.length; i += 16384)
-        binary += String.fromCharCode(...bytes.subarray(i, i + 16384))
-      const item = await apiRequest<StoredFile>(user, `/me/book-files/${bookId}`, 'POST', {
-        filename: file.name,
-        data: btoa(binary),
-      })
-      setInfo({ enabled: true, items: [item] })
+      const item = (await uploadOriginal(user, bookId, file, file.name)) as StoredFile | null
+      if (item) setInfo({ enabled: true, items: [item] })
     } catch (err) {
       setError(readableError(err))
     } finally {
@@ -74,7 +68,7 @@ export function PrivateBookFile({ bookId }: { bookId: string }) {
       link.click()
       setTimeout(() => URL.revokeObjectURL(href), 1000)
     } catch {
-      setError('Não foi possível baixar o arquivo. Confira sua sessão e tente novamente.')
+      setError('Não deu para baixar agora. Tente de novo.')
     } finally {
       setBusy(false)
     }
@@ -86,10 +80,11 @@ export function PrivateBookFile({ bookId }: { bookId: string }) {
     try {
       const result = await apiRequest<{ purged: boolean }>(user, `/me/files/${file.id}`, 'DELETE')
       await removeEpub(user.uid, bookId)
+      announceBookFiles()
       setInfo({ enabled: true, items: [] })
       setConfirm(false)
       if (!result.purged)
-        setError('Acesso ao arquivo revogado. A remoção física será repetida pelo operador.')
+        setError('Arquivo removido. A limpeza final termina em instantes.')
     } catch (err) {
       setError(readableError(err))
     } finally {
@@ -98,50 +93,47 @@ export function PrivateBookFile({ bookId }: { bookId: string }) {
   }
   return (
     <details className="library-discovery" onToggle={(event) => setOpen(event.currentTarget.open)}>
-      <summary>Arquivo EPUB original · privado</summary>
-      <p>
-        O arquivo original pertence somente à sua conta. Participar de um clube não dá aos outros
-        membros acesso a ele.
-      </p>
-      {open && <LocalOriginal bookId={bookId} />}{' '}
+      <summary>Arquivo do livro</summary>
+      {open && !user?.emailVerified && <LocalOriginal bookId={bookId} />}
       {!user?.emailVerified ? (
-        <p>
-          Entre com uma conta confirmada para guardar o arquivo original entre aparelhos. A leitura
-          de texto local continua disponível sem cadastro.
+        <p className="t-caption">
+          <a href="#/account">Entre na sua conta</a> para ter este livro em qualquer aparelho.
         </p>
       ) : !info && !error ? (
-        <p role="status">Conferindo arquivo privado…</p>
+        <p role="status" className="t-caption">Conferindo…</p>
       ) : info && !info.enabled ? (
-        <p>O armazenamento de arquivos originais ainda não está habilitado neste ambiente.</p>
+        <p className="t-caption">Indisponível neste ambiente.</p>
       ) : info?.items.length ? (
         info.items.map((file) => (
-          <div key={file.id}>
-            <p>
-              {file.filename} · {(file.byteSize / 1000000).toFixed(1)} MB
+          <div key={file.id} className="book-file">
+            <p className="t-caption">
+              Salvo na conta · {(file.byteSize / 1000000).toFixed(1)} MB
             </p>
-            <Button disabled={busy} variant="secondary" onClick={() => void download(file)}>
-              Baixar meu EPUB
-            </Button>
-            {confirm ? (
-              <>
-                <p>Excluir este arquivo original? A versão de texto e suas anotações permanecem.</p>
-                <Button disabled={busy} variant="danger" onClick={() => void remove(file)}>
-                  Confirmar exclusão do arquivo
-                </Button>
-                <Button variant="ghost" onClick={() => setConfirm(false)}>
-                  Cancelar
-                </Button>
-              </>
-            ) : (
-              <Button disabled={busy} variant="ghost" onClick={() => setConfirm(true)}>
-                Excluir arquivo original
+            <div className="workspace-actions">
+              <Button disabled={busy} variant="secondary" onClick={() => void download(file)}>
+                Baixar EPUB
               </Button>
-            )}
+              {confirm ? (
+                <>
+                  <Button disabled={busy} variant="danger" onClick={() => void remove(file)}>
+                    Apagar arquivo
+                  </Button>
+                  <Button variant="ghost" onClick={() => setConfirm(false)}>
+                    Cancelar
+                  </Button>
+                </>
+              ) : (
+                <Button disabled={busy} variant="ghost" onClick={() => setConfirm(true)}>
+                  Apagar arquivo
+                </Button>
+              )}
+            </div>
+            {confirm && <p className="t-caption">Suas anotações e o progresso continuam.</p>}
           </div>
         ))
       ) : info?.enabled ? (
         <label className="file-button">
-          Guardar EPUB original
+          Enviar EPUB
           <input
             type="file"
             accept=".epub"
@@ -154,7 +146,7 @@ export function PrivateBookFile({ bookId }: { bookId: string }) {
           />
         </label>
       ) : null}
-      {busy && <p role="status">Transferindo arquivo privado…</p>}
+      {busy && <p role="status" className="t-caption">Enviando…</p>}
       {error && <p role="alert">{error}</p>}
     </details>
   )
@@ -176,7 +168,7 @@ function LocalOriginal({ bookId }: { bookId: string }) {
   if (!file) return null
   return (
     <div>
-      <p>Cópia privada neste navegador: {file.filename}</p>
+      <p className="t-caption">Salvo neste aparelho</p>
       <Button
         variant="secondary"
         onClick={() => {
@@ -188,7 +180,7 @@ function LocalOriginal({ bookId }: { bookId: string }) {
           setTimeout(() => URL.revokeObjectURL(href), 1000)
         }}
       >
-        Baixar EPUB deste navegador
+        Baixar EPUB
       </Button>
     </div>
   )

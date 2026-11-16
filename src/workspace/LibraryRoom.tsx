@@ -1,17 +1,20 @@
 import { ClubBookFile } from '../clubs/ClubBookFile'
 import { PrivateBookCover } from './PrivateBookCover'
 import { useAuth } from '../auth/AuthProvider'
-import { apiRequest } from '../auth/api'
-
-import { saveEpub } from './epub-storage'
-import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { BookOpen, Heart, Search } from 'lucide-react'
+import { apiRequest, readableError } from '../auth/api'
+import { localEpub, saveEpub } from './epub-storage'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { BookOpen, BookPlus, Heart, ImageIcon, MoreHorizontal, Plus, Search, Upload } from 'lucide-react'
+import { useTheme } from '../app/ThemeProvider'
+import { BOOK_FILES_EVENT, fetchUsage, uploadOriginal, type BookFilesUsage } from './book-files'
+import { openBook } from './BookOpener'
+import { BookShare } from './BookShare'
 import type { z } from 'zod'
 import type { bookMetadataSchema, WorkspaceState } from '../../server/src/workspace-model'
 import { preferencesSchema } from '../../server/src/workspace-model'
 import type { CatalogEntry } from '../../server/src/catalog'
-import { Button, Card, ProgressBar } from '../components/ui'
+import { Button, Card } from '../components/ui'
 import type { ImportedBook } from './import-book'
 import { useWorkspace } from './WorkspaceProvider'
 import './library-room.css'
@@ -38,8 +41,9 @@ export function LibraryRoom() {
   const { user } = useAuth(),
     [params] = useSearchParams(),
     sample = params.get('sample')
-  const [originalFile, setOriginalFile] = useState<File | null>(null),
-    [cloudOriginal, setCloudOriginal] = useState(true)
+  const [originalFile, setOriginalFile] = useState<File | null>(null)
+  const { appearance, saveAppearance } = useTheme()
+  const [usage, setUsage] = useState<BookFilesUsage | null>(null)
   const { snapshot, act, busy, scope } = useWorkspace()
   const { state, reading, role } = snapshot!
   const preferences = preferencesSchema.parse(snapshot!.preferences)
@@ -68,24 +72,13 @@ export function LibraryRoom() {
         file.name,
         cover ? new Blob([new Uint8Array(cover.bytes)], { type: cover.mime }) : undefined,
       )
-      if (user?.emailVerified && cloudOriginal) {
-        const bytes = new Uint8Array(await file.arrayBuffer())
-        let binary = ''
-        for (let index = 0; index < bytes.length; index += 16384)
-          binary += String.fromCharCode(...bytes.subarray(index, index + 16384))
-        await apiRequest(user, `/me/book-files/${id}`, 'POST', {
-          filename: file.name,
-          data: btoa(binary),
-        })
-        setMessage('Livro e EPUB privado guardados na sua conta.')
-      } else setMessage('Livro e EPUB guardados neste navegador.')
+      // Com conta, o EPUB vai para a conta uma vez só e fica disponível em qualquer aparelho.
+      if (user?.emailVerified) {
+        await uploadOriginal(user, id, file, file.name)
+        setMessage('Livro salvo na sua conta.')
+      } else setMessage('Livro salvo neste aparelho.')
     } catch (error) {
-      setMessage(
-        'O livro foi adicionado, mas o original não foi guardado por completo: ' +
-          (error instanceof Error
-            ? error.message
-            : 'Não foi possível guardar o arquivo neste navegador.'),
-      )
+      setMessage('O livro foi adicionado, mas o arquivo não foi salvo na conta: ' + readableError(error))
     }
   }
   async function save(event: FormEvent) {
@@ -114,7 +107,7 @@ export function LibraryRoom() {
       } finally {
         setImporting(false)
       }
-    } else setMessage(editing ? 'Dados do livro atualizados.' : 'Livro adicionado à biblioteca.')
+    } else setMessage(editing ? 'Dados atualizados.' : 'Livro adicionado.')
     setShow(false)
     setEditing(null)
     setDraft(blank())
@@ -141,7 +134,7 @@ export function LibraryRoom() {
       setOriginalFile(/\.epub$/i.test(file.name) ? stableFile : null)
       setEditing(null)
       setShow(true)
-      setMessage('Confira os dados extraídos antes de adicionar o livro.')
+      setMessage('')
     } catch (error) {
       setMessage((error as Error).message)
     } finally {
@@ -169,6 +162,44 @@ export function LibraryRoom() {
       live = false
     }
   }, [sample])
+  // Livros importados antes (só neste aparelho) sobem sozinhos para a conta, um de cada vez.
+  const syncing = useRef(false)
+  useEffect(() => {
+    if (!user?.emailVerified || scope !== 'personal') return
+    let live = true
+    const load = () =>
+      void fetchUsage(user)
+        .then((value) => live && setUsage(value))
+        .catch(() => {})
+    load()
+    window.addEventListener(BOOK_FILES_EVENT, load)
+    return () => {
+      live = false
+      window.removeEventListener(BOOK_FILES_EVENT, load)
+    }
+  }, [user?.uid, user?.emailVerified, scope])
+  useEffect(() => {
+    if (!user?.emailVerified || scope !== 'personal' || !usage?.enabled || syncing.current) return
+    const missing = state.books.filter((book) => !usage.bookIds.includes(book.id))
+    if (!missing.length || usage.used >= usage.limit) return
+    syncing.current = true
+    void (async () => {
+      try {
+        let room = usage.limit - usage.used
+        for (const book of missing) {
+          if (room <= 0) break
+          const record = await localEpub(user.uid, book.id).catch(() => undefined)
+          if (!record) continue
+          await uploadOriginal(user, book.id, record.file, record.filename)
+          room--
+        }
+      } catch {
+        /* tenta de novo na próxima visita */
+      } finally {
+        syncing.current = false
+      }
+    })()
+  }, [usage, state.books.length])
   async function search(event: FormEvent) {
     event.preventDefault()
     setSearching(true)
@@ -210,15 +241,36 @@ export function LibraryRoom() {
     <div className="library-room stack-lg">
       <header className="library-heading">
         <div>
-          <span className="eyebrow">
-            {scope === 'personal' ? 'MEU ESPAÇO DE LEITURA' : 'ACERVO COMPARTILHADO'}
-          </span>
-          <h1>Sua biblioteca</h1>
-          <p>Uma estante para cada capítulo da sua vida.</p>
-          <Link to="/app/downloads">Arquivos autorizados e leituras de demonstração →</Link>
+          <h1>{scope === 'personal' ? 'Sua biblioteca' : 'Leituras do clube'}</h1>
+          {usage?.enabled && (
+            <p className="library-usage" aria-label={`${usage.used} de ${usage.limit} livros na sua conta`}>
+              <span className="library-usage__bar" aria-hidden="true">
+                <span style={{ width: `${Math.min(100, (usage.used / usage.limit) * 100)}%` }} />
+              </span>
+              {usage.used} de {usage.limit} livros na conta
+            </p>
+          )}
         </div>
-        {['owner', 'admin'].includes(role) && (
+      </header>
+      {['owner', 'admin'].includes(role) && (
+        <div className="library-toolbar">
+          <label className="button button--primary library-import">
+            <Upload size={18} aria-hidden="true" />
+            {importing ? 'Abrindo…' : 'Importar EPUB'}
+            <input
+              aria-label="Importar EPUB ou TXT"
+              type="file"
+              accept=".epub,.txt"
+              disabled={importing || busy}
+              onChange={(e) => {
+                const item = e.target.files?.[0]
+                if (item) void file(item)
+                e.target.value = ''
+              }}
+            />
+          </label>
           <Button
+            variant="secondary"
             onClick={() => {
               setEditing(null)
               setOriginalFile(null)
@@ -226,19 +278,32 @@ export function LibraryRoom() {
               setShow(!show)
             }}
           >
-            Adicionar livro
+            <BookPlus size={18} aria-hidden="true" /> Adicionar livro
           </Button>
-        )}
-      </header>
+          {scope === 'personal' && (
+            <label className="switch-chip">
+              <input
+                type="checkbox"
+                checked={!!appearance.coverBackdrop}
+                onChange={(e) => {
+                  const next = { ...appearance, coverBackdrop: e.target.checked }
+                  saveAppearance(next)
+                  // Com conta, a escolha vai junto para os outros aparelhos.
+                  if (user?.emailVerified)
+                    void apiRequest(user, '/me/appearance', 'POST', { appearance: next }).catch(() => {})
+                }}
+              />
+              <ImageIcon size={17} aria-hidden="true" />
+              Capa como fundo
+            </label>
+          )}
+        </div>
+      )}
       {['owner', 'admin'].includes(role) && (
         <details className="library-discovery">
           <summary>
-            <Search size={17} /> Buscar um título no catálogo
+            <Search size={17} /> Buscar no catálogo
           </summary>
-          <p>
-            A pesquisa envia o título ou autor informado à Open Library. Os resultados são
-            metadados; arquivos e direitos de distribuição são separados.
-          </p>
           <form className="workspace-actions" onSubmit={search}>
             <input
               aria-label="Pesquisar catálogo"
@@ -301,7 +366,7 @@ export function LibraryRoom() {
                       })
                       setEditing(null)
                       setShow(true)
-                      setMessage('Confira a edição e salve os metadados na sua biblioteca.')
+                      setMessage('')
                     }}
                   >
                     Adicionar à minha biblioteca
@@ -312,27 +377,11 @@ export function LibraryRoom() {
           </div>
         </details>
       )}
-      {['owner', 'admin'].includes(role) && (
-        <label className="file-button">
-          {importing ? 'Abrindo arquivo…' : 'Importar EPUB ou TXT'}
-          <input
-            aria-label="Importar EPUB ou TXT"
-            type="file"
-            accept=".epub,.txt"
-            disabled={importing || busy}
-            onChange={(e) => {
-              const item = e.target.files?.[0]
-              if (item) void file(item)
-              e.target.value = ''
-            }}
-          />
-        </label>
-      )}
       {message && <p role="status">{message}</p>}
       {show && (
         <Card>
           <form className="workspace-form" onSubmit={save}>
-            <h2>{editing ? 'Editar metadados' : 'Adicionar à biblioteca'}</h2>
+            <h2>{editing ? 'Editar livro' : originalFile ? 'Confira e salve' : 'Novo livro'}</h2>
             <label>
               Título
               <input
@@ -447,21 +496,7 @@ export function LibraryRoom() {
                 />
               </label>
             )}
-            {originalFile && scope === 'personal' && user?.emailVerified && (
-              <label className="workspace-check">
-                <input
-                  type="checkbox"
-                  checked={cloudOriginal}
-                  onChange={(e) => setCloudOriginal(e.target.checked)}
-                />
-                Guardar também o EPUB original no armazenamento privado da minha conta
-              </label>
-            )}
-            <small>
-              Importe somente conteúdo que você pode usar
-              {scope !== 'personal' ? ' e compartilhar com este clube' : ''}. O arquivo original não
-              é enviado ao catálogo público.
-            </small>
+            <small>Importe só livros que você tem direito de usar.</small>
             <div className="workspace-actions">
               <Button disabled={busy || importing}>Salvar livro</Button>
               <Button variant="ghost" type="button" onClick={() => setShow(false)}>
@@ -497,7 +532,9 @@ export function LibraryRoom() {
         ))}
       </div>
       <details className="library-discovery">
-        <summary>Organizar estantes personalizadas</summary>
+        <summary>
+          <Plus size={16} aria-hidden="true" /> Estantes
+        </summary>
         <form
           className="workspace-actions"
           onSubmit={(e) => {
@@ -529,7 +566,7 @@ export function LibraryRoom() {
           </div>
         ))}
       </details>
-      <p className="library-count">{books.length} título(s) nesta estante</p>
+      <p className="library-count">{books.length} {books.length === 1 ? 'livro' : 'livros'}</p>
       <div className="library-book-grid">
         {books.map((book) => (
           <BookItem
@@ -553,16 +590,8 @@ export function LibraryRoom() {
       {!books.length && (
         <div className="library-empty">
           <BookOpen size={36} />
-          <h2>
-            {state.books.length
-              ? 'Sua próxima leitura pode estar em outra estante'
-              : 'Uma estante pronta para suas histórias'}
-          </h2>
-          <p>
-            {state.books.length
-              ? 'Experimente outro filtro ou adicione um título.'
-              : 'Cadastre um livro físico ou importe um EPUB para começar.'}
-          </p>
+          <h2>{state.books.length ? 'Nada nesta estante' : 'Sua estante está vazia'}</h2>
+          <p>{state.books.length ? 'Tente outro filtro.' : 'Importe um EPUB para começar.'}</p>
         </div>
       )}
     </div>
@@ -570,184 +599,178 @@ export function LibraryRoom() {
 }
 function BookItem({ book, onEdit }: { book: Book; onEdit: () => void }) {
   const { snapshot, act, busy, scope, addToPersonal } = useWorkspace()
+  const navigate = useNavigate()
   const [added, setAdded] = useState(false)
   const [confirm, setConfirm] = useState(false)
   const saved = snapshot!.reading[book.id]
   const owner = ['owner', 'admin'].includes(snapshot!.role)
   const prefs = preferencesSchema.parse(snapshot!.preferences)
+  const percent = saved?.percent ?? 0
   const status =
-    saved?.status ?? (saved?.percent === 100 ? 'finished' : saved?.percent ? 'reading' : 'want')
+    saved?.status ?? (percent === 100 ? 'finished' : percent ? 'reading' : 'want')
+  const href = `/app/reader/${book.id}`
+  const open = (event: React.MouseEvent<HTMLAnchorElement>) =>
+    openBook(event, { title: book.title, go: () => navigate(href) })
   return (
     <article className="library-book">
-      <div className="library-book-identity">
-        <Link
-          className="library-cover-link"
-          to={`/app/reader/${book.id}`}
-          aria-label={`Ler ${book.title}`}
-        >
-          <PrivateBookCover
-            id={book.id}
-            title={book.title}
-            author={book.author}
-            fallback={book.metadata?.cover}
-          />
-        </Link>
-        <div>
-          <span className="eyebrow">{book.category || 'LITERATURA'}</span>
-          <h2>{book.title}</h2>
-          <p>{book.author}</p>
-          <p className="book-edition">
-            {[book.metadata?.publisher, book.metadata?.year, book.metadata?.language]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
-          <Button
-            variant="ghost"
-            disabled={busy}
-            aria-label={`${saved?.favorite ? 'Retirar dos' : 'Adicionar aos'} favoritos: ${book.title}`}
-            onClick={() =>
-              void act({
-                type: 'reading.update',
-                id: book.id,
-                favorite: !saved?.favorite,
-              })
-            }
-          >
-            <Heart size={17} fill={saved?.favorite ? 'currentColor' : 'none'} />
-            {saved?.favorite ? 'Favorito' : 'Favoritar'}
-          </Button>
-        </div>
-      </div>
-      <ProgressBar value={saved?.percent ?? 0} label="Seu progresso" />
-      <div className="book-metadata-grid">
-        <label>
-          Status de leitura
-          <select
-            aria-label={`Status de ${book.title}`}
-            disabled={busy}
-            value={status}
-            onChange={(e) =>
-              void act({
-                type: 'reading.update',
-                id: book.id,
-                status: e.target.value as keyof typeof statusLabels,
-              })
-            }
-          >
-            {Object.entries(statusLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Sua estante
-          <select
-            disabled={busy}
-            value={saved?.shelf ?? ''}
-            onChange={(e) =>
-              void act({
-                type: 'reading.update',
-                id: book.id,
-                shelf: e.target.value,
-              })
-            }
-          >
-            <option value="">Sem estante personalizada</option>
-            {prefs.shelves.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      {scope !== 'personal' && (
-        <Button
-          variant="secondary"
-          disabled={busy}
-          onClick={() =>
-            void addToPersonal({
-              title: book.title,
-              author: book.author,
-              category: book.category,
-              metadata: book.metadata,
-            }).then((ok) => ok && setAdded(true))
-          }
-        >
-          {added ? 'Título na biblioteca pessoal' : 'Adicionar à minha biblioteca'}
-        </Button>
-      )}
-      <Link className="button-link" to={`/app/reader/${book.id}`}>
-        {book.content ? 'Ler agora' : 'Acompanhar leitura'} →
+      <Link className="library-cover-link" to={href} aria-label={`Ler ${book.title}`} onClick={open}>
+        <PrivateBookCover
+          id={book.id}
+          title={book.title}
+          author={book.author}
+          fallback={book.metadata?.cover}
+        />
       </Link>
-      <details>
-        <summary>Sobre esta edição</summary>
-        <p className="preserve-text">{book.metadata?.synopsis || 'Sinopse não informada.'}</p>
-        <p>
-          {book.metadata?.ratingAverage !== undefined && (
-            <>
-              Avaliação na Open Library: {book.metadata.ratingAverage.toFixed(1)}/5 ·{' '}
-              {book.metadata.ratingCount} avaliação(ões).
-            </>
-          )}
-        </p>
-        <p>
-          ISBN: {book.metadata?.isbn || 'Não informado'}
-          {book.metadata?.pages ? ` · ${book.metadata.pages} páginas` : ''}
-        </p>
-        <p>
-          {book.metadata?.license ||
-            'A disponibilidade do arquivo é independente do cadastro bibliográfico.'}
-        </p>
-        {book.metadata?.source && (
-          <small className="preserve-text">Origem: {book.metadata.source}</small>
-        )}
-      </details>
-      {scope === 'personal' ? (
-        <PrivateBookFile bookId={book.id} />
-      ) : (
-        <ClubBookFile clubId={scope} bookId={book.id} />
-      )}
-      {owner && (
-        <div className="workspace-actions">
-          <Button variant="ghost" disabled={busy} onClick={onEdit}>
-            Editar dados
-          </Button>
-          <Button
-            variant="ghost"
-            disabled={busy}
-            onClick={() =>
-              void act({
-                type: 'book.current',
-                id: snapshot!.state.currentBookId === book.id ? null : book.id,
-              })
-            }
-          >
-            {snapshot!.state.currentBookId === book.id ? 'Tirar destaque' : 'Destacar leitura'}
-          </Button>
-          {confirm ? (
-            <>
-              <span>Excluir este livro?</span>
-              <Button
-                variant="danger"
-                disabled={busy}
-                onClick={() => void act({ type: 'book.remove', id: book.id })}
-              >
-                Confirmar exclusão
-              </Button>
-              <Button variant="ghost" onClick={() => setConfirm(false)}>
-                Cancelar
-              </Button>
-            </>
-          ) : (
-            <Button variant="ghost" disabled={busy} onClick={() => setConfirm(true)}>
-              Remover livro
-            </Button>
-          )}
+      <div className="library-book__body">
+        {book.category && <span className="eyebrow">{book.category}</span>}
+        <h2>{book.title}</h2>
+        <p className="library-book__author">{book.author}</p>
+        <div
+          className="library-book__progress"
+          role="progressbar"
+          aria-label={`Progresso de ${book.title}`}
+          aria-valuenow={percent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <span className="library-book__track" aria-hidden="true">
+            <span style={{ width: `${percent}%` }} />
+          </span>
+          <small>{percent === 100 ? 'Lido' : percent ? `${percent}%` : 'Não iniciado'}</small>
         </div>
-      )}
+        <div className="library-book__actions">
+          <Link className="button button--primary library-book__read" to={href} onClick={open}>
+            <BookOpen size={17} aria-hidden="true" />
+            {percent ? 'Continuar' : 'Ler'}
+          </Link>
+          <button
+            type="button"
+            className={`icon-action ${saved?.favorite ? 'is-on' : ''}`}
+            disabled={busy}
+            aria-pressed={!!saved?.favorite}
+            aria-label={saved?.favorite ? `Tirar ${book.title} dos favoritos` : `Favoritar ${book.title}`}
+            title={saved?.favorite ? 'Favorito' : 'Favoritar'}
+            onClick={() => void act({ type: 'reading.update', id: book.id, favorite: !saved?.favorite })}
+          >
+            <Heart size={19} fill={saved?.favorite ? 'currentColor' : 'none'} aria-hidden="true" />
+          </button>
+          <BookShare compact book={{ id: book.id, title: book.title, author: book.author, coverUrl: book.metadata?.cover }} />
+          <details className="book-menu">
+            <summary className="icon-action" aria-label={`Mais opções de ${book.title}`} title="Mais opções">
+              <MoreHorizontal size={19} aria-hidden="true" />
+            </summary>
+            <div className="book-menu__panel">
+              <label>
+                Status
+                <select
+                  aria-label={`Status de ${book.title}`}
+                  disabled={busy}
+                  value={status}
+                  onChange={(e) =>
+                    void act({
+                      type: 'reading.update',
+                      id: book.id,
+                      status: e.target.value as keyof typeof statusLabels,
+                    })
+                  }
+                >
+                  {Object.entries(statusLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {prefs.shelves.length > 0 && (
+                <label>
+                  Estante
+                  <select
+                    disabled={busy}
+                    value={saved?.shelf ?? ''}
+                    onChange={(e) => void act({ type: 'reading.update', id: book.id, shelf: e.target.value })}
+                  >
+                    <option value="">Nenhuma</option>
+                    {prefs.shelves.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {scope !== 'personal' && (
+                <Button
+                  variant="secondary"
+                  disabled={busy || added}
+                  onClick={() =>
+                    void addToPersonal({
+                      title: book.title,
+                      author: book.author,
+                      category: book.category,
+                      metadata: book.metadata,
+                    }).then((ok) => ok && setAdded(true))
+                  }
+                >
+                  {added ? 'Na sua biblioteca' : 'Levar para minha biblioteca'}
+                </Button>
+              )}
+              {owner && (
+                <>
+                  <Button
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={() =>
+                      void act({
+                        type: 'book.current',
+                        id: snapshot!.state.currentBookId === book.id ? null : book.id,
+                      })
+                    }
+                  >
+                    {snapshot!.state.currentBookId === book.id ? 'Tirar do destaque' : 'Destacar no início'}
+                  </Button>
+                  <Button variant="ghost" disabled={busy} onClick={onEdit}>
+                    Editar dados
+                  </Button>
+                </>
+              )}
+              <details className="book-menu__about">
+                <summary>Sobre o livro</summary>
+                {book.metadata?.synopsis && <p className="preserve-text">{book.metadata.synopsis}</p>}
+                <p className="book-edition">
+                  {[
+                    book.metadata?.publisher,
+                    book.metadata?.year?.slice(0, 4),
+                    book.metadata?.pages ? `${book.metadata.pages} páginas` : '',
+                    book.metadata?.isbn ? `ISBN ${book.metadata.isbn}` : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || 'Sem dados da edição.'}
+                </p>
+              </details>
+              {scope === 'personal' ? (
+                <PrivateBookFile bookId={book.id} />
+              ) : (
+                <ClubBookFile clubId={scope} bookId={book.id} />
+              )}
+              {owner &&
+                (confirm ? (
+                  <div className="workspace-actions">
+                    <Button variant="danger" disabled={busy} onClick={() => void act({ type: 'book.remove', id: book.id })}>
+                      Remover livro
+                    </Button>
+                    <Button variant="ghost" onClick={() => setConfirm(false)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                ) : (
+                  <Button variant="ghost" className="book-menu__danger" disabled={busy} onClick={() => setConfirm(true)}>
+                    Remover da biblioteca
+                  </Button>
+                ))}
+            </div>
+          </details>
+        </div>
+      </div>
     </article>
   )
 }

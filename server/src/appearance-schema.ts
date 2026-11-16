@@ -52,6 +52,8 @@ export const appearanceSchema = z
     density: z.enum(appearanceDensities).optional(),
     lineHeight: z.enum(appearanceLineHeights).optional(),
     buttons: z.enum(appearanceButtonShapes).optional(),
+    // Capa do livro em leitura como fundo do app (o app também adota as cores da capa).
+    coverBackdrop: z.boolean().optional(),
   })
   .strict()
 export type Appearance = z.infer<typeof appearanceSchema>

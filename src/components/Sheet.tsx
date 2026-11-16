@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
+import './sheet.css'
 /** Native modal: focus stays inside, Escape closes, and mobile keyboards resize the content. */
 export function Sheet({
   title,
