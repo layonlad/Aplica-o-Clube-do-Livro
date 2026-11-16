@@ -440,7 +440,7 @@ export function SocialProfile({ profileId }: { profileId?: string } = {}) {
                     <strong>{club.name}</strong>
                     <small>
                       {club.visibility === 'private' ? 'Clube privado' : 'Clube público'}
-                      {club.role === 'owner' ? ' · Você administra' : ''}
+                      {['owner', 'admin'].includes(club.role ?? '') ? ' · Administração' : ''}
                     </small>
                     <Link to={club.shared || isSelf ? `/space/${club.id}` : '/app/explore'}>
                       Ver clube
