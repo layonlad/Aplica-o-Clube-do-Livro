@@ -1,6 +1,6 @@
 # Leitor imersivo e perfil social — entrega para revisão
 
-Implementação de 16/11/2026 — [PR 27](https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/27). **Sem merge e sem publicação em produção nesta tarefa.** A versão publicada permanece `383541f` (PR 25). O nome e a identidade visual existentes foram preservados. O [mapa](https://layonlad.github.io/Aplica-o-Clube-do-Livro/mapa/) reflete `main`; as mudanças descritas aqui dependem da aprovação do PR e de uma liberação posterior.
+Implementação de 16/11/2026 — [PR 27](https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/27), **publicado após autorização do dono no merge `aaef7fa`**. Nome e identidade visual existentes preservados. [Versões, testes em produção e limpeza das fixtures](publicacoes/2026-11-16-pr27.md). O [mapa](https://layonlad.github.io/Aplica-o-Clube-do-Livro/mapa/) registra a versão efetivamente publicada.
 
 ## Leitor EPUB
 
@@ -78,7 +78,7 @@ Resultado local: **207 testes aprovados — 73 frontend, 44 unitários da API, 8
 - `npm run test:e2e`: Auth Emulator, identidade/revogação e PostgreSQL temporários.
 - `npm audit --audit-level=high`: aprovado, sem altas/críticas; 14 avisos moderados na árvore de ferramentas de desenvolvimento da CLI Firebase. `npm audit --omit=dev --audit-level=high`: zero vulnerabilidades. Nenhuma atualização forçada ou downgrade da CLI foi aplicado.
 - Ensaio das migrations 017–019 sobre a base 016: duas aplicações, com preservação de seguidores, posts, vídeo, comentários, preferências e histórico. Nenhum dado de usuário real copiado. O CI usa PostgreSQL 17; o PostgreSQL embarcado local é 18.
-- Navegadores locais: Chrome e WebKit a 390×844 e rotação para 844×390; Chrome desktop 1366×900; movimento reduzido no WebKit; perfil também conferido a 320 e 768 px. Testes usam EPUB sintético com capa e três capítulos e três contas descartáveis no Auth Emulator. Nenhum teste foi executado em produção.
+- Navegadores locais: Chrome e WebKit a 390×844 e rotação para 844×390; Chrome desktop 1366×900; movimento reduzido no WebKit; perfil também conferido a 320 e 768 px. Testes usam EPUB sintético com capa e três capítulos e três contas descartáveis no Auth Emulator. Esses ensaios ocorreram localmente; a validação posterior em produção está no relatório da publicação.
 - Leitor: abertura sem controles, gestos nas duas direções, teclado, limites de capítulos, efeito de folha, desligamento da animação, fallback de fullscreen, fullscreen nativo desktop, preferências após recarga, retomada paginada e contínua, favoritos, marcador e anotação após recarga.
 - Social: ícone de perfil, edição, foto, bio, botão abaixo da bio, privacidade, pedido/aprovação/recusa/cancelamento, atividades autorizadas e recusa HTTP de clube privado a seguidor não membro. As contas sintéticas foram excluídas ao final; os bancos e arquivos locais são descartáveis.
 
@@ -93,7 +93,7 @@ Resultado local: **207 testes aprovados — 73 frontend, 44 unitários da API, 8
 5. Com duas contas, tornar um perfil privado, solicitar e aprovar. Confirmar publicação pessoal visível depois da aprovação, sem acesso a clubes privados. Repetir com recusa, cancelamento, unfollow e bloqueio.
 6. Usar uma terceira conta membro de somente um clube comum; conferir que a aba Clubes e as atividades não mencionam o outro clube. Salvos e notas pessoais permanecem apenas no próprio perfil.
 
-## Liberação posterior — somente com nova autorização
+## Procedimento de liberação — executado após autorização
 
 1. Aprovar o PR e conferir o CI do commit final; preservar recuperação privada e as versões publicadas.
 2. Aplicar a migration 019 pelo papel proprietário e os dois scripts de grants. Não executar a API nova antes da tabela nem conceder DDL ao runtime.
