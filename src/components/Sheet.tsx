@@ -1,3 +1,4 @@
+import { lockPageScroll } from './scroll-lock'
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
@@ -20,7 +21,7 @@ export function Sheet({
   close.current = onClose
   useEffect(() => {
     const dialog = ref.current!,
-      previous = document.body.style.overflow
+      unlock = lockPageScroll()
     const resize = () => {
       const viewport = window.visualViewport
       dialog.style.setProperty('--sheet-height', `${viewport?.height ?? window.innerHeight}px`)
@@ -32,14 +33,13 @@ export function Sheet({
     resize()
     window.visualViewport?.addEventListener('resize', resize)
     window.visualViewport?.addEventListener('scroll', resize)
-    document.body.style.overflow = 'hidden'
     if (dialog.showModal) dialog.showModal()
     else dialog.setAttribute('open', '')
     return () => {
       window.visualViewport?.removeEventListener('resize', resize)
       window.visualViewport?.removeEventListener('scroll', resize)
       dialog.close?.()
-      document.body.style.overflow = previous
+      unlock()
     }
   }, [])
   return createPortal(

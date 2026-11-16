@@ -2,7 +2,8 @@ import type { Pool, PoolClient } from 'pg'
 import type { UserProfile } from './contracts.js'
 import { transaction } from './database.js'
 import { decodeCursor, pageOf } from './pagination.js'
-import { notBlocked, publicMissing, requirePublicProfile } from './public-policy.js'
+import { notBlocked, publicMissing, visibleProfile, visiblePublicPost } from './public-policy.js'
+import { FollowService, lockPeople } from './follow-service.js'
 import { HttpError } from './errors.js'
 export interface ProfileInput {
   handle: string
@@ -127,9 +128,10 @@ export class ProfileService {
       )
       const {
         rows: [profile],
-      } = await client.query(`SELECT ${column} AS current FROM profiles WHERE user_id=$1 FOR UPDATE`, [
-        user.id,
-      ])
+      } = await client.query(
+        `SELECT ${column} AS current FROM profiles WHERE user_id=$1 FOR UPDATE`,
+        [user.id],
+      )
       if (
         mediaId &&
         !(
@@ -174,7 +176,7 @@ export class ProfileService {
       const {
         rows: [person],
       } = await client.query(
-        `SELECT u.id,COALESCE(CASE WHEN pr.is_public THEN pr.display_name END,u.name) AS name,pr.avatar_id AS "avatarId",COALESCE(pr.is_public,false) AS "isPublic",
+        `SELECT u.id,COALESCE(pr.display_name,u.name) AS name,pr.avatar_id AS "avatarId",COALESCE(pr.is_public AND NOT pr.suspended,false) AS "isPublic",
           COALESCE((SELECT jsonb_agg(jsonb_build_object('id',c.id,'name',c.name) ORDER BY c.name) FROM club_memberships mine JOIN club_memberships theirs ON theirs.club_id=mine.club_id AND theirs.user_id=u.id AND theirs.status='active' JOIN clubs c ON c.id=mine.club_id WHERE mine.user_id=$2 AND mine.status='active'),'[]') AS "sharedClubs"
         FROM users u LEFT JOIN profiles pr ON pr.user_id=u.id WHERE u.id=$1 AND ${notBlocked('u.id', '$2')}`,
         [id, actor.id],
@@ -192,55 +194,98 @@ export class ProfileService {
   }
   get(actor: UserProfile | null, id: string) {
     return transaction(this.pool, async (client) => {
+      const viewer = actor?.id ?? null
       const {
         rows: [profile],
       } = await client.query(
-        `SELECT ${fields},EXISTS(SELECT 1 FROM follows WHERE follower_id=$2 AND followed_id=user_id) AS following,(SELECT count(*)::int FROM follows WHERE followed_id=user_id) AS followers,(SELECT count(*)::int FROM follows WHERE follower_id=user_id) AS follows FROM profiles WHERE user_id=$1 AND is_public AND ${notBlocked('user_id', '$2')}`,
-        [id, actor?.id ?? null],
+        `SELECT ${fields},user_id=$2 AS "isSelf",(${visibleProfile('profiles.user_id', '$2')}) OR user_id=$2 AS "canSeeContent",
+         EXISTS(SELECT 1 FROM follows WHERE follower_id=$2 AND followed_id=user_id) AS following,
+         EXISTS(SELECT 1 FROM follow_requests WHERE requester_id=$2 AND target_id=user_id AND status='pending') AS requested
+         FROM profiles WHERE user_id=$1 AND (is_public OR $2::uuid IS NOT NULL) AND (NOT suspended OR user_id=$2) AND ${notBlocked('user_id', '$2')}`,
+        [id, viewer],
       )
       if (!profile) throw publicMissing()
-      // Whitelisted metadata only: never return the JSON workspace or reading annotations.
+      const allowed = profile.canSeeContent
+      const counts = allowed
+        ? (
+            await client.query(
+              `SELECT
+        (SELECT count(*)::int FROM follows f WHERE f.followed_id=$1 AND ${notBlocked('f.follower_id', '$2')}) AS followers,
+        (SELECT count(*)::int FROM follows f WHERE f.follower_id=$1 AND ${notBlocked('f.followed_id', '$2')}) AS follows,
+        (SELECT count(*)::int FROM social_posts p WHERE p.author_user_id=$1 AND ${visiblePublicPost('p', '$2')}) AS posts`,
+              [id, viewer],
+            )
+          ).rows[0]
+        : { followers: null, follows: null, posts: null }
       const library =
-        profile.showLibrary || profile.showStats
+        allowed && (profile.showLibrary || profile.showStats)
           ? (
               await client.query('SELECT state,reading FROM personal_workspaces WHERE user_id=$1', [
                 id,
               ])
             ).rows[0]
           : null
-      const books = Array.isArray(library?.state?.books) ? library.state.books : []
-      const reading = library?.reading ?? {}
+      const books = Array.isArray(library?.state?.books) ? library.state.books : [],
+        reading = library?.reading ?? {}
+      const clubs = (
+        await client.query(
+          `SELECT c.id,c.name,m.role,COALESCE(s.visibility,'private') AS visibility,
+        EXISTS(SELECT 1 FROM club_memberships mine WHERE mine.club_id=c.id AND mine.user_id=$2 AND mine.status='active') AS shared
+        FROM clubs c JOIN club_memberships m ON m.club_id=c.id LEFT JOIN club_settings s ON s.club_id=c.id
+        WHERE m.user_id=$1 AND m.status='active' AND ($1=$2 OR EXISTS(SELECT 1 FROM club_memberships mine WHERE mine.club_id=c.id AND mine.user_id=$2 AND mine.status='active') OR ($3::boolean AND $4::boolean AND s.visibility='public'))
+        ORDER BY c.created_at DESC,c.id DESC LIMIT 50`,
+          [id, viewer, allowed, profile.showClubs],
+        )
+      ).rows
       return {
         ...profile,
-        goal: profile.showStats ? profile.goal : null,
-        library: profile.showLibrary
-          ? books.slice(0, 100).map((book: { id: string; title: string; author: string }) => ({
-              title: book.title,
-              author: book.author,
-              status:
-                reading[book.id]?.status ??
-                (reading[book.id]?.percent === 100
-                  ? 'completed'
-                  : reading[book.id]?.percent > 0
-                    ? 'reading'
-                    : 'want'),
-            }))
-          : [],
-        stats: profile.showStats
-          ? {
-              books: books.length,
-              completed: books.filter((book: { id: string }) => reading[book.id]?.percent === 100)
-                .length,
-            }
-          : null,
-        clubs: profile.showClubs
+        ...counts,
+        avatarId: allowed || clubs.some((c) => c.shared) ? profile.avatarId : null,
+        coverId: allowed ? profile.coverId : null,
+        relation: profile.isSelf
+          ? 'self'
+          : profile.following
+            ? 'following'
+            : profile.requested
+              ? 'requested'
+              : profile.isPublic
+                ? 'follow'
+                : 'request',
+        pendingRequests: profile.isSelf
           ? (
               await client.query(
-                "SELECT c.id,c.name FROM clubs c JOIN club_memberships m ON m.club_id=c.id JOIN club_settings s ON s.club_id=c.id WHERE m.user_id=$1 AND m.status='active' AND s.visibility='public' ORDER BY c.created_at DESC LIMIT 50",
+                "SELECT count(*)::int AS n FROM follow_requests r JOIN profiles requester ON requester.user_id=r.requester_id WHERE target_id=$1 AND status='pending' AND NOT requester.suspended AND " +
+                  notBlocked('requester_id', '$1'),
                 [id],
               )
-            ).rows
-          : [],
+            ).rows[0].n
+          : undefined,
+        goal: allowed && profile.showStats ? profile.goal : null,
+        library:
+          allowed && profile.showLibrary
+            ? books
+                .slice(0, 100)
+                .map((book: { id: string; title: string; author: string }) => ({
+                  title: book.title,
+                  author: book.author,
+                  status:
+                    reading[book.id]?.status ??
+                    (reading[book.id]?.percent === 100
+                      ? 'completed'
+                      : reading[book.id]?.percent > 0
+                        ? 'reading'
+                        : 'want'),
+                }))
+            : [],
+        stats:
+          allowed && profile.showStats
+            ? {
+                books: books.length,
+                completed: books.filter((book: { id: string }) => reading[book.id]?.percent === 100)
+                  .length,
+              }
+            : null,
+        clubs,
       }
     })
   }
@@ -251,7 +296,7 @@ export class ProfileService {
     return transaction(this.pool, async (client) => {
       const cursor = decodeCursor(input.cursor)
       const { rows } = await client.query(
-        `SELECT user_id AS id,handle,display_name AS "displayName",bio,genres,avatar_id AS "avatarId",created_at::text AS "sortTime" FROM profiles WHERE is_public AND ${notBlocked('user_id', '$1')} AND ($2::text IS NULL OR (display_name||' '||handle) ILIKE '%'||$2||'%') AND ($3::text IS NULL OR EXISTS(SELECT 1 FROM unnest(genres) genre WHERE lower(genre)=lower($3))) AND ($4::timestamptz IS NULL OR (created_at,user_id)<($4,$5::uuid)) ORDER BY created_at DESC,user_id DESC LIMIT $6`,
+        `SELECT user_id AS id,handle,display_name AS "displayName",bio,genres,CASE WHEN (${visibleProfile('profiles.user_id', '$1')}) THEN avatar_id ELSE NULL END AS "avatarId",created_at::text AS "sortTime" FROM profiles WHERE NOT suspended AND (is_public OR ($1::uuid IS NOT NULL AND handle=$2)) AND ${notBlocked('user_id', '$1')} AND ($2::text IS NULL OR (display_name||' '||handle) ILIKE '%'||$2||'%') AND ($3::text IS NULL OR EXISTS(SELECT 1 FROM unnest(genres) genre WHERE lower(genre)=lower($3))) AND ($4::timestamptz IS NULL OR (created_at,user_id)<($4,$5::uuid)) ORDER BY created_at DESC,user_id DESC LIMIT $6`,
         [
           actor?.id ?? null,
           input.q?.replace(/^@/, '') ?? null,
@@ -265,37 +310,19 @@ export class ProfileService {
     })
   }
   follow(user: UserProfile, id: string, value: boolean) {
-    return transaction(this.pool, async (client) => {
-      if (user.id === id) throw new HttpError(400, 'SELF_RELATION', 'Escolha outro leitor.')
-      await requirePublicProfile(client, user.id)
-      if (
-        !(
-          await client.query(
-            `SELECT 1 FROM profiles WHERE user_id=$1 AND is_public AND ${notBlocked('user_id', '$2')} FOR SHARE`,
-            [id, user.id],
-          )
-        ).rowCount
-      )
-        throw publicMissing()
-      if (value)
-        await client.query(
-          'INSERT INTO follows(follower_id,followed_id) VALUES($1,$2) ON CONFLICT DO NOTHING',
-          [user.id, id],
-        )
-      else
-        await client.query('DELETE FROM follows WHERE follower_id=$1 AND followed_id=$2', [
-          user.id,
-          id,
-        ])
-      return { value }
-    })
+    return new FollowService(this.pool).follow(user, id, value)
   }
   block(user: UserProfile, id: string, value: boolean) {
     return transaction(this.pool, async (client) => {
       if (user.id === id) throw new HttpError(400, 'SELF_RELATION', 'Escolha outro leitor.')
+      await lockPeople(client, user.id, id)
       if (!(await client.query('SELECT 1 FROM users WHERE id=$1', [id])).rowCount)
         throw publicMissing()
       if (value) {
+        await client.query(
+          "UPDATE follow_requests SET status='cancelled',resolved_at=now() WHERE ((requester_id=$1 AND target_id=$2) OR (requester_id=$2 AND target_id=$1)) AND status='pending'",
+          [user.id, id],
+        )
         await client.query(
           'INSERT INTO user_blocks(blocker_id,blocked_id) VALUES($1,$2) ON CONFLICT DO NOTHING',
           [user.id, id],

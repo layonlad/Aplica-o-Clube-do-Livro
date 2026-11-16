@@ -46,7 +46,7 @@ export class ModerationService {
         if (
           !(
             await client.query(
-              `SELECT 1 FROM profiles WHERE user_id=$1 AND is_public AND ${notBlocked('user_id', '$2')}`,
+              `SELECT 1 FROM profiles WHERE user_id=$1 AND NOT suspended AND ${notBlocked('user_id', '$2')}`,
               [id, user.id],
             )
           ).rowCount

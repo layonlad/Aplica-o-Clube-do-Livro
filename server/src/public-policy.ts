@@ -5,8 +5,16 @@ export const publicScope = '00000000-0000-0000-0000-000000000000'
 export function notBlocked(target: string, actor: string) {
   return `NOT EXISTS(SELECT 1 FROM user_blocks b WHERE (b.blocker_id=${actor} AND b.blocked_id=${target}) OR (b.blocked_id=${actor} AND b.blocker_id=${target}))`
 }
+/** Only community/profile content. Never use this to authorize a club. */
+export function visibleProfile(target: string, actor: string) {
+  return `EXISTS(SELECT 1 FROM profiles vp WHERE vp.user_id=${target} AND NOT vp.suspended AND (vp.is_public OR vp.user_id=${actor} OR EXISTS(SELECT 1 FROM follows vf WHERE vf.followed_id=vp.user_id AND vf.follower_id=${actor}))) AND ${notBlocked(target, actor)}`
+}
 export function visiblePublicPost(alias = 'p', actor = '$2') {
-  return `${alias}.audience='public' AND ${alias}.club_id IS NULL AND ${alias}.deleted_at IS NULL AND EXISTS(SELECT 1 FROM profiles pr WHERE pr.user_id=${alias}.author_user_id AND pr.is_public) AND ${notBlocked(`${alias}.author_user_id`, actor)}`
+  return `${alias}.audience='public' AND ${alias}.club_id IS NULL AND ${alias}.deleted_at IS NULL AND ${visibleProfile(`${alias}.author_user_id`, actor)}`
+}
+export async function requireSocialProfile(client: PoolClient, userId: string) {
+  if (!(await client.query('SELECT 1 FROM profiles WHERE user_id=$1 AND NOT suspended FOR SHARE', [userId])).rowCount)
+    throw new HttpError(403, 'PROFILE_REQUIRED', 'Prepare seu perfil antes de publicar. Perfis suspensos não podem publicar.')
 }
 export async function requirePublicProfile(client: PoolClient, userId: string) {
   const result = await client.query(

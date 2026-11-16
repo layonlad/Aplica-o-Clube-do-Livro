@@ -8,11 +8,11 @@ const text = z.string().trim().min(1).max(5000)
 const date = z.iso.datetime({ offset: true })
 const photo = z.string().max(220000).regex(/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/)
 const annotationSchema = z.object({ id, start: z.number().int().min(0).max(600000), end: z.number().int().min(1).max(600000), quote: z.string().min(1).max(280), note: z.string().max(2000), at: date }).strict()
-const epubLocator=z.object({hash:z.string().regex(/^[0-9a-f]{64}$/),chapter:z.number().int().min(0).max(999),offset:z.number().int().min(0).max(3000000)}).strict()
+const epubLocator=z.object({hash:z.string().regex(/^[0-9a-f]{64}$/),chapter:z.number().int().min(0).max(999),offset:z.number().int().min(0).max(3000000),element:z.number().int().min(0).max(5000).optional()}).strict()
 const epubAnnotation=z.object({id,hash:z.string().regex(/^[0-9a-f]{64}$/),chapter:z.number().int().min(0).max(999),start:z.number().int().min(0).max(3000000),end:z.number().int().min(1).max(3000000),quote:z.string().min(1).max(280),note:z.string().max(2000),at:date}).strict().refine(item=>item.end>item.start&&item.end-item.start===item.quote.length)
 export const preferencesSchema = z.object({
   shelves: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
-  reader: z.object({ size: z.number().int().min(16).max(32), font: z.enum(['serif','sans','lora','merriweather']), theme: z.enum(['light','dark','sepia']), margin: z.enum(['compact','comfortable','wide']), lineHeight:z.enum(['tight','normal','relaxed']).optional(), weight:z.enum(['regular','bold']).optional(), align:z.enum(['left','justify']).optional(), flow:z.enum(['paged','scroll']).optional() }).default({size:20,font:'serif',theme:'light',margin:'comfortable'}),
+  reader: z.object({ size: z.number().int().min(16).max(32), font: z.enum(['serif','sans','lora','merriweather']), theme: z.enum(['light','dark','sepia']), margin: z.enum(['compact','comfortable','wide']), lineHeight:z.enum(['tight','normal','relaxed']).optional(), weight:z.enum(['regular','bold']).optional(), align:z.enum(['left','justify']).optional(), flow:z.enum(['paged','scroll']).optional(),pageAnimation:z.boolean().optional(),edgeTaps:z.boolean().optional(),paragraphSpacing:z.enum(['compact','normal','wide']).optional(),background:z.string().regex(/^#[0-9a-f]{6}$/i).nullable().optional() }).default({size:20,font:'serif',theme:'light',margin:'comfortable'}),
   // Aparência da conta (fontes, cores, modo). Gravada por /me/appearance; mantida aqui para não ser descartada nas ações do espaço.
   appearance: appearanceSchema.optional().catch(undefined),
 }).default({shelves:[],reader:{size:20,font:'serif',theme:'light',margin:'comfortable'}})

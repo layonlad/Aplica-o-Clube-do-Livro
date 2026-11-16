@@ -286,7 +286,7 @@ export function PostComposer({
       {open && (
         <form className="workspace-form simple-composer" onSubmit={submit}>
           <p className="composer-audience">
-            {clubId === null ? 'Publicação pública' : 'Somente integrantes deste clube'}
+            {clubId === null ? 'Conforme a privacidade do seu perfil' : 'Somente integrantes deste clube'}
           </p>
           {poll && <h3>Criar enquete</h3>}
           <label>

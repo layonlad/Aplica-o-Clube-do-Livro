@@ -241,6 +241,10 @@ it('executa a fila com identidade restrita sem DDL, leitura de migrations ou alt
     })
     await call(`/clubs/${club}/posts`, undefined, 'POST', { body: 'Com identidade restrita' })
     expect((await new PushWorker(runtime, options).run()).failed).toBe(0)
+    await expect(runtime.query('SELECT suspended FROM profiles WHERE false')).resolves.toMatchObject({rowCount:0})
+    await expect(runtime.query('SELECT follower_id,followed_id FROM follows WHERE false')).resolves.toMatchObject({rowCount:0})
+    await expect(runtime.query('SELECT bio FROM profiles WHERE false')).rejects.toThrow('permission denied')
+    await expect(runtime.query('SELECT * FROM follow_requests WHERE false')).rejects.toThrow('permission denied')
     await expect(runtime.query('SELECT * FROM schema_migrations')).rejects.toThrow(
       'permission denied',
     )

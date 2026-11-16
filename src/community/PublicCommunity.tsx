@@ -66,7 +66,7 @@ export function PublicCommunity() {
       <header className="social-heading">
         <span className="eyebrow">COMUNIDADE LITERÁRIA</span>
         <h1>As leituras nos encontram</h1>
-        <p>Ideias, livros e pessoas para além de um só clube. Este espaço é público.</p>
+        <p>Ideias, livros e pessoas para além de um só clube. Publicações de perfis privados aparecem só para seguidores aprovados.</p>
         <Link className="text-link" to="/app/explore">
           <Compass size={17} /> Explorar leitores e livros
         </Link>

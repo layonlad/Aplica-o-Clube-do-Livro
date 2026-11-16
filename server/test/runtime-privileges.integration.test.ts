@@ -95,6 +95,21 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
     const profile = await call('/me/profile')
     expect(profile.statusCode, profile.body).toBe(200)
     expect((await call('/me/notifications')).statusCode).toBe(200)
+    const peerHeaders = { authorization: 'Bearer restricted-peer' }
+    const peer = (await app.inject({ url: '/v1/me', headers: peerHeaders })).json().user.id
+    const requested = await app.inject({url:`/v1/public/profiles/${session.json().user.id}/follow`,method:'POST',headers:peerHeaders,payload:{value:true}})
+    expect(requested.statusCode,requested.body).toBe(200)
+    expect(requested.json().state).toBe('requested')
+    const pending = await call('/me/follow-requests')
+    expect(pending.statusCode,pending.body).toBe(200)
+    expect(pending.json().items[0].userId).toBe(peer)
+    const approved = await call('/me/follow-requests/'+pending.json().items[0].id,'POST',{decision:'approve'})
+    expect(approved.statusCode,approved.body).toBe(200)
+    const activity = await call(`/people/${session.json().user.id}/activity`)
+    expect(activity.statusCode,activity.body).toBe(200)
+    expect(activity.json().items.some((i:{targetId:string})=>i.targetId===post.json().id)).toBe(true)
+    expect((await call('/me/profile/saved')).statusCode).toBe(200)
+    expect((await call('/me/profile/reading-saved')).statusCode).toBe(200)
     const appearance = {
       preset: 'azul',
       mode: 'dark',
@@ -154,6 +169,10 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
       weight: 'bold',
       align: 'justify',
       flow: 'paged',
+      pageAnimation:false,
+      edgeTaps:true,
+      paragraphSpacing:'wide',
+      background:'#f4ecd8',
     }
     const readerSaved = await call('/me/workspace', 'POST', {
       version: bookAdded.json().version,
@@ -238,6 +257,7 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
       'personal_workspaces',
       'club_workspaces',
       'club_reading_states',
+      'follow_requests',
     ])
       await expect(runtime.query(`DELETE FROM ${table} WHERE false`)).rejects.toThrow(
         'permission denied',

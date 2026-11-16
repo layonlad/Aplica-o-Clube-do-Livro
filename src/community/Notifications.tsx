@@ -13,6 +13,7 @@ import { UserAvatar } from '../components/UserAvatar'
 import './community.css'
 interface Notice {
   id: string
+  followAction?: 'request' | 'approved' | null
   kind: string
   targetType: string
   targetId: string
@@ -95,7 +96,7 @@ export function Notifications() {
             : `/app/community?post=${notice.targetId}`,
         )
       else if (notice.targetType === 'topic') navigate('/app/forum?topic=' + notice.targetId)
-      else if (notice.targetType === 'profile') navigate('/app/people/' + notice.targetId)
+      else if (notice.targetType === 'profile') navigate(notice.followAction === 'request' ? '/app/profile?requests=1' : '/app/people/' + notice.targetId)
       else if (notice.targetType === 'request')
         navigate(notice.kind === 'join_request' ? '/clubs/' + notice.clubId : '/app')
       else if (notice.targetType === 'invite') navigate('/clubs')
@@ -214,7 +215,7 @@ export function Notifications() {
                 <UserAvatar name={notice.actorName} avatarId={notice.actorAvatarId} size="sm" />
                 <span>
                   <strong>{notice.actorName}</strong>{' '}
-                  {labels[notice.kind] ?? 'compartilhou uma novidade'}
+                  {(notice.followAction === 'request' ? 'solicitou seguir você' : notice.followAction === 'approved' ? 'aceitou sua solicitação' : labels[notice.kind]) ?? 'compartilhou uma novidade'}
                   {notice.clubName ? ` · ${notice.clubName}` : ''}
                 </span>
                 <small>

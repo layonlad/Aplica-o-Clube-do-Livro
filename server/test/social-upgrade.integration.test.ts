@@ -25,6 +25,19 @@ it('aplica a evolução sobre a base 016 duas vezes e preserva publicação, ví
         "INSERT INTO users(firebase_uid,email,name) VALUES('upgrade-synthetic','upgrade@example.com','Leitora sintética') RETURNING id,email,name",
       )
     ).rows[0]
+    const follower = (
+      await db.pool.query(
+        "INSERT INTO users(firebase_uid,email,name) VALUES('upgrade-follower','follower@example.invalid','Seguidor existente') RETURNING id",
+      )
+    ).rows[0].id
+    await db.pool.query(
+      "INSERT INTO profiles(user_id,handle,display_name,is_public) VALUES($1,'legado','Leitora sintética',true),($2,'seguidor_legado','Seguidor existente',true)",
+      [user.id, follower],
+    )
+    await db.pool.query('INSERT INTO follows(follower_id,followed_id) VALUES($1,$2)', [
+      follower,
+      user.id,
+    ])
     const club = (
       await db.pool.query(
         "WITH c AS (INSERT INTO clubs(name,owner_user_id) VALUES('Clube legado',$1) RETURNING id) INSERT INTO club_memberships(club_id,user_id,role) SELECT id,$1,'owner' FROM c RETURNING club_id",
@@ -72,6 +85,17 @@ it('aplica a evolução sobre a base 016 duas vezes e preserva publicação, ví
     await migrate(db.pool)
     expect(
       (
+        await db.pool.query('SELECT 1 FROM follows WHERE follower_id=$1 AND followed_id=$2', [
+          follower,
+          user.id,
+        ])
+      ).rowCount,
+    ).toBe(1)
+    expect((await db.pool.query('SELECT count(*)::int AS n FROM follow_requests')).rows[0].n).toBe(
+      0,
+    )
+    expect(
+      (
         await db.pool.query(
           'SELECT body,kind,quote,version,created_at FROM social_posts WHERE id=$1',
           [post],
@@ -93,7 +117,7 @@ it('aplica a evolução sobre a base 016 duas vezes e preserva publicação, ví
     ).toBe('Comentário histórico')
     expect(
       (await db.pool.query('SELECT count(*)::int AS count FROM schema_migrations')).rows[0].count,
-    ).toBe(18)
+    ).toBe(19)
   } finally {
     await db.close()
   }

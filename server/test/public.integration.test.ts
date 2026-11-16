@@ -60,17 +60,13 @@ afterAll(async () => {
   await app?.close()
   await db?.close()
 })
-it('exige opt-in, publica somente o nome escolhido e revalida privacidade sem expor a biblioteca pessoal', async () => {
+it('mantém privacidade por padrão, publica somente o nome escolhido e revalida privacidade sem expor a biblioteca pessoal', async () => {
   const mine = (await call('/me/profile', 'public-alice')).json()
   expect(mine.isPublic).toBe(false)
-  expect(
-    (
-      await call('/public/posts', 'public-alice', 'POST', {
-        kind: 'reflection',
-        body: 'Privada por padrão',
-      })
-    ).statusCode,
-  ).toBe(403)
+  const initial = await call('/public/posts', 'public-alice', 'POST', {kind:'reflection',body:'Privada por padrão'})
+  expect(initial.statusCode).toBe(201)
+  expect((await call('/public/posts/'+initial.json().id)).statusCode).toBe(404)
+  expect((await call('/public/posts/'+initial.json().id,'public-alice','DELETE')).statusCode).toBe(204)
   await profile('public-alice', { handle: 'alice', displayName: 'Alice leitora' })
   await profile('public-bob', { handle: 'bob', displayName: 'Bob leitor' })
   await profile('public-carol', { handle: 'carol', displayName: 'Carol leitora' })

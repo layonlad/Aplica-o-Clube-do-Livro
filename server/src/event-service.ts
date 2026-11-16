@@ -248,7 +248,7 @@ export class EventService {
       await this.event(client, clubId, id)
       const cursor = decodeCursor(input.cursor)
       const { rows } = await client.query(
-        `SELECT u.id,u.name,(SELECT avatar_id FROM profiles WHERE user_id=u.id) AS "avatarId",a.rsvp,CASE WHEN $6::boolean OR a.user_id=$2 THEN a.attended ELSE NULL END AS attended,a.updated_at::text AS "sortTime" FROM event_attendees a JOIN users u ON u.id=a.user_id JOIN club_memberships m ON m.club_id=a.club_id AND m.user_id=a.user_id AND m.status='active' WHERE a.event_id=$1 AND ($3::timestamptz IS NULL OR (a.updated_at,u.id)<($3,$4::uuid)) ORDER BY a.updated_at DESC,u.id DESC LIMIT $5`,
+        `SELECT u.id,COALESCE((SELECT display_name FROM profiles WHERE user_id=u.id),u.name) AS name,(SELECT avatar_id FROM profiles WHERE user_id=u.id) AS "avatarId",a.rsvp,CASE WHEN $6::boolean OR a.user_id=$2 THEN a.attended ELSE NULL END AS attended,a.updated_at::text AS "sortTime" FROM event_attendees a JOIN users u ON u.id=a.user_id JOIN club_memberships m ON m.club_id=a.club_id AND m.user_id=a.user_id AND m.status='active' WHERE a.event_id=$1 AND ($3::timestamptz IS NULL OR (a.updated_at,u.id)<($3,$4::uuid)) ORDER BY a.updated_at DESC,u.id DESC LIMIT $5`,
         [
           id,
           user.id,

@@ -253,9 +253,9 @@ export class AlbumService {
       await this.album(client, clubId, id)
       const cursor = decodeCursor(input.cursor)
       const { rows } = await client.query(
-        `SELECT m.id,m.kind,m.width,m.height,m.duration,am.caption,am.post_id AS "postId",jsonb_build_object('id',u.id,'name',u.name,'avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) AS "addedBy",am.created_at AS "createdAt",am.created_at::text AS "sortTime",
+        `SELECT m.id,m.kind,m.width,m.height,m.duration,am.caption,am.post_id AS "postId",jsonb_build_object('id',u.id,'name',COALESCE((SELECT display_name FROM profiles WHERE user_id=u.id),u.name),'avatarId',(SELECT avatar_id FROM profiles WHERE user_id=u.id)) AS "addedBy",am.created_at AS "createdAt",am.created_at::text AS "sortTime",
       (SELECT count(*)::int FROM post_comments pc WHERE pc.post_id=am.post_id AND pc.deleted_at IS NULL) AS comments,(am.added_by=$2 OR $6::boolean) AS "canRemove",(SELECT count(*)::int FROM post_likes l WHERE l.post_id=am.post_id) AS likes,EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id=am.post_id AND l.user_id=$2) AS liked,
-      COALESCE((SELECT jsonb_agg(jsonb_build_object('id',tagged.id,'name',tagged.name)) FROM album_participant_tags t JOIN users tagged ON tagged.id=t.user_id JOIN club_memberships cm ON cm.club_id=$7 AND cm.user_id=t.user_id AND cm.status='active' WHERE t.album_id=am.album_id AND t.media_id=m.id AND t.status='accepted'),'[]') AS tags,
+      COALESCE((SELECT jsonb_agg(jsonb_build_object('id',tagged.id,'name',COALESCE((SELECT display_name FROM profiles WHERE user_id=tagged.id),tagged.name))) FROM album_participant_tags t JOIN users tagged ON tagged.id=t.user_id JOIN club_memberships cm ON cm.club_id=$7 AND cm.user_id=t.user_id AND cm.status='active' WHERE t.album_id=am.album_id AND t.media_id=m.id AND t.status='accepted'),'[]') AS tags,
       EXISTS(SELECT 1 FROM album_participant_tags t WHERE t.album_id=am.album_id AND t.media_id=m.id AND t.user_id=$2 AND t.status='pending') AS "myPendingTag"
       FROM album_media am JOIN media_objects m ON m.id=am.media_id AND m.state='active' JOIN users u ON u.id=am.added_by WHERE am.album_id=$1 AND ($8::uuid IS NULL OR m.id=$8) AND ($3::timestamptz IS NULL OR (am.created_at,m.id)<($3,$4::uuid)) ORDER BY am.created_at DESC,m.id DESC LIMIT $5`,
         [

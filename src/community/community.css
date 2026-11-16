@@ -705,3 +705,25 @@
 .shared-book__body { grid-template-columns: 64px minmax(0, 1fr); align-items: center; }
 .shared-book__body img { width: 64px; }
 .shared-book__text { width: 100%; min-height: 84px; margin-bottom: 12px; }
+/* Social profile uses existing identity; all private sections are filtered by the API. */
+.profile-header__stats { display:flex; flex-wrap:wrap; gap:18px; }
+.profile-header__stats>span { display:flex; flex-direction:column; font-size:12px; }
+.profile-header__stats strong { font-size:20px; }
+.profile-header__bio { white-space:pre-wrap; overflow-wrap:anywhere; }
+.profile-header__actions { flex-wrap:wrap; padding-top:12px; }
+.profile-header__actions .button-link,.profile-header__actions .button { min-height:44px; }
+.profile-tabs { overflow-x:auto; max-width:100%; white-space:nowrap; scrollbar-width:thin; }
+.profile-tabs>button { flex-shrink:0; min-height:44px; }
+.profile-activity-feed,.profile-club-list { display:grid; gap:12px; }
+.profile-club-list { grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); margin-bottom:20px; }
+.profile-club-list .card { display:grid; gap:10px; }
+.profile-activity-card { border-bottom:1px solid var(--border); padding:16px 0; display:grid; gap:8px; min-width:0; }
+.profile-activity-card time { font-size:12px; color:var(--muted); }
+.profile-activity-card p { white-space:pre-wrap; overflow-wrap:anywhere; }
+.profile-private-notice { border:1px solid var(--border); border-radius:16px; padding:16px; font-size:14px; }
+.follow-request { display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding-block:12px; border-bottom:1px solid var(--border); }
+.follow-request>a { flex:1 1 160px; display:grid; gap:4px; }
+.follow-request small { font-size:12px; }
+.profile-activity-author { display:flex; gap:10px; align-items:center; }
+.profile-activity-author>span { display:grid; gap:2px; }
+.profile-activity-author small { font-size:12px; }
