@@ -387,6 +387,13 @@
   "atualizacoes": [
     {
       "data": "2026-11-16",
+      "autor": "Claude Code",
+      "titulo": "Leitor de demonstração: modo noturno legível",
+      "resumo": "No modo Noturno do leitor de demonstração, o título do capítulo e os ícones do topo ficavam escuros sobre o fundo escuro. Agora herdam o texto claro, e capítulo, citação, letra capitular e progresso usam o rosa claro; contraste mínimo de 7,4:1. Só CSS, sem mudança de API.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/28"
+    },
+    {
+      "data": "2026-11-16",
       "autor": "Codex",
       "titulo": "Leitor imersivo e perfil social com privacidade — em revisão",
       "resumo": "EPUB com gestos, folha 3D, painéis, favoritos e retomada corrigida; perfil com edição, solicitações, atividades e salvos, carregado sob demanda. Autorização separa perfil, seguidores e clubes, inclusive contadores e denúncias; inclui evolução aditiva e grants mínimos ainda não aplicados. 207 testes locais aprovados, navegador Chrome/WebKit e auditoria de produção sem vulnerabilidades. Produção permanece em 383541f; merge e liberação aguardam nova aprovação.",
