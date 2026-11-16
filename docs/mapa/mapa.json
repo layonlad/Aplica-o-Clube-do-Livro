@@ -357,7 +357,7 @@
       "autor": "Codex",
       "titulo": "Migração integral publicada no Firebase e Google Cloud",
       "resumo": "PR 23 incorporado em 9ad583c com CI aprovado. Site principal e compatibilidade publicados; API e executor no Cloud Run, PostgreSQL no Cloud SQL e arquivos privados no Firebase Storage. Cópia final de 50 tabelas, 140 registros e 41 arquivos conferida; quatro contas reais preservadas. Scheduler testado com HTTP 200; conta/arquivos sintéticos removidos e sessão excluída recusada. Render e fila antigos pausados; recuperação e alertas de R$ 70 mantidos.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/24"
     },
     {
       "data": "2026-11-16",
