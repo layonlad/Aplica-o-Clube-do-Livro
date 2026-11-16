@@ -2,6 +2,8 @@
 
 Produção migrada e verificada em **16/11/2026**, com autorização do dono, para o projeto Google/Firebase `gen-lang-client-0194308411`, nome de exibição **Projeto-clube-do-Livro**. O orçamento autorizado é de **R$ 70/mês**, com alertas; não é um corte automático de cobrança.
 
+Última atualização: **PR 25, commit `383541f`**, publicada após a migração. API e executor antes dos dois sites, sem migrations ou grants. [Relatório e resultado de cada teste](publicacoes/2026-11-16-pr25.md).
+
 ## Endereços
 
 - [Aplicativo](https://gen-lang-client-0194308411.web.app/#/app).
@@ -15,21 +17,21 @@ A entrada continua livre, sem cadastro ou participação em clube. Biblioteca e 
 
 | Recurso | Configuração |
 | --- | --- |
-| Frontend | Firebase Hosting, código incorporado em `9ad583c`; visual do Claude preservado |
+| Frontend | Firebase Hosting, código `383541f` do PR 25; visual do Claude preservado |
 | Autenticação | Firebase Authentication, Google e e-mail/senha, UIDs e provedores preservados |
-| API | Cloud Run `clube-livro-api`, revisão `clube-livro-api-00002-j59`, 1 CPU/1 GiB, mínimo zero, máximo uma instância, concorrência 2 |
+| API | Cloud Run `clube-livro-api`, revisão `clube-livro-api-00003-cbz`, 1 CPU/1 GiB, mínimo zero, máximo uma instância, concorrência 2 |
 | Banco | Cloud SQL `clube-livro-postgres`, PostgreSQL 17, `db-f1-micro`, HDD 10 GiB, zona única, região `us-central1` |
 | Papéis SQL | `clube_migrator`, `clube_runtime` e `clube_notifications`, com grants versionados e sem superusuário/DDL no runtime |
 | Arquivos | Cloud Storage for Firebase, bucket padrão privado do projeto, acesso público impedido |
-| Executor | Cloud Run privado `clube-notifications`, revisão `clube-notifications-00001-sxb`, 1 CPU/512 MiB, mínimo zero, máximo uma instância |
+| Executor | Cloud Run privado `clube-notifications`, revisão `clube-notifications-00002-q8q`, 1 CPU/512 MiB, mínimo zero, máximo uma instância |
 | Agendamento | Cloud Scheduler, `7,22,37,52 * * * *`, UTC, OIDC e identidade exclusiva |
 | Configuração privada | Secret Manager, acessos separados por identidade; sem arquivos de chave de serviço |
 | Imagens | Cloud Build e Artifact Registry `us-central1/clube-livro`; imagem pelo digest conferido |
 | Recuperação | Sete backups Cloud SQL, exportações privadas da migração e origens anteriores preservadas |
 
-Imagem da API e executor construída a partir de `8f0ddd3bf4dad30ffe63472a329e5e98232770f5`, digest `sha256:6cfe7d2c68a929a5d7768bff06dc70b07ede85bb17e0512a3badee16acbef532`. O PR 23 foi incorporado em `9ad583c87439a50d5abe17abb41d81e8324f9dbf`; as mudanças posteriores à construção são metadados/documentação de infraestrutura, sem diferença no backend, Dockerfile ou dependências. CI do PR e de main aprovado.
+Imagem atual da API e executor construída a partir de `383541f0153e645567b8a6153ddf4c206e22a8c7`, digest `sha256:1c45d391af4055c023f4c54281fadb1c5122f77dee225c949037d4df6043a60f`. CI do commit aprovado; 194 testes locais e testes pós-publicação registrados no relatório do PR 25. A configuração de recuperação anterior foi preservada privadamente.
 
-## Verificações da troca
+## Verificações da migração anterior
 
 - Restauração final de 50 tabelas públicas e 140 registros, incluindo controle de migrations, com checksums por tabela e sequências iguais. Dezoito migrations conferidas por hash; nenhuma migration nova.
 - 41 objetos, 2.120.610 bytes, preservados nas mesmas chaves e verificados por hash. Quatro contas reais importadas sem alterar UIDs.
