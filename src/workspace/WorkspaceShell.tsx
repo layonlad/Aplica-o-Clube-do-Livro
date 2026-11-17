@@ -2,7 +2,7 @@ import {NotificationBell} from '../community/NotificationBell'
 import { SpaceSwitcher } from '../components/SpaceSwitcher'
 import { Suspense, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import { Bell, BookOpen, CalendarDays, ChevronRight, History, Home, Camera, Compass, Download, LogIn, Menu, MessagesSquare, NotebookPen, Palette, ShieldCheck, Sparkles, UserRound, UsersRound, X, type LucideIcon } from 'lucide-react'
+import { Bell, BookOpen, CalendarDays, ChevronRight, History, Home, Camera, Download, LogIn, Menu, MessagesSquare, NotebookPen, Palette, Search, ShieldCheck, Sparkles, UserRound, UsersRound, X, type LucideIcon } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import { useTheme } from '../app/ThemeProvider'
 import { SkeletonPage } from '../components/ui'
@@ -13,8 +13,9 @@ import { CoverBackdrop } from './CoverBackdrop'
 import { useWorkspace } from './WorkspaceProvider'
 import { motion } from 'framer-motion'
 import { pageTurn, settle } from '../design/motion'
+import { PageLeaf } from '../app/PageLeaf'
 
-type NavItem = { to: string; name: string; icon: LucideIcon; hint?: string }
+type NavItem = { to: string; name: string; icon: LucideIcon; hint?: string; search?: boolean }
 type NavGroup = { label: string; items: NavItem[] }
 
 const DISMISS_KEY = 'clube-livro-visitor-note-dismissed'
@@ -71,6 +72,7 @@ export function WorkspaceShell() {
   const nav: NavItem[] = [
     { to: '/app', name: 'Início', icon: Home },
     { to: '/app/community', name: 'Comunidade', icon: MessagesSquare },
+    { to: '/app/explore', name: 'Pesquisar', icon: Search, search: true },
     { to: '/app/library', name: 'Biblioteca', icon: BookOpen },
     { to: '/clubs', name: 'Meus clubes', icon: UsersRound },
 
@@ -87,7 +89,7 @@ export function WorkspaceShell() {
       { to: '/app/downloads', name: 'Leituras autorizadas', icon: Download, hint: 'Arquivos com permissão de uso' },
     ] },
     { label: 'Comunidade', items: [
-      { to: '/app/explore', name: 'Explorar', icon: Compass, hint: 'Leitores, livros e clubes' },
+      { to: '/app/explore', name: 'Pesquisar', icon: Search, hint: 'Pessoas, publicações e livros' },
       { to: '/app/notifications', name: 'Notificações', icon: Bell, hint: 'Respostas, convites e avisos' },
       { to: '/app/social-profile', name: 'Perfil social', icon: UserRound, hint: 'Como os outros leitores veem você' },
       ...(publicModerator ? [{ to: '/app/moderation', name: 'Moderação pública', icon: ShieldCheck }] : []),
@@ -137,10 +139,14 @@ export function WorkspaceShell() {
   const showVisitorNote = !user?.emailVerified && !dismissed && pathname === '/app'
 
   const reading = /^\/app\/reader\/[^/]+/.test(pathname)
+  // Ordem da aba atual na barra inferior: decide para que lado a folha vira.
+  const tabOrder = (() => { const index = nav.findIndex(item => item.to === '/app' ? pathname === '/app' : pathname.startsWith(item.to)); return index < 0 ? nav.length : index })()
+  const leafKey = pathname.startsWith('/app/reader') ? 'reader' : pathname
   return <div className={`app-frame workspace-app ${reading ? 'is-reading' : ''}`} data-keyboard={keyboardOpen?'open':'closed'} data-space={globalPage?'community':spaceFor(pathname, scope)}>
     <a className="skip-link" href="#conteudo" onClick={skip}>Pular para o conteúdo</a>
     <AppearanceSync />
     <BookOpenerLayer />
+    {!reading && <PageLeaf turnKey={leafKey} order={tabOrder} />}
     <CoverBackdrop />
     <aside className="app-rail">
       <header className={`app-header ${scrolled ? 'is-scrolled' : ''}`}>
@@ -151,7 +157,7 @@ export function WorkspaceShell() {
         <button ref={menuButtonRef} className="icon-button mobile-only" aria-label="Abrir menu" aria-expanded={menu} onClick={() => setMenu(true)}><Menu /></button>
       </header>
       <nav className="bottom-nav" aria-label="Navegação principal">
-        {nav.map(({ to, name, icon: Icon }) => <NavLink key={to} to={to} end={to === '/app'} className={({ isActive }) => isActive ? 'active' : ''}>{({ isActive }) => <>{isActive && <motion.span layoutId="nav-pill" className="nav-pill" transition={settle} aria-hidden="true" />}<Icon size={21} strokeWidth={1.9} aria-hidden="true" /><span>{name}</span></>}</NavLink>)}
+        {nav.map(({ to, name, icon: Icon, search }) => <NavLink key={to} to={to} end={to === '/app'} aria-label={search ? name : undefined} className={({ isActive }) => `${search ? 'nav-search' : ''} ${isActive ? 'active' : ''}`}>{({ isActive }) => <>{isActive && !search && <motion.span layoutId="nav-pill" className="nav-pill" transition={settle} aria-hidden="true" />}{search ? <span className="nav-search__circle" aria-hidden="true"><Icon size={21} strokeWidth={2.1} /></span> : <Icon size={21} strokeWidth={1.9} aria-hidden="true" />}<span className={search ? 'nav-search__label' : undefined}>{name}</span></>}</NavLink>)}
       </nav>
       <nav className="rail-more rail-only" aria-label="Mais do aplicativo">
         {groups.map(group => <div className="rail-group" key={group.label}>
@@ -172,7 +178,7 @@ export function WorkspaceShell() {
       {unread && <p className="toast-status" role="status">{unread}</p>}
       {error && <div role="alert" className="access-error">{error} {['AUTH_REQUIRED','EMAIL_NOT_VERIFIED'].includes(errorCode)?<button type="button" onClick={()=>void reenter()}>Entrar novamente</button>:<button type="button" onClick={() => void refresh()}>Recarregar</button>}</div>}
       {accountError&&<p role="alert">{accountError}</p>}
-      {loading&&!globalPage ? <SkeletonPage label="Abrindo seu espaço…" /> : snapshot||globalPage ? <motion.div key={pathname} className={pathname.startsWith('/app/reader')?'route-view route-view--reader':'route-view'} variants={pathname.startsWith('/app/reader')?undefined:pageTurn} initial={pathname.startsWith('/app/reader')?false:'initial'} animate={pathname.startsWith('/app/reader')?undefined:'enter'}><Suspense fallback={<SkeletonPage label="Abrindo esta página…"/>}><Outlet /></Suspense></motion.div> : !error ? <p role="status">Escolha seu espaço para começar.</p> : null}
+      {loading&&!snapshot&&!globalPage ? <SkeletonPage label="Abrindo seu espaço…" /> : snapshot||globalPage ? <motion.div key={pathname} className={pathname.startsWith('/app/reader')?'route-view route-view--reader':'route-view'} variants={pathname.startsWith('/app/reader')?undefined:pageTurn} initial={pathname.startsWith('/app/reader')?false:'initial'} animate={pathname.startsWith('/app/reader')?undefined:'enter'} onAnimationStart={()=>{mainRef.current?.querySelector<HTMLElement>('.route-view')?.removeAttribute('data-settled')}} onAnimationComplete={()=>{mainRef.current?.querySelector<HTMLElement>('.route-view')?.setAttribute('data-settled','')}}><Suspense fallback={<SkeletonPage label="Abrindo esta página…"/>}><Outlet /></Suspense></motion.div> : !error ? <p role="status">Escolha seu espaço para começar.</p> : null}
     </main>
 
     {menu && <div className="drawer-layer" onMouseDown={() => setMenu(false)}>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { BookOpen, Compass, PenLine } from 'lucide-react'
+import { BookOpen, PenLine } from 'lucide-react'
 import type { Page, PostDto } from '../../server/src/community-contracts'
 import { useAuth } from '../auth/AuthProvider'
 import { readableError } from '../auth/api'
@@ -63,14 +63,7 @@ export function PublicCommunity() {
   }
   return (
     <div className="social-room stack-lg">
-      <header className="social-heading">
-        <span className="eyebrow">COMUNIDADE LITERÁRIA</span>
-        <h1>As leituras nos encontram</h1>
-        <p>Ideias, livros e pessoas para além de um só clube. Publicações de perfis privados aparecem só para seguidores aprovados.</p>
-        <Link className="text-link" to="/app/explore">
-          <Compass size={17} /> Explorar leitores e livros
-        </Link>
-      </header>
+      <h1 className="sr-only">Comunidade</h1>
       {selected ? (
         <Link to="/app/community">← Voltar à comunidade</Link>
       ) : (
@@ -78,12 +71,7 @@ export function PublicCommunity() {
           {user?.emailVerified ? (
             <>
               <SharedBookComposer clubId={null} onPublished={() => setRevision((value) => value + 1)} />
-              <PostComposer clubId={null} onPublished={() => setRevision((value) => value + 1)} />
-              <p className="t-caption">
-                As publicações usam seu{' '}
-                <Link to="/app/social-profile">perfil e suas escolhas de privacidade</Link>.
-                Seus clubes e arquivos pessoais continuam privados.
-              </p>
+              <PostComposer quick clubId={null} onPublished={() => setRevision((value) => value + 1)} />
             </>
           ) : (
             <div className="notice">

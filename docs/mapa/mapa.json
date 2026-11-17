@@ -384,6 +384,13 @@
   ],
   "atualizacoes": [
     {
+      "data": "2026-11-17",
+      "autor": "Claude Code",
+      "titulo": "Comunidade estilo post, pesquisa na barra, leitor em tela cheia e login permanente",
+      "resumo": "Comunidade sem cabeçalho explicativo: caixa de publicação com foto do perfil, teclado ao tocar e ícone pequeno de foto (sem enquete). Lupa em círculo na barra inferior abre a Pesquisa (pessoas, publicações e livros enquanto digita). Leitor: livro original e versão em texto em tela cheia, páginas ao arrastar ou rolagem, ferramentas num painel único com abas. Leitura com conta corrigida: a página vira na hora e a posição é salva em segundo plano (antes cada virada esperava o servidor, e um conflito recarregava e fechava o livro); a última página do capítulo não trava mais. Login fica salvo ao fechar o app (antes era só da sessão). Folha que vira ao trocar de aba, botões revisados em 360 e 375 px. Só frontend; API e banco não mudam.",
+      "pr": ""
+    },
+    {
       "data": "2026-11-16",
       "autor": "Codex",
       "titulo": "PR 27 publicado: leitor imersivo e perfis sociais validados",

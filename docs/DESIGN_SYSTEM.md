@@ -161,17 +161,21 @@ Desde 15/11/2026 o tamanho-base é **15 px** (`--text-scale: 0.9375` × 16 px), 
 
 | Movimento | Onde | Como |
 | --- | --- | --- |
-| `pageTurn` | Troca de rota (`.route-view` nos shells) | A página nova entra deslizando da direita e assenta (opacidade + `x`) |
+| Folhear (`PageLeaf`) | Troca de aba (`src/app/PageLeaf.tsx`) | Uma folha de papel do tamanho da tela gira sobre a lombada (0,95s) e revela a página nova. Indo para uma aba à direita vira para a esquerda; voltando, ao contrário. Fica abaixo do cabeçalho e da barra; não aparece no leitor nem com movimento reduzido |
+| `pageTurn` | Troca de rota (`.route-view` nos shells) | A página nova assenta devagar por baixo da folha (0,8s, opacidade + `x` + leve `rotateY`) |
+| Páginas do livro | Versão em texto do leitor (`TextPages.tsx`) | Ao arrastar, a página que sai gira sobre a lombada e a nova desliza por baixo |
 | `layoutId="nav-pill"` + `settle` | Navegação inferior e trilho | O marcador do item ativo desliza de uma aba para a outra com mola |
 | Estante | `ShelfBackdrop` | Entra com leve zoom ao abrir; desloca até 28px ao rolar (profundidade). Não se move com movimento reduzido |
 | Adesivos | `.sticker--float` | Laço e estrela balançam devagar; a flor gira; o brilho pisca |
 | Cartão interativo | `.card--interactive:hover` | Sobe 3px e inclina 0,4° (papel na mão) |
 
+**Leitor:** em tela cheia nos dois modos (livro original e versão em texto). Toque no meio (ou Enter) mostra os controles; um único botão abre o painel "Ferramentas de leitura" com abas Sumário, Aparência e Marcadores. Em Aparência escolhe-se Páginas (arrastar para o lado) ou Rolagem.
+
 **Regras:**
 - Anime só `transform` e `opacity`. A exceção é `clip-path` no título.
 - Nada de reprodução automática.
 - Com `prefers-reduced-motion: reduce`, o CSS zera animações e transições, e o `MotionConfig reducedMotion="user"` (em `main.tsx`) faz o framer-motion pular o movimento.
-- Não deixe `transform` permanente em contêineres de página: ele prende elementos `position: fixed` dentro deles. As variantes terminam em `transform: none`.
+- Não deixe `transform` permanente em contêineres de página: ele prende elementos `position: fixed` dentro deles. Quando a animação de rota termina, o shell marca `.route-view[data-settled]`, que zera o `transform` (o `rotateY` com perspectiva do framer deixaria um `matrix3d`).
 
 ## Componentes
 

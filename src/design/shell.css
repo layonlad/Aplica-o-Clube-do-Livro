@@ -325,3 +325,34 @@
 .notification-bell { flex:0 0 var(--control-lg); position:relative; }
 .notification-badge { position:absolute; top:1px; right:0; min-width:17px; height:17px; padding:0 3px; display:grid; place-items:center; border-radius:999px; background:var(--accent-ink); color:var(--surface); font:600 10px/1 var(--font-sticker); animation: heart-pop var(--dur-slow) var(--ease-spring) both; }
 @media(max-width:600px){ .app-header { gap:6px; } .app-header .space-switcher { min-width:0; } }
+
+/* ── Pesquisar: lupa em círculo ao lado de Comunidade (barra inferior) ── */
+.bottom-nav:has(.nav-search) { grid-template-columns: repeat(2, minmax(0, 1fr)) 52px repeat(3, minmax(0, 1fr)); }
+.bottom-nav a.nav-search::before { content: none; }
+.nav-search__label { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.nav-search__circle {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  color: var(--text-on-brand);
+  background: var(--brand);
+  border-radius: 50%;
+  box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 6px 14px color-mix(in srgb, var(--brand) 30%, transparent);
+  transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-fast) var(--ease-out);
+}
+.bottom-nav a.nav-search:active .nav-search__circle { transform: scale(.9); }
+.bottom-nav a.nav-search.active .nav-search__circle { box-shadow: 0 0 0 3px var(--surface-raised), 0 0 0 5px color-mix(in srgb, var(--brand) 45%, transparent); }
+.bottom-nav a.nav-search svg { transform: none; }
+@media (min-width: 1024px) {
+  .bottom-nav:has(.nav-search) { grid-template-columns: 1fr; }
+  .nav-search__label { position: relative !important; width: auto; height: auto; overflow: visible; clip: auto; }
+  .nav-search__circle { width: auto; height: auto; color: inherit; background: none; box-shadow: none !important; border-radius: 0; }
+  .bottom-nav a.nav-search::before { content: ''; }
+}
+@media (max-width: 419px) {
+  .bottom-nav:has(.nav-search) { gap: 0; padding-inline: 3px; grid-template-columns: repeat(2, minmax(0, 1fr)) 48px repeat(3, minmax(0, 1fr)); }
+  .bottom-nav:has(.nav-search) a { font-size: 0.6rem; letter-spacing: -0.02em; }
+}

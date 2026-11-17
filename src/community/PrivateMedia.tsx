@@ -2,7 +2,7 @@ import { mediaBase } from './social-api'
 import { useEffect, useRef, useState } from 'react'
 import { Sheet } from '../components/Sheet'
 import { uploadPhoto } from './photo-upload'
-import { Play, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
+import { ImagePlus, Play, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, ApiError, messageFor, readableError } from '../auth/api'
 import type { PostMedia, Page } from '../../server/src/community-contracts'
@@ -44,10 +44,13 @@ export function MediaPicker({
   onBusy,
   imagesOnly = false,
   compact = false,
+  iconOnly = false,
 }: {
   clubId: string | null
   imagesOnly?: boolean
   compact?: boolean
+  /** Só um botão pequeno com ícone (caixa de publicação rápida); sem a lista de rascunhos. */
+  iconOnly?: boolean
   value: PostMedia[]
   onChange: (value: PostMedia[]) => void
   onBusy?: (busy: boolean) => void
@@ -166,9 +169,21 @@ export function MediaPicker({
     }
   }
   return (
-    <div className={`media-picker ${compact ? 'media-picker--compact' : ''}`}>
-      <label className="file-button">
-        {imagesOnly ? 'Adicionar fotos' : 'Adicionar fotos ou vídeo'}
+    <div className={`media-picker ${compact ? 'media-picker--compact' : ''} ${iconOnly ? 'media-picker--icon' : ''}`}>
+      <label
+        className={iconOnly ? 'media-icon-button' : 'file-button'}
+        title={iconOnly ? 'Adicionar foto' : undefined}
+      >
+        {iconOnly ? (
+          <>
+            <ImagePlus size={20} aria-hidden="true" />
+            <span className="sr-only">Adicionar foto</span>
+          </>
+        ) : imagesOnly ? (
+          'Adicionar fotos'
+        ) : (
+          'Adicionar fotos ou vídeo'
+        )}
         <input
           type="file"
           accept={
@@ -237,7 +252,7 @@ export function MediaPicker({
           </div>
         ))}
       </div>
-      <details onToggle={(event) => setRecover(event.currentTarget.open)}>
+      {!iconOnly && <details onToggle={(event) => setRecover(event.currentTarget.open)}>
         <summary>Rascunhos de fotos</summary>
         <p>Selecione uma foto de um envio anterior.</p>
         <div className="post-media-grid">
@@ -267,7 +282,7 @@ export function MediaPicker({
             Mais arquivos preparados
           </Button>
         )}
-      </details>
+      </details>}
     </div>
   )
 }

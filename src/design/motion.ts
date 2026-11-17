@@ -13,11 +13,14 @@ export const ease = {
 /** Mola macia para marcadores e elementos que "assentam" no lugar. */
 export const settle: Transition = { type: 'spring', stiffness: 420, damping: 34, mass: 0.8 }
 
-/** Virar a página: a tela nova entra girando de leve sobre a lombada (borda esquerda). */
+/** Virar a página: a tela nova assenta devagar enquanto a folha (PageLeaf) passa por cima. */
 export const pageTurn: Variants = {
-  initial: { opacity: 0, x: 22, rotateY: -8, transformPerspective: 1400 },
-  enter: { opacity: 1, x: 0, rotateY: 0, transition: { duration: 0.46, ease: ease.page } },
+  initial: { opacity: 0, x: 18, rotateY: -4, transformPerspective: 1600 },
+  enter: { opacity: 1, x: 0, rotateY: 0, transition: { duration: 0.8, delay: 0.18, ease: ease.page } },
 }
+
+/** Folha de papel que gira sobre a lombada ao trocar de aba (duração total, em segundos). */
+export const LEAF_DURATION = 0.95
 
 /** Lista que entra em cascata (use em um container com staggerChildren). */
 export const cascade: Variants = {

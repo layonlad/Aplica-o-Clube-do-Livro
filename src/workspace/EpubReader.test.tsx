@@ -58,6 +58,8 @@ it('não incorpora scripts, handlers, recursos remotos ou formulários do EPUB e
           hash: expect.stringMatching(/^[a-f0-9]{64}$/),
         }),
       }),
+      undefined,
+      { quiet: true },
     ),
   )
 })

@@ -299,3 +299,17 @@
 @media (min-width: 720px) {
   .library-book-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); align-items: start; }
 }
+
+/* Menu "Mais opções" no celular: o desfoque do card criava um contêiner e prendia o menu dentro dele. */
+.library-book:has(.book-menu[open]) { backdrop-filter: none; -webkit-backdrop-filter: none; z-index: 20; }
+@media (max-width: 420px) {
+  .library-book__actions .library-book__read { padding: 8px 10px; gap: 6px; }
+  .library-book__actions .library-book__read svg { display: none; }
+}
+@media (max-width: 420px) {
+  .library-book__actions { gap: 4px; }
+  .library-book__actions .icon-action { width: 36px; height: 36px; }
+}
+@media (max-width: 380px) {
+  .library-book__actions .library-book__read { padding: 8px; font-size: .8rem; letter-spacing: -.01em; }
+}

@@ -42,3 +42,29 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Folhear entre abas (PageLeaf.tsx) ──
+ * Uma folha de papel do tamanho da tela gira sobre a lombada e revela a página nova.
+ * Fica abaixo do cabeçalho e da barra inferior, para a navegação continuar visível. */
+.page-leaf {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-header) - 1);
+  pointer-events: none;
+  background-color: var(--surface);
+  background-image: var(--paper);
+  background-size: 560px;
+  background-blend-mode: multiply;
+  backface-visibility: visible;
+  will-change: transform, opacity;
+}
+.page-leaf--forward { transform-origin: left center; box-shadow: 18px 0 40px rgba(58, 34, 40, .18); }
+.page-leaf--back { transform-origin: right center; box-shadow: -18px 0 40px rgba(58, 34, 40, .18); }
+.page-leaf__shade { position: absolute; inset: 0; }
+.page-leaf--forward .page-leaf__shade { background: linear-gradient(90deg, rgba(58,34,40,.10), transparent 18%, transparent 70%, rgba(58,34,40,.16)); }
+.page-leaf--back .page-leaf__shade { background: linear-gradient(270deg, rgba(58,34,40,.10), transparent 18%, transparent 70%, rgba(58,34,40,.16)); }
+@media (prefers-reduced-motion: reduce) { .page-leaf { display: none; } }
+
+/* Depois de assentar, a página não guarda transformação 3D: senão menus e elementos "fixos"
+ * dentro dela passam a se posicionar pela página, e não pela tela. */
+.route-view[data-settled] { transform: none !important; }

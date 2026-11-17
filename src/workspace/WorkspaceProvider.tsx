@@ -8,7 +8,7 @@ import { loadPersonal, savePersonal, secureIndex } from './storage'
 interface ContextValue {
   publicModerator:boolean; snapshot: WorkspaceSnapshot|null; clubs: Club[]; scope: string; scopeName: string; loading: boolean; busy:boolean; error:string;errorCode:string
   addToPersonal:(book:{title:string;author:string;category?:string;metadata?:import('../../server/src/workspace-model').WorkspaceState['books'][number]['metadata']})=>Promise<boolean>
-  setScope:(scope:string)=>void; refresh:()=>Promise<void>; act:(action:WorkspaceAction,onSaved?:(snapshot:WorkspaceSnapshot)=>void)=>Promise<boolean>
+  setScope:(scope:string)=>void; refresh:(soft?:boolean)=>Promise<void>; act:(action:WorkspaceAction,onSaved?:(snapshot:WorkspaceSnapshot)=>void,options?:{quiet?:boolean})=>Promise<boolean>
 }
 const Context=createContext<ContextValue|null>(null)
 export function WorkspaceProvider({children}:{children:ReactNode}) {
@@ -28,10 +28,12 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
   const identity=user?.emailVerified?user:null
   const identityRef=useRef(identity);identityRef.current=identity
   const scopeRef=useRef(scope);scopeRef.current=scope
-  const refresh=useCallback(async()=>{
+  // soft: atualiza os dados sem desmontar a tela aberta (usado depois de um conflito ao salvar, ex.: no leitor).
+  const refresh=useCallback(async(soft=false)=>{
     const ticket=++generation.current
     const account=identityRef.current
-    setLoading(true);setError('');setErrorCode('');setSnapshot(null)
+    if(!soft){setLoading(true);setSnapshot(null)}
+    setError('');setErrorCode('')
     try {
       if (!account) {
         const value=await loadPersonal()
@@ -45,10 +47,10 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
         if(ticket===generation.current)setSnapshot(value)
       }
     } catch(err){if(ticket===generation.current){setError(readableError(err));setErrorCode(err instanceof ApiError?(err.status===401?'AUTH_REQUIRED':err.code):'')}}
-    finally {if(ticket===generation.current)setLoading(false)}
+    finally {if(ticket===generation.current&&!soft)setLoading(false)}
   },[identity?.uid,scope])
-  useEffect(()=>{void refresh();return()=>{generation.current++}},[refresh])
-  async function act(action:WorkspaceAction,onSaved?:(snapshot:WorkspaceSnapshot)=>void) {
+  useEffect(()=>{void refresh(false);return()=>{generation.current++}},[refresh])
+  async function act(action:WorkspaceAction,onSaved?:(snapshot:WorkspaceSnapshot)=>void,options:{quiet?:boolean}={}) {
     if(lock.current||!current.current)return false
     const ticket=generation.current;const source=current.current
     lock.current=true;setBusy(true);setError('');setErrorCode('')
@@ -61,7 +63,7 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
       }
       if(ticket===generation.current&&identityRef.current?.uid===identity?.uid&&scopeRef.current===scope){current.current=next;setSnapshot(next);onSaved?.(next)}
       return true
-    }catch(err){if(ticket===generation.current){setErrorCode(err instanceof ApiError?(err.status===401?'AUTH_REQUIRED':err.code):'');setError(err instanceof WorkspaceError?err.message:readableError(err)); if(err instanceof ApiError&&['WORKSPACE_CHANGED','READING_CHANGED'].includes(err.code)){void refresh().then(()=>{if(identityRef.current?.uid===identity?.uid&&scopeRef.current===scope)setError(err.message)})}}return false}
+    }catch(err){if(ticket===generation.current){const conflict=err instanceof ApiError&&['WORKSPACE_CHANGED','READING_CHANGED'].includes(err.code);if(!options.quiet){setErrorCode(err instanceof ApiError?(err.status===401?'AUTH_REQUIRED':err.code):'');setError(err instanceof WorkspaceError?err.message:readableError(err))} if(conflict){void refresh(true).then(()=>{if(!options.quiet&&identityRef.current?.uid===identity?.uid&&scopeRef.current===scope)setError((err as ApiError).message)})}}return false}
     finally{lock.current=false;setBusy(false)}
   }
   async function addToPersonal(book:{title:string;author:string;category?:string;metadata?:import('../../server/src/workspace-model').WorkspaceState['books'][number]['metadata']}){
