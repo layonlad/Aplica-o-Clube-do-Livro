@@ -389,7 +389,7 @@
       "autor": "Codex",
       "titulo": "Proteção de sessão e retomada do leitor EPUB",
       "resumo": "O app conectado espera autenticação e validação da sessão antes de montar as rotas. Login persistente, retorno interno, logout, recuperação de falha temporária e caches separados por conta. A posição EPUB usa âncora visível durante a troca de modo e grava depois de medir cada capítulo. 236 testes locais aprovados e ensaios Chrome/WebKit com duas contas sintéticas, login e logout persistentes, retomada de EPUB e rolagem. Correção em revisão, sem alterações em produção.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/39"
     },
     {
       "data": "2026-11-18",
