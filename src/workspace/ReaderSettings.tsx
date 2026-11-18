@@ -1,5 +1,4 @@
-import { Sheet } from '../components/Sheet'
-import { useReaderChrome } from './ImmersiveReader'
+import { ReaderPanel, useReaderChrome } from './ImmersiveReader'
 import { useEffect, useState, type CSSProperties } from 'react'
 import { preferencesSchema, type ReadingPreferences } from '../../server/src/workspace-model'
 import { fontOptions, contrast } from '../app/appearance'
@@ -52,11 +51,29 @@ export function ReaderSettings() {
       if (!ok) setError('Não foi possível salvar. Tente novamente.')
     })
   }
-  if (chrome && chrome.panel !== 'appearance') return null
   const content = (
     <details open={chrome ? true : undefined} className="reader-settings">
       <summary>Preferências de leitura</summary>
       {error && <p role="alert">{error}</p>}
+      <div className="reader-flow" role="group" aria-label="Modo de leitura">
+        {(
+          [
+            ['paged', 'Páginas', 'Arraste para o lado'],
+            ['scroll', 'Rolagem', 'Role para baixo'],
+          ] as const
+        ).map(([value, label, hint]) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={(reader.flow ?? 'paged') === value}
+            disabled={busy}
+            onClick={() => update({ flow: value })}
+          >
+            <strong>{label}</strong>
+            <small>{hint}</small>
+          </button>
+        ))}
+      </div>
       <h3>Texto e aparência</h3>
       <div className="reader-settings-grid">
         <label>
@@ -202,18 +219,6 @@ export function ReaderSettings() {
             <option value="justify">Justificado</option>
           </select>
         </label>
-        <label>
-          Navegação no EPUB
-          <select
-            aria-label="Navegação no EPUB"
-            value={reader.flow ?? 'paged'}
-            disabled={busy}
-            onChange={(event) => update({ flow: event.target.value as ReaderPreferences['flow'] })}
-          >
-            <option value="paged">Páginas</option>
-            <option value="scroll">Rolagem contínua</option>
-          </select>
-        </label>
       </div>
       <fieldset className="reader-settings-grid">
         <legend>Navegação e gestos</legend>{' '}
@@ -238,15 +243,5 @@ export function ReaderSettings() {
       </fieldset>
     </details>
   )
-  return chrome ? (
-    <Sheet
-      title="Aparência da leitura"
-      className="reader-sheet"
-      onClose={() => chrome.setPanel(null)}
-    >
-      {content}
-    </Sheet>
-  ) : (
-    content
-  )
+  return chrome ? <ReaderPanel name="appearance">{content}</ReaderPanel> : content
 }

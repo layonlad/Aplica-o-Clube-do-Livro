@@ -142,9 +142,12 @@ export function useEpubPagination(
       if (!host) return
       const next = Math.min(count - 1, Math.max(0, target))
       host.scrollLeft = next * stride.current
-      current.current = next
-      setPage(next)
+      // Se a rolagem não chegou à página pedida, ela não existe: quem chamou trata como fim do capítulo.
+      const reached = Math.round(host.scrollLeft / stride.current)
+      current.current = reached
+      setPage(reached)
       visibleLocator()
+      return reached === target
     },
     [count, viewport, visibleLocator],
   )
@@ -199,7 +202,9 @@ export function useEpubPagination(
       host.style.setProperty('--epub-column-width', host.clientWidth + 'px')
       host.style.setProperty('--epub-page-height', host.clientHeight + 'px')
       stride.current = host.clientWidth + gap
-      setCount(Math.max(1, Math.ceil((body.scrollWidth + gap) / stride.current)))
+      // Conta pelas colunas que a tela consegue rolar (a largura do texto arredondava uma página a mais,
+      // e a última "página" nunca era alcançada: o leitor travava antes do próximo capítulo).
+      setCount(Math.max(1, Math.ceil((host.scrollWidth + gap - 2) / stride.current)))
       revealOffset(anchor.current.offset, anchor.current.element)
     }
     const resize = () => {

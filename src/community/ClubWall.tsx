@@ -213,9 +213,12 @@ function WallRoom({ clubId, name }: { clubId: string | null; name: string }) {
 export function PostComposer({
   clubId,
   onPublished,
+  quick = false,
 }: {
   clubId: string | null
   onPublished: () => void
+  /** Caixa sempre aberta, como um post rápido: texto, foto pequena e Publicar. Sem enquete. */
+  quick?: boolean
 }) {
   const ownAvatar = useOwnAvatar(),
     { user } = useAuth()
@@ -268,6 +271,45 @@ export function PostComposer({
       setBusy(false)
     }
   }
+  if (quick)
+    return (
+      <form className="post-composer quick-composer" onSubmit={submit}>
+        <UserAvatar name={user?.displayName || 'Leitor'} avatarId={ownAvatar} size="md" />
+        <div className="quick-composer__body">
+          <label>
+            <span className="sr-only">Escreva uma publicação</span>
+            <textarea
+              rows={2}
+              required
+              maxLength={10000}
+              value={body}
+              onChange={(event) => {
+                setBody(event.target.value)
+                const field = event.currentTarget
+                field.style.height = 'auto'
+                field.style.height = `${field.scrollHeight}px`
+              }}
+              placeholder="O que você está pensando sobre sua leitura?"
+              enterKeyHint="enter"
+            />
+          </label>
+          {error && <p role="alert">{error}</p>}
+          <div className="quick-composer__bar">
+            <MediaPicker
+              clubId={clubId}
+              value={media}
+              onChange={setMedia}
+              onBusy={setUploading}
+              imagesOnly
+              iconOnly
+            />
+            <Button disabled={busy || uploading || !body.trim()}>
+              {busy ? 'Publicando…' : 'Publicar'}
+            </Button>
+          </div>
+        </div>
+      </form>
+    )
   return (
     <section className="post-composer">
       <button

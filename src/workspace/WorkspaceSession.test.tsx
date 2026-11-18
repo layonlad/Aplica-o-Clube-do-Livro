@@ -188,7 +188,7 @@ it('mantém a comunidade acessível mesmo se o carregamento da biblioteca pessoa
     </MemoryRouter>,
   )
   expect(
-    await screen.findByRole('heading', { name: 'As leituras nos encontram' }),
+    await screen.findByRole('heading', { name: 'Comunidade' }),
   ).toBeInTheDocument()
   expect(await screen.findByText('Sua biblioteca está indisponível agora.')).toBeInTheDocument()
   expect(

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { pageTurn, settle } from '../design/motion'
+import { PageLeaf } from '../app/PageLeaf'
 import { BookOpen, CalendarDays, ChevronRight, History, Home, LogOut, Menu, MessageCircle, Palette, Settings, Sparkles, TicketCheck, UserRound, X } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTheme } from '../app/ThemeProvider'
@@ -69,7 +70,8 @@ export function MobileShell() {
       </nav>
       </aside>
 
-      <main className="page-content"><motion.div key={location.pathname} className="route-view" variants={pageTurn} initial="initial" animate="enter"><Outlet /></motion.div></main>
+      <PageLeaf turnKey={location.pathname} order={Math.max(0, primaryNav.findIndex(({ to, end }) => end ? location.pathname === to : location.pathname.startsWith(to)))} />
+      <main className="page-content"><motion.div key={location.pathname} className="route-view" variants={pageTurn} initial="initial" animate="enter" onAnimationComplete={() => document.querySelector('.route-view')?.setAttribute('data-settled', '')}><Outlet /></motion.div></main>
 
       {menuOpen && (
         <div className="drawer-layer" role="presentation" onMouseDown={() => setMenuOpen(false)}>
