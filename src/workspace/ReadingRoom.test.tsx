@@ -108,6 +108,11 @@ it.each([
       document.dispatchEvent(new Event('selectionchange'))
     })
     expect(screen.getByRole('dialog', { name: 'Guardar um trecho' })).toBeInTheDocument()
+  // Chrome mantém o Range do livro, mas retorna texto vazio ao focar a anotação.
+  const emptyText = vi.spyOn(window.getSelection()!, 'toString').mockReturnValue('')
+  fireEvent(document, new Event('selectionchange'))
+  emptyText.mockRestore()
+  fireEvent.change(screen.getByLabelText('Anotação privada'), { target: { value: 'Nota privada' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salvar destaque' }))
     expect(mocks.act).toHaveBeenCalledWith(
       expect.objectContaining({

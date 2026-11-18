@@ -173,6 +173,9 @@ export function ReadingRoom() {
     )
       return
     const quote = value.toString()
+    // Ao focar a anotação, o navegador pode manter o Range e devolver texto vazio.
+    // Preserve o trecho escolhido até salvar ou fechar o painel.
+    if (!quote) return
     if (quote.length > 280) {
       setMessage('Selecione um trecho de até 280 caracteres.')
       setSelection(null)

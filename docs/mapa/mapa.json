@@ -388,7 +388,7 @@
       "data": "2026-11-17",
       "autor": "Codex",
       "titulo": "PR 31: pesquisa automática e seleção de trechos corrigidas em branch isolada",
-      "resumo": "Pesquisa de livros em Tudo/Livros com pausa de 1,2 s, erros próprios e descarte de respostas antigas. Seleção em rolagem usa origem do capítulo; referência da página preservada durante a animação para permitir destaques também no modo paginado. Sete regressões automatizadas e ensaio móvel; versão em validação antes da publicação autorizada somente dos sites. Nenhuma mudança no trabalho atual do Claude, API, banco ou migrations.",
+      "resumo": "Pesquisa de livros em Tudo/Livros com pausa de 1,2 s, erros próprios e descarte de respostas antigas. Seleção em rolagem usa origem do capítulo; referência da página preservada durante a animação para permitir destaques também no modo paginado. Foco no campo da anotação preserva o trecho selecionado. Sete regressões automatizadas e ensaio móvel; versão em validação antes da publicação autorizada somente dos sites. Nenhuma mudança no trabalho atual do Claude, API, banco ou migrations.",
       "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/33"
     },
     {
