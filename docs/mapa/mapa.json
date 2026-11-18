@@ -6,10 +6,10 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Identidade Coral publicada e validada com correções",
+    "fase": "Sessão protegida e leitor EPUB publicados",
     "tom": "ok",
-    "resumo": "PR 35 publicado com correções da auditoria no PR 36: site d99a2ac nos dois Hosting, API/executor 9ce87a1 pelo digest. Fonte, proporções, contraste, convites estreitos, carrossel e paginação corrigidos. CI do merge e 221 testes locais aprovados; 104 arquivos por site iguais ao build por SHA-256. Produção confirmou recusa de convite, seguidores, cor de texto persistida e Lançamentos; EPUB sintético com capa, quinze viradas, retomada e capítulos nos dois sentidos. Duas contas descartáveis excluídas, tokens recusados e original purgado. Banco e permissões preservados; sem migration nova.",
-    "proximoPasso": "Revisar a entrada obrigatória no app conectado, restauração segura da sessão e correções de posição EPUB. Ensaios isolados não alteram a versão Coral em produção.",
+    "resumo": "PR 39 publicado nos dois Firebase Hosting no merge 26627b2. O app conectado exige sessão Firebase validada pela API antes das rotas privadas. Retoma o destino após login, mantém a sessão entre acessos, descarta caches transitórios ao sair e preserva navegação e posição EPUB. CI do PR e 236 testes locais aprovados. Chrome e WebKit validaram duas contas e o leitor localmente. Em produção, sete rotas por site levaram ao login sem sessão e 104 arquivos por site corresponderam ao build. API e executor em 9ce87a1.",
+    "proximoPasso": "Dono pode testar login, logout e EPUB no endereço principal. Aparelhos físicos e Google OAuth na nuvem continuam para teste com o dono. Produção continua manual e com autorização.",
     "pendencias": [
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
@@ -28,7 +28,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "d99a2ac · PRs 35/36 publicados em 18/11/2026; API/executor 9ce87a1",
+      "versao": "26627b2 · PR 39 publicado em 18/11/2026; API/executor 9ce87a1",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -60,7 +60,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Branch codex/auth-session-reader: sessão, isolamento e leitor testados com Firebase Auth Emulator, API e PostgreSQL locais.",
+      "versao": "Branch codex/registro-publicacao-sessao: registro da publicação do PR 39. Build em cópia limpa e ensaios locais isolados.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -68,7 +68,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "d99a2ac · mesmo build conectado do principal, com 104 arquivos por site conferidos por SHA-256; origem local preservada",
+      "versao": "26627b2 · mesmo frontend do site principal; 104 arquivos verificados por SHA-256",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -100,7 +100,7 @@
       "guarda": [
         "Arquivos do app (HTML, CSS, JavaScript, fontes)"
       ],
-      "detalhe": "Frontend conectado e mapa no Firebase. Os dois endereços servem o mesmo build. Visitantes continuam locais; com conta confirmada, EPUBs pessoais novos e cópias antigas desse mesmo espaço são enviados automaticamente até a cota. O endereço anterior preserva seu IndexedDB; arquivos locais de outra origem não se transferem sozinhos. API validada antes do site.",
+      "detalhe": "Frontend conectado e mapa no Firebase. Os dois endereços servem o mesmo build. O app conectado exige sessão validada; a demonstração pública fica na prévia. com conta confirmada, EPUBs pessoais novos e cópias antigas desse mesmo espaço são enviados automaticamente até a cota. O endereço anterior preserva seu IndexedDB; arquivos locais de outra origem não se transferem sozinhos. API validada antes do site.",
       "link": "https://gen-lang-client-0194308411.web.app"
     },
     {
@@ -384,6 +384,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-18",
+      "autor": "Codex",
+      "titulo": "Sessão protegida e retomada do EPUB publicadas nos dois sites",
+      "resumo": "PR 39 mesclado e frontend 26627b2 publicado em cópia limpa. CI aprovado no PR, 236 testes locais e ensaios Chrome/WebKit com duas contas. Produção verificou sete rotas protegidas, cadastro e recuperação por site sem sessão, sem chamadas privadas ou erros. 104 arquivos por site iguais ao build por SHA-256. API e executor continuam em 9ce87a1, sem migrations novas.",
+      "pr": ""
+    },
     {
       "data": "2026-11-18",
       "autor": "Codex",
