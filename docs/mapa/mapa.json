@@ -389,7 +389,7 @@
       "autor": "Codex",
       "titulo": "CI: auditoria bloqueante de produção e acompanhamento das ferramentas",
       "resumo": "Confirmada ausência de versão corrigida de picomatch e presença apenas em ferramentas de desenvolvimento. Produção com zero vulnerabilidades e auditoria obrigatória; relatório completo preservado como informativo. Sem audit fix, downgrade ou alteração de dependências. Produção do app permanece na versão anterior; PR 31 será revisado separadamente.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/32"
     },
     {
       "data": "2026-11-16",
