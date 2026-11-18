@@ -13,6 +13,12 @@ Produção migrada e verificada em **16/11/2026**, com autorização do dono, pa
 
 A entrada continua livre, sem cadastro ou participação em clube. Biblioteca e livros apenas locais permanecem no navegador e na origem em que foram salvos. O endereço de compatibilidade evita abandonar esse IndexedDB; o novo endereço possui armazenamento local próprio. Conta é opcional para sincronizar; convites dão acesso somente aos clubes correspondentes. A mudança de projeto Firebase pode exigir novo login.
 
+## Login com Google
+
+No site principal, o Firebase Auth atende o retorno na mesma aba usando o domínio do próprio Hosting. Os endereços `.web.app` e `.firebaseapp.com` do projeto devem continuar autorizados no Firebase, com a URI `https://<domínio>/__/auth/handler` autorizada no cliente OAuth do Google. O site de compatibilidade pertence a outro projeto de Hosting e usa a janela do domínio configurado de autenticação.
+
+Antes de publicar alterações nesse fluxo, teste o botão **Continuar com Google** no Safari ou WebKit móvel e no Chrome. No site principal, confira que a mesma aba abre o Google, volta à página solicitada e mantém a sessão ao recarregar. Teste também e-mail e senha e a opção de recuperação.
+
 ## Recursos de produção
 
 | Recurso | Configuração |

@@ -1,9 +1,12 @@
 import { BookOpen } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
-import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useLocation } from 'react-router-dom'
+import { createUserWithEmailAndPassword, getRedirectResult, GoogleAuthProvider, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, updateProfile } from 'firebase/auth'
 import { Button } from '../components/ui'
 import { useAuth } from './AuthProvider'
 import { readableError } from './api'
+import { canRedirectGoogle } from './firebase'
+import { rememberAccountRedirect } from './return-path'
 import { BowSticker, FlowerSticker, SparkleSticker, StarSticker } from '../components/Stickers'
 
 /** Painel editorial da entrada: estante em lombadas e uma citação em domínio público. */
@@ -22,6 +25,9 @@ function AccessArt() {
 
 export function AuthScreen() {
   const { auth } = useAuth()
+  const { state } = useLocation()
+  const useRedirect = canRedirectGoogle(auth, window.location)
+  const pendingRedirect = useRef<ReturnType<typeof getRedirectResult>>()
   const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login')
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
@@ -29,6 +35,14 @@ export function AuthScreen() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  useEffect(() => {
+    if (!useRedirect) return
+    let active = true
+    pendingRedirect.current ??= getRedirectResult(auth)
+    void pendingRedirect.current.catch((err: unknown) => { if (active) setError(readableError(err)) })
+    return () => { active = false }
+  }, [auth, useRedirect])
+
   async function submit(event: FormEvent) {
     event.preventDefault(); setBusy(true); setError(''); setMessage('')
     try {
@@ -45,8 +59,15 @@ export function AuthScreen() {
   }
   async function google() {
     setBusy(true); setError('')
-    try { await signInWithPopup(auth, new GoogleAuthProvider()) }
-    catch (err) { setError(readableError(err)) }
+    try {
+      const provider = new GoogleAuthProvider()
+      if (useRedirect) {
+        rememberAccountRedirect(state?.from)
+        await signInWithRedirect(auth, provider)
+      } else {
+        await signInWithPopup(auth, provider)
+      }
+    } catch (err) { setError(readableError(err)) }
     finally { setBusy(false) }
   }
   return <main className="access-page access-page--split"><AccessArt /><section className="access-card">

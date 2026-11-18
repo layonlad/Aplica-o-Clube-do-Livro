@@ -9,7 +9,7 @@
     "fase": "Sessão protegida e leitor EPUB publicados",
     "tom": "ok",
     "resumo": "PR 39 publicado nos dois Firebase Hosting no merge 26627b2. O app conectado exige sessão Firebase validada pela API antes das rotas privadas. Retoma o destino após login, mantém a sessão entre acessos, descarta caches transitórios ao sair e preserva navegação e posição EPUB. CI do PR e 236 testes locais aprovados. Chrome e WebKit validaram duas contas e o leitor localmente. Em produção, sete rotas por site levaram ao login sem sessão e 104 arquivos por site corresponderam ao build. API e executor em 9ce87a1.",
-    "proximoPasso": "Dono pode testar login, logout e EPUB no endereço principal. Aparelhos físicos e Google OAuth na nuvem continuam para teste com o dono. Produção continua manual e com autorização.",
+    "proximoPasso": "Correção do retorno Google no iPhone em revisão. O build conectado chegou à tela do Google no WebKit e Chrome. A publicação aguarda aprovação e o fluxo completo será validado em aparelho físico.",
     "pendencias": [
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
@@ -384,6 +384,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-18",
+      "autor": "Codex",
+      "titulo": "Login Google na mesma origem do site principal",
+      "resumo": "O Firebase usa o domínio do próprio site principal para o retorno do Google na mesma aba. O destino interno fica na sessão enquanto a pessoa entra. WebKit com perfil de iPhone e Chrome chegaram ao Google pelo handler oficial do domínio. O endereço de compatibilidade continua usando a janela do mesmo projeto de autenticação. A publicação e a validação com uma conta real serão registradas após aprovação.",
+      "pr": ""
+    },
     {
       "data": "2026-11-18",
       "autor": "Codex",
