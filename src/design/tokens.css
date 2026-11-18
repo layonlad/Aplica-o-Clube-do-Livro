@@ -158,9 +158,9 @@
   --overlay: rgba(24, 24, 28, 0.42);
 
   /* Cabeçalho das telas principais: coral alaranjado no alto à esquerda, rosa embaixo à direita. */
-  --hero-gradient: linear-gradient(160deg, #ff7a4d 0%, #f6604f 38%, #ec5677 72%, #e05aa6 100%);
+  --hero-gradient: linear-gradient(160deg, #c34a2a 0%, #c34439 38%, #be3a5c 72%, #aa3d7b 100%);
   --hero-ink: #ffffff;
-  --hero-ink-muted: rgba(255, 255, 255, 0.92);
+  --hero-ink-muted: #ffffff;
   --hero-button: rgba(255, 255, 255, 0.22);
   --hero-button-hover: rgba(255, 255, 255, 0.32);
 
@@ -230,7 +230,7 @@
   --space-12: calc(48px * var(--density));
   --space-16: calc(64px * var(--density));
   --gutter: 16px;                 /* margem lateral das referências */
-  --section-gap: calc(22px * var(--density));
+  --section-gap: calc(16px * var(--density));
 
   /* ── Controles ── */
   --control-xs: calc(30px * var(--density-user));  /* "Continuar", "Participar" */

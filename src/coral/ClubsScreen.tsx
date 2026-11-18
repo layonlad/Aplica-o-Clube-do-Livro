@@ -32,10 +32,9 @@ export function ClubsScreen() {
   const [invites, setInvites] = useState<Notice[] | null>(null)
   const [inviteBusy, setInviteBusy] = useState<string | null>(null)
   const [inviteError, setInviteError] = useState('')
-  const [reload, setReload] = useState(0)
   const searchInput = useRef<HTMLInputElement>(null)
   const mine = useMyClubs()
-  const discover = useDiscoverClubs(query.trim().length >= 2 ? query : '', reload)
+  const discover = useDiscoverClubs(query.trim().length >= 2 ? query : '')
   const verified = !!user?.emailVerified
   const focus = params.get('clube')
 
@@ -46,7 +45,7 @@ export function ClubsScreen() {
       .then((page) => live && setInvites(page.items.filter((item) => item.targetType === 'invite')))
       .catch(() => live && setInvites([]))
     return () => { live = false }
-  }, [user?.uid, verified, reload])
+  }, [user?.uid, verified])
   useEffect(() => {
     if (!focus || !discover.page) return
     const club = discover.page.items.find((item) => item.id === focus)
@@ -149,7 +148,7 @@ export function ClubsScreen() {
         )}
 
         <section aria-labelledby="clubs-discover">
-          <SectionHead id="clubs-discover" title="Descobrir clubes" onLink={discover.page?.nextCursor ? () => setReload((value) => value + 1) : undefined} />
+          <SectionHead id="clubs-discover" title="Descobrir clubes" onLink={discover.page?.nextCursor && !discover.loadingMore ? () => void discover.loadMore() : undefined} linkLabel="Ver mais" />
           {discover.error && <p role="alert" className="access-error">{discover.error}</p>}
           <div className="discover-list">
             {discoverItems.map((club) => {

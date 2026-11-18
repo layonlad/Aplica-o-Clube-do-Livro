@@ -63,7 +63,7 @@ export function readStoredAppearance(): Appearance {
       ...defaultAppearance,
       mode: legacy.mode,
       radius: legacy.radius,
-      bodyFont: legacy.font === 'editorial' ? 'lora' : legacy.font === 'modern' ? 'inter' : 'jakarta',
+      bodyFont: legacy.font === 'editorial' ? 'lora' : 'inter',
     }
   } catch {
     return defaultAppearance

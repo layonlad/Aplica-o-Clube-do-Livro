@@ -9,7 +9,7 @@
     "fase": "Comunidade, pesquisa e leitor publicados com correções",
     "tom": "ok",
     "resumo": "Sites principal e de compatibilidade publicados em b7a7301, entrega dos PRs 31 e 33. Comunidade com caixa rápida, lupa, leitor em tela cheia, painel único e login persistente. Corrigidas busca automática de livros, origem da seleção em rolagem, referência do texto na animação e preservação do trecho ao escrever. CI e 214 testes aprovados; 102 arquivos por site iguais ao build. Validação em produção confirmou 15 páginas rápidas, retomada exata, capítulos, anotações, foto e pesquisa; conta sintética excluída e arquivos purgados. API permanece em aaef7fa; banco e infraestrutura preservados.",
-    "proximoPasso": "Dono testar a versão publicada e conferir aparelhos físicos. Redesenho em andamento do Claude continua separado; não foi incorporado. Monitorar catálogo externo e aviso picomatch das ferramentas. Produção continua manual, conforme escopo autorizado.",
+    "proximoPasso": "Concluir a auditoria e o CI da correção visual do PR 35, publicar os dois sites após a API e registrar a versão final. Validar em aparelhos físicos; não há migration nova.",
     "pendencias": [
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
@@ -36,7 +36,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health",
-      "versao": "aaef7fa · API clube-livro-api-00004-lr8 e executor clube-notifications-00003-klf; migration 019 e grants mínimos aplicados antes do frontend",
+      "versao": "9ce87a1 · API clube-livro-api-00005-fqj e executor clube-notifications-00004-6vl; digest 52ccc3e2; 19 migrations existentes preservadas",
       "atualizacao": "Cloud Build e deploy manual pelo digest no Cloud Run; mínimo zero, máximo uma instância",
       "tom": "ok"
     },
@@ -60,7 +60,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Branch codex/registro-publicacao-pr33: registro da publicação validada e limpeza; código b7a7301 compilado em cópia limpa. Trabalho atual do Claude preservado em branch separada.",
+      "versao": "Branch codex/auditoria-publicacao-coral: revisão e correções isoladas sobre 9ce87a1; contas e conteúdo sintéticos no emulador e PostgreSQL local.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -384,6 +384,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-18",
+      "autor": "Codex",
+      "titulo": "Auditoria Coral: fonte, proporções, contraste e paginação corrigidos",
+      "resumo": "Revisão do PR 35 em branch isolada, autorizada pelo dono. Corrigidos fonte padrão herdada, carrossel inicialmente deslocado, espaçamento dos cabeçalhos e cartões, contraste do texto no gradiente, convites estreitos e botão que repetia a primeira página dos clubes. Preferências explícitas e leitor preservados. API/executor 9ce87a1 publicados pelo digest; saúde e proteção anônima conferidas. Hosting ainda na versão anterior até validar e publicar o merge desta correção. Evidências e limites no relatório de auditoria.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/36"
+    },
     {
       "data": "2026-11-18",
       "autor": "Claude Code",

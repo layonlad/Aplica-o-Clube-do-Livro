@@ -40,7 +40,7 @@ export function ReadingCard({ book, entry, onMore }: { book: Book; entry: Entry;
   return (
     <article className="continue-card" aria-label={`Continuar lendo ${book.title}`}>
       <a href={`#/app/reader/${book.id}`} onClick={(event) => { open(event, book); if (!event.defaultPrevented) { event.preventDefault(); navigate(`/app/reader/${book.id}`) } }} aria-label={`Abrir ${book.title}`}>
-        <BookCover title={book.title} author={book.author} bookId={book.id} image={book.metadata?.cover} width={86} ratio={0.84} />
+        <BookCover title={book.title} author={book.author} bookId={book.id} image={book.metadata?.cover} width={84} ratio={0.86} />
       </a>
       <div className="continue-card__body">
         <div className="continue-card__top">
@@ -141,7 +141,7 @@ export function ClubArt({ accent, coverMediaId, book, publicMedia = false, name 
 }
 
 /** Cartão de clube com foto e texto sobreposto (Clubes em destaque, Clubes populares). */
-export function ClubTile({ name, members, accent, coverMediaId, book, onOpen, tag, publicMedia, width = 146 }: { name: string; members?: number | null; accent: string; coverMediaId?: string | null; book?: { title: string; author: string } | null; onOpen: () => void; tag?: string; publicMedia?: boolean; width?: number }) {
+export function ClubTile({ name, members, accent, coverMediaId, book, onOpen, tag, publicMedia, width = 126 }: { name: string; members?: number | null; accent: string; coverMediaId?: string | null; book?: { title: string; author: string } | null; onOpen: () => void; tag?: string; publicMedia?: boolean; width?: number }) {
   return (
     <button type="button" className="club-tile" style={{ '--tile-w': `${width}px`, border: 0, textAlign: 'left', cursor: 'pointer' } as CSSProperties} onClick={onOpen} aria-label={`Abrir ${name}`}>
       <ClubArt accent={accent} coverMediaId={coverMediaId} book={book} publicMedia={publicMedia} name={name} />

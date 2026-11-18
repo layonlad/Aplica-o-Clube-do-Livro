@@ -124,7 +124,7 @@ export function ExploreScreen() {
               <div className="h-scroll">
                 {trending.map((item, index) => (
                   <button key={`${item.title}-${item.author}`} type="button" className="cover-button" onClick={() => setBook(item)} aria-label={`${index + 1}º em alta: ${item.title}, ${item.posts} publicações`}>
-                    <BookCover title={item.title} author={item.author} width={104} ratio={0.82} rank={index + 1} />
+                    <BookCover title={item.title} author={item.author} width={92} ratio={0.86} rank={index + 1} />
                   </button>
                 ))}
               </div>
@@ -151,7 +151,7 @@ export function ExploreScreen() {
             <div className="h-scroll">
               {catalog.items.map((item) => (
                 <button key={item.key} type="button" className="cover-button" onClick={() => setBook(item)} aria-label={`${item.title}, de ${item.author}`}>
-                  <BookCover title={item.title} author={item.author} image={item.metadata.cover} width={search || category ? 104 : 92} ratio={search || category ? 0.82 : 0.97} />
+                  <BookCover title={item.title} author={item.author} image={item.metadata.cover} width={search || category ? 104 : 86} ratio={search || category ? 0.82 : 1.05} />
                 </button>
               ))}
               {!catalog.items.length && !catalog.error && [0, 1, 2, 3].map((key) => <span key={key} className="skeleton" style={{ width: 104, aspectRatio: '0.82', borderRadius: 6 }} aria-hidden="true" />)}
