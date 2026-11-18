@@ -389,7 +389,7 @@
       "autor": "Codex",
       "titulo": "Login Google na mesma origem do site principal",
       "resumo": "O Firebase usa o domínio do próprio site principal para o retorno do Google na mesma aba. O destino interno fica na sessão enquanto a pessoa entra. WebKit com perfil de iPhone e Chrome chegaram ao Google pelo handler oficial do domínio. O endereço de compatibilidade continua usando a janela do mesmo projeto de autenticação. A publicação e a validação com uma conta real serão registradas após aprovação.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/41"
     },
     {
       "data": "2026-11-18",
