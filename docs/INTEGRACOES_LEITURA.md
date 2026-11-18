@@ -70,3 +70,18 @@ Em **Escrever reflexão**, escolha Comunidade ou um clube do qual participa e, s
 - Importe um TXT, repita para conferir duplicatas, tente uma obra incerta e confirme a edição manualmente. Experimente excluir anotações, progresso e histórico e verifique a limpeza ao remover o livro.
 - A validação em produção requer autorização separada. A ordem prevista é aplicar migration 020 e grants com o papel proprietário, testar com o runtime restrito, publicar a API e, depois, o frontend. O módulo não adiciona serviços, coleções Firestore, regras Firebase Storage, credenciais Amazon ou agendamento.
 - A auditoria visual complementar pode focar a folha com teclado real em iOS/Android, o menu nativo de arquivos, nomes longos e o fluxo de seleção de muitas anotações. O backup JSON legado cobre a leitura no app. Os dados externos ficam na conta e podem ser gerenciados no módulo.
+
+## Resultado dos testes
+
+| Ensaio executado | Resultado |
+| --- | --- |
+| Frontend, unitários da API (com vídeo), PostgreSQL e Auth Emulator | 231 aprovados: 88 frontend, 50 API, 92 integração e 1 autenticação |
+| TypeScript, builds de API e frontend, compilação conectada, mapa | Aprovados |
+| API com o papel restrito | Original, progresso e importação acessíveis somente nos fluxos permitidos. Falhas de propriedade, formato, tamanho e storage verificadas |
+| Concorrência | Escritas de progresso com a mesma revisão retornaram 200 e 409. Download, importação e remoção do livro preservaram a política de propriedade e a posição interna |
+| Navegadores com API, PostgreSQL, storage e Auth Emulator locais | Chrome e WebKit completaram download do EPUB original, progresso independente, histórico e meta, importação com seleção manual, edição e exclusão de anotações, reflexão privada no clube e abertura do EPUB |
+| Responsividade | Três painéis em 320, 360, 375, 390, 393, 414, 430, 768 e 1440 px no Chrome. WebKit em 320, 390 e 768 px. Sem transbordamento horizontal e sem erros de JavaScript nos dois ensaios finais |
+| Temas | Claro, escuro e fundo personalizado conferidos nos dois navegadores |
+| Aparelhos e Amazon | Menu de compartilhamento condicionado a recurso nativo. Fallback validado localmente e detecção coberta por teste. Recebimento pelo Kindle físico, teclado de aparelhos e tecnologias assistivas aguardam validação física |
+
+O ensaio de navegador usou o modo de desenvolvimento exigido pelo Auth Emulator com contas e EPUB/TXT sintéticos. A compilação do modo conectado foi validada separadamente. Produção não foi acessada para testes nem modificada.

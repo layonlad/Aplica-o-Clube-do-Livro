@@ -389,8 +389,8 @@
       "data": "2026-11-18",
       "autor": "Codex",
       "titulo": "Integrações de Leitura: EPUB, progresso e anotações Kindle",
-      "resumo": "Menu da Biblioteca prepara EPUB pessoal autorizado para o Send to Kindle, com download alternativo. Progresso informado e anotações My Clippings ficam privados. Histórico e meta anual são opcionais, e a reflexão usa o compositor dos clubes ou da comunidade. Migration 020 e grants restritos validados localmente. Sem sincronização automática ou publicação em produção.",
-      "pr": ""
+      "resumo": "Menu da Biblioteca prepara EPUB pessoal autorizado para o Send to Kindle, com download alternativo. Progresso informado e anotações My Clippings ficam privados. Histórico e meta anual são opcionais, e a reflexão usa o compositor dos clubes ou da comunidade. Migration 020 e grants restritos validados, com 231 testes e fluxos completos em Chrome e WebKit locais. Sem sincronização automática ou publicação em produção.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/38"
     },
     {
       "data": "2026-11-18",
