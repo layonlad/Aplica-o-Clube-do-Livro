@@ -2,7 +2,7 @@
 
 Produção migrada e verificada em **16/11/2026**, com autorização do dono, para o projeto Google/Firebase `gen-lang-client-0194308411`, nome de exibição **Projeto-clube-do-Livro**. O orçamento autorizado é de **R$ 70/mês**, com alertas; não é um corte automático de cobrança.
 
-Última atualização: **PR 27, API no merge `aaef7fa` e site `1f84461` (PR 27 + CSS do PR 28)**, leitor imersivo e perfis sociais publicados após backup, migration 019 e grants mínimos. API e executor antes dos dois sites. [Relatório e resultado de cada teste](publicacoes/2026-11-16-pr27.md).
+Última atualização: **PRs 31 e 33, site no merge `b7a7301`**, comunidade, pesquisa e leitor publicados em 17/11/2026. A API permanece em `aaef7fa`; nenhuma migration, grant ou alteração de infraestrutura nesta publicação. [Relatório e resultado de cada teste](publicacoes/2026-11-17-pr33.md).
 
 ## Endereços
 
@@ -17,7 +17,7 @@ A entrada continua livre, sem cadastro ou participação em clube. Biblioteca e 
 
 | Recurso | Configuração |
 | --- | --- |
-| Frontend | Firebase Hosting, código `1f84461`, PR 27 + correção noturna do PR 28; visual do Claude preservado |
+| Frontend | Firebase Hosting, código `b7a7301`, PRs 31 e 33; redesenho em andamento do Claude preservado em branch separada |
 | Autenticação | Firebase Authentication, Google e e-mail/senha, UIDs e provedores preservados |
 | API | Cloud Run `clube-livro-api`, revisão `clube-livro-api-00004-lr8`, 1 CPU/1 GiB, mínimo zero, máximo uma instância, concorrência 2 |
 | Banco | Cloud SQL `clube-livro-postgres`, PostgreSQL 17, `db-f1-micro`, HDD 10 GiB, zona única, região `us-central1` |
@@ -49,6 +49,8 @@ Login interativo com a conta Google do dono, recebimento de e-mail e push em apa
 ## Operação e publicações futuras
 
 O [procedimento de migração e recuperação](migracao/FIREBASE_GOOGLE.md) detalha custos, isolamento, permissões e sequência de publicação. Limites não secretos ficam em `infra/google/config.json`.
+
+Para mudanças somente de frontend, compare o backend de main com a versão da API no ar e publique apenas Hosting a partir de cópia limpa do merge aprovado. Migrations, Cloud Build, API/executor e agendamento não precisam ser executados nessa situação.
 
 1. Trabalhar em branch própria, ler/atualizar o mapa e validar o PR/CI.
 2. Com autorização para o escopo, aplicar migrations/grants como proprietário, somente quando necessários, preservando recuperação.
