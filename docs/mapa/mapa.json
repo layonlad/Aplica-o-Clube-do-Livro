@@ -389,7 +389,7 @@
       "autor": "Codex",
       "titulo": "Sessão protegida e retomada do EPUB publicadas nos dois sites",
       "resumo": "PR 39 mesclado e frontend 26627b2 publicado em cópia limpa. CI aprovado no PR, 236 testes locais e ensaios Chrome/WebKit com duas contas. Produção verificou sete rotas protegidas, cadastro e recuperação por site sem sessão, sem chamadas privadas ou erros. 104 arquivos por site iguais ao build por SHA-256. API e executor continuam em 9ce87a1, sem migrations novas.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/40"
     },
     {
       "data": "2026-11-18",
