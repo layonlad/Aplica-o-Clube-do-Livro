@@ -4,7 +4,6 @@ import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerificati
 import { Button } from '../components/ui'
 import { useAuth } from './AuthProvider'
 import { readableError } from './api'
-import { Link } from 'react-router-dom'
 import { BowSticker, FlowerSticker, SparkleSticker, StarSticker } from '../components/Stickers'
 
 /** Painel editorial da entrada: estante em lombadas e uma citação em domínio público. */
@@ -54,8 +53,7 @@ export function AuthScreen() {
     <FlowerSticker size={44} className="sticker-corner" />
     <span className="access-glyph" aria-hidden="true"><BookOpen size={28} /></span>
     <h1>{mode === 'signup' ? 'Comece sua história' : mode === 'reset' ? 'Recuperar senha' : 'Bom ter você aqui'}</h1>
-    <p>Entre para sincronizar suas leituras, acessar seus clubes ou aceitar um convite. Você também pode usar o aplicativo sem conta.</p>
-    <Link className="button-link" to="/app">Continuar sem cadastro →</Link>
+    <p>Entre para sincronizar suas leituras, acessar seus clubes ou aceitar um convite.</p>
     <form className="access-form" onSubmit={submit}>
       {mode === 'signup' && <label>Seu nome<input required maxLength={100} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} /></label>}
       <label>E-mail<input type="email" required maxLength={254} autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
@@ -90,6 +88,5 @@ export function VerifyEmailScreen() {
       <Button disabled={busy} onClick={() => verify(false)}>Já confirmei meu e-mail</Button>
       <Button disabled={busy} variant="secondary" onClick={() => verify(true)}>Reenviar confirmação</Button>
       <Button disabled={busy} variant="ghost" onClick={() => { void signOut().catch((err) => setMessage(readableError(err))) }}>Usar outra conta</Button>
-      <Link to="/app">Continuar no espaço pessoal sem confirmar agora →</Link>
     </div></section></main>
 }

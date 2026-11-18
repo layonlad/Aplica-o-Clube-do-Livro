@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
-import { applyWorkspaceAction, WorkspaceError, type WorkspaceAction, type WorkspaceSnapshot } from '../../server/src/workspace-model'
+import { type WorkspaceAction, type WorkspaceSnapshot } from '../../server/src/workspace-model'
 import type { Club, Session } from '../../server/src/contracts'
 import { useAuth } from '../auth/AuthProvider'
 import { ApiError,apiRequest, readableError } from '../auth/api'
-import { loadPersonal, savePersonal, secureIndex } from './storage'
+import { sessionEnded } from '../auth/session-events'
 
 interface ContextValue {
   publicModerator:boolean; snapshot: WorkspaceSnapshot|null; clubs: Club[]; scope: string; scopeName: string; loading: boolean; busy:boolean; error:string;errorCode:string
@@ -35,48 +35,43 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
     if(!soft){setLoading(true);setSnapshot(null)}
     setError('');setErrorCode('')
     try {
-      if (!account) {
-        const value=await loadPersonal()
-        if(ticket===generation.current){setSnapshot(value);setClubs([])}
-      } else {
-        const session=await apiRequest<Session>(account,'/me')
-        if(ticket!==generation.current)return
-        setClubs(session.clubs);setPublicModerator(!!session.publicModerator)
-        if(scope!=='personal'&&!session.clubs.some(c=>c.id===scope)){setScope('personal');return}
-        const value=await apiRequest<WorkspaceSnapshot>(account,scope==='personal'?'/me/workspace':`/clubs/${scope}/workspace?view=app`)
-        if(ticket===generation.current)setSnapshot(value)
+      if (!account || sessionEnded(account)) return
+      const session = await apiRequest<Session>(account, '/me')
+      if (ticket !== generation.current) return
+      setClubs(session.clubs)
+      setPublicModerator(!!session.publicModerator)
+      if (scope !== 'personal' && !session.clubs.some((club) => club.id === scope)) {
+        setScope('personal')
+        return
       }
+      const value = await apiRequest<WorkspaceSnapshot>(account, scope === 'personal'
+        ? '/me/workspace' : `/clubs/${scope}/workspace?view=app`)
+      if (ticket === generation.current) { current.current = value; setSnapshot(value) }
     } catch(err){if(ticket===generation.current){setError(readableError(err));setErrorCode(err instanceof ApiError?(err.status===401?'AUTH_REQUIRED':err.code):'')}}
     finally {if(ticket===generation.current&&!soft)setLoading(false)}
   },[identity?.uid,scope])
   useEffect(()=>{void refresh(false);return()=>{generation.current++}},[refresh])
   async function act(action:WorkspaceAction,onSaved?:(snapshot:WorkspaceSnapshot)=>void,options:{quiet?:boolean}={}) {
-    if(lock.current||!current.current)return false
+    if (!identity || sessionEnded(identity) || scopeRef.current !== scope || lock.current || !current.current) return false
     const ticket=generation.current;const source=current.current
     lock.current=true;setBusy(true);setError('');setErrorCode('')
     try {
-      let next:WorkspaceSnapshot
-      if(identity){next=await apiRequest<WorkspaceSnapshot>(identity,scope==='personal'?'/me/workspace':`/clubs/${scope}/workspace?view=app`,'POST',{action,version:source.version})}
-      else {
-        next=applyWorkspaceAction(source,action,{id:'visitor',name:localStorage.getItem('clube-livro-name')?.trim().slice(0,100)||'Você'},{id:crypto.randomUUID(),now:new Date().toISOString(),personal:true,...(action.type==='draw'&&source.state.nominations.length?{drawIndex:secureIndex(source.state.nominations.length)}:{})})
-        await savePersonal(next)
-      }
+      const next = await apiRequest<WorkspaceSnapshot>(identity, scope === 'personal'
+        ? '/me/workspace' : `/clubs/${scope}/workspace?view=app`, 'POST', { action, version: source.version })
       if(ticket===generation.current&&identityRef.current?.uid===identity?.uid&&scopeRef.current===scope){current.current=next;setSnapshot(next);onSaved?.(next)}
       return true
-    }catch(err){if(ticket===generation.current){const conflict=err instanceof ApiError&&['WORKSPACE_CHANGED','READING_CHANGED'].includes(err.code);if(!options.quiet){setErrorCode(err instanceof ApiError?(err.status===401?'AUTH_REQUIRED':err.code):'');setError(err instanceof WorkspaceError?err.message:readableError(err))} if(conflict){void refresh(true).then(()=>{if(!options.quiet&&identityRef.current?.uid===identity?.uid&&scopeRef.current===scope)setError((err as ApiError).message)})}}return false}
+    }catch(err){if(ticket===generation.current){const conflict=err instanceof ApiError&&['WORKSPACE_CHANGED','READING_CHANGED'].includes(err.code);if(!options.quiet){setErrorCode(err instanceof ApiError?(err.status===401?'AUTH_REQUIRED':err.code):'');setError(readableError(err))} if(conflict){void refresh(true).then(()=>{if(!options.quiet&&identityRef.current?.uid===identity?.uid&&scopeRef.current===scope)setError((err as ApiError).message)})}}return false}
     finally{lock.current=false;setBusy(false)}
   }
   async function addToPersonal(book:{title:string;author:string;category?:string;metadata?:import('../../server/src/workspace-model').WorkspaceState['books'][number]['metadata']}){
-    if(lock.current)return false
     const account=identityRef.current,sourceScope=scopeRef.current
+    if (!account || sessionEnded(account) || lock.current) return false
     lock.current=true;setBusy(true);setError('')
     try{
-      const source=account?await apiRequest<WorkspaceSnapshot>(account,'/me/workspace'):await loadPersonal()
+      const source=await apiRequest<WorkspaceSnapshot>(account, '/me/workspace')
       if(source.state.books.some(item=>item.title.toLocaleLowerCase()===book.title.toLocaleLowerCase()&&item.author.toLocaleLowerCase()===book.author.toLocaleLowerCase()))return true
       const action:WorkspaceAction={type:'book.add',title:book.title,author:book.author||'Autor não informado',category:book.category??'',content:'',metadata:book.metadata}
-      let next:WorkspaceSnapshot
-      if(account)next=await apiRequest<WorkspaceSnapshot>(account,'/me/workspace','POST',{action,version:source.version})
-      else{next=applyWorkspaceAction(source,action,{id:'visitor',name:'Você'},{id:crypto.randomUUID(),now:new Date().toISOString(),personal:true});await savePersonal(next)}
+      const next = await apiRequest<WorkspaceSnapshot>(account, '/me/workspace', 'POST', { action, version: source.version })
       if(identityRef.current?.uid===account?.uid&&scopeRef.current===sourceScope&&sourceScope==='personal'){current.current=next;setSnapshot(next)}
       return true
     }catch(err){if(identityRef.current?.uid===account?.uid)setError(readableError(err));return false}finally{lock.current=false;setBusy(false)}

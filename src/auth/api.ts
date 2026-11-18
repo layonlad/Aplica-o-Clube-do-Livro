@@ -1,11 +1,20 @@
+import { isInvalidSession, reportRejectedSession, sessionEnded } from './session-events'
 import type { User } from 'firebase/auth'
 import type { ApiErrorBody } from '../../server/src/contracts'
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) { super(message) }
 }
-export async function apiRequest<T>(user: User, path: string, method = 'GET', body?: unknown): Promise<T> {
-  const token = await user.getIdToken()
+export async function authenticatedResponse(
+  user: User, path: string, method = 'GET', body?: unknown, signal?: AbortSignal,
+): Promise<Response> {
+  if (sessionEnded(user)) throw new ApiError(401, 'INVALID_SESSION', 'Entre novamente para continuar.')
+  const token = await user.getIdToken().catch((error: unknown) => {
+    if (isInvalidSession(error)) reportRejectedSession(user)
+    throw error
+  })
+  if (sessionEnded(user)) throw new ApiError(401, 'INVALID_SESSION', 'Entre novamente para continuar.')
+  const timeout = AbortSignal.timeout(method === 'GET' ? 75000 : 180000)
   const response = await fetch(`${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/v1${path}`, {
     method,
     headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
@@ -14,12 +23,20 @@ export async function apiRequest<T>(user: User, path: string, method = 'GET', bo
     credentials: 'omit',
     referrerPolicy: 'no-referrer',
     // Allow the free API host to wake up after an idle period; never retry mutations.
-    signal: AbortSignal.timeout(method==='GET'?75000:180000),
+    signal: signal ? (AbortSignal.any?.([signal, timeout]) ?? signal) : timeout,
   })
   if (!response.ok) {
     const payload = await response.json().catch(() => null) as ApiErrorBody | null
-    throw new ApiError(response.status, payload?.error?.code ?? 'API_ERROR', payload?.error?.message ?? 'O serviço está indisponível. Tente novamente.')
+    const error = new ApiError(response.status, payload?.error?.code ?? 'API_ERROR', payload?.error?.message ?? 'O serviço está indisponível. Tente novamente.')
+    if (response.status === 401 && isInvalidSession(error)) reportRejectedSession(user)
+    throw error
   }
+  if (sessionEnded(user)) throw new ApiError(401, 'INVALID_SESSION', 'Entre novamente para continuar.')
+  return response
+}
+
+export async function apiRequest<T>(user: User, path: string, method = 'GET', body?: unknown): Promise<T> {
+  const response = await authenticatedResponse(user, path, method, body)
   return response.status === 204 ? undefined as T : response.json() as Promise<T>
 }
 export function readableError(error: unknown): string {

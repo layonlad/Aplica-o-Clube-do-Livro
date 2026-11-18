@@ -33,8 +33,8 @@ export function AppearanceSync() {
     let live = true
     apiRequest<{ appearance: Appearance | null }>(user, '/me/appearance')
       .then((value) => {
-        if (live && value.appearance && !same(value.appearance, current.current))
-          saveAppearance(value.appearance)
+        const next = value.appearance ?? defaultAppearance
+        if (live && !same(next, current.current)) saveAppearance(next)
       })
       .catch(() => undefined)
     return () => {

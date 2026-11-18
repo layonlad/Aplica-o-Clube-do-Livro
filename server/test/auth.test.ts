@@ -54,3 +54,15 @@ it('integra cadastro, verificação, login, clube, convite e remoção com Fireb
   expect((await app.inject({ url: '/v1/me', headers: headers(ownerLogin.idToken) })).statusCode).toBe(401)
   expect((await app.inject({ url: '/v1/me', headers: headers('not-a-jwt') })).statusCode).toBe(401)
 })
+
+
+it('exige autenticação para conta, notificações, aparência e originais EPUB', async () => {
+  const id = '00000000-0000-4000-8000-000000000001'
+  for (const path of ['/me', '/me/profile', '/me/workspace', '/me/appearance',
+    '/me/notifications', '/me/book-files', `/me/book-files/${id}`, `/me/files/${id}/content`,
+    `/clubs/${id}/workspace`, `/club-files/${id}/content`]) {
+    const response = await app.inject({ url: '/v1' + path })
+    expect(response.statusCode, path).toBe(401)
+    expect(response.json().error.code).toBe('AUTH_REQUIRED')
+  }
+})

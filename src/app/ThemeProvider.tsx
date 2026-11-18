@@ -54,10 +54,11 @@ function readStoredTheme(): ThemeTokens {
 }
 
 /** Lê a aparência salva; na primeira vez, aproveita modo e formato escolhidos na tela antiga. */
-export function readStoredAppearance(): Appearance {
+export function readStoredAppearance(key = APPEARANCE_KEY): Appearance {
   try {
-    const parsed = appearanceSchema.safeParse(JSON.parse(localStorage.getItem(APPEARANCE_KEY) ?? 'null'))
+    const parsed = appearanceSchema.safeParse(JSON.parse(localStorage.getItem(key) ?? 'null'))
     if (parsed.success) return normalizeAppearance(parsed.data)
+    if (key !== APPEARANCE_KEY) return defaultAppearance
     const legacy = readStoredTheme()
     return {
       ...defaultAppearance,
@@ -70,21 +71,30 @@ export function readStoredAppearance(): Appearance {
   }
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<ThemeTokens>(readStoredTheme)
-  const [appearance, setAppearance] = useState<Appearance>(readStoredAppearance)
+export function ThemeProvider({ children, accountId }: { children: ReactNode; accountId?: string }) {
+  const connected = import.meta.env.VITE_APP_MODE === 'connected' || !!accountId
+  const appearanceKey = accountId ? `${APPEARANCE_KEY}:${accountId}` : APPEARANCE_KEY
+  const [theme, setTheme] = useState<ThemeTokens>(() => connected ? defaultTheme : readStoredTheme())
+  const [appearance, setAppearance] = useState<Appearance>(() =>
+    connected && !accountId ? defaultAppearance : readStoredAppearance(appearanceKey),
+  )
   const [preview, setPreview] = useState<Appearance | null>(null)
 
   useEffect(() => {
+    if (connected) return
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(theme)) } catch { /* armazenamento indisponível */ }
-  }, [theme])
+  }, [theme, connected])
+
+  useLayoutEffect(() => {
+    if (accountId) return () => applyAppearance(defaultAppearance)
+  }, [accountId])
 
   useLayoutEffect(() => {
     const active = preview ?? appearance
     applyAppearance(active)
     // Cores livres do protótipo só valem quando a aparência está no tema padrão.
     const root = document.documentElement
-    if (active.preset === 'padrao' && import.meta.env.VITE_APP_MODE !== 'connected') {
+    if (active.preset === 'padrao' && !connected) {
       if (!active.background && theme.surface !== defaultTheme.surface) root.style.setProperty('--bg', theme.surface)
       if (theme.primary.toLowerCase() !== defaultTheme.primary) root.style.setProperty('--brand', theme.primary)
       if (theme.accent.toLowerCase() !== defaultTheme.accent) root.style.setProperty('--accent', theme.accent)
@@ -94,13 +104,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const onChange = () => applyAppearance(active)
     media.addEventListener('change', onChange)
     return () => media.removeEventListener('change', onChange)
-  }, [appearance, preview, theme.primary, theme.accent, theme.surface])
+  }, [appearance, preview, theme.primary, theme.accent, theme.surface, connected])
 
   const saveAppearance = useCallback((next: Appearance) => {
     setAppearance(next)
     setPreview(null)
-    try { localStorage.setItem(APPEARANCE_KEY, JSON.stringify(next)) } catch { /* armazenamento indisponível */ }
-  }, [])
+    if (connected && !accountId) return
+    try { localStorage.setItem(appearanceKey, JSON.stringify(next)) } catch { /* armazenamento indisponível */ }
+  }, [appearanceKey, connected, accountId])
 
   const value = useMemo<ThemeContextValue>(() => ({
     theme,

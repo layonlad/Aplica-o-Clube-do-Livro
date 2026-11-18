@@ -9,7 +9,7 @@
     "fase": "Identidade Coral publicada e validada com correções",
     "tom": "ok",
     "resumo": "PR 35 publicado com correções da auditoria no PR 36: site d99a2ac nos dois Hosting, API/executor 9ce87a1 pelo digest. Fonte, proporções, contraste, convites estreitos, carrossel e paginação corrigidos. CI do merge e 221 testes locais aprovados; 104 arquivos por site iguais ao build por SHA-256. Produção confirmou recusa de convite, seguidores, cor de texto persistida e Lançamentos; EPUB sintético com capa, quinze viradas, retomada e capítulos nos dois sentidos. Duas contas descartáveis excluídas, tokens recusados e original purgado. Banco e permissões preservados; sem migration nova.",
-    "proximoPasso": "Dono testar a versão Coral. Conferir aparelhos físicos e tecnologias assistivas; referência visual do Perfil ainda não fornecida. Auditoria aprovada com ressalvas, sem atestar 95% de fidelidade. Produção continua manual e com autorização.",
+    "proximoPasso": "Revisar a entrada obrigatória no app conectado, restauração segura da sessão e correções de posição EPUB. Ensaios isolados não alteram a versão Coral em produção.",
     "pendencias": [
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
@@ -60,7 +60,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Branch codex/registro-publicacao-coral: registro documental; build d99a2ac em cópia limpa. Auditoria e evidências isoladas; nenhuma alteração no trabalho do Claude.",
+      "versao": "Branch codex/auth-session-reader: sessão, isolamento e leitor testados com Firebase Auth Emulator, API e PostgreSQL locais.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -384,6 +384,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-18",
+      "autor": "Codex",
+      "titulo": "Proteção de sessão e retomada do leitor EPUB",
+      "resumo": "O app conectado espera autenticação e validação da sessão antes de montar as rotas. Login persistente, retorno interno, logout, recuperação de falha temporária e caches separados por conta. A posição EPUB usa âncora visível durante a troca de modo e grava depois de medir cada capítulo. 236 testes locais aprovados e ensaios Chrome/WebKit com duas contas sintéticas, login e logout persistentes, retomada de EPUB e rolagem. Correção em revisão, sem alterações em produção.",
+      "pr": ""
+    },
     {
       "data": "2026-11-18",
       "autor": "Codex",

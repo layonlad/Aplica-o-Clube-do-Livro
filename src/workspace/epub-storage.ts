@@ -1,3 +1,6 @@
+import type { User } from 'firebase/auth'
+import { onSessionEnd, sessionEnded } from '../auth/session-events'
+
 const database = 'clube-livro-epub-private-v1'
 interface FileRecord {
   key: string
@@ -6,6 +9,7 @@ interface FileRecord {
   file: Blob
   filename: string
   cover?: Blob
+  downloadCache?: boolean
 }
 interface StoredRecord extends Omit<FileRecord, 'file' | 'cover'> {
   file?: Blob
@@ -60,6 +64,7 @@ export async function localEpub(namespace: string, id: string) {
                 file,
                 filename: raw.filename,
                 cover,
+                downloadCache: raw.downloadCache,
               }
             : undefined,
         )
@@ -77,6 +82,7 @@ export async function saveEpub(
   file: Blob,
   filename: string,
   cover?: Blob,
+  downloadOwner?: User,
 ) {
   if (file.size > 10000000) throw Error('EPUB excede 10 MB.')
   if (cover && cover.size > 5000000) throw Error('A capa do EPUB excede o limite.')
@@ -84,6 +90,8 @@ export async function saveEpub(
   // Buffers are portable; keep reading legacy Blob records without rewriting them.
   const bytes = await file.arrayBuffer(),
     coverBytes = await cover?.arrayBuffer()
+  // User imports are durable. Only known copies of a server original are disposable.
+  if (downloadOwner && (downloadOwner.uid !== namespace || sessionEnded(downloadOwner))) return
   const stored: StoredRecord = {
     key: key(namespace, id),
     namespace,
@@ -93,23 +101,28 @@ export async function saveEpub(
     mime: file.type,
     coverBytes,
     coverMime: cover?.type,
+    downloadCache: !!downloadOwner,
     byteSize: bytes.byteLength + (coverBytes?.byteLength ?? 0),
   }
   const db = await open()
   try {
+    if (downloadOwner && sessionEnded(downloadOwner)) return
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction('files', 'readwrite'),
         store = tx.objectStore('files'),
         request = store.index('namespace').openCursor(namespace)
       let size = 0
+      let durableOriginal = false
       request.onsuccess = () => {
         const cursor = request.result
         if (cursor) {
           const item = cursor.value as StoredRecord
           if (item.bookId !== id) size += recordSize(item)
+          else if (!item.downloadCache) durableOriginal = true
           cursor.continue()
           return
         }
+        if (downloadOwner && durableOriginal) return
         if (size + file.size + (cover?.size ?? 0) > 50000000) {
           tx.abort()
           return
@@ -148,3 +161,27 @@ export async function removeEpub(namespace: string, id: string) {
     db.close()
   }
 }
+
+
+async function clearDownloadedCopies(uid: string) {
+  if (!('indexedDB' in globalThis)) return
+  const db = await open()
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('files', 'readwrite')
+      const request = tx.objectStore('files').index('namespace').openCursor(uid)
+      request.onsuccess = () => {
+        const cursor = request.result
+        if (!cursor) return
+        if ((cursor.value as StoredRecord).downloadCache) cursor.delete()
+        cursor.continue()
+      }
+      tx.oncomplete = () => resolve()
+      tx.onabort = tx.onerror = () => reject(tx.error)
+    })
+  } finally {
+    db.close()
+  }
+}
+
+onSessionEnd((uid) => { void clearDownloadedCopies(uid).catch(() => {}) })
