@@ -8,9 +8,10 @@
   "estado": {
     "fase": "Leitor imersivo e perfil social publicados",
     "tom": "ok",
-    "resumo": "PR 27 publicado: API em aaef7fa e site em 1f84461, preservando também o modo noturno do Claude (PR 28). Leitor sem menus permanentes, gestos, folha 3D, preferências e retomada corrigida; perfil com edição, solicitações, atividades e salvos privados. Backup privado, migration aditiva e grants mínimos confirmados; API/executor antes dos dois sites. 207 testes e CI aprovados; validação publicada com duas contas sintéticas removidas ao final.",
-    "proximoPasso": "Concluir o ajuste de auditoria de dependências, revisar o PR 31 e publicar somente o frontend autorizado, preservando API, esquema e migrations. Monitorar o aviso de desenvolvimento até existir correção publicada.",
+    "resumo": "PR 27 publicado: API em aaef7fa e site em 1f84461, preservando também o modo noturno do Claude (PR 28). Leitor sem menus permanentes, gestos, folha 3D, preferências e retomada corrigida; perfil com edição, solicitações, atividades e salvos privados. Backup privado, migration aditiva e grants mínimos confirmados; API/executor antes dos dois sites. 207 testes e CI aprovados; validação publicada com duas contas sintéticas removidas ao final. Revisão local do PR 31 em 17/11 encontrou falhas na seleção de trechos em rolagem e na pesquisa automática de livros; merge e publicação desse PR interrompidos antes de alterar produção.",
+    "proximoPasso": "Corrigir e retestar os dois achados registrados na revisão do PR 31 antes do merge e da publicação apenas do site já autorizada. Preservar API, banco, migrations e versões atuais até a validação. Acompanhar picomatch nas ferramentas até existir correção publicada.",
     "pendencias": [
+      "PR 31 ainda não mesclado nem publicado: Chrome móvel 375 px reproduziu seleção de trechos sem abrir anotação após a primeira página em rolagem e zero consultas de livros enquanto digita em Tudo/Livros. Revisão registrada no GitHub; testes de produção adiados, sem conta descartável real criada.",
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
       "Orçamento do projeto é de R$ 70/mês com alertas, sem corte automático de cobrança. Cloud SQL mínimo e instâncias Cloud Run limitadas; acompanhar uso antes de ampliar capacidade.",
@@ -60,7 +61,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Branch codex/ci-audit-producao: ajuste isolado de CI a partir de main; sem publicação ou mudança na API/banco.",
+      "versao": "PR 32 isolado para auditoria; PR 31 revisado na cópia descartável de 500768d. Duas falhas reproduzidas no navegador; nenhuma publicação ou alteração de API/banco.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -384,6 +385,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-17",
+      "autor": "Codex",
+      "titulo": "Revisão do PR 31 interrompe liberação após duas falhas locais",
+      "resumo": "Repetidos frontend, unitários API e builds com sucesso; sem backend pendente em main em relação à API aaef7fa. Ensaio Chrome móvel 375 px reproduziu anotação sem abrir após rolar para a segunda página e catálogo sem consulta ao digitar. Achados registrados na revisão; PR 31 permanece aberto e nenhum site, API, banco ou migration foi publicado. Testes com conta descartável em produção não executados. Auditoria corrigida separadamente no PR 32.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/31"
+    },
     {
       "data": "2026-11-17",
       "autor": "Codex",
