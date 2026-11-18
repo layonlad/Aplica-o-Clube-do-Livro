@@ -181,7 +181,11 @@ export function ReadingRoom() {
     const prefix = range.cloneRange()
     prefix.selectNodeContents(article.current)
     prefix.setEnd(range.startContainer, range.startOffset)
-    const start = (current?.start ?? 0) + prefix.toString().length
+    // Em rolagem, o artigo contém todo o capítulo, não só a página no topo.
+    const origin = preferences.flow === 'scroll'
+      ? pages.find((item) => item.chapter === current?.chapter)?.start ?? 0
+      : current?.start ?? 0
+    const start = origin + prefix.toString().length
     if (book!.content.slice(start, start + quote.length) === quote)
       setSelection({ quote, start, end: start + quote.length })
   }

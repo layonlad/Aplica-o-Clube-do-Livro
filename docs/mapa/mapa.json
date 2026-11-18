@@ -8,10 +8,9 @@
   "estado": {
     "fase": "Leitor imersivo e perfil social publicados",
     "tom": "ok",
-    "resumo": "PR 27 publicado: API em aaef7fa e site em 1f84461, preservando também o modo noturno do Claude (PR 28). Leitor sem menus permanentes, gestos, folha 3D, preferências e retomada corrigida; perfil com edição, solicitações, atividades e salvos privados. Backup privado, migration aditiva e grants mínimos confirmados; API/executor antes dos dois sites. 207 testes e CI aprovados; validação publicada com duas contas sintéticas removidas ao final. Revisão local do PR 31 em 17/11 encontrou falhas na seleção de trechos em rolagem e na pesquisa automática de livros; merge e publicação desse PR interrompidos antes de alterar produção.",
-    "proximoPasso": "Corrigir e retestar os dois achados registrados na revisão do PR 31 antes do merge e da publicação apenas do site já autorizada. Preservar API, banco, migrations e versões atuais até a validação. Acompanhar picomatch nas ferramentas até existir correção publicada.",
+    "resumo": "PR 27 publicado: API em aaef7fa e site em 1f84461, preservando também o modo noturno do Claude (PR 28). Leitor sem menus permanentes, gestos, folha 3D, preferências e retomada corrigida; perfil com edição, solicitações, atividades e salvos privados. Backup privado, migration aditiva e grants mínimos confirmados; API/executor antes dos dois sites. 207 testes e CI aprovados; validação publicada com duas contas sintéticas removidas ao final. PR 31 integrado em branch isolada com correções da pesquisa automática e da seleção de trechos em rolagem e páginas; publicação autorizada, ainda em validação.",
+    "proximoPasso": "Concluir testes e CI das correções do PR 31 e publicar apenas os dois sites Firebase com autorização já concedida. Validar login persistente, leitura sincronizada, publicação com foto, pesquisa e movimento reduzido. Preservar o redesenho em andamento na branch separada do Claude e não publicar API/banco.",
     "pendencias": [
-      "PR 31 ainda não mesclado nem publicado: Chrome móvel 375 px reproduziu seleção de trechos sem abrir anotação após a primeira página em rolagem e zero consultas de livros enquanto digita em Tudo/Livros. Revisão registrada no GitHub; testes de produção adiados, sem conta descartável real criada.",
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
       "Orçamento do projeto é de R$ 70/mês com alertas, sem corte automático de cobrança. Cloud SQL mínimo e instâncias Cloud Run limitadas; acompanhar uso antes de ampliar capacidade.",
@@ -61,7 +60,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "PR 32 isolado para auditoria; PR 31 revisado na cópia descartável de 500768d. Duas falhas reproduzidas no navegador; nenhuma publicação ou alteração de API/banco.",
+      "versao": "Branch codex/correcoes-pr31: entrega do PR 31 com correções pontuais e regressões; publicação autorizada em preparação, sem integrar o redesenho em andamento do Claude.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -385,6 +384,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-17",
+      "autor": "Codex",
+      "titulo": "PR 31: pesquisa automática e seleção de trechos corrigidas em branch isolada",
+      "resumo": "Pesquisa de livros em Tudo/Livros com pausa de 1,2 s, erros próprios e descarte de respostas antigas. Seleção em rolagem usa origem do capítulo; referência da página preservada durante a animação para permitir destaques também no modo paginado. Sete regressões automatizadas e ensaio móvel; versão em validação antes da publicação autorizada somente dos sites. Nenhuma mudança no trabalho atual do Claude, API, banco ou migrations.",
+      "pr": ""
+    },
     {
       "data": "2026-11-17",
       "autor": "Claude Code",
