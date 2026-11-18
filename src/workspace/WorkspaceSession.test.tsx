@@ -1,3 +1,4 @@
+import { StrictMode } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -5,6 +6,7 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { WorkspaceApp } from './WorkspaceApp'
 import { ThemeProvider } from '../app/ThemeProvider'
 import { apiRequest, ApiError } from '../auth/api'
+import { consumeAccountRedirect, rememberAccountRedirect } from '../auth/return-path'
 const { state } = vi.hoisted(() => ({
   state: {
     user: { uid: 'expired-local-reader', email: 'local@example.com', emailVerified: true } as {
@@ -43,6 +45,17 @@ it('aguarda a restauração da sessão ao abrir diretamente o perfil, sem acessa
   )
   expect(screen.getByText('Verificando sua sessão…')).toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Meu perfil' })).not.toBeInTheDocument()
+})
+
+it('retoma um convite após o retorno Google mesmo quando o estado da rota se perde', async () => {
+  rememberAccountRedirect('/invite?token=synthetic')
+  vi.mocked(apiRequest).mockRejectedValue(new ApiError(503, 'UNAVAILABLE', 'Indisponível.'))
+  render(<StrictMode><MemoryRouter initialEntries={['/account']}>
+    <ThemeProvider><WorkspaceApp /></ThemeProvider>
+  </MemoryRouter></StrictMode>)
+  expect(await screen.findByRole('heading', { name: 'Você tem um convite' })).toBeInTheDocument()
+  expect(screen.getByDisplayValue('synthetic')).toBeInTheDocument()
+  expect(consumeAccountRedirect()).toBeNull()
 })
 
 it('abre o próprio perfil social mesmo se a biblioteca pessoal estiver temporariamente indisponível', async () => {

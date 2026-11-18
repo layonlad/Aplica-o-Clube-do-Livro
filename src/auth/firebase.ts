@@ -1,5 +1,15 @@
 import { initializeApp } from 'firebase/app'
-import { browserLocalPersistence, connectAuthEmulator, indexedDBLocalPersistence, initializeAuth, browserPopupRedirectResolver } from 'firebase/auth'
+import { browserLocalPersistence, connectAuthEmulator, indexedDBLocalPersistence, initializeAuth, browserPopupRedirectResolver, type Auth } from 'firebase/auth'
+
+export function firebaseAuthDomain(projectId: string, configuredDomain: string, host: string) {
+  // Firebase Hosting serves the sign-in helper on this project's own domains.
+  if (host === `${projectId}.web.app` || host === `${projectId}.firebaseapp.com`) return host
+  return configuredDomain
+}
+
+export function canRedirectGoogle(auth: Auth, location: Pick<Location, 'protocol' | 'host'>) {
+  return !auth?.emulatorConfig && location.protocol === 'https:' && auth?.config?.authDomain === location.host
+}
 
 export function createClientAuth() {
   const env = import.meta.env
@@ -13,7 +23,9 @@ export function createClientAuth() {
     throw new Error('Configuração de autenticação local inválida.')
   }
   if (env.VITE_FIREBASE_PROJECT_ID.startsWith('demo-') && !emulator) throw new Error('Inicie e configure o emulador local de autenticação.')
-  const app = initializeApp({ apiKey: env.VITE_FIREBASE_API_KEY, authDomain: env.VITE_FIREBASE_AUTH_DOMAIN, projectId: env.VITE_FIREBASE_PROJECT_ID })
+  const projectId = env.VITE_FIREBASE_PROJECT_ID
+  const authDomain = firebaseAuthDomain(projectId, env.VITE_FIREBASE_AUTH_DOMAIN, window.location.host)
+  const app = initializeApp({ apiKey: env.VITE_FIREBASE_API_KEY, authDomain, projectId })
   // Login permanente, como em apps de celular: a conta continua entrando depois de fechar e abrir o app.
   // As duas opções persistem após fechar o navegador quando o armazenamento do site está disponível.
   // Sair da conta continua disponível no Perfil.

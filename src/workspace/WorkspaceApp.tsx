@@ -1,5 +1,5 @@
 import {PrivateBookCover} from './PrivateBookCover'
-import { lazy, useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { lazy, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, Navigate, Route, Routes, useNavigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowRight, CalendarDays, ChevronRight, Clock, Heart, History, MapPin, Search, Sparkles, Star, UsersRound } from 'lucide-react'
 import { updateProfile } from 'firebase/auth'
@@ -10,7 +10,7 @@ import { WorkspaceShell } from './WorkspaceShell'
 import { BookStack, Button, Card, CoverArt, ProgressBar, Spines, SkeletonPage } from '../components/ui'
 import { ThemeProvider, useTheme } from '../app/ThemeProvider'
 import { BookOpening } from '../app/BookOpening'
-import { accountReturnPath } from '../auth/return-path'
+import { accountReturnPath, consumeAccountRedirect } from '../auth/return-path'
 import { WorkspaceProvider, useWorkspace } from './WorkspaceProvider'
 import { backupSchema } from './storage'
 import { importPhoto } from './import-photo'
@@ -166,10 +166,23 @@ function ProfileRoute(){return <OwnSocialProfile/>}
 function OpenCurrentReading(){const {snapshot}=useWorkspace();const book=snapshot?.state.books.find(book=>book.id===snapshot.state.currentBookId)??snapshot?.state.books.find(book=>(snapshot.reading[book.id]?.percent??0)<100);return <Navigate to={book?`/app/reader/${book.id}`:'/app/library'} replace/>}
 /** Abre o espaço de um clube; com ?post=<id> vai direto para a publicação no mural (link vindo de perfis). */
 function OpenClub(){const {clubId}=useParams();const [params]=useSearchParams();const post=params.get('post');const {setScope}=useWorkspace();const navigate=useNavigate();useEffect(()=>{if(clubId){setScope(clubId);navigate(post&&/^[0-9a-f-]{36}$/i.test(post)?`/app/wall?post=${post}`:'/app',{replace:true})}},[clubId,post,setScope,navigate]);return <p role="status">Abrindo espaço do clube…</p>}
+function AccountReturn() {
+  const { state } = useLocation()
+  const navigate = useNavigate()
+  const returned = useRef(false)
+  useEffect(() => {
+    if (returned.current) return
+    returned.current = true
+    const redirectPath = consumeAccountRedirect()
+    navigate(accountReturnPath(state?.from ?? redirectPath), { replace: true })
+  }, [navigate, state])
+  return null
+}
+
 function WorkspaceSession() {
   const session = useAuth()
   const { user, loading, status, signOut, retry } = session
-  const { pathname, search, state } = useLocation()
+  const { pathname, search } = useLocation()
   if (loading) return <main className="access-page"><p role="status">Verificando sua sessão…</p></main>
   if (status === 'error') return <main className="access-page"><section className="access-card">
     <h1>Sessão temporariamente indisponível</h1>
@@ -183,7 +196,7 @@ function WorkspaceSession() {
       <Route path="*" element={<Navigate to="/account" replace state={{ from: accountReturnPath(pathname + search) }} />} />
     </Routes>
   }
-  if (pathname === '/account') return <Navigate to={accountReturnPath(state?.from)} replace />
+  if (pathname === '/account') return <AccountReturn />
   return <ThemeProvider key={user.uid} accountId={user.uid}>
     <WorkspaceProvider>
       <BookOpening />
