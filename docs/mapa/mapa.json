@@ -389,7 +389,7 @@
       "autor": "Codex",
       "titulo": "PRs 31 e 33 publicados: pesquisa, seleção, login e leitura validados",
       "resumo": "Frontend b7a7301 nos dois Hosting, a partir de cópia limpa e com contas proprietárias correspondentes; 102 arquivos por site iguais por SHA-256. CI e 214 testes aprovados. Conta descartável confirmou login persistente, EPUB/capa, 15 viradas rápidas, retomada exata, capítulos, texto/rolagem/anotação, post com/sem foto, pesquisas e folha/movimento reduzido. Conta excluída, token 401, originais/fotos purgados e uso EPUB zerado. API aaef7fa, banco, migrations e trabalho atual do Claude preservados.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/34"
     },
     {
       "data": "2026-11-17",
