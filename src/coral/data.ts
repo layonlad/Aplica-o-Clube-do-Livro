@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { User } from 'firebase/auth'
 import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, publicRequest, readableError } from '../auth/api'
@@ -98,21 +98,46 @@ export interface DiscoverClub {
 }
 /** Clubes abertos a novos leitores (públicos ou que aceitam pedidos). */
 export function useDiscoverClubs(query = '', reload = 0) {
-  const [page, setPage] = useState<{ items: DiscoverClub[]; nextCursor: string | null } | null>(null),
-    [error, setError] = useState('')
+  const [page, setPage] = useState<{ items: DiscoverClub[]; nextCursor: string | null } | null>(null)
+  const [error, setError] = useState('')
+  const [loadingMore, setLoadingMore] = useState(false)
+  const generation = useRef(0)
+  const paging = useRef(false)
+  const search = query.trim().length >= 2 ? query.trim() : ''
+  const path = (cursor?: string) => {
+    const params = new URLSearchParams()
+    if (search) params.set('q', search)
+    if (cursor) params.set('cursor', cursor)
+    return '/discover/clubs' + (params.size ? `?${params}` : '')
+  }
   useEffect(() => {
-    let live = true
+    const current = ++generation.current
+    setPage(null)
     setError('')
-    publicRequest<{ items: DiscoverClub[]; nextCursor: string | null }>(
-      '/discover/clubs' + (query.trim().length >= 2 ? `?q=${encodeURIComponent(query.trim())}` : ''),
-    )
-      .then((value) => live && setPage(value))
-      .catch((err) => live && setError(readableError(err)))
-    return () => {
-      live = false
+    paging.current = false
+    setLoadingMore(false)
+    publicRequest<{ items: DiscoverClub[]; nextCursor: string | null }>(path())
+      .then((value) => current === generation.current && setPage(value))
+      .catch((err) => current === generation.current && setError(readableError(err)))
+    return () => { generation.current++ }
+  }, [search, reload])
+  async function loadMore() {
+    if (!page?.nextCursor || paging.current) return
+    const current = generation.current
+    paging.current = true
+    setLoadingMore(true)
+    setError('')
+    try {
+      const next = await publicRequest<{ items: DiscoverClub[]; nextCursor: string | null }>(path(page.nextCursor))
+      if (current !== generation.current) return
+      setPage((previous) => previous && ({ ...next, items: [...previous.items, ...next.items.filter((club) => !previous.items.some((item) => item.id === club.id))] }))
+    } catch (err) {
+      if (current === generation.current) setError(readableError(err))
+    } finally {
+      if (current === generation.current) { paging.current = false; setLoadingMore(false) }
     }
-  }, [query, reload])
-  return { page, error }
+  }
+  return { page, error, loadMore, loadingMore }
 }
 
 /** Pessoas que você segue e que publicaram recentemente (para "Leituras dos amigos"). */

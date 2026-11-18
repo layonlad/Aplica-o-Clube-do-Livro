@@ -29,6 +29,7 @@ export function HomeScreen() {
   const feed = useCommunityPosts('limit=5')
   const menuBook = state.books.find((book) => book.id === menu)
   const featured = clubs.items?.length ? clubs.items : null
+  const waitingForClubs = !!user?.emailVerified && clubs.items === null
 
   return (
     <div className="home-screen">
@@ -66,11 +67,11 @@ export function HomeScreen() {
               ? featured.map((club) => (
                   <ClubTile key={club.id} name={club.name} members={club.memberCount} accent={club.accent} coverMediaId={club.coverMediaId} book={club.currentBook} onOpen={() => { setScope(club.id); navigate('/app') }} />
                 ))
-              : discover.page?.items.slice(0, 8).map((club) => (
+              : !waitingForClubs && discover.page?.items.slice(0, 8).map((club) => (
                   <ClubTile key={club.id} name={club.name} accent={club.accent} coverMediaId={club.coverMediaId} publicMedia onOpen={() => navigate(`/app/clubs?clube=${club.id}`)} />
                 ))}
-            {!featured && !discover.page && [0, 1, 2].map((key) => <span key={key} className="skeleton skeleton-tile" aria-hidden="true" />)}
-            {!featured && discover.page && !discover.page.items.length && (
+            {!featured && (waitingForClubs || !discover.page) && [0, 1, 2].map((key) => <span key={key} className="skeleton skeleton-tile" aria-hidden="true" />)}
+            {!waitingForClubs && !featured && discover.page && !discover.page.items.length && (
               <Link className="add-tile" to="/app/clubs?criar=1" style={{ width: 146, aspectRatio: '1.18' }}>
                 <Plus size={22} aria-hidden="true" />Criar um clube
               </Link>

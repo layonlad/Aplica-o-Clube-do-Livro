@@ -91,7 +91,7 @@ input[type='range'] { accent-color: var(--accent); }
   position: relative;
   z-index: 0;
   margin: 0 calc(var(--gutter) * -1);
-  padding: calc(env(safe-area-inset-top) + 14px) var(--gutter) 34px;
+  padding: env(safe-area-inset-top) var(--gutter) 24px;
   color: var(--hero-ink);
   background: var(--hero-gradient);
 }
@@ -134,7 +134,7 @@ input[type='range'] { accent-color: var(--accent); }
   position: relative;
   z-index: 1;
   margin: -22px calc(var(--gutter) * -1) 0;
-  padding: 20px var(--gutter) 0;
+  padding: 14px var(--gutter) 0;
   background: var(--bg);
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
 }
@@ -160,8 +160,8 @@ input[type='range'] { accent-color: var(--accent); }
 
 /* ── Seções ── */
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
-.section-head h2 { flex: 0 1 auto; min-width: 0; margin: 0; font-size: var(--text-h2); font-weight: var(--weight-bold); letter-spacing: -0.01em; }
-.section-head__link { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; color: var(--brand-ink); font-size: var(--text-small); font-weight: var(--weight-medium); white-space: nowrap; background: none; border: 0; padding: 0; cursor: pointer; }
+.section-head h2 { flex: 0 1 auto; min-width: 0; margin: 0; font-size: 1.1rem; font-weight: var(--weight-bold); letter-spacing: -0.01em; }
+.section-head__link { display: inline-flex; align-items: center; gap: 4px; min-height: 24px; color: var(--brand-ink); font-size: var(--text-small); font-weight: var(--weight-medium); white-space: nowrap; background: none; border: 0; padding: 0; cursor: pointer; }
 .section-head__link svg { transition: transform var(--dur-fast) var(--ease-out); }
 .section-head__link:hover svg { transform: translateX(2px); }
 .section-head__meta { color: var(--text-muted); font-size: var(--text-small); }
@@ -171,7 +171,7 @@ input[type='range'] { accent-color: var(--accent); }
   display: flex;
   gap: 10px;
   margin: 0 calc(var(--gutter) * -1);
-  padding: 2px var(--gutter) 10px;
+  padding: 2px var(--gutter) 4px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
@@ -227,11 +227,11 @@ input[type='range'] { accent-color: var(--accent); }
 .continue-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2); }
 .continue-card__title { margin: 0; overflow: hidden; color: var(--text); font-size: var(--text-h3); font-weight: var(--weight-bold); line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
 .continue-card__author { margin: 2px 0 0; overflow: hidden; color: var(--text-muted); font-size: var(--text-small); text-overflow: ellipsis; white-space: nowrap; }
-.continue-card__progress { display: flex; align-items: center; gap: 10px; margin-top: auto; padding-top: 12px; }
+.continue-card__progress { display: flex; align-items: center; gap: 10px; margin-top: auto; padding-top: 8px; }
 .continue-card__progress .progress-track { flex: 1 1 auto; }
 .continue-card__progress strong { flex: 0 0 auto; color: var(--text); font-size: var(--text-caption); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; }
-.continue-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 12px; }
-.continue-card__foot .pill-button { padding-inline: 12px; }
+.continue-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; }
+.continue-card__foot .pill-button { min-height: 28px; padding: 3px 10px; font-size: var(--text-caption); }
 .continue-card__chapter { display: inline-flex; min-width: 0; align-items: center; gap: 6px; overflow: hidden; color: var(--text-muted); font-size: var(--text-caption); text-overflow: ellipsis; white-space: nowrap; }
 .continue-card__chapter svg { flex: 0 0 auto; }
 
@@ -318,7 +318,7 @@ input[type='range'] { accent-color: var(--accent); }
 /* ── Abas de pílulas (Lendo · Quero ler · Concluídos) ── */
 .pill-tabs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
 .pill-tabs::-webkit-scrollbar { display: none; }
-.pill-tabs button { flex: 1 0 auto; min-height: 38px; padding: 6px 16px; color: var(--text); background: var(--surface-raised); border: 1px solid var(--border-strong); border-radius: var(--radius-pill); cursor: pointer; font-size: var(--text-small); font-weight: var(--weight-medium); white-space: nowrap; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
+.pill-tabs button { flex: 1 0 auto; min-height: 32px; padding: 5px 12px; color: var(--text); background: var(--surface-raised); border: 1px solid var(--border-strong); border-radius: var(--radius-pill); cursor: pointer; font-size: var(--text-small); font-weight: var(--weight-medium); white-space: nowrap; transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
 .pill-tabs button[aria-pressed='true'], .pill-tabs button[aria-selected='true'] { color: var(--brand-ink); background: var(--brand-soft); border-color: transparent; font-weight: var(--weight-semibold); }
 .pill-tabs button:active { transform: scale(.97); }
 
@@ -352,7 +352,7 @@ input[type='range'] { accent-color: var(--accent); }
 .lib-row__side small { color: var(--text); font-size: var(--text-caption); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; }
 
 /* ── Coleções (cartões com foto/arte e "Nova coleção") ── */
-.collection-tile { --tile-w: 108px; --tile-ratio: 0.9; }
+.collection-tile { --tile-w: 94px; --tile-ratio: 0.9; }
 .add-tile { display: flex; width: 72px; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--text-muted); background: var(--bg-sunken); border: 0; border-radius: var(--radius-md); cursor: pointer; font-size: var(--text-caption); text-align: center; line-height: 1.2; }
 .add-tile svg { color: var(--accent); }
 .add-tile:active { transform: scale(.97); }
@@ -454,8 +454,14 @@ input[type='range'] { accent-color: var(--accent); }
 }
 
 /* ── Explorar ── */
-.explore-screen .hero { padding-bottom: 46px; }
-.hero .category-pills { margin: 14px calc(var(--gutter) * -1) 0; padding: 0 var(--gutter) 2px; }
+.explore-screen .hero { padding-bottom: 24px; }
+.home-screen .hero { padding-top: calc(env(safe-area-inset-top) + 6px); }
+.explore-screen .hero__row { min-height: 40px; }
+.explore-screen .hero .search-field { height: 40px; min-height: 40px; margin-top: 8px; }
+.explore-screen .hero .search-field input { height: 38px; min-height: 38px; }
+.hero .category-pills button { min-height: 30px; padding: 4px 12px; }
+.home-friends .user-avatar { --avatar-size: 32px; }
+.hero .category-pills { margin: 8px calc(var(--gutter) * -1) 0; padding: 0 var(--gutter) 2px; }
 .category-pills button { flex: 0 0 auto; min-height: 32px; padding: 4px 12px; border-color: transparent; box-shadow: 0 2px 8px rgba(120, 30, 30, .1); font-size: 0.8rem; }
 .category-pills button svg, .filter-pills button svg { flex: none; width: 15px; height: 15px; }
 .hero__subtitle--below { margin-top: 4px; }
@@ -736,3 +742,16 @@ input[type='color']::-moz-color-swatch { border: 0; border-radius: 50%; }
 .community-screen .section-head h2 { font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .community-screen .sort-pill { padding: 3px 10px; font-size: 0.8rem; }
 .community-screen .hero__subtitle, .clubs-screen .hero__subtitle { font-size: 0.8rem; }
+
+/* Em telas estreitas, o convite conserva o nome e separa as ações do texto. */
+.invite-card .row-card__body strong { display: -webkit-box; white-space: normal; overflow-wrap: anywhere; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+@media (max-width: 359px) {
+  .invite-card { gap: 8px; }
+  .invite-card .row-card__media { width: 50px; height: 58px; }
+  .invite-card .pill-button { padding-inline: 10px; }
+  .bottom-nav a { font-size: .667rem; }
+}
+
+.explore-screen .club-tile { --tile-ratio: 1.36; }
+.explore-screen .person-chip { width: 190px; padding: 5px 8px; }
+.explore-screen .person-chip .user-avatar { --avatar-size: 32px; }
