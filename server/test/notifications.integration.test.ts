@@ -110,6 +110,21 @@ it('entrega convite somente ao e-mail verificado e permite aceitá-lo sem expor 
   ).toBe(1)
   expect((await notices('notice-outsider')).items.some((n) => n.targetId === invite.id)).toBe(false)
 })
+it('recusa convite endereçado: só o destinatário recusa, o aviso some e o convite deixa de valer', async () => {
+  ids['notice-decliner'] = (await call('/me', 'notice-decliner')).json().user.id
+  const invite = (
+    await call(`/clubs/${clubId}/invites`, undefined, 'POST', { email: 'notice-decliner@example.com' })
+  ).json()
+  expect((await notices('notice-decliner')).items.some((n) => n.targetId === invite.id)).toBe(true)
+  expect((await call(`/me/invitations/${invite.id}/decline`, 'notice-member', 'POST', {})).statusCode).toBe(400)
+  expect((await call(`/me/invitations/${invite.id}/decline`, 'notice-decliner', 'POST', {})).statusCode).toBe(200)
+  expect((await notices('notice-decliner')).items.some((n) => n.targetId === invite.id)).toBe(false)
+  expect((await call(`/me/invitations/${invite.id}/accept`, 'notice-decliner', 'POST', {})).statusCode).toBe(400)
+  expect((await call(`/me/invitations/${invite.id}/decline`, 'notice-decliner', 'POST', {})).statusCode).toBe(400)
+  expect(
+    (await db.pool.query("SELECT count(*)::int AS n FROM audit_logs WHERE action='invite.declined' AND entity_id=$1", [invite.id])).rows[0].n,
+  ).toBe(1)
+})
 it('oculta notificações públicas depois de bloqueio e de perfil privado, sem revelar o corpo do conteúdo', async () => {
   for (const [uid, handle] of [
     ['notice-owner', 'dono'],

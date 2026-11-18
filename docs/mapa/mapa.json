@@ -384,6 +384,13 @@
   ],
   "atualizacoes": [
     {
+      "data": "2026-11-18",
+      "autor": "Claude Code",
+      "titulo": "Reformulação visual Coral: seis telas das referências e identidade em todo o app",
+      "resumo": "Nova identidade em todo o app: fundo branco, cabeçalho em gradiente coral e rosa, cartões arredondados, Inter e um só acento coral. Novas telas Início, Explorar, Biblioteca, Comunidade, Clubes e Perfil, todas com dados reais e botões ligados. Barra inferior: Início, Explorar, Biblioteca, Comunidade, Perfil. Telas internas ganharam barra coral; folhas, menus, formulários, notificações, login e configurações seguem o mesmo padrão; o leitor continua limpo. Aparência: tema Original, Claro, Escuro ou Sistema, fundo, cor do texto e Restaurar aparência original. Servidor (aditivo, sem migration): recusar convite, listar seguidores e seguindo com privacidade, campo textColor. API antes do site. Detalhes em docs/ENTREGA_REDESIGN_CORAL.md.",
+      "pr": null
+    },
+    {
       "data": "2026-11-17",
       "autor": "Claude Code",
       "titulo": "Comunidade estilo post, pesquisa na barra, leitor em tela cheia e login permanente",

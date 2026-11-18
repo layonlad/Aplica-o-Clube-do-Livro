@@ -1,7 +1,9 @@
 import { ProfileActivityFeed, FollowRequests, SavedReading } from './ProfileActivity'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Ellipsis, Heart, MessageCircle, Settings } from 'lucide-react'
+import { HeroBell } from '../coral/kit'
+import { ConnectionsSheet, CreateFab } from '../coral/ProfileExtras'
 import type { PostDto, PostMedia, Page } from '../../server/src/community-contracts'
 import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
@@ -78,10 +80,13 @@ function ProfilePostList({
   load,
   empty,
   clubLabel,
+  grid = false,
 }: {
   load: (cursor?: string) => Promise<Page<PostDto | ClubPost>>
   empty: string
   clubLabel?: boolean
+  /** Grade de duas colunas (aba Publicações do perfil): miniatura, trecho e contadores. */
+  grid?: boolean
 }) {
   const [page, setPage] = useState<Page<PostDto | ClubPost> | null>(null),
     [error, setError] = useState(''),
@@ -119,7 +124,41 @@ function ProfilePostList({
       </p>
     )
   if (!page) return <SkeletonPage label="Abrindo publicações…" />
-  if (!page.items.length) return <p className="empty-inline profile-empty">{empty}</p>
+  if (!page.items.length) return <p className="soft-empty">{empty}</p>
+  if (grid)
+    return (
+      <>
+        <div className="post-grid">
+          {page.items.map((post) => {
+            const club = 'club' in post ? post.club : null
+            const to = club ? `/space/${club.id}?post=${post.id}` : `/app/community?post=${post.id}`
+            return (
+              <Link key={post.id} className="post-tile" to={to} aria-label={`Abrir publicação: ${post.body.slice(0, 60)}`}>
+                <span className="post-tile__media">
+                  {post.media[0]?.kind === 'image' ? (
+                    <PrivateMedia previewOnly publicMedia={!club} media={post.media[0]} alt="" />
+                  ) : (
+                    <CoverArt title={post.bookTitle || post.quote || post.body.slice(0, 40)} author={post.bookAuthor} />
+                  )}
+                </span>
+                <span className="post-tile__text">{post.quote ? `“${post.quote}”` : post.body}</span>
+                <span className="post-tile__meta">
+                  <span><Heart size={13} aria-hidden="true" />{post.likes}</span>
+                  <span><MessageCircle size={13} aria-hidden="true" />{post.comments}</span>
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+        {page.nextCursor && (
+          <div className="library-add">
+            <Button variant="secondary" disabled={busy} aria-busy={busy} onClick={() => void more()}>
+              {busy ? 'Carregando…' : 'Mais publicações'}
+            </Button>
+          </div>
+        )}
+      </>
+    )
   return (
     <div className="social-feed profile-feed">
       {page.items.map((post) => {
@@ -195,7 +234,8 @@ export function SocialProfile({ profileId }: { profileId?: string } = {}) {
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
     [revision, setRevision] = useState(0),
-    [tab, setTab] = useState<Tab>('public')
+    [tab, setTab] = useState<Tab>('public'),
+    [connections, setConnections] = useState<'followers' | 'following' | null>(null)
   const verified = !!user?.emailVerified
   useEffect(() => {
     let live = true
@@ -284,96 +324,123 @@ export function SocialProfile({ profileId }: { profileId?: string } = {}) {
     tabs.push({ id: 'about', label: 'Sobre' })
   const current = tabs.some((item) => item.id === tab) ? tab : tabs[0]?.id
   return (
-    <div className="social-room profile-page">
-      <button type="button" className="text-link profile-back" onClick={back}>
-        <ArrowLeft size={16} aria-hidden="true" /> Voltar
-      </button>
-      <header className="profile-header">
-        <div className="profile-header__cover" aria-hidden={!profile?.coverId}>
-          {profile?.coverId ? (
+    <div className="social-room profile-page coral-profile">
+      <header className="profile-hero">
+        {profile?.coverId && (
+          <div className="profile-hero__cover">
             <Photo id={profile.coverId} alt={`Capa do perfil de ${name}`} />
+          </div>
+        )}
+        <div className="profile-hero__bar">
+          {isSelf ? (
+            <span className="profile-hero__label">Meu perfil</span>
           ) : (
-            <span className="profile-header__spines" />
+            <button type="button" className="hero-icon" aria-label="Voltar" onClick={back}>
+              <ArrowLeft size={20} />
+            </button>
           )}
-        </div>
-        <div className="profile-header__identity">
-          <UserAvatar name={name} avatarId={avatarId} size="xl" />
-          <div className="profile-header__text">
-            {profile && <span className="eyebrow">@{profile.handle}</span>}
-            <h1>{name}</h1>
-            {profile?.bio && <p className="preserve-text profile-header__bio">{profile.bio}</p>}
-            {!profile && (
-              <p className="profile-header__bio">
-                Perfil privado. Você vê o que esta pessoa compartilhou nos clubes em comum.
-              </p>
-            )}
-            {profile && (
-              <p className="profile-header__stats">
-                <span>
-                  <strong>{profile.posts ?? '—'}</strong> publicações
-                </span>
-                <span>
-                  <strong>{profile.followers ?? '—'}</strong> seguidor(es)
-                </span>
-                <span>
-                  <strong>{profile.follows ?? '—'}</strong> seguindo
-                </span>
-                {profile.stats && (
-                  <span>
-                    <strong>{profile.stats.completed}</strong> leitura(s) concluída(s)
-                  </span>
-                )}
-              </p>
-            )}
-            {!isSelf && shared.length > 0 && (
-              <p className="profile-header__shared">
-                Em comum:{' '}
-                {shared.map((club) => (
-                  <span className="chip chip--success" key={club.id}>
-                    {club.name}
-                  </span>
-                ))}
-              </p>
+          <div className="hero__actions">
+            {isSelf ? (
+              <>
+                <HeroBell />
+                <Link className="hero-icon" to="/app/ajustes" aria-label="Configurações">
+                  <Settings size={20} />
+                </Link>
+              </>
+            ) : (
+              profile && verified && (
+                <details className="profile-more">
+                  <summary className="hero-icon" aria-label="Mais opções do perfil">
+                    <Ellipsis size={20} />
+                  </summary>
+                  <div className="social-menu">
+                    <ConfirmAction
+                      label="Bloquear leitor"
+                      confirmLabel="Confirmar bloqueio"
+                      disabled={busy}
+                      onConfirm={() => relation('block', true)}
+                    />
+                    <ReportAction kind="profile" id={profile.id} />
+                  </div>
+                </details>
+              )
             )}
           </div>
         </div>
+      </header>
+      <section className="profile-card" aria-labelledby="profile-name">
+        <div className="profile-card__avatar">
+          <UserAvatar name={name} avatarId={avatarId} size="xl" />
+        </div>
+        <h1 id="profile-name">{name}</h1>
+        {profile && <p className="profile-card__handle">@{profile.handle}</p>}
+        {profile?.bio && <p className="preserve-text profile-card__bio">{profile.bio}</p>}
+        {!profile && (
+          <p className="profile-card__bio">
+            Perfil privado. Você vê o que esta pessoa compartilhou nos clubes em comum.
+          </p>
+        )}
+        {isSelf && (
+          <div className="profile-card__actions">
+            <Link className="pill-button profile-edit" to="/app/social-profile">
+              Editar perfil
+            </Link>
+            {(profile?.pendingRequests ?? 0) > 0 && (
+              <button type="button" className="pill-button pill-button--solid" aria-expanded={requests} onClick={() => setRequests(!requests)}>
+                Solicitações ({profile?.pendingRequests})
+              </button>
+            )}
+          </div>
+        )}
         {profile && verified && !isSelf && (
-          <div className="workspace-actions profile-header__actions">
-            <Button
+          <div className="profile-card__actions">
+            <button
+              type="button"
+              className={`pill-button profile-follow ${profile.following || profile.requested ? '' : 'pill-button--solid'}`}
               disabled={busy}
+              aria-busy={busy}
+              aria-pressed={!!(profile.following || profile.requested)}
               onClick={() => void relation('follow', !(profile.following || profile.requested))}
             >
               {profile.following
-                ? 'Deixar de seguir'
+                ? 'Seguindo'
                 : profile.requested
-                  ? 'Cancelar solicitação'
+                  ? 'Solicitação pendente'
                   : profile.isPublic
                     ? 'Seguir'
                     : 'Solicitar para seguir'}
-            </Button>
-            <ConfirmAction
-              label="Bloquear leitor"
-              confirmLabel="Confirmar bloqueio"
-              disabled={busy}
-              onConfirm={() => relation('block', true)}
-            />
-            <ReportAction kind="profile" id={profile.id} />
+            </button>
           </div>
         )}
-        {isSelf && (
-          <div className="workspace-actions profile-header__actions">
-            <Link className="button-link" to="/app/social-profile">
-              Editar perfil
-            </Link>
-            <Link className="button-link" to="/app/settings">
-              Configurações da conta
-            </Link>
-            <Button variant="secondary" onClick={() => setRequests(!requests)}>
-              Solicitações ({profile?.pendingRequests ?? 0})
-            </Button>
+        {profile && (
+          <div className="profile-stats">
+            <button type="button" onClick={() => setTab('public')} disabled={profile.posts == null}>
+              <strong>{profile.posts ?? '—'}</strong>
+              <span>Publicações</span>
+            </button>
+            <button type="button" onClick={() => setConnections('followers')} disabled={profile.followers == null || !verified}>
+              <strong>{profile.followers ?? '—'}</strong>
+              <span>Seguidores</span>
+            </button>
+            <button type="button" onClick={() => setConnections('following')} disabled={profile.follows == null || !verified}>
+              <strong>{profile.follows ?? '—'}</strong>
+              <span>Seguindo</span>
+            </button>
           </div>
         )}
-      </header>
+        {!isSelf && shared.length > 0 && (
+          <p className="profile-card__shared">
+            Clubes em comum:{' '}
+            {shared.map((club) => (
+              <span className="tag" key={club.id}>
+                {club.name}
+              </span>
+            ))}
+          </p>
+        )}
+      </section>
+      {connections && id && <ConnectionsSheet personId={id} kind={connections} onClose={() => setConnections(null)} />}
+      {isSelf && <CreateFab />}
       {isSelf && requests && <FollowRequests onResolved={() => setRevision((n) => n + 1)} />}
       {profile?.canSeeContent === false && (
         <p className="profile-private-notice">
@@ -387,7 +454,7 @@ export function SocialProfile({ profileId }: { profileId?: string } = {}) {
         </p>
       )}
       {tabs.length > 0 && (
-        <div className="profile-tabs" role="tablist" aria-label="Seções do perfil">
+        <div className="profile-tabs line-tabs" role="tablist" aria-label="Seções do perfil">
           {tabs.map((item) => (
             <button
               key={item.id}
@@ -428,6 +495,7 @@ export function SocialProfile({ profileId }: { profileId?: string } = {}) {
         >
           {current === 'public' && (
             <ProfilePostList
+              grid
               load={loadPublic}
               empty={`${name} ainda não publicou na comunidade.`}
             />

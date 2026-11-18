@@ -309,6 +309,38 @@ export class ProfileService {
       return pageOf(rows, input.limit)
     })
   }
+  /**
+   * Quem segue a pessoa (followers) ou quem ela segue (following). Só aparece quando o visitante pode ver
+   * o conteúdo do perfil. A dona do perfil vê todas as conexões; visitantes, só as contas que também podem ver.
+   * Contas bloqueadas (em qualquer direção) nunca aparecem.
+   */
+  connections(
+    actor: UserProfile,
+    id: string,
+    kind: 'followers' | 'following',
+    input: { limit: number; cursor?: string },
+  ) {
+    return transaction(this.pool, async (client) => {
+      const target = await client.query(
+        `SELECT 1 FROM profiles WHERE user_id=$1 AND NOT suspended AND ((${visibleProfile('profiles.user_id', '$2')}) OR user_id=$2)`,
+        [id, actor.id],
+      )
+      if (!target.rowCount) throw publicMissing()
+      const cursor = decodeCursor(input.cursor)
+      const [self, other] = kind === 'followers' ? ['f.followed_id', 'f.follower_id'] : ['f.follower_id', 'f.followed_id']
+      const { rows } = await client.query(
+        `SELECT p.user_id AS id,p.handle,p.display_name AS "displayName",p.avatar_id AS "avatarId",
+         EXISTS(SELECT 1 FROM follows mine WHERE mine.follower_id=$2 AND mine.followed_id=p.user_id) AS following,
+         p.user_id=$2 AS "isSelf",f.created_at::text AS "sortTime"
+         FROM follows f JOIN profiles p ON p.user_id=${other}
+         WHERE ${self}=$1 AND NOT p.suspended AND (($1=$2 AND ${notBlocked('p.user_id', '$2')}) OR (${visibleProfile('p.user_id', '$2')})) AND ${notBlocked('p.user_id', '$1')}
+         AND ($3::timestamptz IS NULL OR (f.created_at,p.user_id)<($3,$4::uuid))
+         ORDER BY f.created_at DESC,p.user_id DESC LIMIT $5`,
+        [id, actor.id, cursor?.time ?? null, cursor?.id ?? null, input.limit + 1],
+      )
+      return pageOf(rows, input.limit)
+    })
+  }
   follow(user: UserProfile, id: string, value: boolean) {
     return new FollowService(this.pool).follow(user, id, value)
   }

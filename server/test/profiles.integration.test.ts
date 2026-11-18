@@ -197,6 +197,27 @@ it('mostra no perfil só as publicações de clubes que o visitante também freq
   )
 })
 
+it('lista seguidores e quem a pessoa segue só para quem pode ver o perfil, sem contas bloqueadas', async () => {
+  for (const uid of ['leitora_a', 'leitora_b', 'leitora_c']) {
+    ids[uid] = (await app.inject({ url: '/v1/me', headers: headers(uid) })).json<Session>().user.id
+    await db.pool.query(
+      "INSERT INTO profiles(user_id,handle,display_name,is_public) VALUES($1,$2,$3,$4) ON CONFLICT(user_id) DO UPDATE SET is_public=EXCLUDED.is_public",
+      [ids[uid], uid, uid.toUpperCase(), uid !== 'leitora_c'],
+    )
+  }
+  await db.pool.query('INSERT INTO follows(follower_id,followed_id) VALUES($1,$3),($2,$3),($3,$1)', [ids.leitora_b, ids.leitora_c, ids.leitora_a])
+  const list = async (uid: string, path: string) => app.inject({ url: `/v1/people/${ids.leitora_a}/${path}`, headers: headers(uid) })
+  const followers = await list('leitora_b', 'followers')
+  expect(followers.statusCode, followers.body).toBe(200)
+  // leitora_c é privada e leitora_b não a segue: ela não aparece para leitora_b.
+  expect(followers.json<Page<{ id: string }>>().items.map((item) => item.id)).toEqual([ids.leitora_b])
+  expect((await list('leitora_a', 'followers')).json<Page<{ id: string }>>().items.map((item) => item.id).sort()).toEqual([ids.leitora_b, ids.leitora_c].sort())
+  expect((await list('leitora_a', 'following')).json<Page<{ id: string }>>().items.map((item) => item.id)).toEqual([ids.leitora_b])
+  await db.pool.query('INSERT INTO user_blocks(blocker_id,blocked_id) VALUES($1,$2)', [ids.leitora_a, ids.leitora_b])
+  expect((await list('leitora_b', 'followers')).statusCode).toBe(404)
+  expect((await list('leitora_a', 'followers')).json<Page<{ id: string }>>().items.map((item) => item.id)).toEqual([ids.leitora_c])
+  expect((await list('leitora_a', 'following')).json<Page<{ id: string }>>().items).toHaveLength(0)
+})
 it('salva a aparência na conta e a preserva nas ações do espaço pessoal', async () => {
   const appearance = {
     preset: 'azul',

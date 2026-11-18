@@ -1,14 +1,14 @@
 {
-  "name": "Clube do Livro Aurora",
-  "short_name": "Clube Aurora",
+  "name": "Clubes de leitura",
+  "short_name": "Leituras",
   "description": "Encontros, leituras e conversas em um só lugar.",
   "lang": "pt-BR",
   "id": "./",
   "start_url": "./#/",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#fbf4e8",
-  "theme_color": "#462b70",
+  "background_color": "#ffffff",
+  "theme_color": "#f9694e",
   "icons": [
     {
       "src": "./icon.svg",

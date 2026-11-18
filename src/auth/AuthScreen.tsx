@@ -1,3 +1,4 @@
+import { BookOpen } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth'
 import { Button } from '../components/ui'
@@ -51,7 +52,7 @@ export function AuthScreen() {
   }
   return <main className="access-page access-page--split"><AccessArt /><section className="access-card">
     <FlowerSticker size={44} className="sticker-corner" />
-    <span className="brand-mark brand-mark--large">CL</span><p className="eyebrow">Clube do Livro</p>
+    <span className="access-glyph" aria-hidden="true"><BookOpen size={28} /></span>
     <h1>{mode === 'signup' ? 'Comece sua história' : mode === 'reset' ? 'Recuperar senha' : 'Bom ter você aqui'}</h1>
     <p>Entre para sincronizar suas leituras, acessar seus clubes ou aceitar um convite. Você também pode usar o aplicativo sem conta.</p>
     <Link className="button-link" to="/app">Continuar sem cadastro →</Link>

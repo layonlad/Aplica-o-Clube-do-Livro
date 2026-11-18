@@ -30,12 +30,12 @@ body {
 /* ── Estante fixa atrás de tudo (componente ShelfBackdrop) ──
  * Camadas: estante (foto ou ilustração) → véu pastel → grão de papel. Nada aqui rola com a página. */
 :root {
-  --shelf-image: url('../assets/estante/estante-ilustrada.svg');
-  --shelf-size: 720px auto;          /* ilustração: ladrilho que se repete; foto: cover */
-  --shelf-repeat: repeat;
-  --paper: url('../assets/papel/papel-amassado.svg');
+  /* Identidade coral: fundo liso. A estante só aparece quando a pessoa usa a capa do livro como fundo. */
+  --shelf-image: none;
+  --shelf-size: cover;
+  --shelf-repeat: no-repeat;
+  --paper: none;
 }
-:root[data-paper='off'] { --paper: none; }
 
 .shelf-backdrop {
   position: fixed;
@@ -64,6 +64,8 @@ body {
     linear-gradient(180deg, color-mix(in srgb, var(--veil-tint) 40%, transparent), transparent 30%, transparent 75%, color-mix(in srgb, var(--veil-tint) 30%, transparent)),
     color-mix(in srgb, var(--veil-color) var(--veil-strength), transparent);
 }
+:root:not([data-cover-backdrop='on']) .shelf-backdrop__shelf,
+:root:not([data-cover-backdrop='on']) .shelf-backdrop__veil { display: none; }
 .shelf-backdrop__veil::after {
   content: '';
   position: absolute;
@@ -104,14 +106,14 @@ h1, h2, h3, h4, p, figure, blockquote { margin-top: 0; }
 
 h1, h2, h3 {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: var(--weight-bold);
   font-optical-sizing: auto;
   letter-spacing: var(--tracking-tight);
   color: var(--text);
   text-wrap: balance;
 }
 h1 { font-size: var(--text-h1); line-height: var(--leading-tight); }
-h2 { font-size: var(--text-h2); line-height: 1.12; }
+h2 { font-size: var(--text-h2); line-height: var(--leading-snug); }
 h3 { font-size: var(--text-h3); line-height: var(--leading-snug); }
 h4 { font-family: var(--font-ui); font-size: var(--text-h4); font-weight: 700; line-height: 1.3; }
 p { text-wrap: pretty; }
@@ -130,7 +132,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { border-radiu
 .stack-xl > * + * { margin-top: var(--space-8); }
 
 /* Tipos utilitários */
-.t-display { font-family: var(--font-display); font-size: var(--text-display); line-height: 0.98; letter-spacing: -0.03em; font-weight: 600; }
+.t-display { font-family: var(--font-display); font-size: var(--text-display); line-height: 1.1; letter-spacing: -0.02em; font-weight: var(--weight-heavy); }
 .t-subtitle { font-size: var(--text-subtitle); line-height: var(--leading-normal); color: var(--text-muted); }
 .t-caption { font-size: var(--text-caption); color: var(--text-muted); }
 .eyebrow {
@@ -138,10 +140,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { border-radiu
   margin-bottom: var(--space-2);
   color: var(--space-accent-ink);
   font-family: var(--font-ui);
-  font-size: var(--text-overline);
-  font-weight: 800;
-  letter-spacing: var(--tracking-overline);
-  text-transform: uppercase;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /* Barra de rolagem discreta */

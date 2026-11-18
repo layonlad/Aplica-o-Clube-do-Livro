@@ -1,3 +1,4 @@
+import { AppBar } from '../coral/kit'
 import {ClubSettingsPanel} from '../clubs/ClubSettingsPanel'
 import {roleLabels} from '../../server/src/permissions'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
@@ -17,12 +18,9 @@ export function Protected({ children }: { children: ReactNode }) {
   if (!user.emailVerified) return <VerifyEmailScreen />
   return <div key={user.uid}>{children}</div>
 }
-function Shell({ children }: { children: ReactNode }) {
-  const { user, signOut } = useAuth()
-  const [error, setError] = useState('')
-  return <div className="connected-shell" data-space="club"><header className="connected-header"><Link to="/app"><span className="brand-mark">CL</span> Voltar ao aplicativo</Link>
-    <div><span>{user?.displayName || user?.email}</span><Button variant="ghost" onClick={() => void signOut().catch((err) => setError(readableError(err)))}>Sair</Button></div></header>
-    <main className="connected-content">{error && <p role="alert">{error}</p>}{children}</main></div>
+function Shell({ children, title = 'Clube' }: { children: ReactNode; title?: string }) {
+  return <div className="connected-shell coral-connected" data-space="club"><AppBar title={title} back="/app/clubs" />
+    <main className="connected-content page-sheet">{children}</main></div>
 }
 export function ClubList() {
   const { user } = useAuth()
@@ -68,10 +66,10 @@ export function InvitePage() {
     catch (err) { setError(readableError(err)) }
     finally { setBusy(false) }
   }
-  return <Shell><Card><h1>Você tem um convite</h1><p>Ao aceitar, você passará a participar do clube com a conta <strong>{user?.email}</strong>.</p>
+  return <Shell title="Convite"><Card><h1>Você tem um convite</h1><p>Ao aceitar, você passará a participar do clube com a conta <strong>{user?.email}</strong>.</p>
     <form className="access-form" onSubmit={accept}><label>Código do convite<input required value={token} onChange={(e) => setToken(e.target.value)} autoComplete="off" spellCheck={false} /></label>
       {error && <p role="alert" className="access-error">{error}</p>}<Button type="submit" disabled={busy}>{busy ? 'Aceitando…' : 'Aceitar convite'}</Button></form>
-    <Link to="/clubs">Voltar para meus clubes</Link></Card></Shell>
+    <Link to="/app/clubs">Voltar para meus clubes</Link></Card></Shell>
 }
 
 export function ClubPage() {
@@ -121,7 +119,7 @@ export function ClubPage() {
   async function moreMembers(){if(!details?.membersNextCursor)return;setBusy(true);setError('');try{const value=await apiRequest<{items:Member[];nextCursor:string|null}>(user!,`/clubs/${clubId}/members?cursor=${encodeURIComponent(details.membersNextCursor)}`);setDetails(current=>current?{...current,members:[...current.members,...value.items],membersNextCursor:value.nextCursor}:current)}catch(err){setError(readableError(err))}finally{setBusy(false)}}
   const owner = details?.club.role === 'owner'
   const manager = owner || details?.club.role === 'admin'
-  return <Shell>{error && <div role="alert" className="access-error">{error} <Button variant="ghost" onClick={() => setReload((v) => v + 1)}>Atualizar</Button></div>}
+  return <Shell title="Membros do clube">{error && <div role="alert" className="access-error">{error} <Button variant="ghost" onClick={() => setReload((v) => v + 1)}>Atualizar</Button></div>}
     {!details && !error && <p role="status">Abrindo o clube…</p>}
     {details && <><div className="page-intro"><div><p className="eyebrow">SEU CLUBE</p><h1>{details.club.name}</h1><p>{details.memberCount??details.members.filter((m) => m.status === 'active').length} participantes · {owner ? 'Você é responsável pelo clube' : 'Você participa deste clube'}</p></div></div>
       {message && <p role="status">{message}</p>}

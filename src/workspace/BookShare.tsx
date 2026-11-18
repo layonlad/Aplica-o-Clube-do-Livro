@@ -72,7 +72,7 @@ export function BookShare({ book, compact = false }: { book: ShareBook; compact?
   )
 }
 
-function ShareSheet({ book, onClose }: { book: ShareBook; onClose: () => void }) {
+export function ShareSheet({ book, onClose }: { book: ShareBook; onClose: () => void }) {
   const { user } = useAuth()
   const { clubs, setScope } = useWorkspace()
   const navigate = useNavigate()

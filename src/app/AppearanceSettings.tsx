@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Check, Monitor, Moon, RotateCcw, Sun } from 'lucide-react'
+import { Check, Monitor, Moon, Palette, RotateCcw, Sparkles, Sun } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import { apiRequest, readableError } from '../auth/api'
 import { Button } from '../components/ui'
@@ -8,6 +7,8 @@ import { UserAvatar } from '../components/UserAvatar'
 import { useTheme } from './ThemeProvider'
 import {
   appearanceTokens,
+  backgroundOptions,
+  textColorOptions,
   buttonShapeOptions,
   defaultAppearance,
   densityOptions,
@@ -105,18 +106,21 @@ export function AppearanceSettings() {
     setDraft((value) => ({ ...value, ...patch }))
   }
 
-  async function apply() {
+  async function apply(value: Appearance = draft) {
     setBusy(true)
     setError('')
     setMessage('')
     try {
       if (user?.emailVerified)
         await apiRequest(user, '/me/appearance', 'POST', {
-          appearance: same(draft, defaultAppearance) ? null : draft,
+          appearance: same(value, defaultAppearance) ? null : value,
         })
-      saveAppearance(draft)
+      saveAppearance(value)
+      setDraft(value)
       setMessage(
-        user?.emailVerified
+        same(value, defaultAppearance)
+          ? 'Aparência original restaurada.'
+          : user?.emailVerified
           ? 'Aparência aplicada e salva na sua conta.'
           : 'Aparência aplicada neste navegador. Entre na sua conta para levá-la a outros aparelhos.',
       )
@@ -131,23 +135,81 @@ export function AppearanceSettings() {
   const headings = fontOptions
   return (
     <div className="appearance-page stack-lg">
-      <div className="page-intro">
-        <div>
-          <span className="eyebrow">
-            <Link to="/app/profile">Perfil</Link> · Aparência
-          </span>
-          <h1>Aparência e personalização</h1>
-          <p>
-            Escolha cores, fontes e o modo de exibição. Tudo aparece em prévia na hora; nada é salvo
-            até você aplicar.
-          </p>
-        </div>
-      </div>
+      <p className="t-subtitle">Tudo aparece em prévia na hora. Toque em “Aplicar” para salvar na sua conta.</p>
 
       <div className="appearance-layout">
         <div className="appearance-controls">
           <fieldset className="appearance-group">
-            <legend>Tema de cores</legend>
+            <legend>Tema</legend>
+            <div className="seg-control" role="group" aria-label="Tema">
+              {(
+                [
+                  ['original', 'Original', Sparkles],
+                  ['light', 'Claro', Sun],
+                  ['dark', 'Escuro', Moon],
+                  ['system', 'Sistema', Monitor],
+                ] as const
+              ).map(([value, label, Icon]) => {
+                const original = draft.preset === 'padrao' && draft.mode === 'light' && !draft.background && !draft.textColor
+                const pressed = value === 'original' ? original : !original && draft.mode === value
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={pressed}
+                    onClick={() =>
+                      value === 'original'
+                        ? update({ preset: 'padrao', accent: null, mode: 'light', background: null, textColor: null })
+                        : update({ mode: value })
+                    }
+                  >
+                    <Icon size={15} aria-hidden="true" /> {label}
+                  </button>
+                )
+              })}
+            </div>
+            <p className="t-caption appearance-note">“Original” é o visual coral padrão do aplicativo. “Sistema” acompanha o modo claro ou escuro do aparelho.</p>
+          </fieldset>
+
+          <fieldset className="appearance-group">
+            <legend>Fundo do aplicativo</legend>
+            <div className="swatch-row">
+              {backgroundOptions.map((option) => (
+                <button key={option.id} type="button" className="swatch" aria-pressed={(draft.background ?? null) === option.color} onClick={() => update({ background: option.color })}>
+                  <span className="swatch__chip" style={{ background: option.color ?? (tokens.dark ? '#121215' : '#ffffff') }} />
+                  {option.label}
+                </button>
+              ))}
+              <label className="swatch">
+                <span className="swatch__chip swatch__chip--custom" style={draft.background && !backgroundOptions.some((option) => option.color === draft.background) ? { background: draft.background } : undefined}>
+                  <input type="color" aria-label="Cor de fundo personalizada" value={draft.background ?? '#ffffff'} onChange={(event) => update({ background: event.target.value.toLowerCase() })} />
+                </span>
+                Personalizada
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset className="appearance-group">
+            <legend>Cor dos textos</legend>
+            <div className="swatch-row">
+              {textColorOptions.map((option) => (
+                <button key={option.id} type="button" className="swatch" aria-pressed={(draft.textColor ?? null) === option.color} onClick={() => update({ textColor: option.color })}>
+                  <span className="swatch__chip swatch__chip--text" style={{ color: option.color ?? undefined }}>Aa</span>
+                  {option.label}
+                </button>
+              ))}
+              <label className="swatch">
+                <span className="swatch__chip swatch__chip--custom" style={draft.textColor && !textColorOptions.some((option) => option.color === draft.textColor) ? { background: draft.textColor } : undefined}>
+                  <input type="color" aria-label="Cor do texto personalizada" value={draft.textColor ?? '#18181c'} onChange={(event) => update({ textColor: event.target.value.toLowerCase() })} />
+                </span>
+                Personalizada
+              </label>
+            </div>
+            <p className="t-caption appearance-note">Se a cor escolhida ficar difícil de ler no fundo, o app ajusta o tom para manter o contraste mínimo de leitura.</p>
+          </fieldset>
+
+          <fieldset className="appearance-group">
+            <legend>Cor de destaque</legend>
             <div className="theme-options">
               {presetOptions.map((preset) => (
                 <label className="theme-option" key={preset.id}>
@@ -172,27 +234,17 @@ export function AppearanceSettings() {
                   name="preset"
                   value="personalizado"
                   checked={custom}
-                  onChange={() =>
-                    update({ preset: 'personalizado', accent: draft.accent ?? '#b85a80' })
-                  }
+                  onChange={() => update({ preset: 'personalizado', accent: draft.accent ?? '#d44425' })}
                 />
-                <span
-                  className="theme-option__swatch theme-option__swatch--custom"
-                  aria-hidden="true"
-                  style={custom && draft.accent ? { background: draft.accent } : undefined}
-                />
-                <span>Personalizado</span>
+                <span className="theme-option__swatch theme-option__swatch--custom" aria-hidden="true" style={custom && draft.accent ? { background: draft.accent } : undefined} />
+                <span>Personalizada</span>
                 <Check className="theme-option__check" size={16} aria-hidden="true" />
               </label>
             </div>
             {custom && (
               <label className="custom-color">
-                Sua cor principal
-                <input
-                  type="color"
-                  value={draft.accent ?? '#b85a80'}
-                  onChange={(event) => update({ accent: event.target.value.toLowerCase() })}
-                />
+                <Palette size={16} aria-hidden="true" /> Sua cor
+                <input type="color" value={draft.accent ?? '#d44425'} onChange={(event) => update({ accent: event.target.value.toLowerCase() })} />
                 <code>{draft.accent}</code>
               </label>
             )}
@@ -201,54 +253,6 @@ export function AppearanceSettings() {
                 Ajustamos o tom para manter textos e botões legíveis (contraste mínimo AA).
               </p>
             )}
-          </fieldset>
-
-          <fieldset className="appearance-group">
-            <legend>Fundo do aplicativo</legend>
-            <label className="custom-color">
-              Cor de fundo
-              <input
-                type="color"
-                aria-label="Cor de fundo"
-                value={draft.background ?? (tokens.dark ? '#1e1417' : '#fbf5e6')}
-                onChange={(event) => update({ background: event.target.value.toLowerCase() })}
-              />
-              <code>{draft.background ?? 'Automático'}</code>
-            </label>
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={!draft.background}
-              onClick={() => update({ background: null })}
-            >
-              Usar fundo do tema
-            </Button>
-          </fieldset>
-
-          <fieldset className="appearance-group">
-            <legend>Modo</legend>
-            <div className="segmented" role="presentation">
-              {(
-                [
-                  ['light', 'Claro', Sun],
-                  ['dark', 'Escuro', Moon],
-                  ['system', 'Automático', Monitor],
-                ] as const
-              ).map(([value, label, Icon]) => (
-                <label key={value}>
-                  <input
-                    type="radio"
-                    name="mode"
-                    value={value}
-                    checked={draft.mode === value}
-                    onChange={() => update({ mode: value })}
-                  />
-                  <span>
-                    <Icon size={16} aria-hidden="true" /> {label}
-                  </span>
-                </label>
-              ))}
-            </div>
           </fieldset>
 
           {(
@@ -362,7 +366,7 @@ export function AppearanceSettings() {
         <aside className="appearance-preview" aria-label="Prévia da aparência">
           <div className="theme-preview-card card card--raised">
             <span className="eyebrow">Prévia</span>
-            <h2>Que história vamos viver?</h2>
+            <h2>Continuar lendo</h2>
             <p>Um cartão de leitura como os do seu mural, com o seu tema aplicado.</p>
             <div className="theme-preview-card__identity">
               <UserAvatar name={user?.displayName || 'Leitora'} size="md" />
@@ -396,8 +400,8 @@ export function AppearanceSettings() {
             </p>
           )}
           <div className="appearance-actions">
-            <Button disabled={busy || !changed} onClick={() => void apply()}>
-              {busy ? 'Salvando…' : 'Aplicar alterações'}
+            <Button disabled={busy || !changed} aria-busy={busy} onClick={() => void apply()}>
+              {busy ? 'Salvando…' : 'Aplicar'}
             </Button>
             <Button
               variant="secondary"
@@ -408,10 +412,10 @@ export function AppearanceSettings() {
             </Button>
             <Button
               variant="ghost"
-              disabled={busy || same(draft, defaultAppearance)}
-              onClick={() => update(defaultAppearance)}
+              disabled={busy || (same(draft, defaultAppearance) && same(appearance, defaultAppearance))}
+              onClick={() => void apply(defaultAppearance)}
             >
-              <RotateCcw size={16} aria-hidden="true" /> Restaurar padrão
+              <RotateCcw size={16} aria-hidden="true" /> Restaurar aparência original
             </Button>
           </div>
           {message && (

@@ -140,6 +140,15 @@ export async function registerPublicMutations(
         .parse(request.body).decision === 'approve',
     ),
   )
+  for (const kind of ['followers', 'following'] as const)
+    api.get(`/people/:id/${kind}`, (request) =>
+      profiles.connections(
+        request.user,
+        idParams.parse(request.params).id,
+        kind,
+        pageInput.strict().parse(request.query),
+      ),
+    )
   api.get('/people/:id/activity', (request) =>
     activity.list(
       request.user,

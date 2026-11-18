@@ -54,6 +54,12 @@ export const appearanceSchema = z
     buttons: z.enum(appearanceButtonShapes).optional(),
     // Capa do livro em leitura como fundo do app (o app também adota as cores da capa).
     coverBackdrop: z.boolean().optional(),
+    // Cor do texto escolhida em Aparência (null = automática, conforme o fundo).
+    textColor: z
+      .string()
+      .regex(/^#[0-9a-f]{6}$/i)
+      .nullable()
+      .optional(),
   })
   .strict()
 export type Appearance = z.infer<typeof appearanceSchema>

@@ -6,9 +6,12 @@ import { Button } from './ui'
 export function ShareAction({
   path,
   privateContent = false,
+  label,
 }: {
   path: string
   privateContent?: boolean
+  /** Com rótulo, vira item de menu ("Enviar link") em vez de ícone solto. */
+  label?: string
 }) {
   const [open, setOpen] = useState(false),
     [message, setMessage] = useState('')
@@ -29,12 +32,13 @@ export function ShareAction({
     <>
       <button
         type="button"
-        className="social-action"
-        aria-label="Compartilhar link"
+        className={label ? 'button button--ghost' : 'social-action'}
+        aria-label={label ? undefined : 'Compartilhar link'}
         title="Compartilhar link"
         onClick={() => void share()}
       >
-        <Send size={22} />
+        <Send size={label ? 18 : 22} />
+        {label}
       </button>
       {open && (
         <Sheet title="Compartilhar" onClose={() => setOpen(false)}>

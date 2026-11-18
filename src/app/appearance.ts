@@ -47,13 +47,13 @@ export const fontOptions: {
     label: 'Plus Jakarta Sans',
     kind: 'moderna',
     family: "'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif",
+    load: () => import('@fontsource-variable/plus-jakarta-sans/index.css'),
   },
   {
     id: 'inter',
     label: 'Inter',
     kind: 'moderna',
     family: "'Inter Variable', ui-sans-serif, system-ui, sans-serif",
-    load: () => import('@fontsource-variable/inter/index.css'),
   },
   {
     id: 'manrope',
@@ -83,11 +83,11 @@ export const fontOptions: {
   },
 ]
 
-/** Temas prontos: cor de marca (botões, links) e acento (destaques). Todos passam em AA com texto branco. */
+/** Cores de destaque: marca (botões, links) e acento (ícones, progresso). "Original" é o coral das referências. */
 export const presetOptions: { id: PresetId; label: string; brand: string; accent: string }[] = [
-  { id: 'padrao', label: 'Rosa e palha', brand: '#9a4167', accent: '#e897b4' },
+  { id: 'padrao', label: 'Coral original', brand: '#d44425', accent: '#f25c3b' },
+  { id: 'coral', label: 'Rosa', brand: '#c43a7b', accent: '#f07bb0' },
   { id: 'roxo', label: 'Roxo', brand: '#5a3b8c', accent: '#b9a6d9' },
-  { id: 'coral', label: 'Coral', brand: '#a8362a', accent: '#fc7667' },
   { id: 'azul', label: 'Azul', brand: '#2546a8', accent: '#9db6ff' },
   { id: 'verde', label: 'Verde', brand: '#1f5c3f', accent: '#b9e6c9' },
   { id: 'dourado', label: 'Dourado', brand: '#7d5300', accent: '#f4b942' },
@@ -124,31 +124,52 @@ export const defaultAppearance: Appearance = {
   mode: 'light',
   accent: null,
   background: null,
-  headingFont: 'fraunces',
-  bodyFont: 'jakarta',
+  headingFont: 'inter',
+  bodyFont: 'inter',
   radius: 'round',
   textSize: 'md',
   density: 'regular',
   lineHeight: 'normal',
   buttons: 'pill',
   coverBackdrop: false,
+  textColor: null,
 }
+
+/** Fundos prontos de Aparência → Fundo do aplicativo. */
+export const backgroundOptions: { id: string; label: string; color: string | null }[] = [
+  { id: 'branco', label: 'Branco', color: null },
+  { id: 'creme', label: 'Creme', color: '#fbf6ec' },
+  { id: 'sepia', label: 'Sépia', color: '#f1e5cf' },
+  { id: 'cinza', label: 'Cinza', color: '#eeeef1' },
+  { id: 'preto', label: 'Preto', color: '#0f0f12' },
+]
+/** Cores prontas para o texto. "Automática" escolhe preto ou branco conforme o fundo. */
+export const textColorOptions: { id: string; label: string; color: string | null }[] = [
+  { id: 'auto', label: 'Automática', color: null },
+  { id: 'preto', label: 'Preto', color: '#18181c' },
+  { id: 'branco', label: 'Branco', color: '#f6f6f8' },
+  { id: 'cinza', label: 'Cinza', color: '#4a4a52' },
+  { id: 'sepia', label: 'Sépia', color: '#5b4632' },
+]
 
 /** Completa preferências antigas (sem os campos novos) e mantém a ordem das chaves, para comparar com segurança. */
 export function normalizeAppearance(value: Appearance): Appearance {
+  // O par de fontes padrão da identidade anterior (Fraunces + Plus Jakarta) volta ao padrão atual (Inter).
+  const oldDefaultFonts = value.headingFont === 'fraunces' && value.bodyFont === 'jakarta'
   return {
     preset: value.preset,
     mode: value.mode,
     accent: value.accent ?? null,
     background: value.background ?? null,
-    headingFont: value.headingFont,
-    bodyFont: value.bodyFont,
+    headingFont: oldDefaultFonts ? 'inter' : value.headingFont,
+    bodyFont: oldDefaultFonts ? 'inter' : value.bodyFont,
     radius: value.radius,
     textSize: value.textSize ?? 'md',
     density: value.density ?? 'regular',
     lineHeight: value.lineHeight ?? 'normal',
     buttons: value.buttons ?? 'pill',
     coverBackdrop: value.coverBackdrop ?? false,
+    textColor: value.textColor ?? null,
   }
 }
 export function sameAppearance(a: Appearance, b: Appearance) {
@@ -194,6 +215,11 @@ function mix(color: string, amount: number) {
   const weight = Math.abs(amount)
   return hex(rgb(color).map((v) => v + (target - v) * weight) as [number, number, number])
 }
+/** Mistura duas cores: amount 0 = a, 1 = b. */
+export function blend(a: string, b: string, amount: number) {
+  const [x, y] = [rgb(a), rgb(b)]
+  return hex(x.map((v, i) => v + (y[i] - v) * amount) as [number, number, number])
+}
 /**
  * Ajusta uma cor de marca até ela ter contraste AA (≥ 4,5) com o fundo dado,
  * escurecendo (fundo claro) ou clareando (fundo escuro). Devolve a cor original quando já é legível.
@@ -208,8 +234,8 @@ export function ensureContrast(color: string, background: string, minimum = 4.5)
   return { color: lighten ? '#ffffff' : '#000000', adjusted: true }
 }
 
-const LIGHT_BG = '#fbf5e6'
-const DARK_BG = '#1e1417'
+const LIGHT_BG = '#ffffff'
+const DARK_BG = '#121215'
 
 export function resolvedMode(appearance: Appearance) {
   if (appearance.mode !== 'system') return appearance.mode
@@ -230,15 +256,27 @@ export function appearanceTokens(appearance: Appearance) {
   const dark = resolvedMode(appearance) === 'dark'
   const background = appearance.background ?? (dark ? DARK_BG : LIGHT_BG)
   const customBackground = !!appearance.background
+  const customText = !!appearance.textColor
   const darkSurface = contrast('#ffffff', background) >= contrast('#000000', background)
-  const surface = mix(background, darkSurface ? -0.1 : 0.65)
+  const surface = mix(background, darkSurface ? 0.06 : 0.65)
   const isDefault = appearance.preset === 'padrao' && !customBackground
   const onLight = ensureContrast(base, '#ffffff')
   const brand = darkSurface
     ? ensureContrast(mix(base, 0.45), background, 7).color
     : ensureContrast(onLight.color, background).color
-  const heading = fontOptions.find((font) => font.id === appearance.headingFont) ?? fontOptions[0]
-  const body = fontOptions.find((font) => font.id === appearance.bodyFont) ?? fontOptions[4]
+  // Texto: a cor escolhida, ajustada até ficar legível (AA) sobre o fundo; o secundário é uma mistura dela com o fundo.
+  const text = ensureContrast(
+    appearance.textColor ?? (darkSurface ? '#f4f4f6' : '#18181c'),
+    background,
+    customText ? 4.5 : 7,
+  ).color
+  const muted = ensureContrast(blend(text, background, 0.38), background).color
+  const recolor = customBackground || customText
+  // O fundo rebaixado (campos, trilhas) fica um pouco mais escuro; se isso tirar o texto do contraste AA, usa o próprio fundo.
+  const sunkenCandidate = mix(background, darkSurface ? 0.04 : -0.035)
+  const sunken = contrast(text, sunkenCandidate) >= 4.5 ? sunkenCandidate : background
+  const heading = fontOptions.find((font) => font.id === appearance.headingFont) ?? fontOptions[5]
+  const body = fontOptions.find((font) => font.id === appearance.bodyFont) ?? fontOptions[5]
   const textSize = textSizeOptions.find((item) => item.id === appearance.textSize)
   const density = densityOptions.find((item) => item.id === appearance.density)
   const leading = lineHeightOptions.find((item) => item.id === appearance.lineHeight)
@@ -248,32 +286,28 @@ export function appearanceTokens(appearance: Appearance) {
     adjusted: onLight.adjusted,
     vars: {
       '--bg': customBackground ? background : null,
-      '--bg-sunken': customBackground ? mix(background, darkSurface ? -0.16 : 0.05) : null,
+      '--bg-sunken': customBackground ? sunken : null,
       '--surface': customBackground ? surface : null,
-      '--surface-raised': customBackground ? mix(background, darkSurface ? -0.04 : 0.85) : null,
-      '--text': customBackground
-        ? ensureContrast(darkSurface ? '#f8eedc' : '#3a2228', background, 7).color
-        : null,
-      '--text-muted': customBackground
-        ? ensureContrast(darkSurface ? '#d8c3c6' : '#6c4d54', background).color
-        : null,
-      '--text-subtle': customBackground
-        ? ensureContrast(darkSurface ? '#d8c3c6' : '#6c4d54', background).color
-        : null,
-      '--danger': customBackground ? ensureContrast(darkSurface?'#ff9fae':'#841f33',background).color : null,
-      '--success': customBackground ? ensureContrast(darkSurface?'#c5dcbc':'#456b48',background).color : null,
-      '--warning': customBackground ? ensureContrast(darkSurface?'#dcc58e':'#7a6226',background).color : null,
-      '--info': customBackground ? ensureContrast(darkSurface?'#cbbde6':'#5e4a99',background).color : null,
+      '--surface-raised': customBackground ? mix(background, darkSurface ? 0.09 : 0.8) : null,
+      '--text': recolor ? text : null,
+      '--text-muted': recolor ? muted : null,
+      '--text-subtle': recolor ? muted : null,
+      '--danger': customBackground ? ensureContrast(darkSurface?'#ff8d8d':'#c0262d',background).color : null,
+      '--success': customBackground ? ensureContrast(darkSurface?'#6fd3a0':'#1d8a55',background).color : null,
+      '--warning': customBackground ? ensureContrast(darkSurface?'#f2c26b':'#9a5a00',background).color : null,
+      '--info': customBackground ? ensureContrast(darkSurface?'#9dbcff':'#2c62c9',background).color : null,
       '--danger-soft':customBackground?'color-mix(in srgb, var(--danger) 12%, var(--surface))':null,
       '--success-soft':customBackground?'color-mix(in srgb, var(--success) 12%, var(--surface))':null,
       '--warning-soft':customBackground?'color-mix(in srgb, var(--warning) 12%, var(--surface))':null,
       '--info-soft':customBackground?'color-mix(in srgb, var(--info) 12%, var(--surface))':null,
-      '--border-strong':customBackground?ensureContrast(darkSurface?'#d8c3c6':'#6c4d54',background,3).color:null,
+      '--border-strong': customBackground
+        ? `color-mix(in srgb, ${darkSurface ? '#ffffff' : '#000000'} 16%, transparent)`
+        : null,
       '--border': customBackground
-        ? `color-mix(in srgb, ${darkSurface ? '#ffffff' : '#000000'} 18%, transparent)`
+        ? `color-mix(in srgb, ${darkSurface ? '#ffffff' : '#000000'} 9%, transparent)`
         : null,
       '--divider': customBackground
-        ? `color-mix(in srgb, ${darkSurface ? '#ffffff' : '#000000'} 12%, transparent)`
+        ? `color-mix(in srgb, ${darkSurface ? '#ffffff' : '#000000'} 8%, transparent)`
         : null,
       '--text-on-brand': customBackground
         ? contrast('#ffffff', brand) >= 4.5
@@ -291,8 +325,10 @@ export function appearanceTokens(appearance: Appearance) {
         : preset.accent && appearance.preset !== 'personalizado'
           ? preset.accent
           : mix(base, 0.35),
-      '--font-display': appearance.headingFont === 'fraunces' ? null : heading.family,
-      '--font-ui': appearance.bodyFont === 'jakarta' ? null : body.family,
+      '--accent-ink': isDefault ? null : brand,
+      '--accent-soft': isDefault ? null : `color-mix(in srgb, ${brand} ${dark ? 18 : 11}%, var(--surface))`,
+      '--font-display': appearance.headingFont === 'inter' ? null : heading.family,
+      '--font-ui': appearance.bodyFont === 'inter' ? null : body.family,
       '--radius-card':
         appearance.radius === 'round'
           ? null

@@ -49,7 +49,8 @@ export function LibraryRoom() {
   const preferences = preferencesSchema.parse(snapshot!.preferences)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
-  const [show, setShow] = useState(false)
+  // Atalhos vindos da Biblioteca e do botão Criar: ?adicionar=1 abre o formulário; ?importar=1 destaca o botão de importar.
+  const [show, setShow] = useState(params.get('adicionar') === '1')
   const [shelf, setShelf] = useState('')
   const [draft, setDraft] = useState(blank)
   const [editing, setEditing] = useState<string | null>(null)
@@ -254,7 +255,7 @@ export function LibraryRoom() {
       </header>
       {['owner', 'admin'].includes(role) && (
         <div className="library-toolbar">
-          <label className="button button--primary library-import">
+          <label className={`button button--primary library-import ${params.get('importar') === '1' ? 'is-highlighted' : ''}`}>
             <Upload size={18} aria-hidden="true" />
             {importing ? 'Abrindo…' : 'Importar EPUB'}
             <input
