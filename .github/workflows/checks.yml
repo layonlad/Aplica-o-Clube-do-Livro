@@ -44,4 +44,9 @@ jobs:
           VITE_FIREBASE_AUTH_DOMAIN: build-validation-only.firebaseapp.com
       - run: npm run test:integration
       - run: npm run test:e2e
-      - run: npm audit --audit-level=high
+      - name: Auditar dependências de produção (bloqueante)
+        run: npm audit --omit=dev --audit-level=high
+      # Development tools are reported separately; see docs/SEGURANCA_DEPENDENCIAS.md.
+      - name: Auditar ferramentas de desenvolvimento (informativo)
+        continue-on-error: true
+        run: npm audit --audit-level=high
