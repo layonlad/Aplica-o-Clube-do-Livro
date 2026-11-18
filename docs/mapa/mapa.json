@@ -389,7 +389,7 @@
       "autor": "Codex",
       "titulo": "Coral publicado: API, dois sites, auditoria e testes finais concluídos",
       "resumo": "API/executor 9ce87a1 pelo digest; site d99a2ac dos PRs 35/36 nos dois Hosting, em cópia limpa. CI e 221 testes aprovados; 104 arquivos por site idênticos por SHA-256. Recusa, seguidores, cor de texto, lançamentos e EPUB com capa/quinze páginas/retomada/capítulos aprovados em produção, sem erros no console. Duas contas sintéticas excluídas, sessões 401 e original purgado; auditoria privada preservada. Correções visuais e evidências documentadas; sem migration, novo grant ou serviço. Perfil sem referência e testes físicos permanecem ressalvas.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/37"
     },
     {
       "data": "2026-11-18",
