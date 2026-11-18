@@ -2,7 +2,7 @@
 
 Produção migrada e verificada em **16/11/2026**, com autorização do dono, para o projeto Google/Firebase `gen-lang-client-0194308411`, nome de exibição **Projeto-clube-do-Livro**. O orçamento autorizado é de **R$ 70/mês**, com alertas; não é um corte automático de cobrança.
 
-Última atualização: **PRs 31 e 33, site no merge `b7a7301`**, comunidade, pesquisa e leitor publicados em 17/11/2026. A API permanece em `aaef7fa`; nenhuma migration, grant ou alteração de infraestrutura nesta publicação. [Relatório e resultado de cada teste](publicacoes/2026-11-17-pr33.md).
+Última atualização: **PRs 35/36, site no merge `d99a2ac`**, identidade Coral publicada em 18/11/2026. API/executor no merge `9ce87a1`, por digest, publicados antes dos dois sites. Sem migration ou grants novos. [Relatório, auditoria e resultado de cada teste](publicacoes/2026-11-18-coral.md).
 
 ## Endereços
 
@@ -19,17 +19,17 @@ A entrada continua livre, sem cadastro ou participação em clube. Biblioteca e 
 | --- | --- |
 | Frontend | Firebase Hosting, código `b7a7301`, PRs 31 e 33; redesenho em andamento do Claude preservado em branch separada |
 | Autenticação | Firebase Authentication, Google e e-mail/senha, UIDs e provedores preservados |
-| API | Cloud Run `clube-livro-api`, revisão `clube-livro-api-00004-lr8`, 1 CPU/1 GiB, mínimo zero, máximo uma instância, concorrência 2 |
+| API | Cloud Run `clube-livro-api`, revisão `clube-livro-api-00005-fqj`, 1 CPU/1 GiB, mínimo zero, máximo uma instância, concorrência 2 |
 | Banco | Cloud SQL `clube-livro-postgres`, PostgreSQL 17, `db-f1-micro`, HDD 10 GiB, zona única, região `us-central1` |
 | Papéis SQL | `clube_migrator`, `clube_runtime` e `clube_notifications`, com grants versionados e sem superusuário/DDL no runtime |
 | Arquivos | Cloud Storage for Firebase, bucket padrão privado do projeto, acesso público impedido |
-| Executor | Cloud Run privado `clube-notifications`, revisão `clube-notifications-00003-klf`, 1 CPU/512 MiB, mínimo zero, máximo uma instância |
+| Executor | Cloud Run privado `clube-notifications`, revisão `clube-notifications-00004-6vl`, 1 CPU/512 MiB, mínimo zero, máximo uma instância |
 | Agendamento | Cloud Scheduler, `7,22,37,52 * * * *`, UTC, OIDC e identidade exclusiva |
 | Configuração privada | Secret Manager, acessos separados por identidade; sem arquivos de chave de serviço |
 | Imagens | Cloud Build e Artifact Registry `us-central1/clube-livro`; imagem pelo digest conferido |
 | Recuperação | Sete backups Cloud SQL, exportações privadas da migração e origens anteriores preservadas |
 
-Imagem atual da API e executor construída a partir de `aaef7fabf181139ffc6712b72ad65d7418a21dbe`, digest `sha256:be5d617bd5786744b53776ed31c50784feaafaf910089feffa9d8a95f534d378`. CI do merge e 207 testes aprovados; testes pós-publicação e limpeza sintética registrados no relatório do PR 27. Backup privado confirmado antes da migration 019; configuração anterior preservada para recuperação.
+Imagem atual da API e executor construída a partir de `9ce87a1a071adbd43585ad96c92a987c304fe57d`, digest `sha256:52ccc3e2c9b43a2cc1e295daa1c8376a905823f118d5441281330e0a919d83ca`. CI do merge e 221 testes locais aprovados; novos fluxos e limpeza sintética registrados no relatório Coral. Dezenove migrations e permissões preservadas; configuração anterior guardada para recuperação.
 
 ## Verificações da migração anterior
 

@@ -6,10 +6,10 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Comunidade, pesquisa e leitor publicados com correções",
+    "fase": "Identidade Coral publicada e validada com correções",
     "tom": "ok",
-    "resumo": "Sites principal e de compatibilidade publicados em b7a7301, entrega dos PRs 31 e 33. Comunidade com caixa rápida, lupa, leitor em tela cheia, painel único e login persistente. Corrigidas busca automática de livros, origem da seleção em rolagem, referência do texto na animação e preservação do trecho ao escrever. CI e 214 testes aprovados; 102 arquivos por site iguais ao build. Validação em produção confirmou 15 páginas rápidas, retomada exata, capítulos, anotações, foto e pesquisa; conta sintética excluída e arquivos purgados. API permanece em aaef7fa; banco e infraestrutura preservados.",
-    "proximoPasso": "Concluir a auditoria e o CI da correção visual do PR 35, publicar os dois sites após a API e registrar a versão final. Validar em aparelhos físicos; não há migration nova.",
+    "resumo": "PR 35 publicado com correções da auditoria no PR 36: site d99a2ac nos dois Hosting, API/executor 9ce87a1 pelo digest. Fonte, proporções, contraste, convites estreitos, carrossel e paginação corrigidos. CI do merge e 221 testes locais aprovados; 104 arquivos por site iguais ao build por SHA-256. Produção confirmou recusa de convite, seguidores, cor de texto persistida e Lançamentos; EPUB sintético com capa, quinze viradas, retomada e capítulos nos dois sentidos. Duas contas descartáveis excluídas, tokens recusados e original purgado. Banco e permissões preservados; sem migration nova.",
+    "proximoPasso": "Dono testar a versão Coral. Conferir aparelhos físicos e tecnologias assistivas; referência visual do Perfil ainda não fornecida. Auditoria aprovada com ressalvas, sem atestar 95% de fidelidade. Produção continua manual e com autorização.",
     "pendencias": [
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
@@ -18,9 +18,9 @@
       "Upload geral confirmado anteriormente pelo dono. PR 25 validou compartilhamento da capa; PR 27 validou foto de perfil e EPUB com capa em produção, somente com dados sintéticos removidos ao final.",
       "EPUB com fontes ofuscadas é aceito; texto ou imagens realmente criptografados exigem edição legível da loja/editora. Sem capa raster compatível, permanece uma ilustração de reserva.",
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
-      "Leitor de tela e aparelhos físicos ainda não foram testados. PRs 31/33 validaram Chrome móvel simulado em produção: login após fechar/reabrir, 15 páginas rápidas, retomada, capítulos, texto em rolagem, anotações, pesquisa, publicação com foto e movimento reduzido. Conta e arquivos sintéticos removidos.",
+      "Leitor de tela e aparelhos físicos pendentes. PRs 35/36: seis telas em nove larguras no Chrome e três no WebKit; claro, escuro e movimento reduzido conferidos. Produção confirmou recusa, seguidores, aparência e catálogo, além do EPUB; contas e arquivo sintéticos removidos. Ensaios anteriores de login, foto, anotação e pesquisa permanecem registrados no PR 34.",
       "O modo conectado não oferece cache offline por service worker. Backups do banco são gerenciados; arquivos novos não têm cópia periódica independente. As origens antigas preservam a fotografia da migração, sem gravações posteriores.",
-      "Estética Estante Rosa & Palha preservada; falta a foto definitiva do dono. Leitor e perfis conferidos no PR 27; demais telas ainda precisam de revisão visual individual no aparelho físico."
+      "Identidade Coral vigente no app conectado. Auditoria do PR 36 corrigiu fonte, proporções, contraste e navegação; cinco referências disponíveis, sem imagem de Perfil. Fotos de clubes ausentes usam arte de reserva; não há cadastro de autores. Aparelhos físicos permanecem pendentes."
     ]
   },
   "ambientes": [
@@ -28,7 +28,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "b7a7301 · PRs 31 e 33 publicados em 17/11/2026; API permanece em aaef7fa",
+      "versao": "d99a2ac · PRs 35/36 publicados em 18/11/2026; API/executor 9ce87a1",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -60,7 +60,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Branch codex/auditoria-publicacao-coral: revisão e correções isoladas sobre 9ce87a1; contas e conteúdo sintéticos no emulador e PostgreSQL local.",
+      "versao": "Branch codex/registro-publicacao-coral: registro documental; build d99a2ac em cópia limpa. Auditoria e evidências isoladas; nenhuma alteração no trabalho do Claude.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -68,7 +68,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "b7a7301 · mesmo build do site principal, com 102 arquivos publicados conferidos por SHA-256; armazenamento local e API/Auth preservados",
+      "versao": "d99a2ac · mesmo build conectado do principal, com 104 arquivos por site conferidos por SHA-256; origem local preservada",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -129,7 +129,7 @@
         "Regras e permissões em execução",
         "Configuração privada no Secret Manager; identidade própria sem arquivo de chave"
       ],
-      "detalhe": "1 CPU/1 GiB, concorrência 2 e pool de 5 conexões, com mínimo zero e máximo uma instância. PR 27 aaef7fa publicado pelo digest, após migration 019 e grants mínimos. Valida autenticação, privacidade do perfil, relação aprovada, associação independente aos clubes, bloqueios e moderação. Atividades paginadas e salvos do titular. Cloud SQL autenticado, GCS privado por ADC e manutenção preservados; Render antigo suspenso.",
+      "detalhe": "1 CPU/1 GiB, concorrência 2 e pool de 5 conexões, com mínimo zero e máximo uma instância. PR 35 9ce87a1 publicado pelo digest 52ccc3e2; revisão clube-livro-api-00005-fqj. Migrations existentes até 019 e grants mínimos preservados. Rotas novas de recusa e relações e campo de aparência testados com o runtime restrito, sem grants novos. Valida autenticação, privacidade do perfil, relação aprovada, associação independente aos clubes, bloqueios e moderação. Atividades paginadas e salvos do titular. Cloud SQL autenticado, GCS privado por ADC e manutenção preservados; Render antigo suspenso.",
       "link": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health"
     },
     {
@@ -208,7 +208,7 @@
         "Fila e tentativas no PostgreSQL",
         "Configuração privada no Secret Manager; identidade SQL própria"
       ],
-      "detalhe": "Scheduler a cada quinze minutos com OIDC e audiência exata; IAM privado e validação de identidade na aplicação. PR 27 publicado na revisão clube-notifications-00003-klf, mesmo digest da API; limites, segredos e agendamento preservados. Novos grants apenas para metadados de privacidade e relações aprovadas, sem textos ou leitura de solicitações. Execução agendada observada com HTTP 200 e zero falhas; chamada anônima negada com 403. Push físico continua pendente.",
+      "detalhe": "Scheduler a cada quinze minutos com OIDC e audiência exata; IAM privado e validação de identidade na aplicação. PR 35 9ce87a1 publicado na revisão clube-notifications-00004-6vl, mesmo digest 52ccc3e2 da API; limites, segredos e agendamento preservados. Grants existentes apenas para metadados de privacidade e relações aprovadas, sem textos ou leitura de solicitações. Execução agendada observada anteriormente com HTTP 200 e zero falhas; chamada anônima negada com 403. Push físico continua pendente.",
       "link": "https://console.cloud.google.com/cloudscheduler?project=gen-lang-client-0194308411"
     },
     {
@@ -384,6 +384,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-18",
+      "autor": "Codex",
+      "titulo": "Coral publicado: API, dois sites, auditoria e testes finais concluídos",
+      "resumo": "API/executor 9ce87a1 pelo digest; site d99a2ac dos PRs 35/36 nos dois Hosting, em cópia limpa. CI e 221 testes aprovados; 104 arquivos por site idênticos por SHA-256. Recusa, seguidores, cor de texto, lançamentos e EPUB com capa/quinze páginas/retomada/capítulos aprovados em produção, sem erros no console. Duas contas sintéticas excluídas, sessões 401 e original purgado; auditoria privada preservada. Correções visuais e evidências documentadas; sem migration, novo grant ou serviço. Perfil sem referência e testes físicos permanecem ressalvas.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/37"
+    },
     {
       "data": "2026-11-18",
       "autor": "Codex",
