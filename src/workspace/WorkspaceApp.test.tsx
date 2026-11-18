@@ -12,14 +12,14 @@ function open(path='/'){return render(<MemoryRouter initialEntries={[path]}><The
 describe('aplicativo sem cadastro',()=>{
   it('abre o aplicativo completo sem autenticação ou consulta a dados privados',async()=>{
     open()
-    expect(await screen.findByRole('heading',{name:'Que história vamos viver?'})).toBeInTheDocument()
+    expect(await screen.findByRole('heading',{name:/^Olá/})).toBeInTheDocument()
     expect(screen.getByRole('navigation',{name:'Navegação principal'})).toBeInTheDocument()
     expect(screen.queryByLabelText('Senha')).not.toBeInTheDocument()
     expect(apiRequest).not.toHaveBeenCalled()
     expect(screen.queryByText('Torto Arado')).not.toBeInTheDocument()
   })
   it('salva um livro sem conta, abre o leitor e mantém o histórico após reabrir',async()=>{
-    const user=userEvent.setup();const view=open('/app/library')
+    const user=userEvent.setup();const view=open('/app/library/gerenciar')
     await user.click(await screen.findByRole('button',{name:'Adicionar livro'}))
     await user.type(screen.getByLabelText('Título'),'Minha leitura')
     await user.type(screen.getByLabelText('Autor'),'Autora')

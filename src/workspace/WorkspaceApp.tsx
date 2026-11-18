@@ -5,7 +5,7 @@ import { ArrowRight, CalendarDays, ChevronRight, Clock, Heart, History, MapPin, 
 import { updateProfile } from 'firebase/auth'
 import { AuthProvider, useAuth } from '../auth/AuthProvider'
 import { AuthScreen, VerifyEmailScreen } from '../auth/AuthScreen'
-import { Protected, ClubList, ClubPage, InvitePage } from '../connected/ConnectedApp'
+import { Protected, ClubPage, InvitePage } from '../connected/ConnectedApp'
 import { WorkspaceShell } from './WorkspaceShell'
 import { BookStack, Button, Card, CoverArt, ProgressBar, Spines, SkeletonPage } from '../components/ui'
 import { useTheme } from '../app/ThemeProvider'
@@ -17,6 +17,11 @@ import { ReadingRoom as ReaderView } from './ReadingRoom'
 import { ProfileIdentityCard } from './ProfileIdentityCard'
 import { AppearanceSettings } from '../app/AppearanceSettings'
 import './workspace.css'
+import { HomeScreen } from '../coral/HomeScreen'
+import { LibraryScreen } from '../coral/LibraryScreen'
+import { ClubHome } from '../coral/ClubHome'
+const SettingsHub=lazy(()=>import('../coral/SettingsHub').then(module=>({default:module.SettingsHub})))
+const ClubsScreen=lazy(()=>import('../coral/ClubsScreen').then(module=>({default:module.ClubsScreen})))
 
 const PushSettings=lazy(()=>import('../community/PushSettings').then(module=>({default:module.PushSettings})))
 const ClubIdentity=lazy(()=>import('../clubs/ClubIdentity').then(module=>({default:module.ClubIdentity})))
@@ -24,11 +29,11 @@ const AuthorizedDownloads=lazy(()=>import('./AuthorizedDownloads').then(module=>
 const ClubCalendar=lazy(()=>import('../clubs/ClubCalendar').then(module=>({default:module.ClubCalendar})))
 const Notifications=lazy(()=>import('../community/Notifications').then(module=>({default:module.Notifications})))
 const Moderation=lazy(()=>import('../community/Moderation').then(module=>({default:module.Moderation})))
-const PublicCommunity=lazy(()=>import('../community/PublicCommunity').then(module=>({default:module.PublicCommunity})))
+const PublicCommunity=lazy(()=>import('../coral/CommunityScreen').then(module=>({default:module.CommunityScreen})))
 const SocialProfile=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.SocialProfile})))
 const OwnSocialProfile=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.OwnSocialProfile})))
 const SocialProfileEditor=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.SocialProfileEditor})))
-const Explore=lazy(()=>import('../community/Explore').then(module=>({default:module.Explore})))
+const Explore=lazy(()=>import('../coral/ExploreScreen').then(module=>({default:module.ExploreScreen})))
 const ClubForum=lazy(()=>import('../forum/ClubForum').then(module=>({default:module.ClubForum})))
 const ClubWall=lazy(()=>import('../community/ClubWall').then(module=>({default:module.ClubWall})))
 const ClubGallery=lazy(()=>import('../community/ClubGallery').then(module=>({default:module.ClubGallery})))
@@ -39,6 +44,10 @@ const storedName=()=>{try{return localStorage.getItem('clube-livro-name')??''}ca
 function Intro({title,body,action,eyebrow}:{title:string;body:string;action?:ReactNode;eyebrow?:string}){return <div className="page-intro"><div>{eyebrow&&<span className="eyebrow">{eyebrow}</span>}<h1 className="title-reveal">{title}</h1><p>{body}</p></div>{action}</div>}
 function Empty({title,body,link}:{title:string;body:string;link?:[string,string]}){return <Card className="empty-card"><BookStack/><h2>{title}</h2><p>{body}</p>{link&&<Link className="button-link" to={link[0]}>{link[1]} →</Link>}</Card>}
 function DateTile({date}:{date:string}){const value=new Date(date);const past=value.getTime()<Date.now();return <span className={`date-tile ${past?'date-tile--past':''}`} aria-hidden="true"><strong>{value.getDate()}</strong><span>{value.toLocaleDateString('pt-BR',{month:'short'}).replace('.','')}</span></span>}
+/** Biblioteca: a tela das referências no espaço pessoal; no clube, as leituras do clube. */
+function LibraryRoute(){const {scope}=useWorkspace();return scope==='personal'?<LibraryScreen/>:<LibraryView/>}
+/** Início: no espaço pessoal, a tela das referências; dentro de um clube, a visão geral do clube. */
+function HomeRoute(){const {scope}=useWorkspace();return scope==='personal'?<HomeScreen/>:<ClubHome key={scope}/>}
 function HomeView(){
   const {snapshot,scope,scopeName}=useWorkspace();const {state,reading}=snapshot!;const {user}=useAuth()
   const current=state.books.find(b=>b.id===state.currentBookId)??state.books.find(b=>(reading[b.id]?.percent??0)<100)
@@ -154,5 +163,5 @@ function AccountView(){const {user,loading}=useAuth();if(loading)return <p role=
 function OpenCurrentReading(){const {snapshot}=useWorkspace();const book=snapshot?.state.books.find(book=>book.id===snapshot.state.currentBookId)??snapshot?.state.books.find(book=>(snapshot.reading[book.id]?.percent??0)<100);return <Navigate to={book?`/app/reader/${book.id}`:'/app/library'} replace/>}
 /** Abre o espaço de um clube; com ?post=<id> vai direto para a publicação no mural (link vindo de perfis). */
 function OpenClub(){const {clubId}=useParams();const [params]=useSearchParams();const post=params.get('post');const {setScope}=useWorkspace();const navigate=useNavigate();useEffect(()=>{if(clubId){setScope(clubId);navigate(post&&/^[0-9a-f-]{36}$/i.test(post)?`/app/wall?post=${post}`:'/app',{replace:true})}},[clubId,post,setScope,navigate]);return <p role="status">Abrindo espaço do clube…</p>}
-function WorkspaceSession(){const {user}=useAuth();return <WorkspaceProvider key={user?.emailVerified?user.uid:'visitor'}><Routes><Route path="/" element={<Navigate to="/app" replace/>}/><Route path="/app" element={<WorkspaceShell/>}><Route index element={<HomeView/>}/><Route path="downloads" element={<AuthorizedDownloads/>}/><Route path="library" element={<LibraryView/>}/><Route path="reader/:id" element={<ReaderView/>}/><Route path="reader" element={<OpenCurrentReading/>}/><Route path="wall" element={<ClubWall/>}/><Route path="gallery" element={<ClubGallery/>}/><Route path="explore" element={<Explore/>}/><Route path="notifications" element={<Notifications/>}/><Route path="moderation" element={<Moderation/>}/><Route path="community" element={<PublicCommunity/>}/><Route path="people/:id" element={<SocialProfile/>}/><Route path="social-profile" element={<SocialProfileEditor/>}/><Route path="calendar" element={<CalendarView/>}/><Route path="forum" element={<ForumView/>}/><Route path="nominations" element={<NominationsView/>}/><Route path="history" element={<HistoryView/>}/><Route path="profile" element={<ProfileRoute/>}/><Route path="settings" element={<ProfileView/>}/><Route path="theme" element={<ThemeView/>}/><Route path="admin" element={<Navigate to="/clubs" replace/>}/></Route><Route path="/account" element={<AccountView/>}/><Route path="/clubs" element={<Protected><ClubList/></Protected>}/><Route path="/clubs/:clubId" element={<Protected><ClubPage/></Protected>}/><Route path="/invite" element={<Protected><InvitePage/></Protected>}/><Route path="/space/:clubId" element={<Protected><OpenClub/></Protected>}/><Route path="*" element={<Navigate to="/app" replace/>}/></Routes></WorkspaceProvider>}
+function WorkspaceSession(){const {user}=useAuth();return <WorkspaceProvider key={user?.emailVerified?user.uid:'visitor'}><Routes><Route path="/" element={<Navigate to="/app" replace/>}/><Route path="/app" element={<WorkspaceShell/>}><Route index element={<HomeRoute/>}/><Route path="downloads" element={<AuthorizedDownloads/>}/><Route path="library" element={<LibraryRoute/>}/><Route path="library/gerenciar" element={<LibraryView/>}/><Route path="reader/:id" element={<ReaderView/>}/><Route path="reader" element={<OpenCurrentReading/>}/><Route path="wall" element={<ClubWall/>}/><Route path="gallery" element={<ClubGallery/>}/><Route path="explore" element={<Explore/>}/><Route path="notifications" element={<Notifications/>}/><Route path="moderation" element={<Moderation/>}/><Route path="community" element={<PublicCommunity/>}/><Route path="clubs" element={<ClubsScreen/>}/><Route path="ajustes" element={<SettingsHub/>}/><Route path="people/:id" element={<SocialProfile/>}/><Route path="social-profile" element={<SocialProfileEditor/>}/><Route path="calendar" element={<CalendarView/>}/><Route path="forum" element={<ForumView/>}/><Route path="nominations" element={<NominationsView/>}/><Route path="history" element={<HistoryView/>}/><Route path="profile" element={<ProfileRoute/>}/><Route path="settings" element={<ProfileView/>}/><Route path="theme" element={<ThemeView/>}/><Route path="admin" element={<Navigate to="/clubs" replace/>}/></Route><Route path="/account" element={<AccountView/>}/><Route path="/clubs" element={<Navigate to="/app/clubs" replace/>}/><Route path="/clubs/:clubId" element={<Protected><ClubPage/></Protected>}/><Route path="/invite" element={<Protected><InvitePage/></Protected>}/><Route path="/space/:clubId" element={<Protected><OpenClub/></Protected>}/><Route path="*" element={<Navigate to="/app" replace/>}/></Routes></WorkspaceProvider>}
 export function WorkspaceApp(){return <AuthProvider><WorkspaceSession/></AuthProvider>}

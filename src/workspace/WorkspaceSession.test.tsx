@@ -151,7 +151,7 @@ it('salva um livro no espaço da conta autenticada', async () => {
     return Promise.resolve(empty)
   })
   render(
-    <MemoryRouter initialEntries={['/app/library']}>
+    <MemoryRouter initialEntries={['/app/library/gerenciar']}>
       <ThemeProvider>
         <WorkspaceApp />
       </ThemeProvider>

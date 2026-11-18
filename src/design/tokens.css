@@ -1,194 +1,221 @@
 /*
- * Clube do Livro — Design tokens ("Estante Rosa & Palha")
+ * Design tokens — identidade "Coral"
  * Fonte única de verdade para cor, tipografia, espaço, forma, profundidade e movimento.
- * Documentação: DESIGN_SYSTEM.md. Não use valores soltos nos componentes; use estes tokens.
+ * Documentação: docs/DESIGN_SYSTEM.md. Não use valores soltos nos componentes; use estes tokens.
  *
- * Direção: fundo fixo de estante cheia de livros, véu pastel rosa e palha por cima,
- * superfícies de papel de livro levemente amassado, laços, estrelas e serifas editoriais.
+ * Direção (referências de 2026-11-17): fundo branco, cabeçalho em gradiente coral → rosa,
+ * cartões brancos arredondados com sombra suave, Inter em todo o app, ícones finos e
+ * um único acento coral para ações, seleção e progresso.
  */
 
 :root {
   /* ── Paleta base (não use direto em componentes; use os tokens semânticos abaixo) ── */
-  /* Rosa: do rosa-bebê (preenchimentos) ao rosa-framboesa (marca e texto) */
-  --rosa-50: #fff6f9;
-  --rosa-100: #fdeaf1;
-  --rosa-200: #f9d5e2;
-  --rosa-300: #f2b7cc;   /* rosa pastel — preenchimentos e adesivos */
-  --rosa-400: #e897b4;   /* rosa-chiclete — acento (nunca como texto sobre claro) */
-  --rosa-500: #d9769c;
-  --rosa-600: #b85a80;
-  --rosa-700: #9a4167;   /* rosa-framboesa — marca; texto AA sobre palha (5,8) e texto branco sobre ele (6,3) */
-  --rosa-800: #792f50;
-  --rosa-900: #56213a;
-  --rosa-950: #36131f;
+  --coral-50: #fff5f1;
+  --coral-100: #ffe9e1;
+  --coral-200: #ffd3c4;
+  --coral-300: #ffb199;
+  --coral-400: #ff8763;
+  --coral-500: #f25c3b;   /* coral da referência: ícones, barras, contornos (3,3:1 sobre branco) */
+  --coral-600: #d44425;   /* coral para texto e botão cheio com texto branco (AA 4,5:1) */
+  --coral-700: #b2361b;
+  --coral-800: #8a2913;
 
-  /* Palha: o papel do livro, a madeira clara da estante */
-  --palha-50: #fffcf4;
-  --palha-100: #fbf5e6;  /* fundo */
-  --palha-200: #f5ebd0;
-  --palha-300: #ecdcb2;
-  --palha-400: #dcc58e;
-  --palha-500: #c8aa67;
-  --palha-600: #a88a45;
-  --palha-700: #7a6226;  /* palha para texto (AA) */
+  --pink-200: #fbd2e4;
+  --pink-300: #f7a9cb;
+  --pink-400: #f07bb0;
+  --pink-500: #e45698;
+  --pink-600: #c43a7b;
 
-  /* Vinho: o vermelho do xadrez e das fitas, só em detalhes */
-  --vinho-500: #c0394f;
-  --vinho-600: #a32a40;  /* vinho para texto (AA 6,5) */
-  --vinho-700: #841f33;
+  --gray-0: #ffffff;
+  --gray-25: #fbfbfc;
+  --gray-50: #f6f6f8;
+  --gray-100: #efeff2;
+  --gray-200: #e4e4e9;
+  --gray-300: #d0d0d7;
+  --gray-400: #a2a2ab;
+  --gray-500: #74747b;    /* cinza para texto secundário (AA 4,6:1) */
+  --gray-600: #5b5b62;
+  --gray-700: #3f3f46;
+  --gray-800: #2a2a30;
+  --gray-900: #18181c;    /* preto suave dos títulos */
 
-  /* Cacau: tinta do texto, marrom quente puxado para o vinho */
-  --cacau-900: #3a2228;
-  --cacau-700: #5a3c43;
-  --cacau-600: #6c4d54;
-  --cacau-400: #7c5d63;
+  --green-600: #1d8a55;
+  --green-500: #22a35f;   /* indicador "ativo agora" */
+  --green-100: #e3f5eb;
+  --amber-700: #9a5a00;
+  --amber-100: #fff2d9;
+  --red-700: #c0262d;
+  --red-100: #fde8e8;
+  --blue-700: #2c62c9;
+  --blue-100: #e7efff;
+  --star: #f5a524;
 
-  --salvia-800: #34543a;
-  --salvia-700: #456b48;
-  --salvia-300: #c5dcbc;
-  --salvia-100: #e8f1e3;
-
-  --lilas-700: #5e4a99;
-  --lilas-500: #9580c8;
-  --lilas-300: #cbbde6;
-  --lilas-100: #efe9f7;
-
-  /* ── Nomes antigos ("Lombadas") apontando para a paleta nova ──
-   * Telas ainda usam --plum-*, --coral-* etc. diretamente; assim elas acompanham a troca sem quebrar.
-   * Em código novo, use os nomes de cima ou, melhor, os semânticos. */
-  --plum-950: var(--rosa-950);
-  --plum-900: var(--rosa-900);
-  --plum-800: var(--rosa-800);
-  --plum-700: var(--rosa-700);
-  --plum-600: var(--rosa-600);
-  --plum-500: var(--rosa-500);
-  --plum-300: var(--rosa-300);
-  --plum-200: var(--rosa-200);
-  --plum-100: var(--rosa-100);
-  --coral-700: var(--vinho-700);
-  --coral-600: var(--vinho-600);
-  --coral-500: var(--rosa-400);
-  --coral-300: var(--rosa-300);
-  --coral-100: var(--rosa-100);
-  --cream-50: var(--palha-50);
-  --cream-100: var(--palha-100);
-  --cream-200: var(--palha-200);
-  --cream-300: var(--palha-300);
-  --cream-400: var(--palha-400);
-  --mint-800: var(--salvia-800);
-  --mint-700: var(--salvia-700);
+  /* ── Nomes antigos apontando para a paleta nova ──
+   * Telas mais antigas ainda usam --rosa-*, --palha-*, --plum-* etc.; assim elas acompanham a identidade
+   * sem quebrar. Em código novo, use os semânticos. */
+  --rosa-50: var(--coral-50);
+  --rosa-100: var(--coral-100);
+  --rosa-200: var(--coral-200);
+  --rosa-300: var(--coral-300);
+  --rosa-400: var(--coral-400);
+  --rosa-500: var(--coral-500);
+  --rosa-600: var(--coral-600);
+  --rosa-700: var(--coral-600);
+  --rosa-800: var(--coral-700);
+  --rosa-900: var(--gray-900);
+  --rosa-950: var(--gray-900);
+  --palha-50: var(--gray-0);
+  --palha-100: var(--gray-25);
+  --palha-200: var(--gray-50);
+  --palha-300: var(--gray-200);
+  --palha-400: #f7c873;
+  --palha-500: var(--gray-300);
+  --palha-600: var(--gray-400);
+  --palha-700: var(--amber-700);
+  --vinho-500: var(--coral-500);
+  --vinho-600: var(--coral-600);
+  --vinho-700: var(--red-700);
+  --cacau-900: var(--gray-900);
+  --cacau-700: var(--gray-700);
+  --cacau-600: var(--gray-500);
+  --cacau-400: var(--gray-500);
+  --salvia-800: var(--green-600);
+  --salvia-700: var(--green-600);
+  --salvia-300: #a8dcc0;
+  --salvia-100: var(--green-100);
+  --lilas-700: var(--blue-700);
+  --lilas-500: #7d9fe6;
+  --lilas-300: #b9cdf5;
+  --lilas-100: var(--blue-100);
+  --plum-950: var(--gray-900);
+  --plum-900: var(--gray-900);
+  --plum-800: var(--coral-700);
+  --plum-700: var(--coral-600);
+  --plum-600: var(--coral-600);
+  --plum-500: var(--coral-500);
+  --plum-300: var(--coral-300);
+  --plum-200: var(--coral-200);
+  --plum-100: var(--coral-100);
+  --cream-50: var(--gray-0);
+  --cream-100: var(--gray-25);
+  --cream-200: var(--gray-50);
+  --cream-300: var(--gray-200);
+  --cream-400: var(--gray-300);
+  --mint-800: var(--green-600);
+  --mint-700: var(--green-600);
   --mint-300: var(--salvia-300);
-  --mint-100: var(--salvia-100);
-  --honey-700: var(--palha-700);
-  --honey-500: var(--palha-400);
-  --honey-100: var(--palha-200);
-  --blue-700: var(--lilas-700);
+  --mint-100: var(--green-100);
+  --honey-700: var(--amber-700);
+  --honey-500: var(--star);
+  --honey-100: var(--amber-100);
   --blue-500: var(--lilas-500);
-  --blue-100: var(--lilas-100);
-  --rose-300: var(--rosa-300);
-  --rose-100: var(--rosa-100);
-  --ink-900: var(--cacau-900);
-  --ink-700: var(--cacau-700);
-  --ink-600: var(--cacau-600);
-  --ink-400: var(--cacau-400);
+  --rose-300: var(--pink-300);
+  --rose-100: var(--pink-200);
+  --ink-900: var(--gray-900);
+  --ink-700: var(--gray-700);
+  --ink-600: var(--gray-500);
+  --ink-400: var(--gray-500);
 
-  /* ── Semânticos: tema claro ── */
-  --bg: var(--palha-100);
-  --bg-sunken: var(--palha-200);
-  --surface: var(--palha-50);
-  --surface-raised: #fffefb;
-  --surface-tint: color-mix(in srgb, var(--brand) 6%, var(--surface));
-  --surface-inverse: var(--rosa-900);
+  /* ── Semânticos: tema original (claro) ── */
+  --bg: var(--gray-0);
+  --bg-sunken: var(--gray-50);
+  --surface: var(--gray-0);
+  --surface-raised: var(--gray-0);
+  --surface-tint: var(--coral-50);
+  --surface-inverse: var(--gray-900);
 
-  --text: var(--cacau-900);
-  --text-muted: var(--cacau-600);
-  --text-subtle: var(--cacau-400);
-  --text-inverse: var(--palha-50);
+  --text: var(--gray-900);
+  --text-muted: var(--gray-500);
+  --text-subtle: var(--gray-500);
+  --text-inverse: var(--gray-0);
   --text-on-brand: #ffffff;
-  --text-on-accent: var(--cacau-900);
+  --text-on-accent: #ffffff;
 
-  --border: color-mix(in srgb, var(--palha-500) 38%, transparent);
-  --border-strong: color-mix(in srgb, var(--palha-500) 75%, var(--rosa-300));
-  --divider: color-mix(in srgb, var(--rosa-700) 11%, transparent);
+  --border: var(--gray-100);
+  --border-strong: var(--gray-200);
+  --divider: var(--gray-100);
 
-  --brand: var(--rosa-700);
-  --brand-hover: var(--rosa-800);
-  --brand-soft: var(--rosa-100);
-  --brand-ink: var(--rosa-700);
-  --accent: var(--rosa-400);
-  --accent-soft: var(--rosa-100);
-  --accent-ink: var(--vinho-600);
-  --highlight: var(--palha-400);
+  --brand: var(--coral-600);         /* botão cheio, links e texto de ação */
+  --brand-hover: var(--coral-700);
+  --brand-soft: var(--coral-100);    /* pílula selecionada, fundo de ícone */
+  --brand-ink: var(--coral-600);
+  --accent: var(--coral-500);        /* ícone ativo, barra de progresso, contorno */
+  --accent-soft: var(--coral-100);
+  --accent-ink: var(--coral-600);
+  --highlight: var(--star);
 
-  --success: var(--salvia-700);
-  --success-soft: var(--salvia-100);
-  --warning: var(--palha-700);
-  --warning-soft: var(--palha-200);
-  --danger: var(--vinho-700);
-  --danger-soft: #fbe6e9;
-  --info: var(--lilas-700);
-  --info-soft: var(--lilas-100);
+  --success: var(--green-600);
+  --success-soft: var(--green-100);
+  --warning: var(--amber-700);
+  --warning-soft: var(--amber-100);
+  --danger: var(--red-700);
+  --danger-soft: var(--red-100);
+  --info: var(--blue-700);
+  --info-soft: var(--blue-100);
+  --online: var(--green-500);
 
-  --focus-ring: 0 0 0 3px var(--bg), 0 0 0 5px var(--rosa-600);
-  --overlay: rgba(54, 19, 31, 0.48);
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--coral-500);
+  --overlay: rgba(24, 24, 28, 0.42);
+
+  /* Cabeçalho das telas principais: coral alaranjado no alto à esquerda, rosa embaixo à direita. */
+  --hero-gradient: linear-gradient(160deg, #ff7a4d 0%, #f6604f 38%, #ec5677 72%, #e05aa6 100%);
+  --hero-ink: #ffffff;
+  --hero-ink-muted: rgba(255, 255, 255, 0.92);
+  --hero-button: rgba(255, 255, 255, 0.22);
+  --hero-button-hover: rgba(255, 255, 255, 0.32);
 
   /* Ambiente atual (muda com data-space no shell) */
   --space-accent: var(--accent);
   --space-accent-soft: var(--accent-soft);
   --space-accent-ink: var(--accent-ink);
 
-  /* Assinatura visual: faixa de lombadas, agora em rosa e palha */
-  --spines: linear-gradient(90deg,
-    var(--rosa-700) 0 16%, var(--rosa-300) 16% 32%, var(--palha-400) 32% 44%,
-    var(--vinho-500) 44% 52%, var(--rosa-400) 52% 68%, var(--salvia-300) 68% 78%, var(--palha-300) 78% 90%, var(--lilas-300) 90% 100%);
+  /* Faixa decorativa antiga: agora um traço coral discreto */
+  --spines: linear-gradient(90deg, var(--coral-500), var(--pink-500));
+  --spines-v: linear-gradient(180deg, var(--coral-500), var(--pink-500));
 
-  --spines-v: linear-gradient(180deg,
-    var(--rosa-700) 0 16%, var(--rosa-300) 16% 32%, var(--palha-400) 32% 44%,
-    var(--vinho-500) 44% 52%, var(--rosa-400) 52% 68%, var(--salvia-300) 68% 78%, var(--palha-300) 78% 90%, var(--lilas-300) 90% 100%);
+  /* Fundo com a capa do livro (opcional, em Aparência). Sem véu de papel no tema original. */
+  --veil-color: var(--bg);
+  --veil-tint: var(--coral-100);
+  --veil-strength: 82%;
+  --veil-center: 70%;
+  --shelf-blur: 14px;
 
-  /* ── Estante e papel ──
-   * A imagem da estante (--shelf-image) e a textura de papel (--paper) ficam em base.css, por causa dos caminhos.
-   * --veil-*: véu pastel por cima da estante, para o texto continuar legível.
-   * --shelf-blur: desfoque da estante (profundidade de campo). */
-  --veil-color: var(--palha-100);
-  --veil-tint: var(--rosa-200);
-  --veil-strength: 48%;   /* véu geral: a estante aparece */
-  --veil-center: 55%;     /* reforço no centro, onde fica o texto */
-  --shelf-blur: 1.5px;
+  /* ── Tipografia: Inter em tudo (títulos, interface e leitura social) ── */
+  --font-display: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-ui: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-reading: 'Fraunces Variable', Georgia, 'Iowan Old Style', serif; /* só no leitor de livros */
+  --font-sticker: var(--font-ui);
 
-  /* ── Tipografia ── */
-  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
-  --font-ui: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-reading: 'Fraunces Variable', Georgia, 'Iowan Old Style', serif;
-  /* Letra arredondada de "adesivo": só selos, rótulos curtos e destaques (nunca texto corrido) */
-  --font-sticker: 'Fredoka Variable', 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', system-ui, sans-serif;
-
-  /* Escala: tudo em rem, sobre um tamanho-base de 15 px (--text-scale × 16 px).
-   * A pessoa ajusta o tamanho-base em Perfil → Aparência; o app inteiro acompanha. */
+  /* Escala sobre um tamanho-base de 15 px (--text-scale × 16 px). Ajustável em Aparência. */
   --text-scale: 0.9375;
-  --text-display: clamp(2rem, 1.4rem + 3.2vw, 3.6rem);
-  --text-h1: clamp(1.6rem, 1.3rem + 1.6vw, 2.5rem);
-  --text-h2: clamp(1.3rem, 1.15rem + 0.8vw, 1.75rem);
-  --text-h3: 1.15rem;
-  --text-h4: 1.0333rem;
-  --text-subtitle: 1rem;
-  --text-body: 1rem;
-  --text-small: 0.875rem;
-  --text-caption: 0.78rem;
+  --text-display: 2rem;          /* 30 px: título de tela no cabeçalho (Biblioteca, Explorar) */
+  --text-h1: 1.6rem;             /* 24 px */
+  --text-h2: 1.2rem;             /* 18 px: título de seção (Continuar lendo, Clubes em destaque) */
+  --text-h3: 1.0667rem;          /* 16 px: título de cartão */
+  --text-h4: 1rem;
+  --text-subtitle: 0.9333rem;    /* 14 px */
+  --text-body: 1rem;             /* 15 px */
+  --text-small: 0.9rem;          /* 13,5 px */
+  --text-caption: 0.8rem;        /* 12 px */
   --text-button: 0.9rem;
   --text-overline: 0.72rem;
-  /* Campos de texto: no toque nunca abaixo de 16 px, senão o iOS amplia a página ao focar. */
-  --text-field: 1rem;
+  --text-nav: 0.7333rem;         /* 11 px: legendas da barra inferior */
+  --text-field: 1rem;            /* no toque nunca abaixo de 16 px (ver base.css) */
 
-  --leading-tight: 1.05;
-  --leading-snug: 1.25;
-  --leading-normal: 1.55;
-  --leading-relaxed: 1.7;
-  --tracking-tight: -0.02em;
-  --tracking-overline: 0.14em;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
 
-  /* ── Espaço (base 4px × densidade) ──
-   * --density-user vem da Aparência (compacto, padrão, amplo); --density-screen aperta um pouco no celular. */
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+  --tracking-tight: -0.015em;
+  --tracking-overline: 0.08em;
+
+  /* ── Espaço (base 4px × densidade) ── */
   --density-user: 1;
   --density-screen: 1;
   --density: calc(var(--density-user) * var(--density-screen));
@@ -202,52 +229,58 @@
   --space-10: calc(40px * var(--density));
   --space-12: calc(48px * var(--density));
   --space-16: calc(64px * var(--density));
-  --gutter: clamp(14px, 4vw, 40px);
+  --gutter: 16px;                 /* margem lateral das referências */
+  --section-gap: calc(22px * var(--density));
 
-  /* ── Controles (botões, campos, abas): altura e respiro acompanham só a densidade escolhida,
-   * nunca a da tela, para o toque continuar confortável no celular. ── */
+  /* ── Controles ── */
+  --control-xs: calc(30px * var(--density-user));  /* "Continuar", "Participar" */
   --control-sm: calc(34px * var(--density-user));
   --control-md: calc(40px * var(--density-user));
-  --control-lg: calc(44px * var(--density-user));
-  --field-pad-y: calc(9px * var(--density-user));
-  --field-pad-x: calc(13px * var(--density-user));
+  --control-lg: calc(44px * var(--density-user));  /* área mínima de toque */
+  --hero-icon: 44px;                                /* botões redondos do cabeçalho */
+  --field-pad-y: calc(10px * var(--density-user));
+  --field-pad-x: calc(14px * var(--density-user));
   --content-max: 1040px;
   --reading-max: 66ch;
+  --nav-height: 64px;
 
   /* ── Forma ── */
   --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
   --radius-pill: 999px;
-  --radius-book: 3px 10px 10px 3px;
+  --radius-book: 6px;
   --radius-card: var(--radius-lg);
   --radius-button: var(--radius-pill);
   --radius-field: var(--radius-md);
+  --radius-sheet: var(--radius-xl);
 
-  /* ── Profundidade (sombras quentes, tingidas de vinho, como papel sobre madeira) ── */
-  --shadow-1: 0 1px 2px rgba(86, 33, 58, 0.07), 0 3px 10px rgba(86, 33, 58, 0.06);
-  --shadow-2: 0 2px 4px rgba(86, 33, 58, 0.07), 0 12px 30px rgba(86, 33, 58, 0.11);
-  --shadow-3: 0 8px 18px rgba(86, 33, 58, 0.12), 0 26px 64px rgba(86, 33, 58, 0.18);
-  --shadow-book: 1px 1px 0 rgba(255, 255, 255, 0.3) inset, 6px 10px 22px rgba(54, 19, 31, 0.24);
-  /* Papel solto: sombra curta e assimétrica, como folha apoiada */
-  --shadow-paper: 0 1px 1px rgba(86, 33, 58, 0.06), 2px 6px 14px -4px rgba(86, 33, 58, 0.16), -1px 14px 26px -16px rgba(86, 33, 58, 0.22);
+  /* ── Profundidade: sombras neutras e curtas ── */
+  --shadow-1: 0 1px 2px rgba(24, 24, 28, 0.05), 0 2px 10px rgba(24, 24, 28, 0.05);
+  --shadow-2: 0 2px 6px rgba(24, 24, 28, 0.06), 0 10px 26px rgba(24, 24, 28, 0.08);
+  --shadow-3: 0 10px 24px rgba(24, 24, 28, 0.12), 0 28px 60px rgba(24, 24, 28, 0.16);
+  --shadow-book: 0 2px 6px rgba(24, 24, 28, 0.14), 0 6px 16px rgba(24, 24, 28, 0.12);
+  --shadow-paper: var(--shadow-1);
+  --shadow-card: 0 1px 2px rgba(24, 24, 28, 0.04), 0 4px 16px rgba(24, 24, 28, 0.06);
+  --shadow-nav: 0 -1px 0 var(--divider), 0 -6px 20px rgba(24, 24, 28, 0.04);
 
-  /* ── Movimento ── */
-  --dur-instant: 120ms;
-  --dur-fast: 180ms;
-  --dur-base: 260ms;
-  --dur-slow: 380ms;
-  --dur-page: 420ms;
+  /* ── Movimento: rápido e suave ── */
+  --dur-instant: 100ms;
+  --dur-fast: 160ms;
+  --dur-base: 220ms;
+  --dur-slow: 320ms;
+  --dur-page: 280ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
   --ease-page: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* ── Camadas ── */
   --z-header: 20;
   --z-nav: 30;
+  --z-fab: 35;
   --z-drawer: 100;
   --z-toast: 200;
 
@@ -267,68 +300,71 @@
   color-scheme: light;
 }
 
-/* ── Tema escuro: "estante à noite" (cacau e vinho, texto cor de palha) ── */
+/* ── Tema escuro: neutro, com o mesmo coral ── */
 :root[data-theme='dark'] {
-  --bg: #1e1417;
-  --bg-sunken: #170f12;
-  --surface: #2a1c21;
-  --surface-raised: #34242a;
-  --surface-inverse: var(--palha-100);
+  --bg: #121215;
+  --bg-sunken: #0c0c0e;
+  --surface: #1c1c21;
+  --surface-raised: #232329;
+  --surface-tint: #2a1d1a;
+  --surface-inverse: var(--gray-50);
 
-  --text: #f8eedc;
-  --text-muted: #d8c3c6;
-  --text-subtle: #a8909a;
-  --text-inverse: var(--cacau-900);
+  --text: #f4f4f6;
+  --text-muted: #b4b4bc;
+  --text-subtle: #a2a2ab;
+  --text-inverse: var(--gray-900);
 
-  --border: rgba(248, 238, 220, 0.10);
-  --border-strong: rgba(248, 238, 220, 0.20);
-  --divider: rgba(248, 238, 220, 0.08);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --divider: rgba(255, 255, 255, 0.07);
 
-  --brand: var(--rosa-300);
-  --brand-hover: var(--rosa-200);
-  --brand-soft: rgba(242, 183, 204, 0.14);
-  --brand-ink: var(--rosa-300);
-  --text-on-brand: var(--rosa-950);
-  --accent: var(--rosa-400);
-  --accent-soft: rgba(232, 151, 180, 0.16);
-  --accent-ink: #f7c6d6;
-  --highlight: var(--palha-400);
+  --brand: #ff7a55;
+  --brand-hover: #ff9473;
+  --brand-soft: rgba(255, 122, 85, 0.16);
+  --brand-ink: #ff8f6e;
+  --text-on-brand: #1a0d08;
+  --accent: #ff7a55;
+  --accent-soft: rgba(255, 122, 85, 0.16);
+  --accent-ink: #ff8f6e;
 
-  --success: var(--salvia-300);
-  --success-soft: rgba(197, 220, 188, 0.12);
-  --warning: var(--palha-400);
-  --warning-soft: rgba(220, 197, 142, 0.14);
-  --danger: #ff9fae;
-  --danger-soft: rgba(255, 159, 174, 0.12);
-  --info: var(--lilas-300);
-  --info-soft: rgba(203, 189, 230, 0.12);
+  --success: #6fd3a0;
+  --success-soft: rgba(111, 211, 160, 0.12);
+  --warning: #f2c26b;
+  --warning-soft: rgba(242, 194, 107, 0.12);
+  --danger: #ff8d8d;
+  --danger-soft: rgba(255, 141, 141, 0.12);
+  --info: #9dbcff;
+  --info-soft: rgba(157, 188, 255, 0.12);
 
-  --focus-ring: 0 0 0 3px var(--bg), 0 0 0 5px var(--rosa-300);
-  --overlay: rgba(10, 4, 6, 0.66);
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px #ff7a55;
+  --overlay: rgba(0, 0, 0, 0.62);
 
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-2: 0 10px 28px rgba(0, 0, 0, 0.38);
-  --shadow-3: 0 24px 60px rgba(0, 0, 0, 0.52);
-  --shadow-paper: 0 1px 1px rgba(0, 0, 0, 0.3), 2px 8px 18px -6px rgba(0, 0, 0, 0.5);
+  --hero-gradient: linear-gradient(160deg, #c9502f 0%, #b9434b 45%, #a23f74 100%);
 
-  --veil-color: #1e1417;
-  --veil-tint: #3a1b28;
-  --veil-strength: 62%;
-  --veil-center: 50%;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 10px 28px rgba(0, 0, 0, 0.45);
+  --shadow-3: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-nav: 0 -1px 0 var(--divider);
+
+  --veil-color: #121215;
+  --veil-tint: #2a1d1a;
 
   color-scheme: dark;
 }
 
-/* ── Telas pequenas: espaços um pouco mais justos (os controles mantêm a altura de toque) ── */
+/* Contraste alto pedido pelo sistema: cabeçalho mais fechado para o texto branco passar em AA. */
+@media (prefers-contrast: more) {
+  :root { --hero-gradient: linear-gradient(160deg, #c8401f 0%, #b8344f 55%, #a5306f 100%); --hero-button: rgba(0, 0, 0, 0.22); }
+}
+
+/* ── Telas pequenas: respiros um pouco mais justos (os controles mantêm a altura de toque) ── */
 @media (max-width: 600px) {
-  :root { --density-screen: 0.88; }
+  :root { --density-screen: 0.92; }
 }
 @media (pointer: coarse) {
   :root { --text-field: max(16px, 1rem); }
 }
 
-/* ── Ambientes: cada área tem um acento próprio, sobre a mesma base ── */
-[data-space='personal'] { --space-accent: var(--rosa-400); --space-accent-soft: var(--accent-soft); --space-accent-ink: var(--accent-ink); }
-[data-space='library'] { --space-accent: var(--rosa-700); --space-accent-soft: var(--brand-soft); --space-accent-ink: var(--brand-ink); }
-[data-space='club'] { --space-accent: var(--salvia-300); --space-accent-soft: var(--success-soft); --space-accent-ink: var(--success); }
-[data-space='community'] { --space-accent: var(--palha-400); --space-accent-soft: var(--warning-soft); --space-accent-ink: var(--warning); }
+/* ── Ambientes: o acento é o mesmo coral em todo o app ── */
+[data-space] { --space-accent: var(--accent); --space-accent-soft: var(--accent-soft); --space-accent-ink: var(--accent-ink); }

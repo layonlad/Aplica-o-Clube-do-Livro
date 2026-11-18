@@ -26,6 +26,7 @@ import { Button } from '../components/ui'
 import { UserAvatar, UserIdentity, useOwnAvatar } from '../components/UserAvatar'
 import { MediaPicker } from './PrivateMedia'
 import './community.css'
+import { BookCover, ago } from '../coral/kit'
 export const kindLabels = {
   reflection: 'Reflexão',
   review: 'Resenha',
@@ -214,16 +215,21 @@ export function PostComposer({
   clubId,
   onPublished,
   quick = false,
+  initialPoll = false,
+  onCancel,
 }: {
   clubId: string | null
   onPublished: () => void
   /** Caixa sempre aberta, como um post rápido: texto, foto pequena e Publicar. Sem enquete. */
   quick?: boolean
+  /** Dentro de uma folha (botão "Criar publicação"): o formulário já vem aberto e "Cancelar" fecha a folha. */
+  initialPoll?: boolean
+  onCancel?: () => void
 }) {
   const ownAvatar = useOwnAvatar(),
     { user } = useAuth()
-  const [open, setOpen] = useState(false),
-    [poll, setPoll] = useState(false),
+  const [open, setOpen] = useState(!!onCancel),
+    [poll, setPoll] = useState(initialPoll),
     [body, setBody] = useState(''),
     [options, setOptions] = useState('')
   const [media, setMedia] = useState<PostMedia[]>([]),
@@ -310,9 +316,10 @@ export function PostComposer({
         </div>
       </form>
     )
+  if (onCancel && !open) setOpen(true)
   return (
-    <section className="post-composer">
-      <button
+    <section className={`post-composer ${onCancel ? 'post-composer--sheet' : ''}`}>
+      {!onCancel && <button
         className="composer-prompt"
         type="button"
         aria-expanded={open}
@@ -324,7 +331,13 @@ export function PostComposer({
         <UserAvatar name={user?.displayName || 'Leitor'} avatarId={ownAvatar} size="md" />
         <span>O que você está pensando sobre sua leitura?</span>
         <PenLine size={18} />
-      </button>
+      </button>}
+      {onCancel && (
+        <div className="filter-pills" role="group" aria-label="Tipo de publicação">
+          <button type="button" aria-pressed={!poll} onClick={() => setPoll(false)}>Texto e fotos</button>
+          <button type="button" aria-pressed={poll} onClick={() => setPoll(true)}>Enquete</button>
+        </div>
+      )}
       {open && (
         <form className="workspace-form simple-composer" onSubmit={submit}>
           <p className="composer-audience">
@@ -367,14 +380,14 @@ export function PostComposer({
               type="button"
               variant="ghost"
               disabled={busy || uploading}
-              onClick={() => setOpen(false)}
+              onClick={() => (onCancel ? onCancel() : setOpen(false))}
             >
-              Fechar rascunho
+              {onCancel ? 'Cancelar' : 'Fechar rascunho'}
             </Button>
           </div>
         </form>
       )}
-      {!open && (
+      {!open && !onCancel && (
         <Button
           type="button"
           variant="ghost"
@@ -439,7 +452,8 @@ export function PostCard({
             avatarId={post.author.avatarId}
             meta={
               <>
-                {kindLabels[post.kind]} · {date(post.createdAt)}
+                <time dateTime={post.createdAt} title={date(post.createdAt)}>{ago(post.createdAt)}</time> ·{' '}
+                <span className="post-kind">{kindLabels[post.kind]}</span>
                 {post.version > 0 ? ' · Editado' : ''}
               </>
             }
@@ -462,6 +476,23 @@ export function PostCard({
                 Editar publicação
               </Button>
             )}
+            {post.bookTitle && (
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  void addToPersonal({ title: post.bookTitle, author: post.bookAuthor }).then(
+                    (ok) => ok && setBookMessage('Título adicionado à sua biblioteca pessoal.'),
+                  )
+                }
+              >
+                Adicionar à minha biblioteca
+              </Button>
+            )}
+            <ShareAction
+              label="Enviar link"
+              path={clubId ? `/space/${clubId}?post=${post.id}` : `/app/community?post=${post.id}`}
+              privateContent={clubId !== null}
+            />
             <ReportAction kind="post" id={post.id} />
             {post.canDelete && (
               <ConfirmAction
@@ -537,7 +568,14 @@ export function PostCard({
         </form>
       ) : (
         <>
-          <p className="post-body">{post.body}</p>
+          {post.bookTitle && !post.quote && !post.media.length ? (
+            <div className="post-content post-content--book">
+              <p className="post-body">{post.body}</p>
+              <BookCover title={post.bookTitle} author={post.bookAuthor} width={84} ratio={0.76} />
+            </div>
+          ) : (
+            <p className="post-body">{post.body}</p>
+          )}
           {post.sharedPostId && (
             <Link to={`/app/community?post=${post.sharedPostId}`}>
               Abrir publicação compartilhada →
@@ -553,30 +591,7 @@ export function PostCard({
               </cite>
             </blockquote>
           )}
-          {post.bookTitle && !post.quote && (
-            <div className="post-book-reference">
-              <small>ENTRE ESSAS PÁGINAS</small>
-              <strong>{post.bookTitle}</strong>
-              <span>{post.bookAuthor}</span>
-            </div>
-          )}
-          <>
-            {post.bookTitle && (
-              <div>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    void addToPersonal({ title: post.bookTitle, author: post.bookAuthor }).then(
-                      (ok) => ok && setBookMessage('Título adicionado à sua biblioteca pessoal.'),
-                    )
-                  }
-                >
-                  Adicionar à minha biblioteca
-                </Button>
-                {bookMessage && <p role="status">{bookMessage}</p>}
-              </div>
-            )}
-          </>
+          {bookMessage && <p role="status" className="toast-status">{bookMessage}</p>}
           <MediaCarousel
             media={post.media}
             publicMedia={clubId === null}
@@ -625,18 +640,16 @@ export function PostCard({
           <MessageCircle size={19} />
           {post.comments}
         </Button>
-        <ShareAction
-          path={clubId ? `/space/${clubId}?post=${post.id}` : `/app/community?post=${post.id}`}
-          privateContent={clubId !== null}
-        />
         <Button
           variant="ghost"
+          className={`post-save ${post.saved ? 'is-saved' : ''}`}
           aria-label={post.saved ? 'Retirar publicação dos salvos' : 'Salvar publicação'}
           aria-pressed={post.saved}
           disabled={busy || !user?.emailVerified}
           onClick={() => void act('/save', { value: !post.saved })}
         >
           <Bookmark size={19} fill={post.saved ? 'currentColor' : 'none'} />
+          <span>{post.saved ? 'Salvo' : 'Salvar'}</span>
         </Button>
       </footer>
       {!user?.emailVerified && clubId === null && (

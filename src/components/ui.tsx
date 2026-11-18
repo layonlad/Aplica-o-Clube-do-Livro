@@ -49,14 +49,16 @@ export function BookCover({ book, size = 'md' }: { book: Book; size?: 'sm' | 'md
 
 /** Combinações de capa da paleta. Todas com contraste AA entre fundo e tinta. */
 const coverPalettes: Array<[bg: string, ink: string, band: string]> = [
-  ['#9a4167', '#fffcf4', '#f2b7cc'],
-  ['#f2b7cc', '#56213a', '#9a4167'],
-  ['#c5dcbc', '#34543a', '#e897b4'],
-  ['#dcc58e', '#3a2228', '#c0394f'],
-  ['#cbbde6', '#2e2350', '#f9d5e2'],
-  ['#f5ebd0', '#9a4167', '#e897b4'],
-  ['#fdeaf1', '#792f50', '#dcc58e'],
-  ['#841f33', '#fbf5e6', '#f2b7cc'],
+  ['#1f4d4f', '#f3e3c0', '#c98a4b'],
+  ['#f6b383', '#7a2a17', '#e9845a'],
+  ['#1d3557', '#f2d48f', '#2f6690'],
+  ['#f7d64a', '#1b2a4a', '#efbf2a'],
+  ['#3d6b73', '#f5ecd7', '#9cbcae'],
+  ['#f6d3dd', '#7a2048', '#e79bb6'],
+  ['#1c1c22', '#d9b56c', '#3d3226'],
+  ['#f0a07a', '#fff4e8', '#b14b6b'],
+  ['#e9e1d2', '#2b2b2b', '#c4d2bd'],
+  ['#4b3f72', '#f7e9d4', '#c06c84'],
 ]
 
 export function coverPalette(seed: string) {

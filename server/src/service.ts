@@ -125,6 +125,18 @@ export class ClubService {
     })
   }
 
+  /** Recusa um convite endereçado à própria pessoa: o convite deixa de valer e some das notificações. */
+  async declineInvite(user: UserProfile, id: string) {
+    return transaction(this.pool, async (client) => {
+      const { rows: [invite] } = await client.query('SELECT id, club_id FROM invites WHERE id = $1 AND email = $2 AND revoked_at IS NULL FOR UPDATE', [id, user.email.toLowerCase()])
+      if (!invite) throw invalidInvite()
+      await client.query('UPDATE invites SET revoked_at = now() WHERE id = $1', [invite.id])
+      await client.query("UPDATE notifications SET read_at = COALESCE(read_at, now()) WHERE recipient_id = $1 AND target_type = 'invite' AND target_id = $2", [user.id, invite.id])
+      await audit(client, invite.club_id, user.id, 'invite.declined', invite.id)
+      return { declined: true }
+    })
+  }
+
   async setMembership(user: UserProfile, clubId: string, targetId: string, status: 'active' | 'removed') {
     return transaction(this.pool, async (client) => {
       const actor = await authorize(client, clubId, user.id); assertCapability(actor.role,'manageMembers')

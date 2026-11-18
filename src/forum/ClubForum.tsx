@@ -21,7 +21,7 @@ export function ClubForum({ clubId }: { clubId: string }) {
     selected = params.get('topic')
   const [page, setPage] = useState<ForumPage>({ items: [], pinned: [], nextCursor: null }),
     [topic, setTopic] = useState<ForumTopic | null>(null),
-    [show, setShow] = useState(false),
+    [show, setShow] = useState(params.get('novo') === '1'),
     [query, setQuery] = useState(''),
     [search, setSearch] = useState(''),
     [book, setBook] = useState('')

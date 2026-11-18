@@ -6,7 +6,8 @@ import { apiRequest } from '../auth/api'
 export function notificationChanged() {
   window.dispatchEvent(new Event('notifications-changed'))
 }
-export function NotificationBell() {
+/** Quantidade de notificações não lidas, atualizada a cada minuto e quando algo muda. */
+export function useUnreadCount() {
   const { user } = useAuth(),
     [count, setCount] = useState(0)
   useEffect(() => {
@@ -47,6 +48,11 @@ export function NotificationBell() {
       navigator.serviceWorker?.removeEventListener('message', message)
     }
   }, [user?.uid, user?.emailVerified])
+  return user?.emailVerified ? count : 0
+}
+export function NotificationBell() {
+  const { user } = useAuth(),
+    count = useUnreadCount()
   if (!user?.emailVerified) return null
   return (
     <Link

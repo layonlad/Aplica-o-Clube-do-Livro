@@ -51,7 +51,7 @@ function initialVariant(): Variant | null {
 
 /**
  * Abertura do app: um livro grande surge, abre a capa devagar, folheia algumas páginas, mostra o nome
- * do Clube do Livro e então a câmera entra na página até o papel tomar a tela inteira e virar o app.
+ * do aplicativo e então a câmera entra na página até o papel tomar a tela inteira e virar o app.
  * Aparece uma vez por sessão do navegador, por cima do app (que carrega por baixo ao mesmo tempo),
  * e dura cerca de 4,8 s. Não tem botão de pular; Esc encerra para quem navega pelo teclado.
  * Só usa transform/opacity (CSS 3D).
@@ -111,8 +111,10 @@ export function BookOpening() {
           </div>
           <div className="book-intro__page book-intro__page--right">
             <div className="book-intro__title">
-              <span className="book-intro__mark">CL</span>
-              <strong>Clube do Livro</strong>
+              <span className="book-intro__mark" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 7v14" /><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" /></svg>
+              </span>
+              <strong>Boas leituras</strong>
               <em>Leituras que aproximam</em>
               <span className="book-intro__spines" />
             </div>

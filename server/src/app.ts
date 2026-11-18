@@ -120,6 +120,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     api.post('/clubs/:clubId/join-requests/:id/review',request=>{const {clubId,id}=clubParams.extend({id:z.uuid()}).parse(request.params);return management.review(request.user,clubId,id,z.object({decision:z.enum(['approved','rejected'])}).strict().parse(request.body).decision)})
     api.get('/me', async request => ({...await service.session(request.user),...await new ModerationService(options.pool,options.moderatorUids).permissions(request.user)}))
     api.post('/me/invitations/:id/accept',{config:{rateLimit:{max:10,timeWindow:'1 minute'}}},request=>service.acceptInvite(request.user,z.object({id:z.uuid()}).parse(request.params).id,true))
+    api.post('/me/invitations/:id/decline',{config:{rateLimit:{max:10,timeWindow:'1 minute'}}},request=>service.declineInvite(request.user,z.object({id:z.uuid()}).parse(request.params).id))
     const fileParams=z.object({bookId:z.uuid()})
     api.get('/clubs/:clubId/book-files/:bookId',request=>{const {clubId,bookId}=clubParams.extend({bookId:z.uuid()}).parse(request.params);return clubFiles.list(request.user,clubId,bookId)})
     api.post('/clubs/:clubId/book-files/:bookId',{bodyLimit:15000000,config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(request,reply)=>{
