@@ -1,3 +1,4 @@
+import { onSessionEnd } from '../auth/session-events'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { User } from 'firebase/auth'
@@ -49,6 +50,14 @@ export function useOwnAvatar() {
  * Várias publicações do mesmo autor reutilizam um único download.
  */
 const cache = new Map<string, Promise<string | null>>()
+onSessionEnd((uid) => {
+  ownAvatar.delete(uid)
+  for (const [key, request] of cache) {
+    if (!key.startsWith(uid + ':')) continue
+    cache.delete(key)
+    void request.then((url) => { if (url) URL.revokeObjectURL(url) })
+  }
+})
 const MAX_CACHED = 300
 
 function avatarKey(id: string, user: User | null) {

@@ -41,7 +41,7 @@ it('aguarda a restauração da sessão ao abrir diretamente o perfil, sem acessa
       </ThemeProvider>
     </MemoryRouter>,
   )
-  expect(screen.getByText('Abrindo seu perfil…')).toBeInTheDocument()
+  expect(screen.getByText('Verificando sua sessão…')).toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: 'Meu perfil' })).not.toBeInTheDocument()
 })
 

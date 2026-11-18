@@ -1,3 +1,4 @@
+import { onSessionEnd, sessionEnded } from '../auth/session-events'
 import { useEffect, useRef, useState } from 'react'
 import type { User } from 'firebase/auth'
 import { useAuth } from '../auth/AuthProvider'
@@ -27,9 +28,13 @@ export interface ClubSummary {
 
 const cache = new Map<string, { at: number; value: ClubSummary }>()
 const TTL = 60_000
+onSessionEnd((uid) => {
+  for (const key of cache.keys()) if (key.startsWith(uid + ':')) cache.delete(key)
+})
 
 async function loadClub(user: User, club: { id: string; name: string; role?: string }): Promise<ClubSummary> {
-  const hit = cache.get(club.id)
+  const cacheKey = user.uid + ':' + club.id
+  const hit = cache.get(cacheKey)
   if (hit && Date.now() - hit.at < TTL) return hit.value
   const [settings, details, workspace] = await Promise.all([
     apiRequest<ClubSettings>(user, `/clubs/${club.id}/settings`).catch(() => null),
@@ -56,12 +61,13 @@ async function loadClub(user: User, club: { id: string; name: string; role?: str
     active: !!state && (state.topics.some((topic) => new Date(topic.at).getTime() > recent) || state.events.some((event) => Math.abs(new Date(event.date).getTime() - Date.now()) < 3 * 86400_000)),
   }
   // Só guarda o resumo quando o clube respondeu; uma falha passageira não fica presa no cache.
-  if (settings) cache.set(club.id, { at: Date.now(), value })
+  if (settings && !sessionEnded(user)) cache.set(cacheKey, { at: Date.now(), value })
   return value
 }
 export function forgetClub(id?: string) {
-  if (id) cache.delete(id)
-  else cache.clear()
+  if (id) {
+    for (const key of cache.keys()) if (key.endsWith(':' + id)) cache.delete(key)
+  } else cache.clear()
 }
 
 /** Clubes de que a pessoa participa, com capa, membros, livro do momento e próximo encontro. */

@@ -43,8 +43,8 @@ export function ReadingRoom() {
   const { snapshot, act, busy, scope } = useWorkspace()
   const book = snapshot!.state.books.find((book) => book.id === id)
   useEffect(() => {
-    if (book?.id) rememberOpenedBook(book.id)
-  }, [book?.id])
+    if (book?.id) rememberOpenedBook(book.id, user?.uid)
+  }, [book?.id, user?.uid])
   const saved = id ? snapshot!.reading[id] : undefined
   const latestSaved = useRef(saved)
   latestSaved.current = saved

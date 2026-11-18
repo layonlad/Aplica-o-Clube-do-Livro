@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useTheme } from '../app/ThemeProvider'
@@ -53,16 +53,16 @@ async function coverColor(blob: Blob) {
 export const LAST_BOOK_KEY = 'clube-livro-last-book'
 
 /** Guarda o último livro aberto no leitor (é a capa dele que vira fundo). */
-export function rememberOpenedBook(bookId: string) {
+export function rememberOpenedBook(bookId: string, uid?: string) {
   try {
-    localStorage.setItem(LAST_BOOK_KEY, bookId)
+    localStorage.setItem(LAST_BOOK_KEY + ':' + (uid ?? 'visitor'), bookId)
   } catch {
     /* sem armazenamento: o fundo usa a leitura em destaque */
   }
 }
-function lastOpenedBook() {
+function lastOpenedBook(uid?: string) {
   try {
-    return localStorage.getItem(LAST_BOOK_KEY)
+    return localStorage.getItem(LAST_BOOK_KEY + ':' + (uid ?? 'visitor'))
   } catch {
     return null
   }
@@ -92,14 +92,14 @@ export function CoverBackdrop() {
   const state = snapshot?.state
   const reading = snapshot?.reading
   // O livro aberto no leitor; senão o último aberto; senão o que o Início mostra em "Continue sua leitura".
-  const opened = /^\/app\/reader\/([^/]+)/.exec(pathname)?.[1] ?? lastOpenedBook()
+  const opened = /^\/app\/reader\/([^/]+)/.exec(pathname)?.[1] ?? lastOpenedBook(user?.uid)
   const current = state
     ? (state.books.find((book) => book.id === opened) ??
       state.books.find((book) => book.id === state.currentBookId) ??
       state.books.find((book) => (reading?.[book.id]?.percent ?? 0) < 100))
     : undefined
   const bookId = current?.id
-  useEffect(() => {
+  useLayoutEffect(() => {
     const body = document.body
     const clear = () => {
       for (const key of STYLE_KEYS) body.style.removeProperty(key)

@@ -13,7 +13,7 @@ type Act = (
  * tenta de novo (montando o pedido outra vez, com a revisão atual).
  */
 export function useLatestSave(act: Act) {
-  const pending = useRef<(() => WorkspaceAction) | null>(null)
+  const pending = useRef<{ build: () => WorkspaceAction; save: Act } | null>(null)
   const running = useRef(false)
   const actRef = useRef(act)
   actRef.current = act
@@ -23,14 +23,14 @@ export function useLatestSave(act: Act) {
     let failures = 0
     try {
       while (pending.current) {
-        const build = pending.current
+        const request = pending.current
         pending.current = null
-        const ok = await actRef.current(build(), undefined, { quiet: true })
+        const ok = await request.save(request.build(), undefined, { quiet: true })
         if (ok) {
           failures = 0
           continue
         }
-        if (!pending.current) pending.current = build
+        if (!pending.current) pending.current = request
         if (++failures > 5) {
           pending.current = null
           break
@@ -43,7 +43,7 @@ export function useLatestSave(act: Act) {
   }, [])
   return useCallback(
     (build: () => WorkspaceAction) => {
-      pending.current = build
+      pending.current = { build, save: actRef.current }
       void flush()
     },
     [flush],
