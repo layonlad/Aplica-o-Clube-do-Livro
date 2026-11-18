@@ -100,7 +100,7 @@
       "guarda": [
         "Arquivos do app (HTML, CSS, JavaScript, fontes)"
       ],
-      "detalhe": "Frontend conectado e mapa no Firebase. Os dois endereços servem o mesmo build. O app conectado exige sessão validada; a demonstração pública fica na prévia. com conta confirmada, EPUBs pessoais novos e cópias antigas desse mesmo espaço são enviados automaticamente até a cota. O endereço anterior preserva seu IndexedDB; arquivos locais de outra origem não se transferem sozinhos. API validada antes do site.",
+      "detalhe": "Frontend conectado e mapa no Firebase. Os dois endereços servem o mesmo build. O app conectado exige sessão validada; a demonstração pública fica na prévia. Com conta confirmada, EPUBs pessoais novos e cópias antigas desse mesmo espaço são enviados automaticamente até a cota. O endereço anterior preserva seu IndexedDB; arquivos locais de outra origem não se transferem sozinhos. API validada antes do site.",
       "link": "https://gen-lang-client-0194308411.web.app"
     },
     {
