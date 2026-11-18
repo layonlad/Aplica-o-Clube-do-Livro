@@ -206,3 +206,154 @@
   gap: 10px;
   min-height: 44px;
 }
+
+/* ── Painel único "Ferramentas de leitura": abas Sumário · Aparência · Marcadores ── */
+.reader-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0 0 14px;
+  padding: 4px;
+  background: color-mix(in srgb, var(--brand) 7%, var(--surface));
+  border-radius: 999px;
+}
+.reader-tabs button {
+  min-height: 40px;
+  padding: 0 8px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.reader-tabs button.active { color: var(--text-on-brand); background: var(--brand); box-shadow: var(--shadow-1); }
+.reader-tab-panel { display: grid; gap: 14px; }
+.reader-tab-panel:empty { display: none; }
+.reader-mode-actions { display: grid; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+.reader-mode-actions .button { width: 100%; justify-content: center; }
+
+/* Botões dentro do painel: grade de duas colunas, mesma altura, texto sempre dentro */
+.reader-sheet .button { min-height: 46px; padding: 10px 14px; font-size: .9rem; line-height: 1.2; }
+.reader-sheet .workspace-actions,
+.reader-tools__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+.reader-sheet .workspace-actions > .button,
+.reader-tools__grid > .button { width: 100%; }
+.reader-sheet .workspace-actions > .button:only-child { grid-column: 1 / -1; }
+.reader-sheet > .sheet-surface .button--secondary[aria-pressed] { width: 100%; }
+.reader-sheet fieldset {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.reader-sheet fieldset > legend { padding: 0 6px; font-weight: 700; }
+.reader-sheet fieldset > .button { width: 100%; }
+.reader-sheet h3 { margin: 6px 0 0; font-size: 1rem; }
+.reader-sheet .reader-file > summary { display: flex; align-items: center; min-height: 44px; font-weight: 600; cursor: pointer; }
+.reader-sheet .card { padding: 14px; }
+
+/* Modo de leitura: Páginas | Rolagem */
+.reader-flow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.reader-flow button {
+  display: grid;
+  gap: 2px;
+  min-height: 60px;
+  padding: 10px 12px;
+  color: var(--text);
+  text-align: left;
+  background: var(--surface-raised);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font: inherit;
+  cursor: pointer;
+}
+.reader-flow button small { color: var(--text-muted); font-size: .75rem; }
+.reader-flow button[aria-pressed='true'] { border-color: var(--brand); background: var(--brand-soft); }
+
+/* Sumário e pesquisa */
+.reader-contents { display: grid; gap: 12px; }
+.reader-search-field, .reader-sheet label.reader-search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 14px;
+  color: var(--text-muted);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+}
+.reader-sheet .reader-search-field:focus-within { border-color: var(--brand); box-shadow: var(--focus-ring); }
+.reader-sheet .reader-search-field input { flex: 1; min-height: 44px; padding: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+.reader-chapters { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.reader-chapters button {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm, 10px);
+  font: inherit;
+  cursor: pointer;
+}
+.reader-chapters button:hover { background: var(--brand-soft); }
+.reader-chapters button[aria-current='true'] { color: var(--brand-ink); background: var(--brand-soft); font-weight: 700; }
+.reader-search-results { display: grid; gap: 6px; }
+.reader-search-results button { padding: 10px 12px; color: var(--text); text-align: left; background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-md); font: inherit; font-size: .9rem; cursor: pointer; }
+
+/* Marcadores, avaliação e destaques */
+.reader-tools { display: grid; gap: 14px; }
+.reader-tools__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.reader-highlight blockquote { margin: 0 0 8px; font-style: italic; }
+
+/* ── Versão em texto em tela cheia ── */
+.text-page-viewport,
+.text-scroll-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 68ch;
+  margin-inline: auto;
+}
+.text-page-viewport { overflow: hidden; touch-action: pan-y pinch-zoom; perspective: 1600px; }
+.text-page-viewport:focus-visible,
+.text-scroll-viewport:focus-visible { outline: none; }
+.text-page {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 2px 24px;
+  background: var(--reader-surface);
+  transform-origin: left center;
+  backface-visibility: hidden;
+}
+.text-scroll-viewport { overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y pinch-zoom; padding-bottom: 24px; }
+.text-prose { color: var(--reader-ink, #302a23); line-height: var(--reader-leading, 1.75); font-weight: var(--reader-weight, 400); text-align: var(--reader-align, left); white-space: pre-wrap; }
+.text-chapter-title { margin: 6px 0 22px; font-family: var(--font-display); font-size: 1.5em; font-weight: 500; line-height: 1.15; white-space: normal; }
+.text-page-status { flex-shrink: 0; margin: 8px 0 0; color: color-mix(in srgb, var(--reader-ink, #302a23) 60%, transparent); font-size: 12px; text-align: center; }
+.text-chapter-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 18px; }
+.immersive-reader.reading-room--comfortable :is(.text-page-viewport, .text-scroll-viewport) { width: 94%; }
+.immersive-reader.reading-room--wide :is(.text-page-viewport, .text-scroll-viewport) { width: 84%; }
+@media (prefers-reduced-motion: reduce) { .text-page { transform: none !important; } }
+.text-page, .text-scroll-viewport { scrollbar-width: none; }
+.text-page::-webkit-scrollbar, .text-scroll-viewport::-webkit-scrollbar { display: none; }

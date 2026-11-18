@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { browserSessionPersistence, connectAuthEmulator, initializeAuth, browserPopupRedirectResolver } from 'firebase/auth'
+import { browserLocalPersistence, browserSessionPersistence, connectAuthEmulator, indexedDBLocalPersistence, initializeAuth, browserPopupRedirectResolver } from 'firebase/auth'
 
 export function createClientAuth() {
   const env = import.meta.env
@@ -14,7 +14,10 @@ export function createClientAuth() {
   }
   if (env.VITE_FIREBASE_PROJECT_ID.startsWith('demo-') && !emulator) throw new Error('Inicie e configure o emulador local de autenticação.')
   const app = initializeApp({ apiKey: env.VITE_FIREBASE_API_KEY, authDomain: env.VITE_FIREBASE_AUTH_DOMAIN, projectId: env.VITE_FIREBASE_PROJECT_ID })
-  const auth = initializeAuth(app, { persistence: browserSessionPersistence, popupRedirectResolver: browserPopupRedirectResolver })
+  // Login permanente, como em apps de celular: a conta continua entrando depois de fechar e abrir o app.
+  // IndexedDB primeiro (sobrevive ao app instalado na tela inicial); depois localStorage; sessão só como último recurso.
+  // Sair da conta continua disponível no Perfil.
+  const auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence], popupRedirectResolver: browserPopupRedirectResolver })
   if (emulator) connectAuthEmulator(auth, emulator)
   return auth
 }
