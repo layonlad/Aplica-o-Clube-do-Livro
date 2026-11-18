@@ -173,6 +173,9 @@ export function ReadingRoom() {
     )
       return
     const quote = value.toString()
+    // Ao focar a anotação, o navegador pode manter o Range e devolver texto vazio.
+    // Preserve o trecho escolhido até salvar ou fechar o painel.
+    if (!quote) return
     if (quote.length > 280) {
       setMessage('Selecione um trecho de até 280 caracteres.')
       setSelection(null)
@@ -181,7 +184,11 @@ export function ReadingRoom() {
     const prefix = range.cloneRange()
     prefix.selectNodeContents(article.current)
     prefix.setEnd(range.startContainer, range.startOffset)
-    const start = (current?.start ?? 0) + prefix.toString().length
+    // Em rolagem, o artigo contém todo o capítulo, não só a página no topo.
+    const origin = preferences.flow === 'scroll'
+      ? pages.find((item) => item.chapter === current?.chapter)?.start ?? 0
+      : current?.start ?? 0
+    const start = origin + prefix.toString().length
     if (book!.content.slice(start, start + quote.length) === quote)
       setSelection({ quote, start, end: start + quote.length })
   }

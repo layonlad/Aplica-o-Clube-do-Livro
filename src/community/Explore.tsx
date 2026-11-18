@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
-import { publicRequest, readableError } from '../auth/api'
+import { readableError } from '../auth/api'
+import { useCatalogSearch } from './useCatalogSearch'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
 import { Button, CoverArt } from '../components/ui'
 import { UserAvatar } from '../components/UserAvatar'
 import { DiscoverClubs } from '../clubs/DiscoverClubs'
 import { socialRead } from './social-api'
 import type { Page, PostDto } from '../../server/src/community-contracts'
-import type { CatalogEntry } from '../../server/src/catalog'
 import type { SocialProfileDto } from './SocialProfile'
 import './community.css'
 type Discovery = {
@@ -36,7 +36,6 @@ export function Explore() {
     [activeGenre, setActiveGenre] = useState(''),
     [bookAuthor, setBookAuthor] = useState(''),
     [page, setPage] = useState<Page<SocialProfileDto>>({ items: [], nextCursor: null }),
-    [books, setBooks] = useState<CatalogEntry[]>([]),
     [error, setError] = useState(''),
     [loading, setLoading] = useState(false),
     [message, setMessage] = useState('')
@@ -44,6 +43,8 @@ export function Explore() {
   const [kind, setKind] = useState<'all' | 'people' | 'posts' | 'books'>('all'),
     [posts, setPosts] = useState<PostDto[]>([]),
     field = useRef<HTMLInputElement>(null)
+  const [catalogRetry, setCatalogRetry] = useState(0)
+  const catalog = useCatalogSearch(query, kind === 'books' ? bookAuthor : '', kind === 'books' ? genre : '', kind === 'all' || kind === 'books', catalogRetry)
   // Pesquisar abre já com o teclado no campo.
   useEffect(() => {
     field.current?.focus({ preventScroll: true })
@@ -93,28 +94,6 @@ export function Explore() {
       live = false
     }
   }, [user?.uid, user?.emailVerified, filters])
-  async function catalog() {
-    setLoading(true)
-    setError('')
-    try {
-      setBooks(
-        (
-          await publicRequest<{ items: CatalogEntry[] }>(
-            '/catalog?' +
-              new URLSearchParams({
-                ...(query.trim() ? { q: query.trim() } : {}),
-                ...(bookAuthor.trim() ? { author: bookAuthor.trim() } : {}),
-                ...(genre.trim() ? { genre: genre.trim() } : {}),
-              }),
-          )
-        ).items,
-      )
-    } catch (err) {
-      setError(readableError(err))
-    } finally {
-      setLoading(false)
-    }
-  }
   async function more() {
     try {
       const next = await socialRead<Page<SocialProfileDto>>(
@@ -137,7 +116,7 @@ export function Explore() {
           setSearch(query.trim())
           setActiveGenre(genre.trim())
           field.current?.blur()
-          if (kind === 'books') void catalog()
+          if (kind === 'books') setCatalogRetry((value) => value + 1)
         }}
       >
         <Search size={20} aria-hidden="true" />
@@ -158,7 +137,6 @@ export function Explore() {
             aria-label="Limpar pesquisa"
             onClick={() => {
               setQuery('')
-              setBooks([])
               field.current?.focus()
             }}
           >
@@ -211,8 +189,8 @@ export function Explore() {
           <Button
             type="button"
             variant="secondary"
-            disabled={loading || (!query.trim() && !bookAuthor.trim() && !genre.trim())}
-            onClick={() => void catalog()}
+            disabled={catalog.loading || ![query, bookAuthor, genre].some((value) => value.trim().length >= 2)}
+            onClick={() => setCatalogRetry((value) => value + 1)}
           >
             Buscar livros
           </Button>
@@ -237,6 +215,8 @@ export function Explore() {
         </section>
       )}
       {error && <p role="alert">{error}</p>}
+      {catalog.error && <p role="alert">{catalog.error}</p>}
+      {catalog.loading && <p role="status" className="t-caption">Pesquisando livros…</p>}
       {message && <p role="status">{message}</p>}
       {(kind === 'all' || kind === 'people') && <section>
         <h2>{search ? 'Pessoas' : 'Leitores para conhecer'}</h2>
@@ -262,11 +242,11 @@ export function Explore() {
           </Button>
         )}
       </section>}
-      {!!books.length && (
+      {!!catalog.items.length && (kind === 'all' || kind === 'books') && (
         <section>
           <h2>Livros encontrados</h2>
           <div className="catalog-results">
-            {books.map((book) => (
+            {catalog.items.map((book) => (
               <article key={book.key}>
                 <CoverArt title={book.title} author={book.author} />
                 <div>

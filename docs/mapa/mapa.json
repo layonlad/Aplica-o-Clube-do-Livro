@@ -6,18 +6,19 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Leitor imersivo e perfil social publicados",
+    "fase": "Comunidade, pesquisa e leitor publicados com correções",
     "tom": "ok",
-    "resumo": "PR 27 publicado: API em aaef7fa e site em 1f84461, preservando também o modo noturno do Claude (PR 28). Leitor sem menus permanentes, gestos, folha 3D, preferências e retomada corrigida; perfil com edição, solicitações, atividades e salvos privados. Backup privado, migration aditiva e grants mínimos confirmados; API/executor antes dos dois sites. 207 testes e CI aprovados; validação publicada com duas contas sintéticas removidas ao final.",
-    "proximoPasso": "Dono testar no celular físico: abrir EPUB, deslizar, ajustar Aa, voltar à leitura e conferir perfil/solicitações. Monitorar uso e orçamento; mudanças futuras exigem autorização correspondente.",
+    "resumo": "Sites principal e de compatibilidade publicados em b7a7301, entrega dos PRs 31 e 33. Comunidade com caixa rápida, lupa, leitor em tela cheia, painel único e login persistente. Corrigidas busca automática de livros, origem da seleção em rolagem, referência do texto na animação e preservação do trecho ao escrever. CI e 214 testes aprovados; 102 arquivos por site iguais ao build. Validação em produção confirmou 15 páginas rápidas, retomada exata, capítulos, anotações, foto e pesquisa; conta sintética excluída e arquivos purgados. API permanece em aaef7fa; banco e infraestrutura preservados.",
+    "proximoPasso": "Dono testar a versão publicada e conferir aparelhos físicos. Redesenho em andamento do Claude continua separado; não foi incorporado. Monitorar catálogo externo e aviso picomatch das ferramentas. Produção continua manual, conforme escopo autorizado.",
     "pendencias": [
+      "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
       "Orçamento do projeto é de R$ 70/mês com alertas, sem corte automático de cobrança. Cloud SQL mínimo e instâncias Cloud Run limitadas; acompanhar uso antes de ampliar capacidade.",
       "Cloud Scheduler chama executor Cloud Run privado a cada quinze minutos; lote autenticado concluído com HTTP 200 e zero falhas. Recebimento push em aparelho físico ainda depende da escolha e permissão do usuário.",
       "Upload geral confirmado anteriormente pelo dono. PR 25 validou compartilhamento da capa; PR 27 validou foto de perfil e EPUB com capa em produção, somente com dados sintéticos removidos ao final.",
       "EPUB com fontes ofuscadas é aceito; texto ou imagens realmente criptografados exigem edição legível da loja/editora. Sem capa raster compatível, permanece uma ilustração de reserva.",
       "Exclusão integral automática da conta Firebase não foi implementada; existem controles de exclusão de conteúdo e privacidade do perfil.",
-      "Leitor de tela e aparelhos físicos ainda não foram testados. PR 27 validou Chrome móvel simulado, retomada exata, preferências/favoritos/marcadores, aprovação de seguidores e nova sessão recuperando original e capa; WebKit foi validado localmente.",
+      "Leitor de tela e aparelhos físicos ainda não foram testados. PRs 31/33 validaram Chrome móvel simulado em produção: login após fechar/reabrir, 15 páginas rápidas, retomada, capítulos, texto em rolagem, anotações, pesquisa, publicação com foto e movimento reduzido. Conta e arquivos sintéticos removidos.",
       "O modo conectado não oferece cache offline por service worker. Backups do banco são gerenciados; arquivos novos não têm cópia periódica independente. As origens antigas preservam a fotografia da migração, sem gravações posteriores.",
       "Estética Estante Rosa & Palha preservada; falta a foto definitiva do dono. Leitor e perfis conferidos no PR 27; demais telas ainda precisam de revisão visual individual no aparelho físico."
     ]
@@ -27,7 +28,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "1f84461 · PR 27 + CSS noturno do PR 28 publicados em 16/11/2026; API permanece em aaef7fa",
+      "versao": "b7a7301 · PRs 31 e 33 publicados em 17/11/2026; API permanece em aaef7fa",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -59,7 +60,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Branch codex/publicacao-leitor-perfil-pr27: registro da liberação concluída; artefatos e credenciais operacionais fora do Git.",
+      "versao": "Branch codex/registro-publicacao-pr33: registro da publicação validada e limpeza; código b7a7301 compilado em cópia limpa. Trabalho atual do Claude preservado em branch separada.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -67,7 +68,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "1f84461 · mesmo build do site principal (PR 27 + PR 28), com 104 arquivos conferidos por hash; armazenamento local e API/Auth preservados",
+      "versao": "b7a7301 · mesmo build do site principal, com 102 arquivos publicados conferidos por SHA-256; armazenamento local e API/Auth preservados",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -86,7 +87,7 @@
         "Aparência escolhida",
         "Sessão de login"
       ],
-      "detalhe": "Sem conta, biblioteca e EPUBs ficam neste navegador. IndexedDB separa visitante e conta; apagar dados do navegador pode apagar cópias locais. Com conta confirmada, EPUBs pessoais do espaço são sincronizados à nuvem dentro da cota. A capa pode virar fundo ou ser compartilhada explicitamente sem publicar o original. O modo conectado não tem cache offline por service worker. Publicado no PR 27: leitor sem controles permanentes, gestos, painéis separados, âncora textual e marcador de página com imagem; preferências no armazenamento já existente.",
+      "detalhe": "Sem conta, biblioteca e EPUBs ficam neste navegador. IndexedDB separa visitante e conta; apagar dados do navegador pode apagar cópias locais. Com conta confirmada, EPUBs pessoais são sincronizados à nuvem dentro da cota. A capa pode virar fundo ou ser compartilhada sem publicar o original. O modo conectado não tem cache offline por service worker. Publicado nos PRs 31/33: leitor original e texto em tela cheia, gestos/rolagem e painel único de Sumário, Aparência e Marcadores; posição salva em segundo plano e retomada exata após 15 viradas rápidas. Firebase persiste a sessão localmente quando o armazenamento está disponível.",
       "link": ""
     },
     {
@@ -114,7 +115,7 @@
         "Login com Google",
         "Estado de confirmação e revogação da conta"
       ],
-      "detalhe": "Google e e-mail/senha habilitados. Contas importadas com UIDs, provedores e hashes preservados; novo login pode ser necessário. API usa ADC e verifica identidade, revogação e desativação sem chave privada. Cadastros na origem antiga foram desabilitados; contas reais não foram excluídas.",
+      "detalhe": "Google e e-mail/senha habilitados. Contas importadas com UIDs, provedores e hashes preservados; novo login pode ser necessário. API usa ADC e verifica identidade, revogação e desativação sem chave privada. Cadastros na origem antiga foram desabilitados; contas reais não foram excluídas. PRs 31/33: cliente com persistência local em IndexedDB/localStorage e fallback de sessão; fechamento completo e reabertura do navegador validados. Identidade, provedores e permissões de backend preservados.",
       "link": "https://console.firebase.google.com/project/gen-lang-client-0194308411/authentication"
     },
     {
@@ -245,7 +246,7 @@
     { "o_que": "EPUB original e capa guardados neste navegador", "onde": "pessoa", "privacidade": "Cópias locais separadas por visitante ou conta", "copia": "IndexedDB; guardar no navegador não equivale a enviar o arquivo para a nuvem" },
     { "o_que": "E-mail, senha e login com Google", "onde": "auth", "privacidade": "Privado", "copia": "Gerenciado pelo Google" },
     { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Público por escolha; perfil privado tem cartão mínimo autenticado. Conteúdo pessoal só do titular ou seguidores aprovados. Clube exige sua associação própria; bloqueios e suspensão são revalidados.", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
-    { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON pessoal e persistência no banco; arquivos originais não entram no JSON" },
+    { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON pessoal e persistência no banco; arquivos originais não entram no JSON; PRs 31/33 salvam posição em segundo plano, sem bloquear viradas, e preservam a origem dos trechos selecionados em páginas/rolagem" },
     { "o_que": "Aparência do app e controles do leitor", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "Preferências no navegador e, com conta, no banco. coverBackdrop opcional salvo pela API e recuperado em outro contexto de navegador em produção; controles do leitor continuam separados. PR 27 publicado: gestos, animação, fundo e espaçamento do leitor persistem no mesmo mecanismo, com prévia imediata." },
     { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Metadados de descoberta por escolha do clube; membros e gestão conforme papel; convites restritos aos autorizados", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Mural, fórum, encontros e álbuns dos clubes", "onde": "banco", "privacidade": "Só membros ativos", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
@@ -331,11 +332,11 @@
         },
         {
           "camada": "pessoa",
-          "texto": "Clica na capa e lê sem menus; centro mostra controles, gestos viram páginas e Aa abre preferências"
+          "texto": "Clica na capa e lê sem menus; centro mostra controles, gestos viram páginas e painel único reúne Sumário, Aparência e Marcadores"
         },
         {
           "camada": "banco",
-          "texto": "Conta sincroniza preferências e posição, sem publicar o livro"
+          "texto": "Conta sincroniza preferências e posição em segundo plano, sem publicar o livro nem travar a virada"
         }
       ]
     },
@@ -392,10 +393,38 @@
     },
     {
       "data": "2026-11-17",
+      "autor": "Codex",
+      "titulo": "PRs 31 e 33 publicados: pesquisa, seleção, login e leitura validados",
+      "resumo": "Frontend b7a7301 nos dois Hosting, a partir de cópia limpa e com contas proprietárias correspondentes; 102 arquivos por site iguais por SHA-256. CI e 214 testes aprovados. Conta descartável confirmou login persistente, EPUB/capa, 15 viradas rápidas, retomada exata, capítulos, texto/rolagem/anotação, post com/sem foto, pesquisas e folha/movimento reduzido. Conta excluída, token 401, originais/fotos purgados e uso EPUB zerado. API aaef7fa, banco, migrations e trabalho atual do Claude preservados.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/34"
+    },
+    {
+      "data": "2026-11-17",
+      "autor": "Codex",
+      "titulo": "PR 31: pesquisa automática e seleção de trechos corrigidas em branch isolada",
+      "resumo": "Pesquisa de livros em Tudo/Livros com pausa de 1,2 s, erros próprios e descarte de respostas antigas. Seleção em rolagem usa origem do capítulo; referência da página preservada durante a animação para permitir destaques também no modo paginado. Foco no campo da anotação preserva o trecho selecionado. Sete regressões automatizadas e ensaio móvel; versão em validação antes da publicação autorizada somente dos sites. Nenhuma mudança no trabalho atual do Claude, API, banco ou migrations.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/33"
+    },
+    {
+      "data": "2026-11-17",
       "autor": "Claude Code",
       "titulo": "Comunidade estilo post, pesquisa na barra, leitor em tela cheia e login permanente",
       "resumo": "Comunidade sem cabeçalho explicativo: caixa de publicação com foto do perfil, teclado ao tocar e ícone pequeno de foto (sem enquete). Lupa em círculo na barra inferior abre a Pesquisa (pessoas, publicações e livros enquanto digita). Leitor: livro original e versão em texto em tela cheia, páginas ao arrastar ou rolagem, ferramentas num painel único com abas. Leitura com conta corrigida: a página vira na hora e a posição é salva em segundo plano (antes cada virada esperava o servidor, e um conflito recarregava e fechava o livro); a última página do capítulo não trava mais. Login fica salvo ao fechar o app (antes era só da sessão). Folha que vira ao trocar de aba, botões revisados em 360 e 375 px. Só frontend; API e banco não mudam.",
       "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/31"
+    },
+    {
+      "data": "2026-11-17",
+      "autor": "Codex",
+      "titulo": "Revisão do PR 31 interrompe liberação após duas falhas locais",
+      "resumo": "Repetidos frontend, unitários API e builds com sucesso; sem backend pendente em main em relação à API aaef7fa. Ensaio Chrome móvel 375 px reproduziu anotação sem abrir após rolar para a segunda página e catálogo sem consulta ao digitar. Achados registrados na revisão; PR 31 permanece aberto e nenhum site, API, banco ou migration foi publicado. Testes com conta descartável em produção não executados. Auditoria corrigida separadamente no PR 32.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/31"
+    },
+    {
+      "data": "2026-11-17",
+      "autor": "Codex",
+      "titulo": "CI: auditoria bloqueante de produção e acompanhamento das ferramentas",
+      "resumo": "Confirmada ausência de versão corrigida de picomatch e presença apenas em ferramentas de desenvolvimento. Produção com zero vulnerabilidades e auditoria obrigatória; relatório completo preservado como informativo. Sem audit fix, downgrade ou alteração de dependências. Produção do app permanece na versão anterior; PR 31 será revisado separadamente.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/32"
     },
     {
       "data": "2026-11-16",

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Star } from 'lucide-react'
-import { useEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react'
+import { forwardRef, useEffect, useRef, type CSSProperties, type ReactNode, type RefObject, type MutableRefObject } from 'react'
+import type { HTMLMotionProps } from 'framer-motion'
 import { useReaderChrome } from './ImmersiveReader'
 import { readingGesture, type ReadingGesture } from './reader-gestures'
 import type { ReadingPage } from './reading-layout'
@@ -201,9 +202,9 @@ export function TextPages({
         }}
       >
         <AnimatePresence initial={false} custom={direction.current} mode="popLayout">
-          <motion.article
+          <TextPage
             key={page}
-            ref={articleRef as RefObject<HTMLElement>}
+            articleRef={articleRef}
             className="reader-prose text-prose text-page"
             style={{ ...style, transformPerspective: 1600 }}
             custom={direction.current}
@@ -216,7 +217,7 @@ export function TextPages({
             onTouchEnd={onSelect}
           >
             {current && renderRange(current.start, current.end)}
-          </motion.article>
+          </TextPage>
         </AnimatePresence>
       </div>
       <p className="text-page-status" aria-live="polite">
@@ -225,6 +226,22 @@ export function TextPages({
     </>
   )
 }
+
+// popLayout precisa da própria ref. A referência do leitor fica em uma prop separada;
+// ao sair, a página anterior não pode apagar a ref da página que acabou de entrar.
+const TextPage = forwardRef<HTMLElement, HTMLMotionProps<'article'> & {
+  articleRef: RefObject<HTMLElement | null>
+}>(function TextPage({ articleRef, ...props }, popRef) {
+  const previous = useRef<HTMLElement | null>(null)
+  return <motion.article {...props} ref={(node) => {
+    if (typeof popRef === 'function') popRef(node)
+    else if (popRef) popRef.current = node
+    const reader = articleRef as MutableRefObject<HTMLElement | null>
+    if (node) reader.current = node
+    else if (reader.current === previous.current) reader.current = null
+    previous.current = node
+  }} />
+})
 
 /** A página que sai gira sobre a lombada; a que entra desliza por baixo. */
 const leaf = {
