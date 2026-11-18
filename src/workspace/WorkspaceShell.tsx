@@ -50,6 +50,7 @@ function titleFor(pathname: string, personal: boolean, clubName: string) {
     ['/app/ajustes', 'Configurações'],
     ['/app/wall', 'Mural'],
     ['/app/gallery', 'Galeria de encontros'],
+    ['/app/library/integracoes', 'Integrações de Leitura'],
     ['/app/library/gerenciar', 'Gerenciar biblioteca'],
     ['/app/library', 'Leituras do clube'],
     ['/app', clubName],

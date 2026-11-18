@@ -1,3 +1,4 @@
+import { pruneIntegrations } from './reading-integrations/privacy.js'
 import {EventService} from './event-service.js'
 import {ForumService} from './forum-service.js'
 import { randomInt, randomUUID } from 'node:crypto'
@@ -53,7 +54,11 @@ export class WorkspaceService {
         }
       } else {
         await client.query('UPDATE personal_workspaces SET state=$2,reading=$3,version=$4,preferences=$5,updated_at=now() WHERE user_id=$1',[user.id,next.state,next.reading,next.version,next.preferences])
-        if(action.type==='book.remove'||action.type==='workspace.import')await client.query("UPDATE private_book_files SET purge_after=CASE WHEN state='pending' THEN now()+interval '30 minutes' ELSE purge_after END,state='deleted',deleted_at=now() WHERE owner_user_id=$1 AND state IN ('active','pending') AND NOT(book_id=ANY($2::uuid[]))",[user.id,next.state.books.map(book=>book.id)])
+        if (action.type === 'book.remove' || action.type === 'workspace.import') {
+          const bookIds = next.state.books.map((book) => book.id)
+          await client.query("UPDATE private_book_files SET purge_after=CASE WHEN state='pending' THEN now()+interval '30 minutes' ELSE purge_after END,state='deleted',deleted_at=now() WHERE owner_user_id=$1 AND state IN ('active','pending') AND NOT(book_id=ANY($2::uuid[]))",[user.id,bookIds])
+          await pruneIntegrations(client, user.id, bookIds)
+        }
       }
       return this.present(client,next,user,clubId,legacyForum)
     })

@@ -216,6 +216,8 @@ export function PostComposer({
   onPublished,
   quick = false,
   initialPoll = false,
+  initialBody = '',
+  linkedBook,
   onCancel,
 }: {
   clubId: string | null
@@ -224,13 +226,15 @@ export function PostComposer({
   quick?: boolean
   /** Dentro de uma folha (botão "Criar publicação"): o formulário já vem aberto e "Cancelar" fecha a folha. */
   initialPoll?: boolean
+  initialBody?: string
+  linkedBook?: { title: string; author: string }
   onCancel?: () => void
 }) {
   const ownAvatar = useOwnAvatar(),
     { user } = useAuth()
   const [open, setOpen] = useState(!!onCancel),
     [poll, setPoll] = useState(initialPoll),
-    [body, setBody] = useState(''),
+    [body, setBody] = useState(initialBody),
     [options, setOptions] = useState('')
   const [media, setMedia] = useState<PostMedia[]>([]),
     [busy, setBusy] = useState(false),
@@ -246,6 +250,7 @@ export function PostComposer({
     setError('')
     const input = {
       body,
+      ...(linkedBook ? { bookTitle: linkedBook.title, bookAuthor: linkedBook.author } : {}),
       kind: poll ? 'poll' : 'reflection',
       mediaIds: media.map((item) => item.id),
       options: poll
@@ -332,7 +337,7 @@ export function PostComposer({
         <span>O que você está pensando sobre sua leitura?</span>
         <PenLine size={18} />
       </button>}
-      {onCancel && (
+      {onCancel && !linkedBook && (
         <div className="filter-pills" role="group" aria-label="Tipo de publicação">
           <button type="button" aria-pressed={!poll} onClick={() => setPoll(false)}>Texto e fotos</button>
           <button type="button" aria-pressed={poll} onClick={() => setPoll(true)}>Enquete</button>
@@ -348,6 +353,8 @@ export function PostComposer({
             <span className="sr-only">Sua mensagem</span>
             <textarea
               rows={4}
+              aria-label="Sua mensagem"
+              maxLength={10000}
               required
               value={body}
               onChange={(event) => setBody(event.target.value)}

@@ -4,7 +4,7 @@ import type { ApiErrorBody } from '../../server/src/contracts'
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) { super(message) }
 }
-export async function apiRequest<T>(user: User, path: string, method = 'GET', body?: unknown): Promise<T> {
+export async function authenticatedResponse(user: User, path: string, method = 'GET', body?: unknown): Promise<Response> {
   const token = await user.getIdToken()
   const response = await fetch(`${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/v1${path}`, {
     method,
@@ -20,6 +20,11 @@ export async function apiRequest<T>(user: User, path: string, method = 'GET', bo
     const payload = await response.json().catch(() => null) as ApiErrorBody | null
     throw new ApiError(response.status, payload?.error?.code ?? 'API_ERROR', payload?.error?.message ?? 'O serviço está indisponível. Tente novamente.')
   }
+  return response
+}
+
+export async function apiRequest<T>(user: User, path: string, method = 'GET', body?: unknown): Promise<T> {
+  const response = await authenticatedResponse(user, path, method, body)
   return response.status === 204 ? undefined as T : response.json() as Promise<T>
 }
 export function readableError(error: unknown): string {

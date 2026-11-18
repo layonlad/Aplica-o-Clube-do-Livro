@@ -157,6 +157,27 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
       data: Buffer.from(epub).toString('base64'),
     })
     expect(epubUpload.statusCode, epubUpload.body).toBe(201)
+    const integration = '/me/reading-integrations/kindle/books/' + bookId
+    const permission = await call(integration + '/permission', 'POST', {
+      fileId: epubUpload.json().id, permission: 'licensed_transfer',
+    })
+    expect(permission.statusCode, permission.body).toBe(204)
+    const exported = await call(integration + '/exports', 'POST', { fileId: epubUpload.json().id })
+    expect(exported.statusCode).toBe(200)
+    expect(exported.rawPayload).toEqual(Buffer.from(epub))
+    const progress = await call(integration + '/progress', 'POST', {
+      percentage: 20, chapter: 'Capítulo 1', observation: '', readingDate: '2026-11-18',
+      includeInSummary: false, revision: 0,
+    })
+    expect(progress.statusCode, progress.body).toBe(200)
+    const annotations = await call(integration + '/annotations', 'POST', {
+      filename: 'My Clippings.txt', mime: 'text/plain', sourceBook: 'Obra de teste', selected: [0],
+      data: Buffer.from('Obra de teste\n- Your Note at location 15\n\nNota sintética\n==========\n').toString('base64'),
+    })
+    expect(annotations.statusCode, annotations.body).toBe(200)
+    const imported = await call(integration + '/annotations')
+    expect(imported.json()).toHaveLength(1)
+    expect((await call(integration + '/annotations/' + imported.json()[0].id, 'DELETE')).statusCode).toBe(204)
     const epubCover = await call(`/me/book-files/${bookId}/cover`)
     expect(epubCover.statusCode, epubCover.body).toBe(200)
     expect(epubCover.headers['content-type']).toContain('image/jpeg')

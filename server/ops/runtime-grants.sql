@@ -24,4 +24,6 @@ GRANT EXECUTE ON FUNCTION notification_club_has_book(uuid,uuid) TO clube_runtime
 REVOKE ALL ON schema_migrations FROM clube_runtime;
 REVOKE UPDATE,DELETE,TRUNCATE ON audit_logs,moderation_actions FROM clube_runtime;
 GRANT SELECT,INSERT,UPDATE ON follow_requests TO clube_runtime;
+REVOKE ALL ON external_reading_progress,imported_reading_annotations,reading_export_attempts FROM clube_runtime;
+GRANT SELECT,INSERT,UPDATE,DELETE ON external_reading_progress,imported_reading_annotations,reading_export_attempts TO clube_runtime;
 COMMIT;

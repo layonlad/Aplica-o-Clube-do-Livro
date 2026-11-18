@@ -1,3 +1,4 @@
+import { registerReadingIntegrations } from './reading-integrations/routes.js'
 import {registerPhotoMaintenance} from './photo-maintenance.js'
 import {PushSubscriptions,subscriptionInput} from './push-subscriptions.js'
 import {registerPhotoRoutes} from './photo-routes.js'
@@ -56,7 +57,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
   const management=new ClubManagement(options.pool)
   const notifications=new NotificationService(options.pool)
   const push=new PushSubscriptions(options.pool,options.pushPublicKey)
-  await app.register(cors, { origin: options.additionalOrigins?.length ? [options.origin,...options.additionalOrigins] : options.origin, methods: ['GET', 'POST', 'DELETE'], allowedHeaders: ['Authorization', 'Content-Type'] })
+  await app.register(cors, { origin: options.additionalOrigins?.length ? [options.origin,...options.additionalOrigins] : options.origin, methods: ['GET', 'POST', 'DELETE'], allowedHeaders: ['Authorization', 'Content-Type'], exposedHeaders: ['X-Reading-Export-Id', 'Content-Disposition'] })
   await app.register(helmet)
   await app.register(rateLimit, { max: options.rateMax ?? 120, timeWindow: '1 minute' })
   app.addHook('onSend', async (_request, reply) => {
@@ -96,6 +97,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
   await registerPublicReads(app,options.pool,async request=>{if(request.headers.authorization)await authenticate(request)},options.storage,options.moderatorUids)
   await app.register(async (api) => {
     api.addHook('onRequest',authenticate)
+    registerReadingIntegrations(api, options.pool, files)
     await registerPublicMutations(api,options.pool,options.storage,options.moderatorUids)
     api.get('/me/push/config',()=>push.config())
     api.post('/me/push/subscriptions',{config:{rateLimit:{max:5,timeWindow:'1 minute',hook:'preHandler',keyGenerator:request=>request.user.id}}},request=>push.register(request.user,subscriptionInput.parse(request.body)))

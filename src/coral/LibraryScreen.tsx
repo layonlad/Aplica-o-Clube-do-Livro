@@ -1,3 +1,5 @@
+import '../reading-integrations/reading-integrations.css'
+import { useExternalReading } from '../reading-integrations/client'
 import { useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BookOpen, BookPlus, ChevronDown, Ellipsis, FolderPen, Heart, Layers, Library, Plus, Search, SlidersHorizontal, Star, Trash2, Upload, X } from 'lucide-react'
@@ -25,8 +27,9 @@ const SORT_KEY = 'clube-livro-library-sort'
 const readSort = (): Sort => { try { return (localStorage.getItem(SORT_KEY) as Sort) || 'recent' } catch { return 'recent' } }
 
 export function LibraryScreen() {
-  const { snapshot, act, busy } = useWorkspace()
+  const { snapshot, act, busy, scope } = useWorkspace()
   const { user } = useAuth()
+  const { items: external } = useExternalReading(scope === 'personal')
   const { appearance, saveAppearance } = useTheme()
   const navigate = useNavigate()
   const open = useOpenBook()
@@ -96,6 +99,7 @@ export function LibraryScreen() {
         )}
       </Hero>
       <SheetBody>
+        <Link className="text-link" to="/app/library/integracoes">Integrações de Leitura</Link>
         <div className="pill-tabs" role="tablist" aria-label="Situação da leitura">
           {(['reading', 'want', 'finished'] as Tab[]).map((value) => (
             <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => setTab(value)}>
@@ -156,6 +160,7 @@ export function LibraryScreen() {
             {visible.map((book) => {
               const entry = reading[book.id]
               const percent = entry?.percent ?? 0
+              const kindle = external.find((item) => item.bookId === book.id && item.provider === 'kindle')
               const rating = entry?.rating ? { value: entry.rating, label: 'Sua nota' } : book.metadata?.ratingAverage ? { value: book.metadata.ratingAverage, label: book.metadata.ratingCount ? `(${compact(book.metadata.ratingCount)})` : '' } : null
               return (
                 <article className="lib-row" key={book.id}>
@@ -165,11 +170,12 @@ export function LibraryScreen() {
                   <div className="lib-row__text">
                     <strong>{book.title}</strong>
                     <span>{book.author}</span>
+                    {kindle && <small className="external-progress-label">Kindle {kindle.percentage}% · {new Date(kindle.updatedAt).toLocaleDateString('pt-BR')}</small>}
                     {rating && <span className="lib-row__meta"><Star size={14} aria-hidden="true" />{rating.value.toFixed(1).replace('.', ',')} {rating.label}</span>}
                   </div>
                   <div className="lib-row__side">
                     <button type="button" className="more-button" aria-label={`Opções de ${book.title}`} onClick={() => setMenu(book.id)}><Ellipsis size={20} /></button>
-                    <small>{percent}%</small>
+                    <small>{kindle ? `App ${percent}%` : `${percent}%`}</small>
                     <span className="progress-track" role="progressbar" aria-label={`Progresso de ${book.title}`} aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${percent}%` }} /></span>
                   </div>
                 </article>
@@ -267,7 +273,7 @@ function CollectionForm({ title, initial = '', onClose, onSave, footer }: { titl
 
 /** Renomeia (cria a nova, move os livros e remove a antiga) ou exclui uma coleção. */
 function CollectionEditor({ name, onClose, onRenamed, onRemoved }: { name: string; onClose: () => void; onRenamed: (name: string) => void; onRemoved: () => void }) {
-  const { snapshot, act, busy } = useWorkspace()
+  const { snapshot, act, busy, scope } = useWorkspace()
   const [confirm, setConfirm] = useState(false)
   const books = snapshot!.state.books.filter((book) => snapshot!.reading[book.id]?.shelf === name)
   async function rename(next: string) {
@@ -305,7 +311,7 @@ function CollectionEditor({ name, onClose, onRenamed, onRemoved }: { name: strin
 }
 
 function MoveToCollection({ book, onDone }: { book: Book; onDone: () => void }) {
-  const { snapshot, act, busy } = useWorkspace()
+  const { snapshot, act, busy, scope } = useWorkspace()
   const shelves = preferencesSchema.parse(snapshot!.preferences).shelves
   const current = snapshot!.reading[book.id]?.shelf ?? ''
   return (
