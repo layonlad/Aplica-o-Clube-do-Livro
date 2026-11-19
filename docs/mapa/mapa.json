@@ -6,9 +6,9 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Auditoria do backend publicada",
+    "fase": "Staging visual publicado",
     "tom": "ok",
-    "resumo": "PR 46 no ar em 4c7caf5 no Cloud Run e nos dois sites. Correções de progresso EPUB, capas, notificações, consultas ao banco e tempo do catálogo externo. 21 migrations, 270 testes locais, CI aprovado e 106 arquivos por site conferidos por SHA-256.",
+    "resumo": "Staging visual 1.0 disponível no Firebase. Produção segue no build 4c7caf5, com a primeira versão numerada aguardando promoção.",
     "proximoPasso": "Validar Staging e pedir a primeira promoção. A versão inicial será 1.0 em produção e as seguintes subirão 1.1, 1.2 e assim por diante.",
     "pendencias": [
       "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
@@ -401,7 +401,7 @@
       "autor": "Codex",
       "titulo": "Staging e versão do aplicativo",
       "resumo": "Criado endereço de testes no Firebase. Configurações identifica ambiente e versão. A base é 1.0 e o build de produção confere a candidata publicada em Staging. A prévia visual usa dados fictícios, com ambiente conectado em configuração.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/48"
     },
     {
       "data": "2026-11-19",
