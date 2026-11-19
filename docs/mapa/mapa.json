@@ -6,12 +6,13 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Sessão protegida e leitor EPUB publicados",
+    "fase": "Biblioteca Gratuita, Notícias e Kindle publicados",
     "tom": "ok",
-    "resumo": "PR 39 publicado nos dois Firebase Hosting no merge 26627b2. O app conectado exige sessão Firebase validada pela API antes das rotas privadas. Retoma o destino após login, mantém a sessão entre acessos, descarta caches transitórios ao sair e preserva navegação e posição EPUB. CI do PR e 236 testes locais aprovados. Chrome e WebKit validaram duas contas e o leitor localmente. Em produção, sete rotas por site levaram ao login sem sessão e 104 arquivos por site corresponderam ao build. API e executor em 9ce87a1.",
-    "proximoPasso": "Dono pode testar login, logout e EPUB no endereço principal. Aparelhos físicos e Google OAuth na nuvem continuam para teste com o dono. Revisar o PR conjunto da Biblioteca Gratuita e Notícias antes de aprovar o merge e a liberação. Produção continua manual e com autorização.",
+    "resumo": "PRs 44 e 38 publicados nos dois Firebase Hosting no merge be3a3e4. API e executor no código f7972e1, de árvore idêntica. Catálogo de nove edições, EPUB licenciado de A Cartomante e notícias da EBC. Progresso Kindle manual e anotações privadas. Migrations 020 e 021 aditivas, backup privado, 265 testes locais, CI aprovado e 107 arquivos por site conferidos por SHA-256.",
+    "proximoPasso": "Dono pode testar Livros Gratuitos em Explorar, Notícias em Comunidade e Enviar ao Kindle no menu da Biblioteca. Validar o recebimento no Kindle e o menu nativo em aparelho físico.",
     "pendencias": [
-      "Biblioteca Gratuita e Notícias: API integrada às telas Coral do PR 43. Uma edição EPUB autorizada, catálogo externo e notícias com discussões foram validados em staging local. A interface de recomendações e assuntos seguidos pode usar as rotas do contrato. Migration 020, grants e coleta aguardam autorização de liberação.",
+      "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
+      "Notícias usam metadados do RSS e link original. A primeira coleta importou uma manchete real. Recomendações, filtros avançados e acompanhamento de assuntos têm rotas na API; faltam controles correspondentes nas telas.",
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
       "Orçamento do projeto é de R$ 70/mês com alertas, sem corte automático de cobrança. Cloud SQL mínimo e instâncias Cloud Run limitadas; acompanhar uso antes de ampliar capacidade.",
@@ -29,7 +30,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "26627b2 · PR 39 publicado em 18/11/2026; API/executor 9ce87a1",
+      "versao": "be3a3e4 · PRs 44 e 38 publicados em 19/11/2026; API/executor f7972e1",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -37,7 +38,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health",
-      "versao": "9ce87a1 · API clube-livro-api-00005-fqj e executor clube-notifications-00004-6vl; digest 52ccc3e2; 19 migrations existentes preservadas",
+      "versao": "f7972e1 · API clube-livro-api-00006-cgh e executor clube-notifications-00005-rnr; digest a34ac653; 21 migrations instaladas",
       "atualizacao": "Cloud Build e deploy manual pelo digest no Cloud Run; mínimo zero, máximo uma instância",
       "tom": "ok"
     },
@@ -61,7 +62,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Branch codex/biblioteca-noticias: Telas do PR 43 conectadas à API e ao leitor no staging local com PostgreSQL e Firebase Auth Emulator.",
+      "versao": "Candidato dos PRs 44 e 38 testado com PostgreSQL, Auth Emulator, Chrome e WebKit.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -69,7 +70,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "26627b2 · mesmo frontend do site principal; 104 arquivos verificados por SHA-256",
+      "versao": "be3a3e4 · mesmo frontend do site principal; 107 arquivos verificados por SHA-256",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -386,6 +387,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-19",
+      "autor": "Codex",
+      "titulo": "Biblioteca Gratuita, Notícias e Kindle publicados",
+      "resumo": "PRs 44 e 38 no ar. Frontend be3a3e4 nos dois endereços, API e executor f7972e1. As migrations 020 e 021 mantiveram as permissões restritas. EPUB autorizado reutilizado para ler ou enviar ao Kindle. Notícias iniciadas com RSS oficial. CI aprovado, 265 testes locais, Chrome e WebKit e verificação de 107 arquivos por site.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/38"
+    },
     {
       "data": "2026-11-19",
       "autor": "Codex",
