@@ -124,9 +124,10 @@ const editions: readonly FreeEdition[] = [
   },
 ]
 
-const assets: Record<string, { filename: string; sha256: string }> = {
+const assets: Record<string, { filename: string; sha256: string; byteSize: number }> = {
   [cartomante]: {
     filename: cartomante + '.epub',
+    byteSize: 22585,
     sha256: 'eac519d66161560bc76b39d1b5ddf7cf45bb7911f5e1f25f49ea14e284363b40',
   },
 }
@@ -175,13 +176,23 @@ export function editionMention(text: string) {
   return candidates.length === 1 ? candidates[0] : null
 }
 
-export async function editionFile(id: string, purpose: 'read' | 'download' | 'transfer') {
-  const book = freeEdition(id), asset = assets[id]
-  if (book.availability !== 'internal' || !asset || !book.rights?.jurisdictions.includes('BR') ||
-      !book.rights.evidence.length || !book.rights.verifiedOn ||
-      !book.rights.read || !book.rights.store || !book.rights.redistribute || !book.rights[purpose]) throw missingLiterary()
+type FilePurpose = 'read' | 'download' | 'transfer'
+
+export function authorizedEditionAsset(id: string, purpose: FilePurpose) {
+  const book = editions.find(edition => edition.id === id)
+  const asset = assets[id]
+  if (book?.availability === 'internal' && asset && book.rights?.jurisdictions.includes('BR') &&
+      book.rights.evidence.length && book.rights.verifiedOn &&
+      book.rights.read && book.rights.store && book.rights.redistribute && book.rights[purpose]) {
+    return { ...asset, basis: book.rights.basis }
+  }
+}
+
+export async function editionFile(id: string, purpose: FilePurpose) {
+  const asset = authorizedEditionAsset(id, purpose)
+  if (!asset) throw missingLiterary()
   const bytes = await readFile(new URL(`../../assets/literary/${asset.filename}`, import.meta.url)).catch(() => null)
-  if (!bytes || createHash('sha256').update(bytes).digest('hex') !== asset.sha256)
+  if (!bytes || bytes.byteLength !== asset.byteSize || createHash('sha256').update(bytes).digest('hex') !== asset.sha256)
     throw new HttpError(503, 'LITERARY_FILE_UNAVAILABLE', 'O arquivo desta edição está temporariamente indisponível.')
   return { bytes, filename: asset.filename }
 }

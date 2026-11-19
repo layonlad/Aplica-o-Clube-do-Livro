@@ -34,8 +34,22 @@ it('preserva a licença e a edição na biblioteca, reusa o arquivo e salva prog
     expect(snapshot.state.books).toHaveLength(1)
     expect(snapshot.state.books[0].metadata).toMatchObject({ literaryEditionId: cartomante, literaryWorkId: 'machado-a-cartomante' })
     const id = one.json().bookId
+    const exportPath = '/v1/me/reading-integrations/kindle/books/' + id
+    const original = await app.inject({ url: exportPath + '/exports', headers })
+    expect(original.json().file).toMatchObject({ id, editionId: cartomante, permission: 'public_domain' })
+    const transfer = await app.inject({ url: exportPath + '/exports', method:'POST', headers, payload:{fileId:id} })
+    expect(transfer.statusCode).toBe(200)
+    expect(transfer.rawPayload.equals(epub.rawPayload)).toBe(true)
+    expect((await app.inject({ url: exportPath + '/permission', method:'POST', headers, payload:{fileId:id,permission:'personal'} })).statusCode).toBe(404)
+    expect((await app.inject({ url: exportPath + '/exports', headers:{authorization:'Bearer other-reader'} })).statusCode).toBe(404)
+    const external = await app.inject({ url: base + '/books/gutenberg-55752', headers, method:'POST' })
+    const externalId = external.json().bookId
+    const externalTransfer = await app.inject({ url:'/v1/me/reading-integrations/kindle/books/'+externalId+'/exports',
+      method:'POST',headers,payload:{fileId:externalId} })
+    expect(externalTransfer.statusCode).toBe(404)
+    const nextSnapshot = (await app.inject({ url:'/v1/me/workspace', headers })).json()
     const saved = await app.inject({ url:'/v1/me/workspace', headers, method:'POST', payload:{
-      version: snapshot.version, action: { type:'reading.update', id, percent: 47, favorite: true, status: 'reading' },
+      version: nextSnapshot.version, action: { type:'reading.update', id, percent: 47, favorite: true, status: 'reading' },
     } })
     expect(saved.json().reading[id]).toMatchObject({ percent:47, favorite:true })
     expect((await app.inject({ url:'/v1/me/book-files/' + id, headers })).json().items).toEqual([])

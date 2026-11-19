@@ -243,6 +243,7 @@
     {"de": "avisos", "para": "api", "texto": "ativo: limpeza limitada autenticada"}
   ],
   "dados": [
+    {"o_que": "Progresso Kindle, anotações importadas e histórico de exportação", "onde": "banco", "privacidade": "Privados do titular. Publicações incluem somente texto e percentual escolhidos pelo leitor, com as permissões do destino. Em revisão para publicação.", "copia": "Tabelas separadas no PostgreSQL. O TXT não é armazenado. A transferência usa o original pessoal privado, quando autorizado."},
     { "o_que": "Leituras de quem usa sem conta", "onde": "pessoa", "privacidade": "Só no aparelho", "copia": "Backup JSON exportado pelo Perfil; originais e mídias baixados separadamente" },
     { "o_que": "EPUB original e capa guardados neste navegador", "onde": "pessoa", "privacidade": "Cópias locais separadas por visitante ou conta", "copia": "IndexedDB; guardar no navegador não equivale a enviar o arquivo para a nuvem" },
     { "o_que": "E-mail, senha e login com Google", "onde": "auth", "privacidade": "Privado", "copia": "Gerenciado pelo Google" },
@@ -385,6 +386,20 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-19",
+      "autor": "Codex",
+      "titulo": "Integração do Kindle com a Biblioteca Gratuita",
+      "resumo": "PRs 38 e 44 combinados com a autenticação e a Biblioteca atuais. Migrations aditivas separadas. Candidato em validação antes de publicar.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/38"
+    },
+    {
+      "data": "2026-11-18",
+      "autor": "Codex",
+      "titulo": "Integrações de Leitura: EPUB, progresso e anotações Kindle",
+      "resumo": "Menu da Biblioteca prepara EPUB pessoal autorizado para o Send to Kindle, com download alternativo. Progresso informado e anotações My Clippings ficam privados. Histórico e meta anual são opcionais, e a reflexão usa o compositor dos clubes ou da comunidade. Migration 020 e grants restritos validados, com 231 testes e fluxos completos em Chrome e WebKit locais. Sem sincronização automática ou publicação em produção.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/38"
+    },
     {
       "data": "2026-11-18",
       "autor": "Codex",

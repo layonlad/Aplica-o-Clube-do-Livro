@@ -6,7 +6,7 @@ A biblioteca pessoal e a dos clubes já usam workspaces em PostgreSQL. A API Fas
 
 A API adiciona o módulo `server/src/literary/` a essa estrutura. Catálogo e edições têm identificadores separados. O arquivo autorizado é empacotado uma vez na imagem da API. O workspace guarda a referência por conta, com estado e posição individuais. Notícias e assuntos seguidos usam a migration aditiva 020. As discussões são posts existentes com um autor editorial reservado, com o mesmo controle de visibilidade. O perfil editorial fica privado e não pode autenticar.
 
-As telas, os componentes Coral e a navegação vieram do PR 43 do Claude Code. A integração usa o adaptador `src/literary/api.ts` e o leitor existente, sem carregar o EPUB na cota pessoal. O [contrato de integração](CONTRATO_FRONTEND.md) cobre rotas, campos e fluxos.
+As telas, os componentes Coral e a navegação vieram do PR 43 do Claude Code. A opção Enviar ao Kindle reutiliza o mesmo EPUB autorizado e verifica o direito de transferência do catálogo no servidor. A integração usa o adaptador `src/literary/api.ts` e o leitor existente, sem carregar o EPUB na cota pessoal. O [contrato de integração](CONTRATO_FRONTEND.md) cobre rotas, campos e fluxos.
 
 ## Fontes e direitos
 
@@ -28,12 +28,12 @@ As telas, os componentes Coral e a navegação vieram do PR 43 do Claude Code. A
    ```
 
 3. Com contas locais, abra Livros Gratuitos, adicione *A Cartomante*, abra o leitor e confira retomada. Verifique as restrições das edições externas. Em Notícias, abra o link original, curta, comente, salve, siga um tema e crie um debate. Compare o compartilhamento feito por um integrante com a rejeição de um estranho. A descoberta de clubes considera somente associação ativa.
-4. Em staging separado, aplique a migration 020 e depois `server/ops/runtime-grants.sql` como proprietário do banco. Valide a API com o papel restrito. `LITERARY_NEWS_SYNC=true` é opcional e usa a chamada protegida de manutenção do executor existente, com aquisição de janela no banco e até uma consulta por fonte por hora. Uma fonte indisponível não descarta os registros das outras fontes. A configuração vem desativada por padrão.
+4. Em staging separado, aplique as migrations 020 e 021 e depois `server/ops/runtime-grants.sql` como proprietário do banco. Valide a API com o papel restrito. `LITERARY_NEWS_SYNC=true` é opcional e usa a chamada protegida de manutenção do executor existente, com aquisição de janela no banco e até uma consulta por fonte por hora. Uma fonte indisponível não descarta os registros das outras fontes. A configuração vem desativada por padrão.
 
 ## Validação do backend
 
 - `npm run check` com codecs de vídeo, 109 testes de frontend e 51 unitários da API, builds frontend/API e validação do mapa.
-- `npm run test:integration`, 93 testes PostgreSQL. Inclui migration 020, papel restrito, entrada idempotente, leitura do EPUB, isolamento de contas, gravação do progresso, atualização agendada pela rota protegida, deduplicação de notícias, curtida, comentário, salvos, compartilhamento no clube, debate e assuntos seguidos.
+- `npm run test:integration`, 93 testes PostgreSQL. Inclui migrations 020 e 021, papel restrito, entrada idempotente, leitura do EPUB, isolamento de contas, gravação do progresso, atualização agendada pela rota protegida, deduplicação de notícias, curtida, comentário, salvos, compartilhamento no clube, debate e assuntos seguidos.
 - `npm run test:auth --workspace server` sob Firebase Auth Emulator, dois testes aprovados.
 - Consulta real por *Dom Casmurro* retornou três resultados e três edições pedidas. A edição OL58615644M retornou empréstimo externo. Nesta execução, a primeira consulta levou aproximadamente 1,61 s e a repetição em cache menos de 1 ms, sem nova chamada. Essa medição local é uma amostra.
 - As duas URLs RSS oficiais responderam. A amostra tinha um item literário da Radioagência. Os adaptadores de importação foram exercitados com CSV e OPDS de teste.
