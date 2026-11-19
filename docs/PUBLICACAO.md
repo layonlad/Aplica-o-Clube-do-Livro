@@ -2,7 +2,7 @@
 
 Produção migrada e verificada em **16/11/2026**, com autorização do dono, para o projeto Google/Firebase `gen-lang-client-0194308411`, nome de exibição **Projeto-clube-do-Livro**. O orçamento autorizado é de **R$ 70/mês**, com alertas; não é um corte automático de cobrança.
 
-Última atualização em 18/11/2026. O PR 39 saiu nos dois Firebase Hosting no merge `26627b2`, com correções de sessão e do leitor autenticado. API e executor permanecem em `9ce87a1`. [Resultado dos testes e verificação publicada](publicacoes/2026-11-18-sessao-epub.md).
+Última atualização em **19/11/2026**. Os PRs 44 e 38 publicaram Biblioteca Gratuita, Notícias e Kindle. Os dois sites servem o build do merge `be3a3e4`, com 107 arquivos verificados por SHA-256. API e executor usam a imagem de `f7972e1`, com a mesma árvore do merge. As migrations 020 e 021 foram aplicadas após backup privado, com permissões verificadas.
 
 ## Endereços
 
@@ -11,25 +11,25 @@ Produção migrada e verificada em **16/11/2026**, com autorização do dono, pa
 - [Mapa do projeto](https://layonlad.github.io/Aplica-o-Clube-do-Livro/mapa/).
 - [Endereço anterior em compatibilidade](https://project-acb850f4-4bb8-45de-a84.web.app/#/app), usando API e Auth novos.
 
-A entrada continua livre, sem cadastro ou participação em clube. Biblioteca e livros apenas locais permanecem no navegador e na origem em que foram salvos. O endereço de compatibilidade evita abandonar esse IndexedDB; o novo endereço possui armazenamento local próprio. Conta é opcional para sincronizar; convites dão acesso somente aos clubes correspondentes. A mudança de projeto Firebase pode exigir novo login.
+O app conectado exige uma conta com e-mail confirmado. O acesso aos clubes depende da associação. EPUBs locais permanecem no navegador e no endereço em que foram salvos.
 
 ## Recursos de produção
 
 | Recurso | Configuração |
 | --- | --- |
-| Frontend | Firebase Hosting, código `b7a7301`, PRs 31 e 33; redesenho em andamento do Claude preservado em branch separada |
+| Frontend | Firebase Hosting nos dois endereços, merge `be3a3e4`, PRs 44 e 38 |
 | Autenticação | Firebase Authentication, Google e e-mail/senha, UIDs e provedores preservados |
-| API | Cloud Run `clube-livro-api`, revisão `clube-livro-api-00005-fqj`, 1 CPU/1 GiB, mínimo zero, máximo uma instância, concorrência 2 |
+| API | Cloud Run `clube-livro-api`, revisão `clube-livro-api-00006-cgh`, 1 CPU/1 GiB, mínimo zero, máximo uma instância, concorrência 2 |
 | Banco | Cloud SQL `clube-livro-postgres`, PostgreSQL 17, `db-f1-micro`, HDD 10 GiB, zona única, região `us-central1` |
 | Papéis SQL | `clube_migrator`, `clube_runtime` e `clube_notifications`, com grants versionados e sem superusuário/DDL no runtime |
 | Arquivos | Cloud Storage for Firebase, bucket padrão privado do projeto, acesso público impedido |
-| Executor | Cloud Run privado `clube-notifications`, revisão `clube-notifications-00004-6vl`, 1 CPU/512 MiB, mínimo zero, máximo uma instância |
+| Executor | Cloud Run privado `clube-notifications`, revisão `clube-notifications-00005-rnr`, 1 CPU/512 MiB, mínimo zero, máximo uma instância |
 | Agendamento | Cloud Scheduler, `7,22,37,52 * * * *`, UTC, OIDC e identidade exclusiva |
 | Configuração privada | Secret Manager, acessos separados por identidade; sem arquivos de chave de serviço |
 | Imagens | Cloud Build e Artifact Registry `us-central1/clube-livro`; imagem pelo digest conferido |
 | Recuperação | Sete backups Cloud SQL, exportações privadas da migração e origens anteriores preservadas |
 
-Imagem atual da API e executor construída a partir de `9ce87a1a071adbd43585ad96c92a987c304fe57d`, digest `sha256:52ccc3e2c9b43a2cc1e295daa1c8376a905823f118d5441281330e0a919d83ca`. CI do merge e 221 testes locais aprovados; novos fluxos e limpeza sintética registrados no relatório Coral. Dezenove migrations e permissões preservadas; configuração anterior guardada para recuperação.
+Imagem atual da API e do executor construída a partir de `f7972e1862bc5a85cb17bf5bae43bc45759ac1f2`, digest `sha256:a34ac653f667347e689de0ef83c537461a1888ef25d410c858048d562b7fd965`. Passaram 265 testes locais e o CI do PR integrado. Os ensaios com Chrome e WebKit cobriram retomada de EPUB, download Kindle e anotações. As rotas públicas de catálogo e notícias e a proteção das rotas privadas foram conferidas em produção. A coleta inicial importou uma manchete real da EBC.
 
 ## Verificações da migração anterior
 
