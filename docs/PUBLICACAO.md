@@ -2,7 +2,7 @@
 
 Produção migrada e verificada em **16/11/2026**, com autorização do dono, para o projeto Google/Firebase `gen-lang-client-0194308411`, nome de exibição **Projeto-clube-do-Livro**. O orçamento autorizado é de **R$ 70/mês**, com alertas; não é um corte automático de cobrança.
 
-Última atualização em **19/11/2026**. Os PRs 44 e 38 publicaram Biblioteca Gratuita, Notícias e Kindle. Os dois sites servem o build do merge `be3a3e4`, com 107 arquivos verificados por SHA-256. API e executor usam a imagem de `f7972e1`, com a mesma árvore do merge. As migrations 020 e 021 foram aplicadas após backup privado, com permissões verificadas.
+Última atualização em **19/11/2026**. O PR 46 publicou a auditoria do backend e as correções de sincronização. Os dois sites servem o build do merge `4c7caf5`, com 106 arquivos verificados por SHA-256. A API e o executor usam a imagem deste mesmo commit. A publicação dispensou alterações no banco e nas permissões.
 
 ## Endereços
 
@@ -17,19 +17,19 @@ O app conectado exige uma conta com e-mail confirmado. O acesso aos clubes depen
 
 | Recurso | Configuração |
 | --- | --- |
-| Frontend | Firebase Hosting nos dois endereços, merge `be3a3e4`, PRs 44 e 38 |
+| Frontend | Firebase Hosting nos dois endereços, merge `4c7caf5`, PR 46 |
 | Autenticação | Firebase Authentication, Google e e-mail/senha, UIDs e provedores preservados |
-| API | Cloud Run `clube-livro-api`, revisão `clube-livro-api-00006-cgh`, 1 CPU/1 GiB, mínimo zero, máximo uma instância, concorrência 2 |
+| API | Cloud Run `clube-livro-api`, revisão `clube-livro-api-00007-kvd`, 1 CPU/1 GiB, mínimo zero, máximo uma instância, concorrência 2 |
 | Banco | Cloud SQL `clube-livro-postgres`, PostgreSQL 17, `db-f1-micro`, HDD 10 GiB, zona única, região `us-central1` |
 | Papéis SQL | `clube_migrator`, `clube_runtime` e `clube_notifications`, com grants versionados e sem superusuário/DDL no runtime |
 | Arquivos | Cloud Storage for Firebase, bucket padrão privado do projeto, acesso público impedido |
-| Executor | Cloud Run privado `clube-notifications`, revisão `clube-notifications-00005-rnr`, 1 CPU/512 MiB, mínimo zero, máximo uma instância |
+| Executor | Cloud Run privado `clube-notifications`, revisão `clube-notifications-00006-cm2`, 1 CPU/512 MiB, mínimo zero, máximo uma instância |
 | Agendamento | Cloud Scheduler, `7,22,37,52 * * * *`, UTC, OIDC e identidade exclusiva |
 | Configuração privada | Secret Manager, acessos separados por identidade; sem arquivos de chave de serviço |
 | Imagens | Cloud Build e Artifact Registry `us-central1/clube-livro`; imagem pelo digest conferido |
 | Recuperação | Sete backups Cloud SQL, exportações privadas da migração e origens anteriores preservadas |
 
-Imagem atual da API e do executor construída a partir de `f7972e1862bc5a85cb17bf5bae43bc45759ac1f2`, digest `sha256:a34ac653f667347e689de0ef83c537461a1888ef25d410c858048d562b7fd965`. Passaram 265 testes locais e o CI do PR integrado. Os ensaios com Chrome e WebKit cobriram retomada de EPUB, download Kindle e anotações. As rotas públicas de catálogo e notícias e a proteção das rotas privadas foram conferidas em produção. A coleta inicial importou uma manchete real da EBC.
+Imagem atual da API e do executor construída de `4c7caf508527a1cc92ce3b8f185cfa0fa9386829`, digest `sha256:6541555eaa707de608f079f0f4cc7cb0c3516227c6d6377c26ec2ad854d2fb11`. Passaram 270 testes locais, a validação em Chrome e WebKit e o CI do PR 46. As verificações da publicação cobriram saúde do banco, proteção de rotas privadas, origens de CORS, catálogo e notícias. O executor continuou inacessível sem autenticação.
 
 ## Verificações da migração anterior
 
