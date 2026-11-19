@@ -62,7 +62,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Auditoria do backend validada com PostgreSQL local e Firebase Auth Emulator.",
+      "versao": "Auditoria do backend validada com PostgreSQL, Firebase Auth Emulator, Chrome e WebKit locais.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -392,7 +392,7 @@
       "autor": "Codex",
       "titulo": "Auditoria e otimização do backend",
       "resumo": "Revisão de rotas, migrations, histórico e logs. Salvamento de leitura usa a revisão já confirmada, e a biblioteca consulta capas disponíveis. Consultas de notificações são compartilhadas. Leituras do espaço pessoal dispensam bloqueio e identidade estável dispensa gravação. O catálogo externo tem limite de espera. Arquivos obsoletos do Render e executor manual removidos. Rotas e permissões preservadas.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/46"
     },
     {
       "data": "2026-11-19",
