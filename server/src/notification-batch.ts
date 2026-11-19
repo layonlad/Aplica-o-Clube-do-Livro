@@ -55,7 +55,7 @@ export async function notificationBatch(env: NodeJS.ProcessEnv = process.env) {
         signal: AbortSignal.timeout(75000),
       })
       if (!response.ok) throw Error('Limpeza temporária indisponível.')
-      const photos = (await response.json()) as { purged: number; failed: number }
+      const photos = (await response.json()) as { purged: number; failed: number; literaryNews?: { inserted: number; failedSources: number; skipped: boolean } }
       if (!Number.isSafeInteger(photos.purged) || !Number.isSafeInteger(photos.failed))
         throw Error('Resultado de limpeza inválido.')
       return {
@@ -63,6 +63,13 @@ export async function notificationBatch(env: NodeJS.ProcessEnv = process.env) {
         ...result,
         temporaryPhotosPurged: photos.purged,
         temporaryPhotosFailed: photos.failed,
+        ...(photos.literaryNews && Number.isSafeInteger(photos.literaryNews.inserted) &&
+            Number.isSafeInteger(photos.literaryNews.failedSources) &&
+            typeof photos.literaryNews.skipped === 'boolean' ? {
+          literaryNewsImported: photos.literaryNews.inserted,
+          literaryNewsFailedSources: photos.literaryNews.failedSources,
+          literaryNewsSkipped: photos.literaryNews.skipped,
+        } : {}),
       }
     } finally {
       await lease.query('SELECT pg_advisory_unlock(57291106)')

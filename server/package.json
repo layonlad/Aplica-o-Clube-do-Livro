@@ -11,6 +11,7 @@
     "start": "node --env-file-if-exists=.env dist/index.js",
     "migrate": "tsx --env-file-if-exists=.env src/migrate.ts",
     "notifications:work": "tsx scripts/notification-worker.ts",
+    "news:sync": "tsx --env-file-if-exists=.env scripts/literary-news-sync.ts",
     "media:cleanup": "tsx --env-file-if-exists=.env src/cleanup-media.ts",
     "test": "vitest run --config vitest.config.ts",
     "test:integration": "tsx test/run-postgres.ts integration",
