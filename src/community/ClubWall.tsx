@@ -217,6 +217,7 @@ export function PostComposer({
   quick = false,
   initialPoll = false,
   onCancel,
+  kind = 'reflection',
 }: {
   clubId: string | null
   onPublished: () => void
@@ -225,6 +226,8 @@ export function PostComposer({
   /** Dentro de uma folha (botão "Criar publicação"): o formulário já vem aberto e "Cancelar" fecha a folha. */
   initialPoll?: boolean
   onCancel?: () => void
+  /** Tipo da publicação quando não é enquete (ex.: 'question' para abrir um debate). */
+  kind?: 'reflection' | 'question'
 }) {
   const ownAvatar = useOwnAvatar(),
     { user } = useAuth()
@@ -246,7 +249,7 @@ export function PostComposer({
     setError('')
     const input = {
       body,
-      kind: poll ? 'poll' : 'reflection',
+      kind: poll ? 'poll' : kind,
       mediaIds: media.map((item) => item.id),
       options: poll
         ? options
@@ -351,7 +354,7 @@ export function PostComposer({
               required
               value={body}
               onChange={(event) => setBody(event.target.value)}
-              placeholder="O que você está pensando sobre sua leitura?"
+              placeholder={kind === 'question' && !poll ? 'Qual pergunta você quer debater com a comunidade?' : 'O que você está pensando sobre sua leitura?'}
             />
           </label>
           {poll && (

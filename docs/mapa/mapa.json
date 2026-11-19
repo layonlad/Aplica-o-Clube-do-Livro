@@ -386,6 +386,13 @@
   "atualizacoes": [
     {
       "data": "2026-11-18",
+      "autor": "Claude",
+      "titulo": "Telas da Biblioteca Gratuita, Notícias e abas da Comunidade",
+      "resumo": "Nova tela Livros Gratuitos (Explorar → Ver todos e atalho na Biblioteca): carrosséis, categorias, idioma, busca, detalhes com licença verificada e Ler agora/Adicionar, que baixam o EPUB autorizado e usam a importação e a cota de sempre. Comunidade ganhou abas Feed, Clubes, Notícias e Debates (perguntas públicas; Abrir debate publica como pergunta). Contrato v1 em docs/CONTRATO_LIVROS_GRATUITOS_NOTICIAS.md para o Codex implementar /v1/free-books e /v1/news; até lá as telas avisam que o recurso está sendo conectado, sem dados fictícios. 109 testes do site aprovados, tsc e build ok. Sem mudança de servidor nem produção.",
+      "pr": "pendente"
+    },
+    {
+      "data": "2026-11-18",
       "autor": "Codex",
       "titulo": "Sessão protegida e retomada do EPUB publicadas nos dois sites",
       "resumo": "PR 39 mesclado e frontend 26627b2 publicado em cópia limpa. CI aprovado no PR, 236 testes locais e ensaios Chrome/WebKit com duas contas. Produção verificou sete rotas protegidas, cadastro e recuperação por site sem sessão, sem chamadas privadas ou erros. 104 arquivos por site iguais ao build por SHA-256. API e executor continuam em 9ce87a1, sem migrations novas.",

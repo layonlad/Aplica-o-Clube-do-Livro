@@ -25,7 +25,7 @@ const nav: NavItem[] = [
 ]
 
 /** Telas que desenham o próprio cabeçalho em gradiente (as seis das referências). */
-const MAIN = ['/app', '/app/explore', '/app/library', '/app/community', '/app/profile', '/app/clubs']
+const MAIN = ['/app', '/app/explore', '/app/explore/gratuitos', '/app/library', '/app/community', '/app/profile', '/app/clubs']
 
 /** Título da barra compacta das telas internas. */
 function titleFor(pathname: string, personal: boolean, clubName: string) {
