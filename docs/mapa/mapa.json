@@ -389,7 +389,7 @@
       "autor": "Codex",
       "titulo": "Desempenho mobile e base iOS e Android",
       "resumo": "Cache de feed e fotos por conta, paginação e rolagem preservadas, carregamento por aba e resumo agregado de clubes. Chrome e WebKit validaram as cinco abas nas doze larguras e repetiram os fluxos de sessão e EPUB. Capacitor sincronizado para staging; assinatura, binários, aparelhos físicos e requisitos de conta e moderação pendentes. Produção continua nas versões anteriores.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/42"
     },
     {
       "data": "2026-11-18",
