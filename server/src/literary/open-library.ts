@@ -7,10 +7,12 @@ const origin = 'https://openlibrary.org'
 export const workPattern = /^OL\d{1,12}W$/
 export const editionPattern = /^OL\d{1,12}M$/
 export const authorPattern = /^OL\d{1,12}A$/
+const requestBudgetMs = 5000
+const unavailable = () => new HttpError(503, 'CATALOG_UNAVAILABLE', 'O catálogo externo está indisponível. Tente novamente mais tarde.')
 const throttled = () => new HttpError(429, 'CATALOG_BUSY', 'Aguarde um instante antes de pesquisar novamente.')
 
 export class OpenLibraryClient {
-  private cache = new Map<string, { value: unknown; expires: number }>()
+  private cache = new Map<string, { value: unknown; expires: number; staleUntil: number }>()
   private pending = new Map<string, Promise<unknown>>()
   private nextSlot = 0
   constructor(
@@ -27,36 +29,48 @@ export class OpenLibraryClient {
     if (this.pending.size >= 4) throw throttled()
     const task = this.fetchPath(path).then((value) => {
       this.cache.delete(path)
-      this.cache.set(path, { value, expires: this.now() + ttl })
+      const expires = this.now() + ttl
+      this.cache.set(path, { value, expires, staleUntil: expires + (path.startsWith('/search.json?') ? 3_600_000 : 0) })
       if (this.cache.size > 192) this.cache.delete(this.cache.keys().next().value!)
       return value
+    }).catch(error => {
+      if (existing && existing.staleUntil > this.now() && error instanceof HttpError &&
+          (error.statusCode === 429 || error.statusCode === 503)) {
+        this.cache.set(path, { ...existing, expires: Math.min(this.now() + 30_000, existing.staleUntil) })
+        return existing.value
+      }
+      throw error
     }).finally(() => this.pending.delete(path))
     this.pending.set(path, task)
     return task
   }
 
   private async fetchPath(path: string): Promise<unknown> {
+    const deadline = this.now() + requestBudgetMs
+    let rateLimited = false
     for (let attempt = 0; attempt < 2; attempt++) {
       const now = this.now()
       const slot = Math.max(now, this.nextSlot)
-      if (slot - now > 6000) throw throttled()
+      if (slot >= deadline) throw attempt === 0 || rateLimited ? throttled() : unavailable()
       this.nextSlot = slot + 1100
       if (slot > now) await this.delay(slot - now)
+      const remaining = deadline - this.now()
+      if (remaining <= 0) break
       try {
         const response = await this.request(origin + path, {
           headers: { 'User-Agent': userAgent, Accept: 'application/json' },
-          signal: AbortSignal.timeout(6000), redirect: 'error',
+          signal: AbortSignal.timeout(Math.min(4000, remaining)), redirect: 'error',
         })
         if (response.ok) return JSON.parse(await readLimited(response, 1_500_000))
         await response.body?.cancel()
         if (response.status === 404) throw missingLiterary()
-        if (response.status === 429 || response.status === 503) {
+        rateLimited = response.status === 429
+        if (rateLimited || response.status === 503) {
           const header = response.headers.get('retry-after')
           const delay = header && /^\d+$/.test(header) ? Number(header) * 1000 :
             header ? Math.max(0, Date.parse(header) - this.now()) : 0
           this.nextSlot = Math.max(this.nextSlot, this.now() + (Number.isFinite(delay) ? delay : 0))
           if (attempt === 0) continue
-          if (response.status === 429) throw throttled()
         }
       } catch (error) {
         if (error instanceof HttpError) throw error
@@ -64,7 +78,7 @@ export class OpenLibraryClient {
       }
       break
     }
-    throw new HttpError(503, 'CATALOG_UNAVAILABLE', 'O catálogo externo está indisponível. Tente novamente mais tarde.')
+    throw rateLimited ? throttled() : unavailable()
   }
 }
 

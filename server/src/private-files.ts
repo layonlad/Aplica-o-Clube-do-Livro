@@ -124,17 +124,13 @@ export class PrivateFiles {
   }
   async cover(userId: string, bookId: string) {
     if (!this.storage) throw unavailable()
-    const file = await transaction(this.pool, async (client) => {
-      await this.book(client, userId, bookId)
-      const {
-        rows: [file],
-      } = await client.query<FileRow>(
-        "SELECT * FROM private_book_files WHERE owner_user_id=$1 AND book_id=$2 AND state='active'",
-        [userId, bookId],
-      )
-      if (!file) throw missing()
-      return file
-    })
+    const { rows: [file] } = await this.pool.query<Pick<FileRow, 'id' | 'object_key'>>(
+      `SELECT f.id,f.object_key FROM private_book_files f
+       WHERE f.owner_user_id=$1 AND f.book_id=$2 AND f.state='active'
+       AND EXISTS(SELECT 1 FROM personal_workspaces w WHERE w.user_id=f.owner_user_id AND w.state->'books' @> $3::jsonb)`,
+      [userId, bookId, JSON.stringify([{ id: bookId }])],
+    )
+    if (!file) throw missing()
     return privateEpubCover(file.id, () => this.storage!.get(file.object_key))
   }
   private async purge(id: string, key: string) {
