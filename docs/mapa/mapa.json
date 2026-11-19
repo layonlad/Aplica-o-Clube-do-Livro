@@ -6,10 +6,10 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Biblioteca Gratuita, Notícias e Kindle publicados",
+    "fase": "Auditoria do backend publicada",
     "tom": "ok",
-    "resumo": "PRs 44 e 38 publicados nos dois Firebase Hosting no merge be3a3e4. API e executor no código f7972e1, de árvore idêntica. Catálogo de nove edições, EPUB licenciado de A Cartomante e notícias da EBC. Progresso Kindle manual e anotações privadas. Migrations 020 e 021 aditivas, backup privado, 265 testes locais, CI aprovado e 107 arquivos por site conferidos por SHA-256.",
-    "proximoPasso": "Revisar o PR da auditoria e aprovar a publicação pela ordem API, executor e sites. Depois, comparar o volume de conflitos de leitura, requisições de capa e tempo do catálogo nos logs.",
+    "resumo": "PR 46 no ar em 4c7caf5 no Cloud Run e nos dois sites. Correções de progresso EPUB, capas, notificações, consultas ao banco e tempo do catálogo externo. 21 migrations, 270 testes locais, CI aprovado e 106 arquivos por site conferidos por SHA-256.",
+    "proximoPasso": "Acompanhar o próximo volume de uso e comparar conflitos de leitura, requisições de capa e tempo do catálogo. Recebimento do EPUB no Kindle e menu nativo aguardam teste em aparelho físico.",
     "pendencias": [
       "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
       "Notícias usam metadados do RSS e link original. A primeira coleta importou uma manchete real. Recomendações, filtros avançados e acompanhamento de assuntos têm rotas na API; faltam controles correspondentes nas telas.",
@@ -30,7 +30,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "be3a3e4 · PRs 44 e 38 publicados em 19/11/2026; API/executor f7972e1",
+      "versao": "4c7caf5 · PR 46 publicado em 19/11/2026; 106 arquivos verificados por SHA-256",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -38,7 +38,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health",
-      "versao": "f7972e1 · API clube-livro-api-00006-cgh e executor clube-notifications-00005-rnr; digest a34ac653; 21 migrations instaladas",
+      "versao": "4c7caf5 · API clube-livro-api-00007-kvd e executor clube-notifications-00006-cm2; digest 6541555e; 21 migrations instaladas",
       "atualizacao": "Cloud Build e deploy manual pelo digest no Cloud Run; mínimo zero, máximo uma instância",
       "tom": "ok"
     },
@@ -70,7 +70,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "be3a3e4 · mesmo frontend do site principal; 107 arquivos verificados por SHA-256",
+      "versao": "4c7caf5 · mesmo frontend do site principal; 106 arquivos verificados por SHA-256",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -387,6 +387,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-19",
+      "autor": "Codex",
+      "titulo": "Publicação da auditoria do backend",
+      "resumo": "PR 46 publicado do merge 4c7caf5. API e executor primeiro, depois ambos os Firebase Hosting. Rotas e permissões mantidas. Saúde, CORS e proteção de rotas verificados. 106 arquivos idênticos ao build em cada site.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/46"
+    },
     {
       "data": "2026-11-19",
       "autor": "Codex",
