@@ -1,7 +1,6 @@
 import { ArrowRight, BookHeart, Check, LockKeyhole, Mail, Ticket } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { isStaging, version } from '../app/release'
 import { useTheme } from '../app/ThemeProvider'
 import { Button, DemoBadge } from '../components/ui'
 import { BowSticker, FlowerSticker, StarSticker } from '../components/Stickers'
@@ -31,7 +30,6 @@ export function LoginPage() {
           <span className="brand-mark brand-mark--hero">{theme.monogram}</span>
           <DemoBadge />
         </div>
-        {isStaging && <p className="access-release">Staging · Versão {version}</p>}
         <p className="eyebrow">BEM-VINDA AO</p>
         <h1>{theme.clubName}</h1>
         <p className="login-lead">Leituras que aproximam.<br />Conversas que ficam.</p>

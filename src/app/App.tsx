@@ -1,6 +1,4 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { ReleaseFooter } from './ReleaseFooter'
-import { isStaging } from './release'
 import { WorkspaceApp } from '../workspace/WorkspaceApp'
 import { MobileShell } from '../components/MobileShell'
 import { AdminPage } from '../pages/AdminPage'
@@ -28,7 +26,6 @@ export function App() {
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="forum" element={<ForumPage />} />
         <Route path="profile" element={<ProfilePage />} />
-        {isStaging && <Route path="ajustes" element={<section className="settings-hub"><h1>Configurações</h1><ReleaseFooter /></section>} />}
         <Route path="nominations" element={<NominationsPage />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="admin" element={<AdminPage />} />

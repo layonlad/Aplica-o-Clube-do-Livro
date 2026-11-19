@@ -1,7 +1,6 @@
 {
   "projects": {
     "production": "gen-lang-client-0194308411",
-    "legacy": "project-acb850f4-4bb8-45de-a84",
-    "staging": "clube-do-livro-staging-01943"
+    "legacy": "project-acb850f4-4bb8-45de-a84"
   }
 }

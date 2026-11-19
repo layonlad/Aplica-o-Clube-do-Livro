@@ -1,6 +1,5 @@
 import { Award, Bell, BookOpenCheck, ChevronRight, Heart, LogOut, Moon, Settings2, Star, Target } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { isStaging } from '../app/release'
 import { Avatar, Card, DemoBadge, ProgressBar } from '../components/ui'
 
 export function ProfilePage() {
@@ -13,7 +12,6 @@ export function ProfilePage() {
       <Card className="goal-card"><div className="section-heading"><div><span className="eyebrow">META DE 2026</span><h2>12 de 16 livros</h2></div><Target /></div><ProgressBar value={75} /><p>Faltam 4 livros para sua meta anual.</p></Card>
       <section><div className="section-heading"><div><span className="eyebrow">CONQUISTAS</span><h2>Sua estante de momentos</h2></div></div><div className="achievement-row"><span><Award />Fundadora</span><span><BookOpenCheck />12 em um ano</span><span><Heart />Boa conversa</span></div></section>
       <Card className="settings-list">
-        {isStaging && <Link to="/app/ajustes"><span><Settings2 /> Configurações</span><ChevronRight /></Link>}
         <button><span><Bell /> Notificações</span><ChevronRight /></button>
         <button><span><Moon /> Aparência</span><ChevronRight /></button>
         <button><span><Star /> Preferências de leitura</span><ChevronRight /></button>

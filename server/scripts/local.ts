@@ -4,10 +4,15 @@ import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
+import { localProfile } from './local-profile.js'
 
 // A local-only launcher. It never reads server/.env or connects to a cloud project.
 const root = fileURLToPath(new URL('../../', import.meta.url))
-const directory = join(root, '.local-data')
+const staging = process.argv.includes('--staging')
+const profile = localProfile(staging)
+const origin = `http://localhost:${profile.frontend}`
+const authHost = `127.0.0.1:${profile.auth}`
+const directory = join(root, profile.directory)
 await mkdir(directory, { recursive: true, mode: 0o700 })
 const secretPath = join(directory, 'postgres-password')
 let password: string
@@ -18,7 +23,7 @@ catch (error) {
   await writeFile(secretPath, password, { mode: 0o600, flag: 'wx' })
 }
 const postgres = new EmbeddedPostgres({
-  databaseDir: join(directory, 'postgres'), user: 'clube_local', password, port: 54329,
+  databaseDir: join(directory, 'postgres'), user: 'clube_local', password, port: profile.postgres,
   authMethod: 'scram-sha-256', persistent: true, createPostgresUser: false,
   initdbFlags: ['--encoding=UTF8', '--locale=C'],
   postgresFlags: ['-h', '127.0.0.1', '-k', '/tmp'],
@@ -38,19 +43,21 @@ try {
   const imported = await access(join(authData, 'firebase-export-metadata.json')).then(() => true, () => false)
   const child = spawn(process.execPath, [
     join(root, 'node_modules/firebase-tools/lib/bin/firebase.js'),
-    'emulators:exec', '--only', 'auth', '--project', 'demo-clube-do-livro',
+    'emulators:exec', '--only', 'auth', '--project', profile.projectId,
+    '--config', join(root, staging ? 'firebase.staging-local.json' : 'firebase.json'),
     ...(imported ? [`--import=${authData}`] : []), `--export-on-exit=${authData}`,
     'npm run local:app --workspace server',
   ], {
     cwd: root, stdio: 'inherit',
     env: {
       ...process.env, NODE_ENV: 'development',
-      DATABASE_URL: `postgresql://clube_local:${password}@127.0.0.1:54329/clube_local`,
-      FIREBASE_PROJECT_ID: 'demo-clube-do-livro', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
-      FRONTEND_ORIGIN: 'http://localhost:5173', HOST: '127.0.0.1', PORT: '3001',
-      VITE_APP_MODE: 'connected', VITE_API_URL: 'http://localhost:3001',
-      VITE_FIREBASE_API_KEY: 'demo-key', VITE_FIREBASE_PROJECT_ID: 'demo-clube-do-livro',
-      VITE_FIREBASE_AUTH_DOMAIN: 'demo-clube-do-livro.firebaseapp.com', VITE_FIREBASE_AUTH_EMULATOR_URL: 'http://127.0.0.1:9099',
+      DATABASE_URL: `postgresql://clube_local:${password}@127.0.0.1:${profile.postgres}/clube_local`,
+      FIREBASE_PROJECT_ID: profile.projectId, FIREBASE_AUTH_EMULATOR_HOST: authHost,
+      FRONTEND_ORIGIN: origin, HOST: '127.0.0.1', PORT: String(profile.api),
+      VITE_APP_ENVIRONMENT: staging ? 'staging' : 'local',
+      VITE_APP_MODE: 'connected', VITE_API_URL: `http://localhost:${profile.api}`,
+      VITE_FIREBASE_API_KEY: 'demo-key', VITE_FIREBASE_PROJECT_ID: profile.projectId,
+      VITE_FIREBASE_AUTH_DOMAIN: profile.projectId + '.firebaseapp.com', VITE_FIREBASE_AUTH_EMULATOR_URL: 'http://' + authHost,
     },
   })
   process.once('SIGINT', () => child.kill('SIGINT'))

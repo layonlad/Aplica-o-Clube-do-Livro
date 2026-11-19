@@ -50,15 +50,10 @@ Login interativo com a conta Google do dono, recebimento de e-mail e push em apa
 
 ### Staging e numeração
 
-- **Staging visual** usa o [site de testes](https://clube-do-livro-previa-01943.web.app) com dados fictícios. A conexão com Firebase Auth, API e banco de teste depende do projeto exclusivo de Staging.
-- **Produção** usa os dois endereços do aplicativo da seção Endereços. Configurações mostra o ambiente e a versão no rodapé.
-- A base é **1.0**. A candidata da próxima publicação passa a **1.1**, depois **1.2**, e assim por diante. Iterações na mesma candidata usam o mesmo número, em `release.json`.
-- Publique primeiro em Staging e envie o link com a versão. O dono testa e pede a promoção. O build de produção confere o manifesto público de Staging e aceita somente a candidata correspondente e a próxima versão. O manifesto identifica ambiente, versão, commit e hash do código. Cada deploy deve usar uma cópia limpa do commit aprovado.
-- Para Staging conectado, prepare `.env.staging.local` com o Firebase exclusivo e a API de teste. Use `npm run build:staging`. Para a prévia visual use `npm run build:staging -- --demo` e publique só o site de testes:
-
-```bash
-npx -y firebase-tools@latest deploy --only hosting --config firebase.staging.json --project production
-```
+- **Staging** roda com `npm run staging` em [localhost:5174](http://localhost:5174/#/app/ajustes). API, PostgreSQL, arquivos e Auth Emulator são locais e ficam separados dos dados do desenvolvimento regular. O processo persiste contas e dados de teste em `.local-data/staging/`.
+- **Produção** usa os endereços do aplicativo da seção Endereços. Configurações identifica o ambiente e a versão no rodapé.
+- A base é **1.0**. A candidata da próxima publicação passa a **1.1**, depois **1.2**, e assim por diante. Iterações na mesma candidata usam o mesmo número em `release.json`.
+- Abra a candidata local e envie o link para avaliação. Ao iniciar com um commit limpo, Staging grava `.local-data/staging/release.json`, com ambiente, versão, commit e hash do código. Após a aprovação, o build de produção verifica a correspondência e a sequência. Em outra worktree, aponte `STAGING_RELEASE_FILE` para o caminho absoluto desse registro.
 
 ### Produção após a aprovação
 
