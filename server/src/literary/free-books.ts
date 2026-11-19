@@ -144,7 +144,7 @@ export interface FreeSearch extends LiteraryPage {
 export function searchFree(input: FreeSearch) {
   const q = foldLiterary(input.q ?? ''), title = foldLiterary(input.title ?? ''), author = foldLiterary(input.author ?? '')
   const matches = editions.filter(edition =>
-    foldLiterary(edition.title + ' ' + edition.author).includes(q) && foldLiterary(edition.title).includes(title) &&
+    foldLiterary([edition.title, edition.author, ...edition.genres.map(genre => genreLabels[genre])].join(' ')).includes(q) && foldLiterary(edition.title).includes(title) &&
     foldLiterary(edition.author).includes(author) && (!input.language || edition.language === input.language) &&
     (!input.genre || edition.genres.includes(input.genre)) && (!input.availability || edition.availability === input.availability) &&
     (!input.format || edition.format === input.format),

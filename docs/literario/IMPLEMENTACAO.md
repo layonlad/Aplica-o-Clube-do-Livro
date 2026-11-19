@@ -6,7 +6,7 @@ A biblioteca pessoal e a dos clubes já usam workspaces em PostgreSQL. A API Fas
 
 A API adiciona o módulo `server/src/literary/` a essa estrutura. Catálogo e edições têm identificadores separados. O arquivo autorizado é empacotado uma vez na imagem da API. O workspace guarda a referência por conta, com estado e posição individuais. Notícias e assuntos seguidos usam a migration aditiva 020. As discussões são posts existentes com um autor editorial reservado, com o mesmo controle de visibilidade. O perfil editorial fica privado e não pode autenticar.
 
-O Claude Code implementa as telas, os componentes Coral, a conexão com o leitor e os testes visuais. O [contrato de integração](CONTRATO_FRONTEND.md) cobre rotas, campos e fluxos. A branch de backend pode ser testada com o frontend atual e integrada à branch do Claude em uma cópia descartável.
+As telas, os componentes Coral e a navegação vieram do PR 43 do Claude Code. A integração usa o adaptador `src/literary/api.ts` e o leitor existente, sem carregar o EPUB na cota pessoal. O [contrato de integração](CONTRATO_FRONTEND.md) cobre rotas, campos e fluxos.
 
 ## Fontes e direitos
 
@@ -17,7 +17,7 @@ O Claude Code implementa as telas, os componentes Coral, a conexão com o leitor
 
 ## Staging
 
-1. Em uma cópia combinada das branches, rode `npm ci` e `npm run dev:local`. O lançador inicia PostgreSQL e Firebase Auth Emulator locais, aplica migrations e serve site em `http://localhost:5173` e API em `http://127.0.0.1:3001`. O diretório ignorado `.local-data` guarda esses dados.
+1. Na branch `codex/biblioteca-noticias`, rode `npm ci` e `npm run dev:local`. O lançador inicia PostgreSQL e Firebase Auth Emulator locais, aplica migrations e serve site em `http://localhost:5173` e API em `http://127.0.0.1:3001`. O diretório ignorado `.local-data` guarda esses dados.
 2. Para coletar manchetes reais no PostgreSQL local, rode em outro terminal o comando abaixo enquanto o lançador estiver ativo. Mantenha o comando e suas variáveis no ambiente local. O importador valida host, nome do banco e modo de execução.
 
    ```sh
@@ -32,15 +32,15 @@ O Claude Code implementa as telas, os componentes Coral, a conexão com o leitor
 
 ## Validação do backend
 
-- `npm run check` com codecs de vídeo, 99 testes de frontend existente e 51 unitários da API, builds frontend/API e validação do mapa.
+- `npm run check` com codecs de vídeo, 109 testes de frontend e 51 unitários da API, builds frontend/API e validação do mapa.
 - `npm run test:integration`, 93 testes PostgreSQL. Inclui migration 020, papel restrito, entrada idempotente, leitura do EPUB, isolamento de contas, gravação do progresso, deduplicação de notícias, curtida, comentário, salvos, compartilhamento no clube, debate e assuntos seguidos.
 - `npm run test:auth --workspace server` sob Firebase Auth Emulator, dois testes aprovados.
 - Consulta real por *Dom Casmurro* retornou três resultados e três edições pedidas. A edição OL58615644M retornou empréstimo externo. Nesta execução, a primeira consulta levou aproximadamente 1,61 s e a repetição em cache menos de 1 ms, sem nova chamada. Essa medição local é uma amostra.
 - As duas URLs RSS oficiais responderam. A amostra tinha um item literário da Radioagência. Os adaptadores de importação foram exercitados com CSV e OPDS de teste.
-- A experiência conjunta no navegador e a matriz de larguras dependem das telas do Claude. As verificações de cobertura visual, responsividade e retomada pelo leitor continuam na entrega conjunta.
+- Chrome local validou as telas combinadas, as larguras 320, 360, 375, 390, 393, 414, 430, 768 e 1280 px, a adição e leitura de *A Cartomante*, três viradas, a retomada na mesma página, a cota pessoal em zero e a discussão de uma notícia importada do RSS oficial.
 
 ## Arquivos e liberação
 
 A implementação está em `server/src/literary/`, `server/assets/literary/`, `server/migrations/020_literary_news.sql`, `server/ops/runtime-grants.sql`, `server/scripts/literary-news-sync.ts` e `scripts/literary/import-catalog.py`. Workspace, posts, descoberta e executor receberam a conexão necessária. Os testes novos ficam em `server/test/literary.*.test.ts`; os ensaios de atualização e permissões foram ampliados. O gerador do mapa descobre as rotas do novo módulo.
 
-Produção aguarda a validação conjunta, aprovação do merge e autorização de liberação. A ordem de publicação é migration e permissões, API/executor, validação das rotas, frontend e teste ponta a ponta.
+Testes em aparelhos físicos, filtros avançados no frontend, recomendações na interface e controles de compartilhamento no clube e de assuntos seguidos continuam para evolução das telas. As rotas correspondentes estão no contrato. Produção aguarda aprovação do merge e autorização de liberação. A ordem de publicação é migration e permissões, API/executor, validação das rotas, frontend e teste ponta a ponta.

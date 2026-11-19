@@ -46,6 +46,7 @@ export class WorkspaceService {
           category: genreLabels[edition.genres[0]] ?? '', content: '',
           metadata: {
             literaryEditionId: edition.id, literaryWorkId: edition.workId, language: edition.language,
+            literaryEpub: edition.availability === 'internal' && edition.rights?.read === true,
             year: edition.year === null ? undefined : String(edition.year), source: edition.source, synopsis: edition.description,
             license: edition.rights?.license ?? 'Leitura conforme as condições da fonte externa.',
           },

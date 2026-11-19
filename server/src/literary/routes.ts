@@ -48,7 +48,8 @@ export async function registerLiteraryReads(
     literary.get('/free', request => searchFree(freeInput.parse(request.query)))
     literary.get('/free/:id', request => freeEdition(bookId.parse(request.params).id))
     literary.get('/free/:id/cover', async (request, reply) =>
-      reply.type('image/jpeg').send(await editionCover(bookId.parse(request.params).id)))
+      reply.type('image/jpeg').header('Cross-Origin-Resource-Policy', 'cross-origin')
+        .send(await editionCover(bookId.parse(request.params).id)))
     literary.get('/news', { onRequest: optionalAuth }, request => {
       const { followed, ...input } = newsInput.parse(request.query)
       return news.list(request.user ?? null, { ...input, followed: followed === '1' })

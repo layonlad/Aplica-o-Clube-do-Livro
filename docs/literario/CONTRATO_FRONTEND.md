@@ -1,6 +1,6 @@
 # Contrato Biblioteca Gratuita e Notícias
 
-Backend no worktree `/private/tmp/clube-literary` e branch `codex/biblioteca-noticias`. As telas Coral, rotas React e conexão com o leitor ficam com o Claude, em sua própria branch. Mantenha a barra inferior com cinco destinos. Use Explorar → Livros Gratuitos e Comunidade → Feed, Clubes, Notícias, Debates. As rotas abaixo incluem o prefixo `/v1`.
+As telas Coral do PR 43 usam este contrato por meio de `src/literary/api.ts`. A barra inferior tem cinco destinos. Os novos fluxos são Explorar → Livros Gratuitos e Comunidade → Feed, Clubes, Notícias, Debates. As rotas abaixo incluem o prefixo `/v1`.
 
 ## Catálogo
 
@@ -15,7 +15,7 @@ Backend no worktree `/private/tmp/clube-literary` e branch `codex/biblioteca-not
 | GET `/literary/free` | `q`, `title`, `author`, `genre`, `language`, `availability=internal|external|catalog`, `format=epub|web`, `sort=relevance|new|old`, `page`, `limit` | `{items,nextPage,genres}`. Edições curadas têm `id,workId,title,author,language,year,genres,description,provider,source,coverPath,format,availability,rights`. |
 | GET `/literary/free/:id` | ID da edição curada | Uma edição. `year=null` para data desconhecida e `rights=null` para links apenas externos. |
 | GET `/literary/free/:id/cover` | ID da edição com capa própria | JPEG. Para montar a URL use a origem da API e o `coverPath` retornado. |
-| POST `/me/literary/books/:id` | ID da edição curada | `{bookId,created}`. Adição idempotente à biblioteca pessoal, com os metadados `literaryEditionId,literaryWorkId`. Use `refresh(true)` e `setScope('personal')` antes de abrir `/app/reader/:bookId`. |
+| POST `/me/literary/books/:id` | ID da edição curada | `{bookId,created}`. Adição idempotente à biblioteca pessoal, com os metadados `literaryEditionId,literaryWorkId,literaryEpub`. Use `refresh(true)` e `setScope('personal')` antes de abrir `/app/reader/:bookId`. |
 | GET `/me/literary/books/:id/epub` | ID da edição curada e `purpose=read|download|transfer` opcional | Binário `application/epub+zip`, autorizado no servidor. Para o leitor use `authenticatedResponse`, `response.blob()` e `readEpub` existentes. Evite `uploadOriginal` e a persistência de um arquivo de catálogo como EPUB pessoal. |
 | GET `/me/literary/recommendations` | Sessão autenticada | `{books,clubs,news}` baseados em interesses da própria conta, com justificativa nos livros. |
 | GET `/me/literary/books/:id/clubs` | ID da edição curada | `{items: [{id,name}]}` somente clubes com associação ativa e correspondência inequívoca. |
@@ -35,4 +35,4 @@ Use `availability === 'internal' && rights?.read` para mostrar **Ler no app**. U
 
 O feed geral permanece nas rotas de posts atuais. A aba Clubes pode reaproveitar a tela de clubes ou seus componentes. Para notícias, reutilize `PostCard`/comentários ou os serviços de leitura e mutação já usados pelo componente. O post editorial identifica o tópico de discussão e contém a referência ao material publicado externamente. O servidor só agrega fontes verificadas a partir da configuração e deixa os campos de reprodução vazios por padrão.
 
-Use as mensagens de erro existentes, trate o estado vazio quando nenhum item da fonte for literário e preserve o cursor antes de anexar a próxima página. A interface de staging precisa aguardar a API desta branch. Os casos de incompatibilidade com o contrato podem ser registrados neste documento pelos dois agentes.
+Use as mensagens de erro existentes, trate o estado vazio quando nenhum item da fonte for literário e preserve o cursor antes de anexar a próxima página. Use Discussão para abrir o post editorial nas interações existentes. Os casos de incompatibilidade com o contrato podem ser registrados neste documento pelos dois agentes.
