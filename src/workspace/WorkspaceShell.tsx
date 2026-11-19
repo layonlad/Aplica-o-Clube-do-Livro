@@ -6,6 +6,10 @@ import { NotificationBell } from '../community/NotificationBell'
 import { SpaceSwitcher } from '../components/SpaceSwitcher'
 import { useAuth } from '../auth/AuthProvider'
 import { SkeletonPage } from '../components/ui'
+import { measureApp } from '../app/performance'
+import { AppErrorBoundary } from '../app/AppErrorBoundary'
+import { preloadTab, warmTabs } from './tab-modules'
+import { useTabScroll } from './useTabScroll'
 import { UserAvatar, useOwnAvatar } from '../components/UserAvatar'
 import { AppearanceSync } from '../app/AppearanceSettings'
 import { AppBar, SheetBody } from '../coral/kit'
@@ -65,9 +69,10 @@ export function WorkspaceShell() {
       if (!editing) baseline = Math.max(baseline, height)
       setKeyboardOpen(editing && (baseline - height > 150 || window.innerHeight - height > 150))
     }
-    const focus = () => requestAnimationFrame(update)
+    let frame = 0
+    const focus = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(update) }
     viewport?.addEventListener('resize', update); window.addEventListener('resize', update); document.addEventListener('focusin', focus); document.addEventListener('focusout', focus)
-    return () => { viewport?.removeEventListener('resize', update); window.removeEventListener('resize', update); document.removeEventListener('focusin', focus); document.removeEventListener('focusout', focus) }
+    return () => { cancelAnimationFrame(frame); viewport?.removeEventListener('resize', update); window.removeEventListener('resize', update); document.removeEventListener('focusin', focus); document.removeEventListener('focusout', focus) }
   }, [])
 
   const { publicModerator, snapshot, scope, scopeName, clubs, setScope, loading, busy, error, errorCode, refresh } = useWorkspace()
@@ -76,8 +81,9 @@ export function WorkspaceShell() {
   const [accountError, setAccountError] = useState('')
   async function reenter() { try { await signOut(); navigate('/account') } catch { setAccountError('Não foi possível sair da sessão. Tente novamente.') } }
   const [params] = useSearchParams()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const mainRef = useRef<HTMLElement>(null)
+  const tabPressed = useRef<number>()
   const unread = params.get('notice')
   const personal = scope === 'personal'
   const globalPage = ['/app/community', '/app/explore', '/app/people/', '/app/social-profile', '/app/profile', '/app/settings', '/app/notifications', '/app/downloads', '/app/moderation', '/app/clubs', '/app/ajustes', '/app/theme'].some((path) => pathname.startsWith(path))
@@ -112,7 +118,16 @@ export function WorkspaceShell() {
     ] },
   ]
 
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'auto' }) }, [pathname])
+  useTabScroll(pathname, search, scope, mainRef)
+  useEffect(() => {
+    if (tabPressed.current === undefined) return
+    measureApp('tab-render', tabPressed.current)
+    tabPressed.current = undefined
+  }, [pathname])
+  useEffect(() => {
+    const timer = setTimeout(() => warmTabs(pathname), 1200)
+    return () => clearTimeout(timer)
+  }, [pathname])
   // Cor da barra de status do celular acompanha o gradiente do cabeçalho.
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]')
@@ -127,7 +142,7 @@ export function WorkspaceShell() {
   const content = loading && !snapshot && !globalPage
     ? <SkeletonPage label="Abrindo seu espaço…" />
     : snapshot || globalPage
-      ? <Suspense fallback={<SkeletonPage label="Abrindo esta página…" />}><Outlet /></Suspense>
+      ? <AppErrorBoundary key={reading ? 'reader' : pathname}><Suspense fallback={<SkeletonPage label="Abrindo esta página…" />}><Outlet /></Suspense></AppErrorBoundary>
       : !error ? <p role="status">Escolha seu espaço para começar.</p> : null
   const notices = <>
     {unread && <p className="toast-status" role="status">{unread}</p>}
@@ -148,7 +163,10 @@ export function WorkspaceShell() {
       <nav className="bottom-nav" aria-label="Navegação principal">
         {nav.map(({ to, name, icon: Icon, match, className }) => {
           const active = match(pathname)
-          return <Link key={to} to={to} className={`${className} ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined} onClick={() => { if (to === '/app' && !personal && active) setScope('personal') }}>
+          return <Link key={to} to={to} className={`${className} ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined} onPointerEnter={() => preloadTab(to)} onPointerDown={() => preloadTab(to)} onFocus={() => preloadTab(to)} onClick={() => {
+            if (pathname !== to) tabPressed.current = performance.now()
+            if (to === '/app' && !personal && active) setScope('personal')
+          }}>
             <Icon size={24} strokeWidth={active ? 2 : 1.7} aria-hidden="true" />
             <span>{name}</span>
           </Link>

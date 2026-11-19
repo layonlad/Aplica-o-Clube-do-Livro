@@ -1,10 +1,11 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { SpaceSwitcher } from '../components/SpaceSwitcher'
 import { CoverUploader } from '../components/CoverUploader'
-import { PostComments } from './ClubWall'
+import type { PostDto } from '../../server/src/community-contracts'
+import { PostCard, PostComments } from './ClubWall'
 import { apiRequest } from '../auth/api'
 const { user } = vi.hoisted(() => ({
   user: { uid: 'reader', emailVerified: true, displayName: 'Leitora' },
@@ -112,4 +113,26 @@ it('reutiliza a capa GIF do Claude e salva sem submeter outro formulário', asyn
   await waitFor(() => expect(saved).toHaveBeenCalledWith('gif-cover'))
   expect(apiRequest).toHaveBeenCalledWith(user, '/me/cover', 'POST', { data: expect.any(String) })
   expect(await screen.findByRole('status')).toHaveTextContent('Capa salva')
+})
+
+
+it('mostra a curtida imediatamente e volta ao estado anterior se o servidor recusar', async () => {
+  let fail!: (error: Error) => void
+  vi.mocked(apiRequest).mockImplementation((_reader, _path, method) => method === 'POST'
+    ? new Promise((_resolve, reject) => { fail = reject })
+    : Promise.resolve({ avatarId: null }))
+  const post: PostDto = {
+    id: 'post', author: { id: 'someone', name: 'Autora' }, body: 'Uma leitura compartilhada.',
+    kind: 'reflection', createdAt: '2026-11-14T12:00:00Z', updatedAt: '2026-11-14T12:00:00Z',
+    version: 0, quote: '', source: '', bookTitle: '', bookAuthor: '', media: [], options: [],
+    liked: false, likes: 2, saved: false, comments: 0, canEdit: false, canDelete: false,
+  }
+  const changed = vi.fn()
+  render(<MemoryRouter><PostCard clubId={null} post={post} onChanged={changed} onRemoved={vi.fn()} /></MemoryRouter>)
+  await userEvent.click(screen.getByRole('button', { name: 'Curtir publicação' }))
+  expect(screen.getByRole('button', { name: 'Descurtir publicação' })).toHaveTextContent('3')
+  expect(screen.getByRole('button', { name: 'Descurtir publicação' })).toBeDisabled()
+  await act(() => fail(new Error('falha da rede')))
+  expect(screen.getByRole('button', { name: 'Curtir publicação' })).toHaveTextContent('2')
+  expect(changed).not.toHaveBeenCalled()
 })

@@ -441,6 +441,30 @@ export function PostCard({
       setBusy(false)
     }
   }
+  const [reaction, setReaction] = useState<{ liked: boolean; likes: number; saved: boolean }>()
+  const reactionLock = useRef(false)
+  async function react(kind: 'like' | 'save') {
+    if (!user?.emailVerified || reactionLock.current || busy) return
+    reactionLock.current = true
+    const value = kind === 'like' ? !post.liked : !post.saved
+    const update = kind === 'like'
+      ? { ...post, liked: value, likes: Math.max(0, post.likes + (value ? 1 : -1)) }
+      : { ...post, saved: value }
+    setReaction(update)
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest(user, path + '/' + kind, 'POST', { value })
+      onChanged(update)
+    } catch (error) {
+      setError(readableError(error))
+    } finally {
+      reactionLock.current = false
+      setReaction(undefined)
+      setBusy(false)
+    }
+  }
+  const displayed = reaction ?? post
   const total = post.options.reduce((sum, option) => sum + option.votes, 0)
   return (
     <article className="social-post">
@@ -622,14 +646,14 @@ export function PostCard({
       <footer className="post-interactions social-actions">
         <Button
           variant="ghost"
-          className={post.liked ? 'is-liked' : ''}
-          aria-label={`${post.liked ? 'Descurtir' : 'Curtir'} publicação`}
-          aria-pressed={post.liked}
+          className={displayed.liked ? 'is-liked' : ''}
+          aria-label={`${displayed.liked ? 'Descurtir' : 'Curtir'} publicação`}
+          aria-pressed={displayed.liked}
           disabled={busy || !user?.emailVerified}
-          onClick={() => void act('/like', { value: !post.liked })}
+          onClick={() => void react('like')}
         >
-          <Heart size={19} fill={post.liked ? 'currentColor' : 'none'} />
-          {post.likes}
+          <Heart size={19} fill={displayed.liked ? 'currentColor' : 'none'} />
+          {displayed.likes}
         </Button>
         <Button
           variant="ghost"
@@ -642,14 +666,14 @@ export function PostCard({
         </Button>
         <Button
           variant="ghost"
-          className={`post-save ${post.saved ? 'is-saved' : ''}`}
-          aria-label={post.saved ? 'Retirar publicação dos salvos' : 'Salvar publicação'}
-          aria-pressed={post.saved}
+          className={`post-save ${displayed.saved ? 'is-saved' : ''}`}
+          aria-label={displayed.saved ? 'Retirar publicação dos salvos' : 'Salvar publicação'}
+          aria-pressed={displayed.saved}
           disabled={busy || !user?.emailVerified}
-          onClick={() => void act('/save', { value: !post.saved })}
+          onClick={() => void react('save')}
         >
-          <Bookmark size={19} fill={post.saved ? 'currentColor' : 'none'} />
-          <span>{post.saved ? 'Salvo' : 'Salvar'}</span>
+          <Bookmark size={19} fill={displayed.saved ? 'currentColor' : 'none'} />
+          <span>{displayed.saved ? 'Salvo' : 'Salvar'}</span>
         </Button>
       </footer>
       {!user?.emailVerified && clubId === null && (

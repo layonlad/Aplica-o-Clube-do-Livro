@@ -10,7 +10,7 @@ import { PostCard, PostComposer } from '../community/ClubWall'
 import { SharedBookComposer } from '../community/SharedBookComposer'
 import { socialRead } from '../community/social-api'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
-import { useMyClubs } from './data'
+import { useCommunityPosts, useMyClubs } from './data'
 import { Hero, HeroBell, HeroIcon, SectionHead, SheetBody } from './kit'
 import { ClubArt } from './pieces'
 
@@ -31,34 +31,31 @@ export function CommunityScreen() {
   const [order, setOrder] = useState<Order>(params.get('aba') === 'seguindo' ? 'following' : params.get('aba') === 'salvos' ? 'saved' : 'recent')
   const [composing, setComposing] = useState(params.get('publicar') === '1')
   const [revision, setRevision] = useState(0)
-  const [page, setPage] = useState<Page<PostDto>>({ items: [], nextCursor: null })
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  const [paging, setPaging] = useState(false)
+  const [pageError, setPageError] = useState('')
+  const pageGeneration = useRef(0)
+  const pagingLock = useRef(false)
   const [sortOpen, setSortOpen] = useState(false)
   const sortRef = useRef<HTMLDivElement>(null)
   const clubs = useMyClubs()
   const verified = !!user?.emailVerified
   const filters = new URLSearchParams({
+    limit: '10',
     ...(search ? { q: search } : {}),
     ...(order === 'following' ? { following: '1' } : {}),
     ...(order === 'saved' ? { saved: '1' } : {}),
   }).toString()
-  const path = selected ? `/public/posts/${selected}` : `/public/posts?${filters}`
-
+  const feed = useCommunityPosts(filters, revision, selected)
+  const page = feed.page ?? { items: [], nextCursor: null }
+  const busy = feed.busy || paging
+  const error = feed.error || pageError
+  const setPage = feed.setPage
   useEffect(() => {
-    let live = true
-    setBusy(true)
-    setError('')
-    setPage({ items: [], nextCursor: null })
-    const request = selected
-      ? socialRead<PostDto>(user, path).then((post) => ({ items: [post], nextCursor: null }))
-      : socialRead<Page<PostDto>>(user, path)
-    request
-      .then((value) => live && setPage(value))
-      .catch((err) => live && setError(readableError(err)))
-      .finally(() => live && setBusy(false))
-    return () => { live = false }
-  }, [user?.uid, user?.emailVerified, path, revision])
+    setPaging(false)
+    setPageError('')
+    pagingLock.current = false
+    return () => { pageGeneration.current++ }
+  }, [filters, selected, revision, user?.uid])
   useEffect(() => {
     if (!sortOpen) return
     const close = (event: PointerEvent) => { if (!sortRef.current?.contains(event.target as Node)) setSortOpen(false) }
@@ -69,15 +66,22 @@ export function CommunityScreen() {
   }, [sortOpen])
 
   async function more() {
-    setBusy(true)
-    setError('')
+    if (!page.nextCursor || pagingLock.current) return
+    const generation = pageGeneration.current
+    pagingLock.current = true
+    setPaging(true)
+    setPageError('')
     try {
-      const next = await socialRead<Page<PostDto>>(user, `/public/posts?${filters}${filters ? '&' : ''}cursor=${encodeURIComponent(page.nextCursor!)}`)
-      setPage((value) => ({ items: [...value.items, ...next.items], nextCursor: next.nextCursor }))
+      const next = await socialRead<Page<PostDto>>(user, `/public/posts?${filters}${filters ? '&' : ''}cursor=${encodeURIComponent(page.nextCursor)}`)
+      if (generation !== pageGeneration.current) return
+      setPage((current) => {
+        const existing = new Set(current.items.map((post) => post.id))
+        return { items: [...current.items, ...next.items.filter((post) => !existing.has(post.id))], nextCursor: next.nextCursor }
+      }, true)
     } catch (err) {
-      setError(readableError(err))
+      if (generation === pageGeneration.current) setPageError(readableError(err))
     } finally {
-      setBusy(false)
+      if (generation === pageGeneration.current) { pagingLock.current = false; setPaging(false) }
     }
   }
   const available = orders.filter((item) => verified || item.id === 'recent')

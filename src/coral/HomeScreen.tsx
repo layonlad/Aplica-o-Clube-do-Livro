@@ -25,7 +25,7 @@ export function HomeScreen() {
   const clubs = useMyClubs()
   const discover = useDiscoverClubs()
   const friends = useFollowingReaders()
-  const feed = useCommunityPosts('limit=5')
+  const feed = useCommunityPosts('limit=10')
   const menuBook = state.books.find((book) => book.id === menu)
   const featured = clubs.items?.length ? clubs.items : null
   const waitingForClubs = !!user?.emailVerified && clubs.items === null
@@ -97,7 +97,7 @@ export function HomeScreen() {
         <section aria-labelledby="home-feed">
           <SectionHead id="home-feed" title="Novidades da comunidade" to="/app/community" linkLabel="Ver mais" />
           <div className="social-feed coral-feed">
-            {feed.page?.items.map((post) => (
+            {feed.page?.items.slice(0, 5).map((post) => (
               <PostCard
                 key={post.id}
                 clubId={null}

@@ -14,7 +14,7 @@ const api = new URL(process.env.VITE_API_URL)
 if (api.protocol !== 'https:' || api.username || api.password || api.hostname.endsWith('.invalid')) throw new Error('Configure uma API HTTPS real antes de publicar.')
 const response = await fetch(new URL('/health', api), { signal: AbortSignal.timeout(75000), cache: 'no-store' })
 if (!response.ok || (await response.json()).status !== 'ok') throw new Error('A API e o banco precisam estar disponíveis antes da publicação.')
-const result = spawnSync('npm', ['run', 'build'], { stdio: 'inherit', env: { ...process.env, VITE_APP_MODE: 'connected' } })
+const result = spawnSync('npm', ['run', 'build'], { stdio: 'inherit', env: { ...process.env, VITE_APP_MODE: 'connected', VITE_APP_NATIVE: '0' } })
 if (result.error) throw result.error
 process.exitCode = result.status ?? 1
 if (!process.exitCode) {

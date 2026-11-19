@@ -22,3 +22,11 @@ it('restringe conexões e origens adicionais da migração', () => {
   for (const DB_POOL_MAX of ['0', '11', 'NaN']) expect(() => readConfig({ ...base, DB_POOL_MAX })).toThrow()
   for (const FRONTEND_EXTRA_ORIGINS of ['http://legacy.web.app', 'https://user:pass@legacy.web.app', 'https://legacy.web.app/path', '*', 'https://a.test,https://b.test,https://c.test,https://d.test']) expect(() => readConfig({ ...base, FRONTEND_EXTRA_ORIGINS })).toThrow()
 })
+
+it('permite somente as duas origens nativas na API de staging quando habilitadas', () => {
+  const staging = { ...base, ALLOW_NATIVE_STAGING_ORIGINS: 'true' }
+  expect(readConfig(staging).FRONTEND_EXTRA_ORIGINS).toEqual(['capacitor://localhost', 'https://localhost'])
+  expect(readConfig(base).FRONTEND_EXTRA_ORIGINS).toEqual([])
+  expect(() => readConfig({ ...staging, NODE_ENV: 'production' })).toThrow()
+  expect(() => readConfig({ ...staging, FIREBASE_PROJECT_ID: 'gen-lang-client-0194308411' })).toThrow()
+})

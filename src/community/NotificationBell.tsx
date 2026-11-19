@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Bell } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
@@ -7,7 +7,7 @@ export function notificationChanged() {
   window.dispatchEvent(new Event('notifications-changed'))
 }
 /** Quantidade de notificações não lidas, atualizada a cada minuto e quando algo muda. */
-export function useUnreadCount() {
+function usePollUnreadCount() {
   const { user } = useAuth(),
     [count, setCount] = useState(0)
   useEffect(() => {
@@ -50,6 +50,14 @@ export function useUnreadCount() {
   }, [user?.uid, user?.emailVerified])
   return user?.emailVerified ? count : 0
 }
+const UnreadCount = createContext(0)
+export function UnreadProvider({ children }: { children: ReactNode }) {
+  return <UnreadCount.Provider value={usePollUnreadCount()}>{children}</UnreadCount.Provider>
+}
+export function useUnreadCount() {
+  return useContext(UnreadCount)
+}
+
 export function NotificationBell() {
   const { user } = useAuth(),
     count = useUnreadCount()

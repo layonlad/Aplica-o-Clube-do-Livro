@@ -76,6 +76,18 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
     expect(session.statusCode, session.body).toBe(200)
     const club = await call('/clubs', 'POST', { name: 'Papel restrito' })
     expect(club.statusCode, club.body).toBe(201)
+    const summaries = await call('/me/clubs/summary')
+    expect(summaries.statusCode).toBe(200)
+    expect(summaries.json()).toEqual([expect.objectContaining({
+      id: club.json().id, role: 'owner', memberCount: 1, visibility: 'private',
+    })])
+
+    const anonymousSummary = await app.inject({ url: '/v1/me/clubs/summary' })
+    expect(anonymousSummary.statusCode).toBe(401)
+    const outsiderSummary = await app.inject({
+      url: '/v1/me/clubs/summary', headers: { authorization: 'Bearer outside-club' },
+    })
+    expect(outsiderSummary.json()).toEqual([])
     const post = await call(`/clubs/${club.json().id}/posts`, 'POST', {
       kind: 'reflection',
       body: 'Persistência com papel restrito',

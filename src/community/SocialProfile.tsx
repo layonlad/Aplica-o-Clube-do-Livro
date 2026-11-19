@@ -6,13 +6,13 @@ import { HeroBell } from '../coral/kit'
 import { ConnectionsSheet, CreateFab } from '../coral/ProfileExtras'
 import type { PostDto, PostMedia, Page } from '../../server/src/community-contracts'
 import { useAuth } from '../auth/AuthProvider'
-import { apiRequest, readableError } from '../auth/api'
+import { apiRequest, peekCached, readableError } from '../auth/api'
 import { Button, CoverArt, SkeletonPage } from '../components/ui'
 import { UserAvatar } from '../components/UserAvatar'
 import { AvatarUploader } from '../components/AvatarUploader'
 import { CoverUploader } from '../components/CoverUploader'
 import { MediaPicker, PrivateMedia } from './PrivateMedia'
-import { socialRead } from './social-api'
+import { cachedSocialRead, socialRead } from './social-api'
 import { ConfirmAction, PostCard } from './ClubWall'
 import { ReportAction } from './ReportAction'
 import './community.css'
@@ -228,9 +228,10 @@ export function SocialProfile({ profileId }: { profileId?: string } = {}) {
     [requests, setRequests] = useState(search.get('requests') === '1')
   const navigate = useNavigate(),
     { user } = useAuth(),
-    [profile, setProfile] = useState<SocialProfileDto | null>(null),
-    [person, setPerson] = useState<PersonCard | null>(null),
-    [loaded, setLoaded] = useState(false),
+    owner = user?.emailVerified ? user.uid : null,
+    [profile, setProfile] = useState<SocialProfileDto | null>(() => peekCached(owner, `/public/profiles/${id}`) ?? null),
+    [person, setPerson] = useState<PersonCard | null>(() => owner ? peekCached(owner, `/people/${id}`) ?? null : null),
+    [loaded, setLoaded] = useState(() => !!(profile || person)),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
     [revision, setRevision] = useState(0),
@@ -239,11 +240,10 @@ export function SocialProfile({ profileId }: { profileId?: string } = {}) {
   const verified = !!user?.emailVerified
   useEffect(() => {
     let live = true
-    setLoaded(false)
     setError('')
     void Promise.allSettled([
-      socialRead<SocialProfileDto>(user, `/public/profiles/${id}`),
-      verified ? apiRequest<PersonCard>(user!, `/people/${id}`) : Promise.reject(null),
+      cachedSocialRead<SocialProfileDto>(user, `/public/profiles/${id}`, revision > 0),
+      verified ? cachedSocialRead<PersonCard>(user, `/people/${id}`, revision > 0) : Promise.reject(null),
     ]).then(([publicResult, personResult]) => {
       if (!live) return
       const publicProfile = publicResult.status === 'fulfilled' ? publicResult.value : null
@@ -857,12 +857,12 @@ export function SocialProfileEditor() {
 
 export function OwnSocialProfile() {
   const { user } = useAuth(),
-    [id, setId] = useState<string | null>(null),
+    [id, setId] = useState<string | null>(() => user ? peekCached<{ id: string }>(user.uid, '/me/profile')?.id ?? null : null),
     [error, setError] = useState('')
   useEffect(() => {
     let live = true
     if (user)
-      void apiRequest<{ id: string }>(user, '/me/profile')
+      void cachedSocialRead<{ id: string }>(user, '/me/profile')
         .then((p) => live && setId(p.id))
         .catch((e) => live && setError(readableError(e)))
     return () => {

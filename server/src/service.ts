@@ -28,9 +28,20 @@ export class ClubService {
   constructor(private pool: Pool) {}
 
   async syncUser(identity: Identity): Promise<UserProfile> {
-    const { rows } = await this.pool.query<UserProfile>(`INSERT INTO users (firebase_uid, email, name) VALUES ($1, $2, $3)
-      ON CONFLICT (firebase_uid) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name, updated_at = now()
-      RETURNING id, email, name`, [identity.uid, identity.email.toLowerCase(), (identity.name?.trim() || identity.email.split('@')[0]).slice(0, 100)])
+    const email = identity.email.toLowerCase()
+    const name = (identity.name?.trim() || identity.email.split('@')[0]).slice(0, 100)
+    const { rows } = await this.pool.query<UserProfile>(
+      `WITH existing AS (
+         SELECT id,email,name FROM users WHERE firebase_uid=$1 AND email=$2 AND name=$3
+       ), synced AS (
+         INSERT INTO users (firebase_uid,email,name)
+         SELECT $1,$2,$3 WHERE NOT EXISTS (SELECT 1 FROM existing)
+         ON CONFLICT (firebase_uid) DO UPDATE SET email=EXCLUDED.email,name=EXCLUDED.name,updated_at=now()
+         RETURNING id,email,name
+       )
+       SELECT * FROM existing UNION ALL SELECT * FROM synced`,
+      [identity.uid, email, name],
+    )
     return rows[0]
   }
 

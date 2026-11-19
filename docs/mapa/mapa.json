@@ -9,7 +9,7 @@
     "fase": "Sessão protegida e leitor EPUB publicados",
     "tom": "ok",
     "resumo": "PR 39 publicado nos dois Firebase Hosting no merge 26627b2. O app conectado exige sessão Firebase validada pela API antes das rotas privadas. Retoma o destino após login, mantém a sessão entre acessos, descarta caches transitórios ao sair e preserva navegação e posição EPUB. CI do PR e 236 testes locais aprovados. Chrome e WebKit validaram duas contas e o leitor localmente. Em produção, sete rotas por site levaram ao login sem sessão e 104 arquivos por site corresponderam ao build. API e executor em 9ce87a1.",
-    "proximoPasso": "Dono pode testar login, logout e EPUB no endereço principal. Aparelhos físicos e Google OAuth na nuvem continuam para teste com o dono. Produção continua manual e com autorização.",
+    "proximoPasso": "Revisar a melhoria mobile-first em staging antes da publicação. Projetos Capacitor sincronizados, com builds nativos, assinatura, exclusão de conta e revisão das lojas pendentes. A correção Google iPhone segue no PR 41.",
     "pendencias": [
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
@@ -60,7 +60,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Branch codex/registro-publicacao-sessao: registro da publicação do PR 39. Build em cópia limpa e ensaios locais isolados.",
+      "versao": "Branch codex/mobile-performance: ensaios locais isolados de feed, mídia, sessão e EPUB; projetos Capacitor para staging.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -384,6 +384,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-18",
+      "autor": "Codex",
+      "titulo": "Desempenho mobile e base iOS e Android",
+      "resumo": "Cache de feed e fotos por conta, paginação e rolagem preservadas, carregamento por aba e resumo agregado de clubes. Chrome e WebKit validaram as cinco abas nas doze larguras e repetiram os fluxos de sessão e EPUB. Capacitor sincronizado para staging; assinatura, binários, aparelhos físicos e requisitos de conta e moderação pendentes. Produção continua nas versões anteriores.",
+      "pr": ""
+    },
     {
       "data": "2026-11-18",
       "autor": "Codex",

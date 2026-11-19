@@ -3,10 +3,10 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { BookPlus, Castle, ChartNoAxesColumn, Heart, Landmark, MessageCircle, Plus, Rocket, Search, UserCheck, UserPlus, UsersRound, X, type LucideIcon } from 'lucide-react'
 import type { Page, PostDto } from '../../server/src/community-contracts'
 import { useAuth } from '../auth/AuthProvider'
-import { apiRequest, publicRequest, readableError } from '../auth/api'
+import { apiRequest, peekCached, publicRequest, readCached, readableError } from '../auth/api'
 import { Sheet } from '../components/Sheet'
 import { UserAvatar } from '../components/UserAvatar'
-import { socialRead } from '../community/social-api'
+import { cachedSocialRead, socialRead } from '../community/social-api'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
 import type { WorkspaceState } from '../../server/src/workspace-model'
 import { useDiscoverClubs } from './data'
@@ -38,7 +38,7 @@ export function ExploreScreen() {
   const [query, setQuery] = useState(params.get('q') ?? '')
   const search = (params.get('q') ?? '').trim()
   const category = categories.find((item) => item.id === params.get('categoria')) ?? null
-  const [discover, setDiscover] = useState<Discover | null>(null)
+  const [discover, setDiscover] = useState<Discover | null>(() => peekCached(null, '/public/discover') ?? null)
   const [catalog, setCatalog] = useState<{ key: string; items: CatalogEntry[]; error: string } | null>(null)
   const [people, setPeople] = useState<Person[] | null>(null)
   const [book, setBook] = useState<{ title: string; author: string; metadata?: Metadata; posts?: number } | null>(null)
@@ -47,7 +47,7 @@ export function ExploreScreen() {
   useEffect(() => { if (params.get('busca')) input.current?.focus() }, [params])
   useEffect(() => {
     let live = true
-    publicRequest<Discover>('/public/discover').then((value) => live && setDiscover(value)).catch(() => live && setDiscover({ books: [], sections: { featured: [], reviews: [], discussions: [], recommendations: [] } }))
+    readCached(null, '/public/discover', () => publicRequest<Discover>('/public/discover')).then((value) => live && setDiscover(value)).catch(() => live && setDiscover({ books: [], sections: { featured: [], reviews: [], discussions: [], recommendations: [] } }))
     return () => { live = false }
   }, [])
   // Catálogo: uma consulta por vez (o servidor limita o ritmo); a categoria ou o texto pesquisado.
@@ -56,12 +56,13 @@ export function ExploreScreen() {
   useEffect(() => {
     if (!catalogKey) { setCatalog(null); return }
     let live = true
-    setCatalog({ key: catalogKey, items: [], error: '' })
+    const path = `/catalog?${catalogKey}`
+    setCatalog({ key: catalogKey, items: peekCached<{items: CatalogEntry[]}>(null, path)?.items ?? [], error: '' })
     // O catálogo aceita uma consulta por segundo no servidor: espera e tenta de novo (até 3 vezes).
     const attempt = (left: number): Promise<{ items: CatalogEntry[] }> =>
-      publicRequest<{ items: CatalogEntry[] }>(`/catalog?${catalogKey}`).catch((err) =>
+      readCached(null, path, () => publicRequest<{ items: CatalogEntry[] }>(path)).catch((err) =>
         left > 0 && live && /CATALOG_BUSY|Aguarde/i.test(`${(err as { code?: string }).code ?? ''} ${readableError(err)}`)
-          ? new Promise((resolve) => setTimeout(resolve, 1300)).then(() => attempt(left - 1))
+          ? new Promise((resolve) => setTimeout(resolve, 1300)).then(() => { if (live) return attempt(left - 1); throw err })
           : Promise.reject(err),
       )
     attempt(3)
@@ -72,7 +73,7 @@ export function ExploreScreen() {
   useEffect(() => {
     let live = true
     const filter = search.length >= 2 ? `q=${encodeURIComponent(search)}` : category ? `genre=${encodeURIComponent(category.label === 'Sci-fi' ? 'Ficção científica' : category.label)}` : ''
-    socialRead<Page<Person>>(user, `/public/profiles?limit=8${filter ? '&' + filter : ''}`).then((value) => live && setPeople(value.items)).catch(() => live && setPeople([]))
+    cachedSocialRead<Page<Person>>(user, `/public/profiles?limit=8${filter ? '&' + filter : ''}`).then((value) => live && setPeople(value.items)).catch(() => live && setPeople([]))
     return () => { live = false }
   }, [user?.uid, user?.emailVerified, search, category?.id])
 

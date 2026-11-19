@@ -97,6 +97,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
   await app.register(async (api) => {
     api.addHook('onRequest',authenticate)
     await registerPublicMutations(api,options.pool,options.storage,options.moderatorUids)
+    api.get('/me/clubs/summary', request => management.summaries(request.user))
     api.get('/me/push/config',()=>push.config())
     api.post('/me/push/subscriptions',{config:{rateLimit:{max:5,timeWindow:'1 minute',hook:'preHandler',keyGenerator:request=>request.user.id}}},request=>push.register(request.user,subscriptionInput.parse(request.body)))
     api.post('/me/push/status',request=>push.status(request.user,z.object({endpoint:z.string().max(2048)}).strict().parse(request.body).endpoint))

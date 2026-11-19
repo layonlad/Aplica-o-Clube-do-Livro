@@ -4,7 +4,9 @@ import { Sheet } from '../components/Sheet'
 import { uploadPhoto } from './photo-upload'
 import { ImagePlus, Play, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
-import { apiRequest, ApiError, messageFor, readableError } from '../auth/api'
+import { apiRequest, ApiError, authenticatedResponse, messageFor, readableError } from '../auth/api'
+import { measureApp } from '../app/performance'
+import { createReadCache } from '../auth/read-cache'
 import type { PostMedia, Page } from '../../server/src/community-contracts'
 import { Button } from '../components/ui'
 export async function uploadMediaFile(
@@ -286,59 +288,56 @@ export function MediaPicker({
     </div>
   )
 }
-function useMediaUrl(
-  id: string,
-  variant: 'thumbnail' | 'feed' | 'full',
-  enabled: boolean,
-  publicMedia = false,
-) {
-  const { user } = useAuth(),
-    [url, setUrl] = useState(''),
-    [error, setError] = useState(''),
-    [retry, setRetry] = useState(0)
+type MediaVariant = 'thumbnail' | 'feed' | 'full'
+const previews = createReadCache<Blob>({
+  freshMs: 30_000,
+  maxEntries: 72,
+  maxWeight: 24 * 1024 * 1024,
+  sizeOf: (blob) => blob.size,
+})
+
+function useMediaUrl(id: string, variant: MediaVariant, enabled: boolean, publicMedia = false) {
+  const { user } = useAuth()
+  const account = user?.emailVerified ? user : null
+  const owner = account?.uid ?? null
+  const path = `/${publicMedia ? 'public/' : ''}media/${id}/content?variant=${variant}`
+  const key = JSON.stringify([owner, path])
+  const [file, setFile] = useState<{ key: string; url?: string; error?: string }>()
+  const [retry, setRetry] = useState(0)
+
   useEffect(() => {
-    setUrl('')
-    setError('')
-    if (!enabled || (!publicMedia && !user?.emailVerified)) return
+    if (!enabled || (!publicMedia && !account)) return
     const abort = new AbortController()
     let objectUrl = ''
-    void (async () => {
-      try {
-        const token = user?.emailVerified ? await user.getIdToken() : null
-        if (abort.signal.aborted) return
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/v1/${publicMedia ? 'public/' : ''}media/${id}/content?variant=${variant}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            credentials: 'omit',
-            cache: 'no-store',
-            referrerPolicy: 'no-referrer',
-            signal: AbortSignal.any([abort.signal, AbortSignal.timeout(75000)]),
-          },
-        )
-        if (!response.ok) {
-          const payload = await response.json().catch(() => null)
-          throw new ApiError(
-            response.status,
-            payload?.error?.code ?? 'MEDIA_UNAVAILABLE',
-            payload?.error?.message ?? 'Registro indisponível.',
-          )
-        }
-        const blob = await response.blob()
-        if (abort.signal.aborted) return
-        objectUrl = URL.createObjectURL(blob)
-        setUrl(objectUrl)
-      } catch (err) {
-        if (!abort.signal.aborted) setError(readableError(err))
-      }
-    })()
-    return () => {
-      abort.abort()
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    async function load(signal: AbortSignal) {
+      const startedAt = performance.now()
+      const response = account
+        ? await authenticatedResponse(account, path, 'GET', undefined, signal)
+        : await fetch(`${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/v1${path}`, {
+            cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer',
+            signal: AbortSignal.any?.([signal, AbortSignal.timeout(75000)]) ?? signal,
+          })
+      if (!response.ok) throw new ApiError(response.status, 'MEDIA_UNAVAILABLE', 'Registro indisponível.')
+      return response.blob().finally(() => measureApp(variant === 'full' ? 'image-full' : 'image-preview', startedAt))
     }
-  }, [user?.uid, user?.emailVerified, id, variant, enabled, retry, publicMedia])
-  return { url, error, retry: () => setRetry((value) => value + 1) }
+    // Full photos and videos are opened on demand and released when the viewer closes.
+    const request = variant === 'full' ? load(abort.signal) : previews.read(owner, path, load)
+    void request.then((blob) => {
+      if (abort.signal.aborted) return
+      objectUrl = URL.createObjectURL(blob)
+      setFile({ key, url: objectUrl })
+    }).catch((error: unknown) => {
+      if (!abort.signal.aborted) setFile({ key, error: readableError(error) })
+    })
+    return () => { abort.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl) }
+  }, [account, owner, key, path, enabled, publicMedia, retry, variant])
+
+  return {
+    ...(enabled && file?.key === key ? file : null),
+    retry: () => { setFile(undefined); setRetry((value) => value + 1) },
+  }
 }
+
 export function PrivateMedia({
   media,
   alt,
@@ -354,47 +353,40 @@ export function PrivateMedia({
   previewOnly?: boolean
   feed?: boolean
 }) {
-  const [visible, setVisible] = useState(full),
-    [expanded, setExpanded] = useState(false),
-    ref = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(full)
+  const [expanded, setExpanded] = useState(false)
+  const [width, setWidth] = useState(0)
+  const ref = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    if (full) {
-      setVisible(true)
-      return
-    }
-    if (!('IntersectionObserver' in window)) {
-      setVisible(true)
-      return
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setVisible(true)
-          observer.disconnect()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-    if (ref.current) observer.observe(ref.current)
+    const element = ref.current
+    if (!element || full) return
+    if (!('IntersectionObserver' in window)) { setVisible(true); return }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setVisible(true)
+        observer.disconnect()
+      }
+    }, { rootMargin: '160px' })
+    observer.observe(element)
     return () => observer.disconnect()
   }, [full])
-  const thumbnail = useMediaUrl(media.id, 'thumbnail', visible && !full, publicMedia)
-  const detailed = useMediaUrl(
-    media.id,
-    full ? 'full' : 'feed',
-    visible && (full || (feed && media.kind === 'image')),
-    publicMedia,
-  )
-  const file = full
-    ? detailed
-    : {
-        url: detailed.url || thumbnail.url,
-        error: thumbnail.error,
-        retry: () => {
-          thumbnail.retry()
-          detailed.retry()
-        },
-      }
+
+  const responsive = feed && media.kind === 'image' && !full
+  useEffect(() => {
+    const element = ref.current
+    if (!responsive || !visible || !element) return
+    const measure = () => setWidth(element.getBoundingClientRect().width || element.clientWidth || 360)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [responsive, visible])
+
+  const density = Math.min(window.devicePixelRatio || 1, 2)
+  const variant = full ? 'full' : responsive && Math.min(width * density, media.width) > 360 ? 'feed' : 'thumbnail'
+  const file = useMediaUrl(media.id, variant, (full || visible) && (!responsive || width > 0), publicMedia)
   return (
     <div
       className={`private-media ${full ? 'private-media--full' : ''} ${feed ? 'private-media--feed' : ''}`}
@@ -412,11 +404,11 @@ export function PrivateMedia({
         </div>
       ) : file.url ? (
         previewOnly ? (
-          <img src={file.url} alt={alt} loading="lazy" />
+          <img src={file.url} alt={alt} decoding="async" />
         ) : full && media.kind === 'video' ? (
           <video src={file.url} controls playsInline preload="metadata" aria-label={alt} />
         ) : full ? (
-          <img src={file.url} alt={alt} />
+          <img src={file.url} alt={alt} decoding="async" />
         ) : (
           <button
             className="media-open"
@@ -424,7 +416,7 @@ export function PrivateMedia({
             aria-label={`${media.kind === 'video' ? 'Abrir vídeo' : 'Ampliar foto'}: ${alt}`}
             onClick={() => setExpanded(true)}
           >
-            <img src={file.url} alt={alt} loading="lazy" />
+            <img src={file.url} alt={alt} decoding="async" />
             {media.kind === 'video' && (
               <span className="media-play">
                 <Play /> Vídeo · {Math.ceil(media.duration ?? 0)} s
@@ -502,7 +494,7 @@ function MediaDialog({
           media.kind === 'video' ? (
             <video src={file.url} aria-label={alt} controls playsInline />
           ) : (
-            <img src={file.url} alt={alt} style={{ width: `${zoom * 100}%` }} />
+            <img src={file.url} alt={alt} decoding="async" style={{ width: `${zoom * 100}%` }} />
           )
         ) : (
           <p role="status">Abrindo foto…</p>

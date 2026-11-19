@@ -78,7 +78,7 @@ const grupoRota = (c) => {
 }
 
 const telas = []
-for (const file of ['src/workspace/WorkspaceApp.tsx', 'src/app/App.tsx'].filter(exists)) {
+for (const file of ['src/workspace/WorkspaceApp.tsx', 'src/workspace/WorkspaceRoutes.tsx', 'src/app/App.tsx'].filter(exists)) {
   for (const m of read(file).matchAll(/<Route\s+(?:index\s+)?path="([^"]+)"/g)) {
     const p = m[1]
     if (p === '*' || p === '/') continue

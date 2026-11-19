@@ -14,9 +14,46 @@ export interface ClubSettings {
   coverMediaId?: string | null
   coverIsPublic?: boolean
 }
+export interface ClubSummary {
+  id: string
+  name: string
+  role: Role
+  description: string
+  visibility: ClubSettings['visibility']
+  accent: string
+  coverMediaId: string | null
+  memberCount: number
+  currentBook: { title: string; author: string } | null
+  nextEvent: { title: string; date: string } | null
+  active: boolean
+}
 const missing = () => new HttpError(404, 'NOT_FOUND', 'Este recurso não está disponível.')
 export class ClubManagement {
   constructor(private pool: Pool) {}
+  async summaries(user: UserProfile): Promise<ClubSummary[]> {
+    const { rows } = await this.pool.query<ClubSummary>(
+      `SELECT c.id,c.name,m.role,COALESCE(s.description,'') AS description,
+         COALESCE(s.visibility,'private') AS visibility,COALESCE(s.accent,'#6e477c') AS accent,
+         s.cover_media_id AS "coverMediaId",
+         (SELECT count(*)::int FROM club_memberships member
+          WHERE member.club_id=c.id AND member.status='active') AS "memberCount",
+         (SELECT jsonb_build_object('title',book->>'title','author',book->>'author')
+          FROM jsonb_array_elements(COALESCE(w.state->'books','[]')) book
+          WHERE book->>'id'=w.state->>'currentBookId' LIMIT 1) AS "currentBook",
+         (SELECT jsonb_build_object('title',event.title,'date',event.starts_at)
+          FROM club_events event WHERE event.club_id=c.id AND event.deleted_at IS NULL
+          AND event.starts_at>=now() ORDER BY event.starts_at,event.id LIMIT 1) AS "nextEvent",
+         (EXISTS(SELECT 1 FROM forum_topics topic WHERE topic.club_id=c.id AND topic.deleted_at IS NULL
+            AND topic.created_at>=now()-interval '3 days')
+          OR EXISTS(SELECT 1 FROM club_events event WHERE event.club_id=c.id AND event.deleted_at IS NULL
+            AND event.starts_at BETWEEN now()-interval '3 days' AND now()+interval '3 days')) AS active
+       FROM club_memberships m JOIN clubs c ON c.id=m.club_id
+       LEFT JOIN club_settings s ON s.club_id=c.id LEFT JOIN club_workspaces w ON w.club_id=c.id
+       WHERE m.user_id=$1 AND m.status='active' ORDER BY c.created_at,c.id`,
+      [user.id],
+    )
+    return rows
+  }
   async discover(input: { q?: string; limit: number; cursor?: string }) {
     const cursor = decodeCursor(input.cursor)
     const { rows } = await this.pool.query(

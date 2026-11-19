@@ -9,6 +9,7 @@ const schema = z.object({
   FIREBASE_WEB_API_KEY: z.string().min(1).optional(),
   FIREBASE_AUTH_EMULATOR_HOST: z.string().optional(),
   FRONTEND_ORIGIN: z.string().url(),
+  ALLOW_NATIVE_STAGING_ORIGINS: z.enum(['true','false']).default('false').transform(value => value === 'true'),
   FRONTEND_EXTRA_ORIGINS: z.string().default('').transform(value => value.split(',').map(item => item.trim()).filter(Boolean)),
   MEDIA_CLEANUP_ENABLED:z.enum(['true','false']).default('false').transform(value=>value==='true'),
   PLATFORM_MODERATOR_UIDS: z.string().default('').transform(value=>value.split(',').map(id=>id.trim()).filter(Boolean)).refine(ids=>ids.length<=10&&ids.every(id=>/^[A-Za-z0-9_-]{1,128}$/.test(id))),
@@ -29,6 +30,13 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
     try { const url = new URL(value); return url.origin !== value || !!url.username || !!url.password || url.protocol !== 'https:' }
     catch { return true }
   })) throw new Error('Origens adicionais exigem até três origens HTTPS exatas.')
+  if (config.ALLOW_NATIVE_STAGING_ORIGINS) {
+    if (config.NODE_ENV !== 'development' ||
+        ['gen-lang-client-0194308411', 'project-acb850f4-4bb8-45de-a84'].includes(config.FIREBASE_PROJECT_ID)) {
+      throw new Error('Origens de WebView são exclusivas da API de staging.')
+    }
+    config.FRONTEND_EXTRA_ORIGINS = [...new Set([...config.FRONTEND_EXTRA_ORIGINS, 'capacitor://localhost', 'https://localhost'])]
+  }
   if (!['postgres:', 'postgresql:'].includes(new URL(config.DATABASE_URL).protocol)) {
     throw new Error('DATABASE_URL deve apontar para PostgreSQL.')
   }
