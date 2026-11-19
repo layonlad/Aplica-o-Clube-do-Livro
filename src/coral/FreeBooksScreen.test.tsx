@@ -26,7 +26,7 @@ const renderAt = (path: string) =>
   )
 beforeEach(() => { home.mockReset(); search.mockReset(); news.mockReset(); setScope.mockReset() })
 
-it('mostra as seções do acervo e leva "Ler agora" à importação com o EPUB', async () => {
+it('mostra as seções do acervo e leva "Ler agora" ao vínculo do EPUB', async () => {
   home.mockResolvedValue({ sections: [{ id: 'br', title: 'Clássicos brasileiros', items: [book] }], categories: [] })
   renderAt('/app/explore/gratuitos')
   expect(await screen.findByRole('heading', { name: 'Clássicos brasileiros' })).toBeInTheDocument()

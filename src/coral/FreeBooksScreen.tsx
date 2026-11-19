@@ -19,7 +19,6 @@ const languages = [
 type Load<T> = { state: 'loading' } | { state: 'ready'; value: T } | { state: 'error'; message: string } | { state: 'not-ready' }
 const failed = (error: unknown): Load<never> => (error instanceof ServiceNotReady ? { state: 'not-ready' } : { state: 'error', message: readableError(error) })
 
-/** Biblioteca Gratuita: obras em domínio público ou com licença aberta, verificadas pelo servidor. */
 export function FreeBooksScreen() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
@@ -107,7 +106,7 @@ export function FreeBooksScreen() {
                 {languages.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
               </select>
             </label>
-            <span className="free-books-filters__note"><ShieldCheck size={15} aria-hidden="true" />Licença verificada</span>
+            <span className="free-books-filters__note"><ShieldCheck size={15} aria-hidden="true" />Fontes oficiais</span>
           </div>
         )}
 
@@ -115,7 +114,7 @@ export function FreeBooksScreen() {
           <div className="soft-empty">
             <BookOpen size={26} aria-hidden="true" />
             <h2 className="soft-empty__title">A Biblioteca Gratuita está sendo conectada</h2>
-            <p>Os livros aparecem aqui assim que o servidor liberar o acervo. Nenhum título é mostrado antes da verificação de licença.</p>
+            <p>O acervo aparece aqui assim que o serviço estiver disponível.</p>
             <button type="button" className="pill-button" onClick={() => setRetry((value) => value + 1)}>Tentar novamente</button>
           </div>
         ) : filtered ? (
@@ -152,7 +151,7 @@ export function FreeBooksScreen() {
         ) : (
           <p className="soft-empty">O acervo gratuito está vazio no momento.</p>
         )}
-        {!notReady && <p className="free-books-credit t-caption">Acervo de Project Gutenberg, Standard Ebooks e Open Library. Só aparecem obras em domínio público ou com licença aberta.</p>}
+        {!notReady && <p className="free-books-credit t-caption">Edições para ler no aplicativo e links oficiais para ler nas fontes externas.</p>}
       </SheetBody>
       {book && <FreeBookDetails book={book} onClose={() => setBook(null)} />}
     </div>
@@ -181,7 +180,6 @@ export function FreeBookTile({ book, onOpen }: { book: FreeBook; onOpen: () => v
   )
 }
 
-/** Detalhes, licença e as ações reais: ler agora ou guardar na biblioteca pessoal (com o EPUB). */
 export function FreeBookDetails({ book, onClose }: { book: FreeBook; onClose: () => void }) {
   const { user } = useAuth()
   const { setScope } = useWorkspace()
@@ -191,7 +189,7 @@ export function FreeBookDetails({ book, onClose }: { book: FreeBook; onClose: ()
     setScope('personal')
     navigate(`/app/library/gerenciar?gratuito=${encodeURIComponent(book.id)}${read ? '&ler=1' : ''}`)
   }
-  const verified = new Date(book.license.verifiedAt)
+  const verified = book.license && new Date(book.license.verifiedAt)
   return (
     <Sheet title="Livro gratuito" onClose={onClose} className="action-sheet free-details">
       <div className="book-details">
@@ -206,22 +204,22 @@ export function FreeBookDetails({ book, onClose }: { book: FreeBook; onClose: ()
           </dl>
         </div>
       </div>
-      <p className="free-license">
+      {book.license && verified && <p className="free-license">
         <BadgeCheck size={17} aria-hidden="true" />
-        <span><strong>{book.license.label}</strong><small>Verificado em {Number.isNaN(verified.getTime()) ? '—' : verified.toLocaleDateString('pt-BR')} · {book.source.name}</small></span>
-      </p>
+        <span><strong>{book.license.label}</strong><small>Verificado em {Number.isNaN(verified.getTime()) ? '—' : verified.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} · {book.source.name}</small></span>
+      </p>}
       {book.description && <p className="free-description preserve-text">{book.description}</p>}
       {book.subjects.length > 0 && <div className="free-subjects">{book.subjects.slice(0, 6).map((item) => <span key={item} className="tag">{item}</span>)}</div>}
       <div className="action-menu">
-        {book.epub && user?.emailVerified ? (
+        {user?.emailVerified ? (
           <>
-            <button type="button" onClick={() => add(true)}>
+            {book.epub && <button type="button" onClick={() => add(true)}>
               <span className="action-menu__icon"><BookOpen size={19} /></span>
-              <span>Ler agora<small>Entra na sua biblioteca com o EPUB</small></span>
-            </button>
+              <span>Ler agora<small>Abre no leitor do aplicativo</small></span>
+            </button>}
             <button type="button" onClick={() => add(false)}>
               <span className="action-menu__icon"><BookPlus size={19} /></span>
-              <span>Adicionar à biblioteca<small>Conta no limite de EPUBs do seu plano</small></span>
+              <span>Adicionar à biblioteca<small>Salva esta edição na sua conta</small></span>
             </button>
           </>
         ) : book.epub ? (
@@ -234,7 +232,7 @@ export function FreeBookDetails({ book, onClose }: { book: FreeBook; onClose: ()
           <span className="action-menu__icon"><ExternalLink size={19} /></span>
           <span>Ver em {book.source.name}<small>Abre o site da fonte</small></span>
         </a>
-        {book.license.url && (
+        {book.license?.url && (
           <a href={book.license.url} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">
             <span className="action-menu__icon"><ShieldCheck size={19} /></span>
             <span>Ler a licença</span>

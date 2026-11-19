@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ExternalLink, Newspaper, Send } from 'lucide-react'
 import { readableError } from '../auth/api'
 import { fetchNews, ServiceNotReady } from '../literary/api'
@@ -118,6 +119,7 @@ function NewsCard({ item, featured = false, label }: { item: NewsItem; featured?
       <button type="button" className="news-card__share" aria-label={copied ? 'Link copiado' : `Compartilhar “${item.title}”`} onClick={() => void share()}>
         <Send size={16} aria-hidden="true" />
       </button>
+      {item.postId && <Link className="text-link" to={`/app/community?post=${encodeURIComponent(item.postId)}`}>Discussão</Link>}
       {copied && <span className="sr-only" role="status">Link copiado</span>}
     </article>
   )

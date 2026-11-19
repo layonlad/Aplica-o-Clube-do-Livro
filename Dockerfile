@@ -15,6 +15,7 @@ COPY server/package.json server/package.json
 RUN npm ci --omit=dev --workspace server --include-workspace-root=false && npm cache clean --force
 COPY --from=build --chown=node:node /app/server/dist ./server/dist
 COPY --from=build --chown=node:node /app/server/migrations ./server/migrations
+COPY --from=build --chown=node:node /app/server/assets ./server/assets
 USER node
 EXPOSE 8080
 CMD ["node", "--env-file-if-exists=/etc/secrets/clube-api.env", "server/dist/index.js"]

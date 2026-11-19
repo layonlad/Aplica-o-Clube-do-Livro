@@ -66,15 +66,15 @@ const commits = git('log', '-25', '--format=%h%x09%ad%x09%an%x09%s', '--date=iso
 const rotasApi = []
 for (const file of walk('server/src', (p) => p.endsWith('.ts'))) {
   const source = read(file)
-  const regex = /\b(api|publicApi|app)\.(get|post|delete|put|patch)\(\s*['"`]([^'"`]+)['"`]/g
+  const regex = /\b(api|publicApi|literary|app)\.(get|post|delete|put|patch)\(\s*['"`]([^'"`]+)['"`]/g
   for (const m of source.matchAll(regex)) {
-    const prefixo = m[1] === 'publicApi' ? '/v1/public' : m[1] === 'api' ? '/v1' : ''
+    const prefixo = m[1] === 'publicApi' ? '/v1/public' : m[1] === 'literary' ? '/v1/literary' : m[1] === 'api' ? '/v1' : ''
     rotasApi.push({ metodo: m[2].toUpperCase(), caminho: (prefixo + m[3]).replace(/\/+/g, '/'), arquivo: relative(root, join(root, file)) })
   }
 }
 const grupoRota = (c) => {
   const parte = c.replace(/^\/v1\/?/, '').split('/')[0] || 'saúde'
-  return { public: 'Comunidade pública', me: 'Minha conta', clubs: 'Clubes', people: 'Perfis', invites: 'Convites', 'club-files': 'Arquivos de clube', media: 'Mídia', moderation: 'Moderação', reports: 'Denúncias', catalog: 'Catálogo', health: 'Saúde', 'saúde': 'Saúde' }[parte] ?? parte
+  return { public: 'Comunidade pública', me: 'Minha conta', clubs: 'Clubes', people: 'Perfis', invites: 'Convites', 'club-files': 'Arquivos de clube', media: 'Mídia', moderation: 'Moderação', reports: 'Denúncias', catalog: 'Catálogo', literary: 'Catálogo literário e notícias', health: 'Saúde', 'saúde': 'Saúde' }[parte] ?? parte
 }
 
 const telas = []

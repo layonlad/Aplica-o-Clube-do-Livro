@@ -10,6 +10,7 @@ const schema = z.object({
   FIREBASE_AUTH_EMULATOR_HOST: z.string().optional(),
   FRONTEND_ORIGIN: z.string().url(),
   FRONTEND_EXTRA_ORIGINS: z.string().default('').transform(value => value.split(',').map(item => item.trim()).filter(Boolean)),
+  LITERARY_NEWS_SYNC:z.enum(['true','false']).default('false').transform(value=>value==='true'),
   MEDIA_CLEANUP_ENABLED:z.enum(['true','false']).default('false').transform(value=>value==='true'),
   PLATFORM_MODERATOR_UIDS: z.string().default('').transform(value=>value.split(',').map(id=>id.trim()).filter(Boolean)).refine(ids=>ids.length<=10&&ids.every(id=>/^[A-Za-z0-9_-]{1,128}$/.test(id))),
   PHOTO_CLEANUP_TOKEN:z.string().regex(/^[A-Za-z0-9_-]{43}$/).optional(),

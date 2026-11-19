@@ -9,8 +9,9 @@
     "fase": "Sessão protegida e leitor EPUB publicados",
     "tom": "ok",
     "resumo": "PR 39 publicado nos dois Firebase Hosting no merge 26627b2. O app conectado exige sessão Firebase validada pela API antes das rotas privadas. Retoma o destino após login, mantém a sessão entre acessos, descarta caches transitórios ao sair e preserva navegação e posição EPUB. CI do PR e 236 testes locais aprovados. Chrome e WebKit validaram duas contas e o leitor localmente. Em produção, sete rotas por site levaram ao login sem sessão e 104 arquivos por site corresponderam ao build. API e executor em 9ce87a1.",
-    "proximoPasso": "Dono pode testar login, logout e EPUB no endereço principal. Aparelhos físicos e Google OAuth na nuvem continuam para teste com o dono. Produção continua manual e com autorização.",
+    "proximoPasso": "Dono pode testar login, logout e EPUB no endereço principal. Aparelhos físicos e Google OAuth na nuvem continuam para teste com o dono. Revisar o PR conjunto da Biblioteca Gratuita e Notícias antes de aprovar o merge e a liberação. Produção continua manual e com autorização.",
     "pendencias": [
+      "Biblioteca Gratuita e Notícias: API integrada às telas Coral do PR 43. Uma edição EPUB autorizada, catálogo externo e notícias com discussões foram validados em staging local. A interface de recomendações e assuntos seguidos pode usar as rotas do contrato. Migration 020, grants e coleta aguardam autorização de liberação.",
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
       "Orçamento do projeto é de R$ 70/mês com alertas, sem corte automático de cobrança. Cloud SQL mínimo e instâncias Cloud Run limitadas; acompanhar uso antes de ampliar capacidade.",
@@ -60,7 +61,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Branch codex/registro-publicacao-sessao: registro da publicação do PR 39. Build em cópia limpa e ensaios locais isolados.",
+      "versao": "Branch codex/biblioteca-noticias: Telas do PR 43 conectadas à API e ao leitor no staging local com PostgreSQL e Firebase Auth Emulator.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -384,6 +385,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-18",
+      "autor": "Codex",
+      "titulo": "Backend da Biblioteca Gratuita e das Notícias Literárias",
+      "resumo": "Busca e edições Open Library com cache, EPUB de A Cartomante com referências pessoais, links oficiais externos, metadados editoriais com deduplicação, ações sociais e sugestões privadas. Migration aditiva e papel restrito testados localmente. Integração local com as telas do PR 43 do Claude Code, com leitura sem duplicar o arquivo e link para discussão. Retomada do EPUB, capa e ações sociais conferidas no Chrome e WebKit. Sem liberação em produção.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/44"
+    },
     {
       "data": "2026-11-18",
       "autor": "Claude",

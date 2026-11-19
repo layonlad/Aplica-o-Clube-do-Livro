@@ -1,3 +1,4 @@
+import { literaryCoverUrl } from '../literary/api'
 import { useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BookOpen, BookPlus, ChevronDown, Ellipsis, FolderPen, Gift, Heart, Layers, Library, Plus, Search, SlidersHorizontal, Star, Trash2, Upload, X } from 'lucide-react'
@@ -120,7 +121,7 @@ export function LibraryScreen() {
               return (
                 <button key={name} type="button" className={`club-tile collection-tile ${collection === name ? 'is-selected' : ''}`} aria-pressed={collection === name} onClick={() => setCollection(collection === name ? null : name)} onContextMenu={(event) => { event.preventDefault(); setEditCollection(name) }}>
                   <span className="club-tile__art">
-                    {first ? <BookCover title={first.title} author={first.author} bookId={first.id} image={first.metadata?.cover} width={120} ratio={0.9} /> : <span className="club-art" />}
+                    {first ? <BookCover title={first.title} author={first.author} bookId={first.id} image={first.metadata?.literaryEpub ? literaryCoverUrl(first.metadata.literaryEditionId) : first.metadata?.cover} width={120} ratio={0.9} /> : <span className="club-art" />}
                   </span>
                   {name.toLocaleLowerCase('pt-BR').includes('favorit') ? <Heart size={17} aria-hidden="true" /> : <Layers size={17} aria-hidden="true" />}
                   <strong>{name}</strong>
@@ -160,7 +161,7 @@ export function LibraryScreen() {
               return (
                 <article className="lib-row" key={book.id}>
                   <a href={`#/app/reader/${book.id}`} onClick={(event) => { open(event, book); if (!event.defaultPrevented) { event.preventDefault(); navigate(`/app/reader/${book.id}`) } }} aria-label={`Abrir ${book.title}`}>
-                    <BookCover title={book.title} author={book.author} bookId={book.id} image={book.metadata?.cover} width={80} ratio={1} />
+                    <BookCover title={book.title} author={book.author} bookId={book.id} image={book.metadata?.literaryEpub ? literaryCoverUrl(book.metadata.literaryEditionId) : book.metadata?.cover} width={80} ratio={1} />
                   </a>
                   <div className="lib-row__text">
                     <strong>{book.title}</strong>

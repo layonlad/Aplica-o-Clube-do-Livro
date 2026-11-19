@@ -19,7 +19,7 @@ import type { ImportedBook } from './import-book'
 import { useWorkspace } from './WorkspaceProvider'
 import './library-room.css'
 import { PrivateBookFile } from './PrivateBookFile'
-import { downloadFreeBookEpub, fetchFreeBook, languageNames, ServiceNotReady } from '../literary/api'
+import { addFreeBook, literaryCoverUrl, ServiceNotReady } from '../literary/api'
 
 const statusLabels = {
   want: 'Quero ler',
@@ -40,17 +40,15 @@ const blank = () => ({
 })
 export function LibraryRoom() {
   const { user } = useAuth(),
-    [params] = useSearchParams(),
+    [params, setParams] = useSearchParams(),
     sample = params.get('sample'),
-    // Livro da Biblioteca Gratuita: ?gratuito=<id> baixa o EPUB autorizado e abre o formulário já preenchido;
-    // com &ler=1 o leitor abre logo depois de salvar.
     freeBookId = params.get('gratuito'),
     readAfter = params.get('ler') === '1'
   const navigateTo = useNavigate()
   const [originalFile, setOriginalFile] = useState<File | null>(null)
   const { appearance, saveAppearance } = useTheme()
   const [usage, setUsage] = useState<BookFilesUsage | null>(null)
-  const { snapshot, act, busy, scope } = useWorkspace()
+  const { snapshot, act, busy, scope, refresh } = useWorkspace()
   const { state, reading, role } = snapshot!
   const preferences = preferencesSchema.parse(snapshot!.preferences)
   const [query, setQuery] = useState('')
@@ -62,7 +60,6 @@ export function LibraryRoom() {
   const [editing, setEditing] = useState<string | null>(null)
   const [message, setMessage] = useState('')
   const [importing, setImporting] = useState(false)
-  const [autoSave, setAutoSave] = useState(false)
   const [catalog, setCatalog] = useState<CatalogEntry[]>([])
   const [catalogQuery, setCatalogQuery] = useState('')
   const [catalogAuthor, setCatalogAuthor] = useState(''),
@@ -89,11 +86,6 @@ export function LibraryRoom() {
       setMessage('O livro foi adicionado, mas o arquivo não foi salvo na conta: ' + readableError(error))
     }
   }
-  useEffect(() => {
-    if (!autoSave || importing || !show || !draft.title || !originalFile) return
-    setAutoSave(false)
-    void save({ preventDefault() {} } as FormEvent)
-  }, [autoSave, importing, show, draft.title, originalFile])
   async function save(event: FormEvent) {
     event.preventDefault()
     if (importing) return
@@ -120,7 +112,6 @@ export function LibraryRoom() {
       } finally {
         setImporting(false)
       }
-      if (freeBookId && readAfter) navigateTo(`/app/reader/${createdId}`)
     } else setMessage(editing ? 'Dados atualizados.' : 'Livro adicionado.')
     setShow(false)
     setEditing(null)
@@ -156,34 +147,30 @@ export function LibraryRoom() {
     }
   }
   useEffect(() => {
-    if (!freeBookId) return
+    if (!freeBookId || !user?.emailVerified || scope !== 'personal') return
     let live = true
     setImporting(true)
-    setMessage('Baixando o livro gratuito…')
-    void fetchFreeBook(freeBookId)
-      .then(async (book) => {
-        if (!book.epub) throw Error('Este livro não tem EPUB disponível. Abra-o na fonte original.')
-        const epub = await downloadFreeBookEpub(book)
+    setMessage('Adicionando o livro gratuito…')
+    void addFreeBook(user, freeBookId)
+      .then(async ({ bookId }) => {
         if (!live) return
-        await file(epub, {
-          source: `${book.source.name}: ${book.source.url}`.slice(0, 500),
-          license: `${book.license.label}. Verificado em ${new Date(book.license.verifiedAt).toLocaleDateString('pt-BR')}.`.slice(0, 500),
-          ...(book.year ? { year: String(book.year) } : {}),
-          ...(languageNames[book.language] ? { language: languageNames[book.language] } : {}),
-          ...(book.description ? { synopsis: book.description.slice(0, 3000) } : {}),
-        }, { title: book.title, author: book.authors.join(', ') })
-        // "Ler agora": salva sem pedir confirmação e abre o leitor em seguida.
-        if (live && readAfter) setAutoSave(true)
-      })
-      .catch((error) => {
+        await refresh(true)
         if (!live) return
         setImporting(false)
-        setMessage(error instanceof ServiceNotReady ? 'A Biblioteca Gratuita ainda está sendo conectada ao servidor. Tente novamente mais tarde.' : messageFor(error))
+        setMessage('Livro salvo na sua biblioteca.')
+        if (readAfter) navigateTo(`/app/reader/${bookId}`, { replace: true })
+        else setParams({}, { replace: true })
       })
-    return () => {
-      live = false
-    }
-  }, [freeBookId])
+      .catch(error => {
+        if (live) setMessage(error instanceof ServiceNotReady
+          ? 'A Biblioteca Gratuita está sendo conectada ao servidor.'
+          : messageFor(error))
+      })
+      .finally(() => {
+        if (live) setImporting(false)
+      })
+    return () => { live = false }
+  }, [freeBookId, readAfter, user?.uid, user?.emailVerified, scope])
   useEffect(() => {
     if (sample !== 'welcome') return
     let live = true
@@ -661,7 +648,7 @@ function BookItem({ book, onEdit }: { book: Book; onEdit: () => void }) {
           id={book.id}
           title={book.title}
           author={book.author}
-          fallback={book.metadata?.cover}
+          fallback={book.metadata?.literaryEpub ? literaryCoverUrl(book.metadata.literaryEditionId) : book.metadata?.cover}
         />
       </Link>
       <div className="library-book__body">

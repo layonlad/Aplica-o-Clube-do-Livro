@@ -57,6 +57,7 @@ export async function registerPublicReads(
                 .enum(['1'])
                 .optional()
                 .transform((value) => value === '1'),
+              watching: z.enum(['1']).optional().transform(value => value === '1'),
               saved: z
                 .enum(['1'])
                 .optional()
