@@ -48,6 +48,20 @@ Login interativo com a conta Google do dono, recebimento de e-mail e push em apa
 
 ## Operação e publicações futuras
 
+### Staging e numeração
+
+- **Staging visual** usa o [site de testes](https://clube-do-livro-previa-01943.web.app) com dados fictícios. A conexão com Firebase Auth, API e banco de teste depende do projeto exclusivo de Staging.
+- **Produção** usa os dois endereços do aplicativo da seção Endereços. Configurações mostra o ambiente e a versão no rodapé.
+- A base é **1.0**. A candidata da próxima publicação passa a **1.1**, depois **1.2**, e assim por diante. Iterações na mesma candidata usam o mesmo número, em `release.json`.
+- Publique primeiro em Staging e envie o link com a versão. O dono testa e pede a promoção. O build de produção confere o manifesto público de Staging e aceita somente a candidata correspondente e a próxima versão. O manifesto identifica ambiente, versão, commit e hash do código. Cada deploy deve usar uma cópia limpa do commit aprovado.
+- Para Staging conectado, prepare `.env.staging.local` com o Firebase exclusivo e a API de teste. Use `npm run build:staging`. Para a prévia visual use `npm run build:staging -- --demo` e publique só o site de testes:
+
+```bash
+npx -y firebase-tools@latest deploy --only hosting --config firebase.staging.json --project production
+```
+
+### Produção após a aprovação
+
 O [procedimento de migração e recuperação](migracao/FIREBASE_GOOGLE.md) detalha custos, isolamento, permissões e sequência de publicação. Limites não secretos ficam em `infra/google/config.json`.
 
 Para mudanças somente de frontend, compare o backend de main com a versão da API no ar e publique apenas Hosting a partir de cópia limpa do merge aprovado. Migrations, Cloud Build, API/executor e agendamento não precisam ser executados nessa situação.

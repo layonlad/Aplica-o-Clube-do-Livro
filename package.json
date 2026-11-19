@@ -17,6 +17,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
+    "build:staging": "node scripts/build-release.mjs staging",
+    "test:release": "node --test scripts/release-version.test.mjs",
     "build:production": "node scripts/build-production.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
@@ -27,7 +29,7 @@
     "db:migrate": "npm run migrate --workspace server",
     "test:api": "npm test --workspace server",
     "test:integration": "npm run test:integration --workspace server",
-    "check": "npm run mapa:check && npm test && npm run test:api && npm run build && npm run api:build",
+    "check": "npm run mapa:check && npm run test:release && npm test && npm run test:api && npm run build && npm run api:build",
     "mapa": "node scripts/mapa/build.mjs",
     "mapa:check": "node scripts/mapa/build.mjs --check",
     "auth:emulator": "firebase emulators:start --only auth --project demo-clube-do-livro",

@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { MotionConfig } from 'framer-motion'
 import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
+import { isStaging } from './app/release'
 import { App } from './app/App'
 import { ThemeProvider } from './app/ThemeProvider'
 import { BookOpening } from './app/BookOpening'
@@ -18,6 +19,8 @@ import './design/motion.css'
 import './design/ornaments.css'
 import './design/personalization.css'
 import './styles.css'
+
+if (isStaging) document.title = 'Staging · ' + document.title
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

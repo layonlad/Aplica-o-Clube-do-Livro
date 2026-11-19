@@ -1,3 +1,4 @@
+import { isStaging, version } from '../app/release'
 import { BookOpen } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth'
@@ -52,6 +53,7 @@ export function AuthScreen() {
   return <main className="access-page access-page--split"><AccessArt /><section className="access-card">
     <FlowerSticker size={44} className="sticker-corner" />
     <span className="access-glyph" aria-hidden="true"><BookOpen size={28} /></span>
+    {isStaging && <p className="access-release">Staging · Versão {version}</p>}
     <h1>{mode === 'signup' ? 'Comece sua história' : mode === 'reset' ? 'Recuperar senha' : 'Bom ter você aqui'}</h1>
     <p>Entre para sincronizar suas leituras, acessar seus clubes ou aceitar um convite.</p>
     <form className="access-form" onSubmit={submit}>
