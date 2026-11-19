@@ -63,4 +63,4 @@ Para mudanças somente de frontend, compare o backend de main com a versão da A
 npx -y firebase-tools@latest deploy --only hosting --config firebase.production.json --project production
 ```
 
-O GitHub permanece como código, CI, prévia demonstrativa e mapa. O workflow antigo de notificações está desativado e não possui mais agendamento no código. Render está suspenso; Neon e mídia antiga preservam a fotografia da migração. Não reativar os escritores antigos ou restaurar snapshots sobre gravações novas sem conciliação. A exclusão desses recursos não fez parte desta migração.
+O GitHub permanece como código, CI, prévia demonstrativa e mapa. O agendamento de notificações executa no Google Cloud. Os arquivos de deploy legado do GitHub Actions e Render foram retirados do repositório. Render está suspenso; Neon e mídia antiga preservam a fotografia da migração. Não reativar os escritores antigos ou restaurar snapshots sobre gravações novas sem conciliação. A exclusão desses recursos não fez parte desta migração.

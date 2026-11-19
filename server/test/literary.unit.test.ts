@@ -44,6 +44,30 @@ describe('catálogo literário', () => {
     expect(service.request).toHaveBeenCalledTimes(2)
   })
 
+  it('limita o tempo da consulta e reaproveita metadados conhecidos quando a fonte falha', async () => {
+    let now = 10_000
+    let online = true
+    const request = vi.fn<typeof fetch>(async () => {
+      if (online) return json({ numFound: 1, docs: [{ key: 'OL42W', title: 'Livro' }] })
+      now += 5_001
+      return json({}, 503)
+    })
+    const client = new OpenLibraryClient(request, async delay => { now += delay }, () => now)
+    const input = { title: 'Livro', page: 1, limit: 10 }
+
+    const first = await searchWorks(input, client)
+    online = false
+    now += 301_000
+    await expect(searchWorks(input, client)).resolves.toEqual(first)
+    expect(request).toHaveBeenCalledTimes(2)
+    await expect(searchWorks(input, client)).resolves.toEqual(first)
+    expect(request).toHaveBeenCalledTimes(2)
+
+    now += 3_601_000
+    await expect(searchWorks(input, client)).rejects.toMatchObject({ code: 'CATALOG_UNAVAILABLE' })
+    expect(request).toHaveBeenCalledTimes(3)
+  })
+
   it('mantém traduções e edições separadas e só oferece empréstimo externo da edição exata', async () => {
     const { client } = catalog(url => {
       if (url.includes('/editions.json')) return json({ size: 2, entries: [

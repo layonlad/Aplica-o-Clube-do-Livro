@@ -5,7 +5,7 @@ import { emptyWorkspace } from '../src/workspace-model.js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { buildApp } from '../src/app.js'
 import { HttpError } from '../src/errors.js'
-import { hashToken } from '../src/service.js'
+import { ClubService, hashToken } from '../src/service.js'
 import { migrate } from '../src/migrations.js'
 import { testDatabase } from './database.js'
 import type { Club, CreatedInvite, Session } from '../src/contracts.js'
@@ -44,6 +44,39 @@ beforeAll(async () => {
 afterAll(async () => { await app?.close(); await db?.close() })
 
 describe('API com PostgreSQL real', () => {
+  it('lê uma identidade estável sem recriar sua linha e sincroniza mudanças reais', async () => {
+    const users = new ClubService(db.pool)
+    const claims = identity('identity-stable')
+    const user = await users.syncUser(claims)
+    const version = async () => (await db.pool.query('SELECT xmin::text FROM users WHERE id=$1', [user.id])).rows[0].xmin
+    const before = await version()
+    await Promise.all([users.syncUser(claims), users.syncUser(claims)])
+    expect(await version()).toBe(before)
+    expect(await users.syncUser({ ...claims, name: 'Nome atualizado' })).toMatchObject({ id: user.id, name: 'Nome atualizado' })
+    expect(await version()).not.toBe(before)
+  })
+
+  it('serve o snapshot pessoal existente enquanto outra transação mantém a linha bloqueada', async () => {
+    const user = await new ClubService(db.pool).syncUser(identity('workspace-read'))
+    const workspace = new WorkspaceService(db.pool)
+    const initial = await workspace.get(user)
+    const client = await db.pool.connect()
+    let timeout: ReturnType<typeof setTimeout> | undefined
+    try {
+      await client.query('BEGIN')
+      await client.query('SELECT 1 FROM personal_workspaces WHERE user_id=$1 FOR UPDATE', [user.id])
+      const result = await Promise.race([
+        workspace.get(user),
+        new Promise<null>(resolve => { timeout = setTimeout(() => resolve(null), 1000) }),
+      ])
+      expect(result).toEqual(initial)
+    } finally {
+      clearTimeout(timeout)
+      await client.query('ROLLBACK')
+      client.release()
+    }
+  })
+
   it('isola capacidades de proprietário, administrador, moderador e membro', async () => {
     const actorIds:Record<string,string>={}
     for(const uid of ['roles-owner','roles-admin','roles-peer','roles-moderator','roles-member']) actorIds[uid]=(await app.inject({url:'/v1/me',headers:headers(uid)})).json<Session>().user.id
@@ -234,6 +267,12 @@ describe('API com PostgreSQL real', () => {
   it('aplica CORS exato e limite de requisições', async () => {
     const limited = await buildApp({ pool: db.pool, origin: 'https://club.example', rateMax: 2, verifyToken: async () => identity('rate') })
     try {
+      const preflight = await limited.inject({ method: 'OPTIONS', url: '/v1/me', headers: {
+        origin: 'https://club.example', 'access-control-request-method': 'GET',
+        'access-control-request-headers': 'authorization',
+      } })
+      expect(preflight.statusCode).toBe(204)
+      expect(preflight.headers['access-control-max-age']).toBe('300')
       const result = await limited.inject({ url: '/v1/me', headers: { ...headers(), origin: 'https://evil.example' } })
       expect(result.headers['access-control-allow-origin']).not.toBe('https://evil.example')
       await limited.inject({ url: '/v1/me', headers: headers() })

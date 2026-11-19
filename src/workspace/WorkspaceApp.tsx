@@ -1,3 +1,4 @@
+import { UnreadProvider } from '../community/NotificationBell'
 import { useExternalReading } from '../reading-integrations/client'
 import {PrivateBookCover} from './PrivateBookCover'
 import { lazy, useEffect, useState, type FormEvent, type ReactNode } from 'react'
@@ -197,7 +198,7 @@ function WorkspaceSession() {
   }
   if (pathname === '/account') return <Navigate to={accountReturnPath(state?.from)} replace />
   return <ThemeProvider key={user.uid} accountId={user.uid}>
-    <WorkspaceProvider>
+    <UnreadProvider><WorkspaceProvider>
       <BookOpening />
       <Routes>
         <Route path="/" element={<Navigate to="/app" replace />} />
@@ -235,7 +236,7 @@ function WorkspaceSession() {
         <Route path="/space/:clubId" element={<OpenClub />} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Routes>
-    </WorkspaceProvider>
+    </WorkspaceProvider></UnreadProvider>
   </ThemeProvider>
 }
 export function WorkspaceApp(){return <AuthProvider><WorkspaceSession/></AuthProvider>}

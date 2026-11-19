@@ -13,13 +13,28 @@ export interface BookFilesUsage {
 }
 
 export const BOOK_FILES_EVENT = 'clube-book-files-changed'
+let coverUsage = new WeakMap<User, { expires: number; request: Promise<BookFilesUsage> }>()
 
 export function announceBookFiles() {
+  coverUsage = new WeakMap()
   window.dispatchEvent(new CustomEvent(BOOK_FILES_EVENT))
 }
 
 export function fetchUsage(user: User) {
   return apiRequest<BookFilesUsage>(user, '/me/book-files')
+}
+
+function coverAvailability(user: User) {
+  const now = Date.now()
+  const cache = coverUsage
+  const current = cache.get(user)
+  if (current && current.expires > now) return current.request
+  const request = fetchUsage(user).catch(error => {
+    if (cache.get(user)?.request === request) cache.delete(user)
+    throw error
+  })
+  cache.set(user, { expires: now + 30_000, request })
+  return request
 }
 
 function toBase64(bytes: Uint8Array) {
@@ -68,6 +83,8 @@ export async function bookCoverBlob(user: User | null, bookId: string, signal?: 
     }
   }
   if (!user?.emailVerified || !import.meta.env.VITE_API_URL) return undefined
+  const usage = await coverAvailability(user).catch(() => undefined)
+  if (signal?.aborted || !usage?.enabled || !usage.bookIds.includes(bookId)) return undefined
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
       const response = await authenticatedResponse(user, `/me/book-files/${bookId}/cover`, 'GET', undefined, signal)
@@ -77,7 +94,7 @@ export async function bookCoverBlob(user: User | null, bookId: string, signal?: 
       }
       return undefined
     } catch (error) {
-      if (!(error instanceof ApiError) || error.status !== 429) return undefined
+      if (signal?.aborted || !(error instanceof ApiError) || error.status !== 429) return undefined
       await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)))
     }
   }

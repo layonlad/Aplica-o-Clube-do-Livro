@@ -9,7 +9,7 @@
     "fase": "Biblioteca Gratuita, Notícias e Kindle publicados",
     "tom": "ok",
     "resumo": "PRs 44 e 38 publicados nos dois Firebase Hosting no merge be3a3e4. API e executor no código f7972e1, de árvore idêntica. Catálogo de nove edições, EPUB licenciado de A Cartomante e notícias da EBC. Progresso Kindle manual e anotações privadas. Migrations 020 e 021 aditivas, backup privado, 265 testes locais, CI aprovado e 107 arquivos por site conferidos por SHA-256.",
-    "proximoPasso": "Dono pode testar Livros Gratuitos em Explorar, Notícias em Comunidade e Enviar ao Kindle no menu da Biblioteca. Validar o recebimento no Kindle e o menu nativo em aparelho físico.",
+    "proximoPasso": "Revisar o PR da auditoria e aprovar a publicação pela ordem API, executor e sites. Depois, comparar o volume de conflitos de leitura, requisições de capa e tempo do catálogo nos logs.",
     "pendencias": [
       "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
       "Notícias usam metadados do RSS e link original. A primeira coleta importou uma manchete real. Recomendações, filtros avançados e acompanhamento de assuntos têm rotas na API; faltam controles correspondentes nas telas.",
@@ -62,7 +62,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Candidato dos PRs 44 e 38 testado com PostgreSQL, Auth Emulator, Chrome e WebKit.",
+      "versao": "Auditoria do backend validada com PostgreSQL, Firebase Auth Emulator, Chrome e WebKit locais.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -387,6 +387,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-19",
+      "autor": "Codex",
+      "titulo": "Auditoria e otimização do backend",
+      "resumo": "Revisão de rotas, migrations, histórico e logs. Salvamento de leitura usa a revisão já confirmada, e a biblioteca consulta capas disponíveis. Consultas de notificações são compartilhadas. Leituras do espaço pessoal dispensam bloqueio e identidade estável dispensa gravação. O catálogo externo tem limite de espera. Arquivos obsoletos do Render e executor manual removidos. Rotas e permissões preservadas.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/46"
+    },
     {
       "data": "2026-11-19",
       "autor": "Codex",
