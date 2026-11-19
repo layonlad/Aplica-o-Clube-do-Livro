@@ -1,5 +1,5 @@
 import type { User } from 'firebase/auth'
-import { apiRequest, ApiError } from '../auth/api'
+import { apiRequest, authenticatedResponse, ApiError } from '../auth/api'
 import { localEpub, saveEpub } from './epub-storage'
 
 /** Uso do armazenamento de EPUBs da conta: plano, limite e livros que já têm o arquivo guardado. */
@@ -63,32 +63,23 @@ export async function bookCoverBlob(user: User | null, bookId: string, signal?: 
     const image = archive.coverPath ? archive.images.get(archive.coverPath) : undefined
     if (image) {
       const cover = new Blob([new Uint8Array(image.bytes)], { type: image.mime })
-      void saveEpub(namespace, bookId, record.file, record.filename, cover).catch(() => {})
+      void saveEpub(namespace, bookId, record.file, record.filename, cover, record.downloadCache ? user ?? undefined : undefined).catch(() => {})
       return cover
     }
   }
   if (!user?.emailVerified || !import.meta.env.VITE_API_URL) return undefined
-  const token = await user.getIdToken()
   for (let attempt = 0; attempt < 4; attempt++) {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/v1/me/book-files/${bookId}/cover`,
-      {
-        headers: { Authorization: 'Bearer ' + token },
-        signal,
-        cache: 'no-store',
-        credentials: 'omit',
-        referrerPolicy: 'no-referrer',
-      },
-    )
-    if (response.status === 429) {
+    try {
+      const response = await authenticatedResponse(user, `/me/book-files/${bookId}/cover`, 'GET', undefined, signal)
+      if (response.headers.get('content-type')?.startsWith('image/')) {
+        const blob = await response.blob()
+        if (blob.size <= 300000) return blob
+      }
+      return undefined
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 429) return undefined
       await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)))
-      continue
     }
-    if (response.ok && response.headers.get('content-type')?.startsWith('image/')) {
-      const blob = await response.blob()
-      if (blob.size <= 300000) return blob
-    }
-    return undefined
   }
   return undefined
 }

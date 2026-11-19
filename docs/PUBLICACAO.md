@@ -2,7 +2,7 @@
 
 Produção migrada e verificada em **16/11/2026**, com autorização do dono, para o projeto Google/Firebase `gen-lang-client-0194308411`, nome de exibição **Projeto-clube-do-Livro**. O orçamento autorizado é de **R$ 70/mês**, com alertas; não é um corte automático de cobrança.
 
-Última atualização: **PRs 35/36, site no merge `d99a2ac`**, identidade Coral publicada em 18/11/2026. API/executor no merge `9ce87a1`, por digest, publicados antes dos dois sites. Sem migration ou grants novos. [Relatório, auditoria e resultado de cada teste](publicacoes/2026-11-18-coral.md).
+Última atualização em 18/11/2026. O PR 39 saiu nos dois Firebase Hosting no merge `26627b2`, com correções de sessão e do leitor autenticado. API e executor permanecem em `9ce87a1`. [Resultado dos testes e verificação publicada](publicacoes/2026-11-18-sessao-epub.md).
 
 ## Endereços
 

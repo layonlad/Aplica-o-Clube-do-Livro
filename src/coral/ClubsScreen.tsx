@@ -15,7 +15,7 @@ import { ClubArt } from './pieces'
 
 interface Notice { id: string; kind: string; targetType: string; targetId: string; clubId: string | null; clubName: string | null; actorName: string; createdAt: string }
 const PENDING_KEY = 'clube-livro-join-pending'
-const readPending = (): string[] => { try { return JSON.parse(localStorage.getItem(PENDING_KEY) ?? '[]') } catch { return [] } }
+const readPending = (key: string): string[] => { try { return JSON.parse(localStorage.getItem(key) ?? '[]') } catch { return [] } }
 const shortDate = (value: string) => new Date(value).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }).replace('.', '')
 
 export function ClubsScreen() {
@@ -28,7 +28,8 @@ export function ClubsScreen() {
   const [showAll, setShowAll] = useState(false)
   const [creating, setCreating] = useState(params.get('criar') === '1')
   const [joining, setJoining] = useState<DiscoverClub | null>(null)
-  const [pending, setPending] = useState<string[]>(readPending)
+  const pendingKey = PENDING_KEY + ':' + user?.uid
+  const [pending, setPending] = useState<string[]>(() => readPending(pendingKey))
   const [invites, setInvites] = useState<Notice[] | null>(null)
   const [inviteBusy, setInviteBusy] = useState<string | null>(null)
   const [inviteError, setInviteError] = useState('')
@@ -181,12 +182,12 @@ export function ClubsScreen() {
       </SheetBody>
 
       {creating && verified && <CreateClub onClose={() => { setCreating(false); if (params.get('criar')) { const next = new URLSearchParams(params); next.delete('criar'); setParams(next, { replace: true }) } }} />}
-      {joining && <JoinClub club={joining} onClose={() => setJoining(null)} onRequested={() => { const next = [...pending, joining.id]; setPending(next); try { localStorage.setItem(PENDING_KEY, JSON.stringify(next)) } catch { /* sem armazenamento */ } setJoining(null) }} />}
+      {joining && <JoinClub club={joining} onClose={() => setJoining(null)} onRequested={() => { const next = [...pending, joining.id]; setPending(next); try { localStorage.setItem(pendingKey, JSON.stringify(next)) } catch { /* sem armazenamento */ } setJoining(null) }} />}
     </div>
   )
 }
 
-function MyClubCard({ club, onOpen }: { club: ClubSummary; onOpen: () => void }) {
+export function MyClubCard({ club, onOpen }: { club: ClubSummary; onOpen: () => void }) {
   return (
     <button type="button" className="my-club" onClick={onOpen} aria-label={`Abrir ${club.name}`}>
       <span className="my-club__top">

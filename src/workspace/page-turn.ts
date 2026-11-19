@@ -1,3 +1,5 @@
+const activeTurns = new WeakMap<HTMLElement, () => void>()
+
 /** Animate an inert copy of the OLD leaf, keeping the live DOM/selection/locator geometry intact. */
 export function preparePageTurn(
   host: HTMLElement,
@@ -5,6 +7,8 @@ export function preparePageTurn(
   direction: number,
   enabled: boolean,
 ) {
+  const room = host.closest<HTMLElement>('.reading-room') ?? host
+  activeTurns.get(room)?.()
   if (
     !enabled ||
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ||
@@ -33,7 +37,7 @@ export function preparePageTurn(
     lineHeight: computed.lineHeight,
     color: computed.color,
   })
-  const surface = getComputedStyle(host.closest('.reading-room')!).getPropertyValue(
+  const surface = getComputedStyle(room).getPropertyValue(
     '--reader-surface',
   )
   container.style.setProperty('--reader-surface', surface)
@@ -61,17 +65,26 @@ export function preparePageTurn(
   leaf.style.transformOrigin = direction > 0 ? 'left center' : 'right center'
   leaf.append(copy)
   container.append(leaf)
-  document.body.append(container)
-  const cleanup = () => container.remove()
+  room.append(container)
+  let frame = 0
+  let animation: Animation | undefined
+  const cleanup = () => {
+    clearTimeout(timer)
+    cancelAnimationFrame(frame)
+    animation?.cancel()
+    container.remove()
+    if (activeTurns.get(room) === cleanup) activeTurns.delete(room)
+  }
   const timer = window.setTimeout(cleanup, 1800)
+  activeTurns.set(room, cleanup)
   return (moved = true) => {
     if (!moved) {
-      clearTimeout(timer)
       cleanup()
       return
     }
-    requestAnimationFrame(() => {
-      const animation = leaf.animate(
+    frame = requestAnimationFrame(() => {
+      if (!container.isConnected) { cleanup(); return }
+      animation = leaf.animate(
         [
           { transform: 'perspective(1400px) rotateY(0deg)', opacity: 1, boxShadow: '0 0 0 #0000' },
           {
@@ -90,10 +103,7 @@ export function preparePageTurn(
       )
       void animation.finished
         .catch(() => {})
-        .finally(() => {
-          clearTimeout(timer)
-          cleanup()
-        })
+        .finally(cleanup)
     })
   }
 }

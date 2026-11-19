@@ -2,12 +2,15 @@ import type { PoolClient } from 'pg'
 import { HttpError } from '../errors.js'
 
 export async function lockPersonalBook(client: PoolClient, userId: string, bookId: string) {
-  const result = await client.query(
-    "SELECT 1 FROM personal_workspaces WHERE user_id=$1 AND state->'books' @> $2::jsonb FOR UPDATE",
-    [userId, JSON.stringify([{ id: bookId }])],
+  const result = await client.query<{ editionId: string | null }>(
+    `SELECT book->'metadata'->>'literaryEditionId' AS "editionId"
+     FROM personal_workspaces w CROSS JOIN LATERAL jsonb_array_elements(w.state->'books') book
+     WHERE w.user_id=$1 AND book->>'id'=$2 FOR UPDATE OF w`,
+    [userId, bookId],
   )
   if (!result.rowCount)
     throw new HttpError(404, 'BOOK_NOT_FOUND', 'Este livro não está na sua biblioteca pessoal.')
+  return result.rows[0]
 }
 
 /** Invoked under the same workspace lock as book removal or replacement. */

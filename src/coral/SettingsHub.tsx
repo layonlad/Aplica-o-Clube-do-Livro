@@ -65,7 +65,7 @@ export function SettingsHub() {
       ))}
       {user && (
         <div className="settings-group">
-          <button type="button" className="settings-row settings-row--danger" onClick={() => void signOut().then(() => navigate('/account')).catch(() => setError('Não foi possível sair agora. Tente novamente.'))}>
+          <button type="button" className="settings-row settings-row--danger" onClick={() => void signOut().then(() => navigate('/account', { replace: true })).catch(() => setError('Não foi possível sair agora. Tente novamente.'))}>
             <span className="settings-row__icon"><LogOut size={18} aria-hidden="true" /></span>
             <span className="settings-row__text"><strong>Sair da conta</strong></span>
             <ChevronRight size={18} aria-hidden="true" />

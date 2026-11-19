@@ -9,7 +9,6 @@ import { useCommunityPosts, useFollowingReaders, useMyClubs, useDiscoverClubs } 
 import { Hero, HeroBell, HeroSearch, SectionHead, SheetBody } from './kit'
 import { BookActions, ClubTile, ReadingCard } from './pieces'
 
-const storedName = () => { try { return localStorage.getItem('clube-livro-name') ?? '' } catch { return '' } }
 
 export function HomeScreen() {
   const { snapshot, setScope } = useWorkspace()
@@ -22,7 +21,7 @@ export function HomeScreen() {
     state.books.find((book) => book.id === state.currentBookId && (reading[book.id]?.percent ?? 0) < 100) ??
     [...state.books].filter((book) => (reading[book.id]?.percent ?? 0) > 0 && (reading[book.id]?.percent ?? 0) < 100)[0] ??
     state.books.find((book) => (reading[book.id]?.percent ?? 0) < 100)
-  const name = (user?.displayName || storedName()).trim().split(/\s+/)[0]
+  const name = (user?.displayName ?? '').trim().split(/\s+/)[0]
   const clubs = useMyClubs()
   const discover = useDiscoverClubs()
   const friends = useFollowingReaders()

@@ -1,8 +1,9 @@
 import '../reading-integrations/reading-integrations.css'
 import { useExternalReading } from '../reading-integrations/client'
+import { literaryCoverUrl } from '../literary/api'
 import { useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BookOpen, BookPlus, ChevronDown, Ellipsis, FolderPen, Heart, Layers, Library, Plus, Search, SlidersHorizontal, Star, Trash2, Upload, X } from 'lucide-react'
+import { BookOpen, BookPlus, ChevronDown, Ellipsis, FolderPen, Gift, Heart, Layers, Library, Plus, Search, SlidersHorizontal, Star, Trash2, Upload, X } from 'lucide-react'
 import { preferencesSchema, type WorkspaceState } from '../../server/src/workspace-model'
 import { Sheet } from '../components/Sheet'
 import { Button } from '../components/ui'
@@ -124,7 +125,7 @@ export function LibraryScreen() {
               return (
                 <button key={name} type="button" className={`club-tile collection-tile ${collection === name ? 'is-selected' : ''}`} aria-pressed={collection === name} onClick={() => setCollection(collection === name ? null : name)} onContextMenu={(event) => { event.preventDefault(); setEditCollection(name) }}>
                   <span className="club-tile__art">
-                    {first ? <BookCover title={first.title} author={first.author} bookId={first.id} image={first.metadata?.cover} width={120} ratio={0.9} /> : <span className="club-art" />}
+                    {first ? <BookCover title={first.title} author={first.author} bookId={first.id} image={first.metadata?.literaryEpub ? literaryCoverUrl(first.metadata.literaryEditionId) : first.metadata?.cover} width={120} ratio={0.9} /> : <span className="club-art" />}
                   </span>
                   {name.toLocaleLowerCase('pt-BR').includes('favorit') ? <Heart size={17} aria-hidden="true" /> : <Layers size={17} aria-hidden="true" />}
                   <strong>{name}</strong>
@@ -165,7 +166,7 @@ export function LibraryScreen() {
               return (
                 <article className="lib-row" key={book.id}>
                   <a href={`#/app/reader/${book.id}`} onClick={(event) => { open(event, book); if (!event.defaultPrevented) { event.preventDefault(); navigate(`/app/reader/${book.id}`) } }} aria-label={`Abrir ${book.title}`}>
-                    <BookCover title={book.title} author={book.author} bookId={book.id} image={book.metadata?.cover} width={80} ratio={1} />
+                    <BookCover title={book.title} author={book.author} bookId={book.id} image={book.metadata?.literaryEpub ? literaryCoverUrl(book.metadata.literaryEditionId) : book.metadata?.cover} width={80} ratio={1} />
                   </a>
                   <div className="lib-row__text">
                     <strong>{book.title}</strong>
@@ -185,7 +186,12 @@ export function LibraryScreen() {
               <div className="soft-empty">
                 <BookOpen size={26} aria-hidden="true" />
                 <strong>{query ? `Nada encontrado para “${query}”` : collection ? `Nenhum livro de “${collection}” aqui` : `Nenhum livro em “${tabLabel[tab]}”`}</strong>
-                {!query && <Link className="pill-button" to="/app/library/gerenciar?importar=1">Importar EPUB</Link>}
+                {!query && (
+                  <span className="soft-empty__actions">
+                    <Link className="pill-button" to="/app/library/gerenciar?importar=1">Importar EPUB</Link>
+                    <Link className="pill-button" to="/app/explore/gratuitos"><Gift size={15} aria-hidden="true" />Livros gratuitos</Link>
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -225,6 +231,10 @@ export function LibraryScreen() {
               <Link to="/app/library/gerenciar?importar=1" onClick={() => setFilters(false)}>
                 <span className="action-menu__icon"><Upload size={18} /></span>
                 <span>Importar EPUB<small>O livro fica salvo na sua conta</small></span>
+              </Link>
+              <Link to="/app/explore/gratuitos" onClick={() => setFilters(false)}>
+                <span className="action-menu__icon"><Gift size={18} /></span>
+                <span>Livros gratuitos<small>Clássicos em domínio público, com o EPUB</small></span>
               </Link>
               <Link to="/app/library/gerenciar?adicionar=1" onClick={() => setFilters(false)}>
                 <span className="action-menu__icon"><BookPlus size={18} /></span>

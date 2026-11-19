@@ -23,7 +23,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HashRouter>
       <MotionConfig reducedMotion="user">
-        <ThemeProvider><ShelfBackdrop /><App /><BookOpening /></ThemeProvider>
+        <ThemeProvider><ShelfBackdrop /><App />{import.meta.env.VITE_APP_MODE !== 'connected' && <BookOpening />}</ThemeProvider>
       </MotionConfig>
     </HashRouter>
   </StrictMode>,

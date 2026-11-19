@@ -1,15 +1,17 @@
 import { useExternalReading } from '../reading-integrations/client'
 import {PrivateBookCover} from './PrivateBookCover'
 import { lazy, useEffect, useState, type FormEvent, type ReactNode } from 'react'
-import { Link, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useNavigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowRight, CalendarDays, ChevronRight, Clock, Heart, History, MapPin, Search, Sparkles, Star, UsersRound } from 'lucide-react'
 import { updateProfile } from 'firebase/auth'
 import { AuthProvider, useAuth } from '../auth/AuthProvider'
 import { AuthScreen, VerifyEmailScreen } from '../auth/AuthScreen'
-import { Protected, ClubPage, InvitePage } from '../connected/ConnectedApp'
+import { ClubPage, InvitePage } from '../connected/ConnectedApp'
 import { WorkspaceShell } from './WorkspaceShell'
 import { BookStack, Button, Card, CoverArt, ProgressBar, Spines, SkeletonPage } from '../components/ui'
-import { useTheme } from '../app/ThemeProvider'
+import { ThemeProvider, useTheme } from '../app/ThemeProvider'
+import { BookOpening } from '../app/BookOpening'
+import { accountReturnPath } from '../auth/return-path'
 import { WorkspaceProvider, useWorkspace } from './WorkspaceProvider'
 import { backupSchema } from './storage'
 import { importPhoto } from './import-photo'
@@ -36,13 +38,16 @@ const SocialProfile=lazy(()=>import('../community/SocialProfile').then(module=>(
 const OwnSocialProfile=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.OwnSocialProfile})))
 const SocialProfileEditor=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.SocialProfileEditor})))
 const Explore=lazy(()=>import('../coral/ExploreScreen').then(module=>({default:module.ExploreScreen})))
+const FreeBooks=lazy(()=>import('../coral/FreeBooksScreen').then(module=>({default:module.FreeBooksScreen})))
 const ClubForum=lazy(()=>import('../forum/ClubForum').then(module=>({default:module.ClubForum})))
 const ClubWall=lazy(()=>import('../community/ClubWall').then(module=>({default:module.ClubWall})))
 const ClubGallery=lazy(()=>import('../community/ClubGallery').then(module=>({default:module.ClubGallery})))
 const localDate=(date:string)=>new Date(date).toLocaleString('pt-BR',{dateStyle:'medium',timeStyle:'short'})
 const localTime=(date:string)=>new Date(date).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})
 const initials=(name:string)=>name.trim().split(/\s+/).slice(0,2).map(part=>part[0]).join('').toUpperCase()||'?'
-const storedName=()=>{try{return localStorage.getItem('clube-livro-name')??''}catch{return ''}}
+const accountGoal = (uid: string) => {
+  try { return Number(localStorage.getItem('clube-livro-goal:' + uid)) || 12 } catch { return 12 }
+}
 function Intro({title,body,action,eyebrow}:{title:string;body:string;action?:ReactNode;eyebrow?:string}){return <div className="page-intro"><div>{eyebrow&&<span className="eyebrow">{eyebrow}</span>}<h1 className="title-reveal">{title}</h1><p>{body}</p></div>{action}</div>}
 function Empty({title,body,link}:{title:string;body:string;link?:[string,string]}){return <Card className="empty-card"><BookStack/><h2>{title}</h2><p>{body}</p>{link&&<Link className="button-link" to={link[0]}>{link[1]} →</Link>}</Card>}
 function DateTile({date}:{date:string}){const value=new Date(date);const past=value.getTime()<Date.now();return <span className={`date-tile ${past?'date-tile--past':''}`} aria-hidden="true"><strong>{value.getDate()}</strong><span>{value.toLocaleDateString('pt-BR',{month:'short'}).replace('.','')}</span></span>}
@@ -57,7 +62,7 @@ function HomeView(){
   const finished=state.books.filter(b=>reading[b.id]?.percent===100).length
   const now=new Date();const hour=now.getHours()
   const greeting=hour>=5&&hour<12?'Bom dia':hour>=12&&hour<18?'Boa tarde':'Boa noite'
-  const name=(user?.displayName||storedName()).trim().split(/\s+/)[0]
+  const name=(user?.displayName||'').trim().split(/\s+/)[0]
   const percent=current?reading[current.id]?.percent??0:0
   return <div className="stack-xl home-view reveal">{scope!=='personal'&&<ClubIdentity key={scope} clubId={scope}/>}
     <header className="home-hero">
@@ -152,7 +157,7 @@ function HistoryView(){const {snapshot,scope}=useWorkspace();const {items:extern
 function ProfileView(){const {snapshot}=useWorkspace();return snapshot?<ProfileViewContent/>:<SkeletonPage label="Abrindo sua conta…"/>}
 function ProfileViewContent(){
   const {user,signOut}=useAuth();const {snapshot,act,busy,scope}=useWorkspace()
-  const [name,setName]=useState(user?.displayName??localStorage.getItem('clube-livro-name')??'');const [goal,setGoal]=useState(Number(localStorage.getItem('clube-livro-goal'))||12);const [message,setMessage]=useState('')
+  const [name,setName]=useState(user?.displayName ?? '');const [goal,setGoal]=useState(user ? accountGoal(user.uid) : 12);const [message,setMessage]=useState('')
   const external = useExternalReading(scope === 'personal')
   const year = new Date().getFullYear()
   const completedIds = new Set(Object.entries(snapshot!.reading)
@@ -163,16 +168,74 @@ function ProfileViewContent(){
       completedIds.add(item.bookId)
   }
   const finished = completedIds.size
-  async function profile(e:FormEvent){e.preventDefault();try{if(user){await updateProfile(user,{displayName:name.trim()});await user.getIdToken(true)}localStorage.setItem('clube-livro-name',name.trim());localStorage.setItem('clube-livro-goal',String(goal));setMessage('Perfil e meta salvos.')}catch{setMessage('Não foi possível salvar seu perfil. Tente novamente.')}}
+  async function profile(e:FormEvent){e.preventDefault();try{if(user){await updateProfile(user,{displayName:name.trim()});await user.getIdToken(true)}if(user)localStorage.setItem('clube-livro-goal:'+user.uid,String(goal));setMessage('Perfil e meta salvos.')}catch{setMessage('Não foi possível salvar seu perfil. Tente novamente.')}}
   function download(){const blob=new Blob([JSON.stringify({format:'clube-livro-v1',state:snapshot!.state,reading:snapshot!.reading,preferences:snapshot!.preferences},null,2)],{type:'application/json'});const href=URL.createObjectURL(blob);const link=document.createElement('a');link.href=href;link.download=`clube-livro-backup-${new Date().toISOString().slice(0,10)}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(href),1000);setMessage('Backup preparado para download.')}
   async function restore(file:File){try{if(file.size>10000000)throw Error('O backup excede 10 MB.');const data=backupSchema.parse(JSON.parse(await file.text()));if(await act({type:'workspace.import',state:data.state,reading:data.reading,preferences:data.preferences}))setMessage('Backup importado no seu espaço pessoal.')}catch{setMessage('Arquivo inválido. Selecione um backup JSON exportado pelo aplicativo.')}}
-  return <div className="stack-lg"><Intro title="Seu perfil de leitor" body={user?`Conta: ${user.email}`:'Você está usando o app sem conta.'}/><ProfileIdentityCard/>{user?.emailVerified&&<Card><h2>Privacidade do perfil</h2><p>Escolha um perfil público ou aprove quem poderá seguir suas publicações pessoais.</p><Link className="button-link" to="/app/social-profile">Editar privacidade do perfil</Link></Card>}<PushSettings/><Card><form className="workspace-form" onSubmit={profile}><label>Seu nome<input required maxLength={100} value={name} onChange={e=>setName(e.target.value)}/></label><label>Meta anual de livros<input required type="number" min={1} max={1000} value={goal} onChange={e=>setGoal(Number(e.target.value))}/></label><Button>Salvar perfil</Button></form><p>{finished} de {goal} livros concluídos em {new Date().getFullYear()}</p><ProgressBar value={Math.min(100,Math.round(finished/goal*100))}/></Card><Card><h2>Seus dados, com você</h2><p>O backup JSON guarda catálogo, texto de leitura, progresso, anotações e preferências. Baixe separadamente os EPUBs originais e as mídias que quiser conservar. O backup atual cobre a leitura no app. Dados Kindle ficam na conta e podem ser gerenciados em Integrações de Leitura.</p><p><Link to="/app/social-profile">Perfil social e privacidade →</Link></p><p>{user?.emailVerified?'Seus livros e registros são sincronizados com sua conta. Nome e meta deste formulário ficam também neste aparelho.':'Sem conta, os registros ficam apenas neste navegador. Eles podem ser perdidos se os dados do navegador forem apagados. Exporte um backup para guardá-los.'}</p><Button variant="secondary" onClick={download}>Exportar backup</Button>{scope==='personal'&&<><p>A importação substitui o conteúdo do espaço pessoal. Guarde seu backup atual antes de importar.</p><label className="file-button">Importar backup pessoal<input type="file" accept="application/json,.json" aria-label="Importar backup pessoal" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(file)void restore(file);e.target.value=''}}/></label></>}</Card>{message&&<p role="status">{message}</p>}<Card><h2>{user?'Sua conta':'Quer levar suas leituras para outros aparelhos?'}</h2><p>Você pode usar seu espaço pessoal sem clube. Para compartilhar leituras e conversas com um grupo, crie ou aceite um convite.</p><div className="workspace-actions"><Link to="/clubs">Meus clubes e convites →</Link>{user?<Button variant="ghost" onClick={()=>void signOut().then(()=>setMessage('Você saiu da conta. Seu espaço local continua neste aparelho.'))}>Sair da conta</Button>:<Link to="/account">Entrar ou criar conta →</Link>}<Link to="/app/theme">Personalizar aparência →</Link></div></Card></div>
+  return <div className="stack-lg"><Intro title="Seu perfil de leitor" body={user?`Conta: ${user.email}`:'Você está usando o app sem conta.'}/><ProfileIdentityCard/>{user?.emailVerified&&<Card><h2>Privacidade do perfil</h2><p>Escolha um perfil público ou aprove quem poderá seguir suas publicações pessoais.</p><Link className="button-link" to="/app/social-profile">Editar privacidade do perfil</Link></Card>}<PushSettings/><Card><form className="workspace-form" onSubmit={profile}><label>Seu nome<input required maxLength={100} value={name} onChange={e=>setName(e.target.value)}/></label><label>Meta anual de livros<input required type="number" min={1} max={1000} value={goal} onChange={e=>setGoal(Number(e.target.value))}/></label><Button>Salvar perfil</Button></form><p>{finished} de {goal} livros concluídos em {new Date().getFullYear()}</p><ProgressBar value={Math.min(100,Math.round(finished/goal*100))}/></Card><Card><h2>Seus dados, com você</h2><p>O backup JSON guarda catálogo, texto de leitura, progresso, anotações e preferências. Baixe separadamente os EPUBs originais e as mídias que quiser conservar. Gerencie dados Kindle em Integrações de Leitura.</p><p><Link to="/app/social-profile">Perfil social e privacidade →</Link></p><p>{user?.emailVerified?'Seus livros e registros são sincronizados com sua conta. A meta anual fica neste aparelho, vinculada à sua conta.':'Sem conta, os registros ficam apenas neste navegador. Eles podem ser perdidos se os dados do navegador forem apagados. Exporte um backup para guardá-los.'}</p><Button variant="secondary" onClick={download}>Exportar backup</Button>{scope==='personal'&&<><p>A importação substitui o conteúdo do espaço pessoal. Guarde seu backup atual antes de importar.</p><label className="file-button">Importar backup pessoal<input type="file" accept="application/json,.json" aria-label="Importar backup pessoal" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(file)void restore(file);e.target.value=''}}/></label></>}</Card>{message&&<p role="status">{message}</p>}<Card><h2>{user?'Sua conta':'Quer levar suas leituras para outros aparelhos?'}</h2><p>Você pode usar seu espaço pessoal sem clube. Para compartilhar leituras e conversas com um grupo, crie ou aceite um convite.</p><div className="workspace-actions"><Link to="/clubs">Meus clubes e convites →</Link>{user?<Button variant="ghost" onClick={()=>void signOut().then(()=>setMessage('Você saiu da conta. Seu espaço local continua neste aparelho.'))}>Sair da conta</Button>:<Link to="/account">Entrar ou criar conta →</Link>}<Link to="/app/theme">Personalizar aparência →</Link></div></Card></div>
 }
 function ThemeView(){return <AppearanceSettings/>}
-function ProfileRoute(){const {user,loading}=useAuth();if(loading)return <SkeletonPage label="Abrindo seu perfil…"/>;return user?.emailVerified?<OwnSocialProfile/>:<ProfileView/>}
-function AccountView(){const {user,loading}=useAuth();if(loading)return <p role="status">Carregando conta…</p>;if(!user)return <AuthScreen/>;if(!user.emailVerified)return <VerifyEmailScreen/>;return <Navigate to="/app" replace/>}
+function ProfileRoute(){return <OwnSocialProfile/>}
 function OpenCurrentReading(){const {snapshot}=useWorkspace();const book=snapshot?.state.books.find(book=>book.id===snapshot.state.currentBookId)??snapshot?.state.books.find(book=>(snapshot.reading[book.id]?.percent??0)<100);return <Navigate to={book?`/app/reader/${book.id}`:'/app/library'} replace/>}
 /** Abre o espaço de um clube; com ?post=<id> vai direto para a publicação no mural (link vindo de perfis). */
 function OpenClub(){const {clubId}=useParams();const [params]=useSearchParams();const post=params.get('post');const {setScope}=useWorkspace();const navigate=useNavigate();useEffect(()=>{if(clubId){setScope(clubId);navigate(post&&/^[0-9a-f-]{36}$/i.test(post)?`/app/wall?post=${post}`:'/app',{replace:true})}},[clubId,post,setScope,navigate]);return <p role="status">Abrindo espaço do clube…</p>}
-function WorkspaceSession(){const {user}=useAuth();return <WorkspaceProvider key={user?.emailVerified?user.uid:'visitor'}><Routes><Route path="/" element={<Navigate to="/app" replace/>}/><Route path="/app" element={<WorkspaceShell/>}><Route index element={<HomeRoute/>}/><Route path="downloads" element={<AuthorizedDownloads/>}/><Route path="library" element={<LibraryRoute/>}/><Route path="library/integracoes" element={<ReadingIntegrations/>}/><Route path="library/gerenciar" element={<LibraryView/>}/><Route path="reader/:id" element={<ReaderView/>}/><Route path="reader" element={<OpenCurrentReading/>}/><Route path="wall" element={<ClubWall/>}/><Route path="gallery" element={<ClubGallery/>}/><Route path="explore" element={<Explore/>}/><Route path="notifications" element={<Notifications/>}/><Route path="moderation" element={<Moderation/>}/><Route path="community" element={<PublicCommunity/>}/><Route path="clubs" element={<ClubsScreen/>}/><Route path="ajustes" element={<SettingsHub/>}/><Route path="people/:id" element={<SocialProfile/>}/><Route path="social-profile" element={<SocialProfileEditor/>}/><Route path="calendar" element={<CalendarView/>}/><Route path="forum" element={<ForumView/>}/><Route path="nominations" element={<NominationsView/>}/><Route path="history" element={<HistoryView/>}/><Route path="profile" element={<ProfileRoute/>}/><Route path="settings" element={<ProfileView/>}/><Route path="theme" element={<ThemeView/>}/><Route path="admin" element={<Navigate to="/clubs" replace/>}/></Route><Route path="/account" element={<AccountView/>}/><Route path="/clubs" element={<Navigate to="/app/clubs" replace/>}/><Route path="/clubs/:clubId" element={<Protected><ClubPage/></Protected>}/><Route path="/invite" element={<Protected><InvitePage/></Protected>}/><Route path="/space/:clubId" element={<Protected><OpenClub/></Protected>}/><Route path="*" element={<Navigate to="/app" replace/>}/></Routes></WorkspaceProvider>}
+function WorkspaceSession() {
+  const session = useAuth()
+  const { user, loading, status, signOut, retry } = session
+  const { pathname, search, state } = useLocation()
+  if (loading) return <main className="access-page"><p role="status">Verificando sua sessão…</p></main>
+  if (status === 'error') return <main className="access-page"><section className="access-card">
+    <h1>Sessão temporariamente indisponível</h1>
+    <p role="alert">{session.message}</p>
+    <div className="access-actions"><Button onClick={retry}>Tentar novamente</Button>
+      <Button variant="ghost" onClick={() => void signOut().catch(() => {})}>Sair da conta</Button></div>
+  </section></main>
+  if (!user || !user.emailVerified || status === 'unverified') {
+    return <Routes>
+      <Route path="/account" element={user ? <VerifyEmailScreen /> : <AuthScreen />} />
+      <Route path="*" element={<Navigate to="/account" replace state={{ from: accountReturnPath(pathname + search) }} />} />
+    </Routes>
+  }
+  if (pathname === '/account') return <Navigate to={accountReturnPath(state?.from)} replace />
+  return <ThemeProvider key={user.uid} accountId={user.uid}>
+    <WorkspaceProvider>
+      <BookOpening />
+      <Routes>
+        <Route path="/" element={<Navigate to="/app" replace />} />
+        <Route path="/app" element={<WorkspaceShell />}>
+          <Route index element={<HomeRoute />} />
+          <Route path="downloads" element={<AuthorizedDownloads />} />
+          <Route path="library" element={<LibraryRoute />} />
+          <Route path="library/integracoes" element={<ReadingIntegrations />} />
+          <Route path="library/gerenciar" element={<LibraryView />} />
+          <Route path="reader/:id" element={<ReaderView />} />
+          <Route path="reader" element={<OpenCurrentReading />} />
+          <Route path="wall" element={<ClubWall />} />
+          <Route path="gallery" element={<ClubGallery />} />
+          <Route path="explore" element={<Explore />} />
+          <Route path="explore/gratuitos" element={<FreeBooks />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="moderation" element={<Moderation />} />
+          <Route path="community" element={<PublicCommunity />} />
+          <Route path="clubs" element={<ClubsScreen />} />
+          <Route path="ajustes" element={<SettingsHub />} />
+          <Route path="people/:id" element={<SocialProfile />} />
+          <Route path="social-profile" element={<SocialProfileEditor />} />
+          <Route path="calendar" element={<CalendarView />} />
+          <Route path="forum" element={<ForumView />} />
+          <Route path="nominations" element={<NominationsView />} />
+          <Route path="history" element={<HistoryView />} />
+          <Route path="profile" element={<ProfileRoute />} />
+          <Route path="settings" element={<ProfileView />} />
+          <Route path="theme" element={<ThemeView />} />
+          <Route path="admin" element={<Navigate to="/clubs" replace />} />
+        </Route>
+        <Route path="/clubs" element={<Navigate to="/app/clubs" replace />} />
+        <Route path="/clubs/:clubId" element={<ClubPage />} />
+        <Route path="/invite" element={<InvitePage />} />
+        <Route path="/space/:clubId" element={<OpenClub />} />
+        <Route path="*" element={<Navigate to="/app" replace />} />
+      </Routes>
+    </WorkspaceProvider>
+  </ThemeProvider>
+}
 export function WorkspaceApp(){return <AuthProvider><WorkspaceSession/></AuthProvider>}

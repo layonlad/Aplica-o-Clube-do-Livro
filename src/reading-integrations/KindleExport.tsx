@@ -19,7 +19,7 @@ const states: Record<string, string> = {
   share_requested: 'Compartilhamento solicitado',
 }
 interface ExportInfo {
-  file: { id: string; filename: string; byteSize: number; permission: Permission } | null
+  file: { id: string; filename: string; byteSize: number; permission: Permission; editionId?: string } | null
   history: { id: string; status: string; createdAt: string }[]
 }
 
@@ -115,18 +115,20 @@ export function KindleExport({ user, bookId }: { user: User; bookId: string }) {
     {error && <p role="alert" className="access-error">{error}</p>}
     {message && <p role="status">{message}</p>}
     {!info && !error && <p role="status">Consultando o original…</p>}
-    {info && !info.file && <p>Importe o EPUB original na biblioteca pessoal para preparar o envio.</p>}
+    {info && !info.file && <p>A biblioteca precisa de um EPUB pessoal ou de uma edição com transferência autorizada.</p>}
     {info?.file && <>
       <p className="t-caption">{info.file.filename}</p>
-      <label>Permissão de exportação
-        <select disabled={busy} value={permission} onChange={(event) => {
-          setPermission(event.target.value as Permission)
-          setPrepared(undefined)
-        }}>
-          {exportPermissions.map((item) => <option key={item} value={item}>{labels[item]}</option>)}
-        </select>
-      </label>
-      <p className="t-caption">Ao autorizar, você confirma que pode transferir este arquivo para uso pessoal. O original precisa estar livre de DRM.</p>
+      {info.file.editionId ? <p className="t-caption">Transferência autorizada pela licença da edição do catálogo.</p> : <>
+        <label>Permissão de exportação
+          <select disabled={busy} value={permission} onChange={(event) => {
+            setPermission(event.target.value as Permission)
+            setPrepared(undefined)
+          }}>
+            {exportPermissions.map((item) => <option key={item} value={item}>{labels[item]}</option>)}
+          </select>
+        </label>
+        <p className="t-caption">Ao autorizar, você confirma que pode transferir este arquivo para uso pessoal. O original precisa estar livre de DRM.</p>
+      </>}
       <div className="workspace-actions">
         {permission !== info.file.permission && <Button disabled={busy} onClick={() => void run(async () => {
           await apiRequest(user, path + '/permission', 'POST', { fileId: info.file!.id, permission })

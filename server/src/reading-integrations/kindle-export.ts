@@ -4,12 +4,13 @@ import { transaction } from '../database.js'
 import { HttpError } from '../errors.js'
 import { validateEpub } from '../private-storage.js'
 import type { PrivateFiles } from '../private-files.js'
+import { authorizedEditionAsset, editionFile } from '../literary/free-books.js'
 import { lockPersonalBook } from './privacy.js'
 import { readingProviders, type exportEvents, type exportPermissions } from './providers.js'
 
 type Permission = (typeof exportPermissions)[number]
 type ExportEvent = (typeof exportEvents)[number]
-interface ExportableFile { id: string; byteSize: number; filename: string; permission: Permission }
+interface ExportableFile { id: string; byteSize: number; filename: string; permission: Permission; editionId?: string }
 
 export function validateKindleFile(file: Pick<ExportableFile, 'byteSize' | 'filename' | 'permission'>) {
   if (file.permission === 'blocked')
@@ -27,7 +28,6 @@ export class KindleExportService {
 
   async info(userId: string, bookId: string) {
     return transaction(this.pool, async (client) => {
-      await lockPersonalBook(client, userId, bookId)
       const file = await this.file(client, userId, bookId)
       const history = await client.query<{ id: string; status: string; createdAt: string }>(
         `SELECT id,status,created_at AS "createdAt" FROM reading_export_attempts
@@ -53,7 +53,6 @@ export class KindleExportService {
   async prepare(userId: string, bookId: string, fileId: string) {
     const attemptId = randomUUID()
     const file = await transaction(this.pool, async (client) => {
-      await lockPersonalBook(client, userId, bookId)
       const current = await this.file(client, userId, bookId)
       this.check(current)
       if (current.id !== fileId) throw this.missing()
@@ -69,17 +68,18 @@ export class KindleExportService {
       return current
     })
     try {
-      const original = await this.files.download(userId, file.id)
+      const original = file.editionId
+        ? await editionFile(file.editionId, 'transfer')
+        : await this.files.download(userId, file.id)
       validateKindleFile({ ...file, byteSize: original.bytes.byteLength })
       if (original.bytes.byteLength !== file.byteSize)
         throw new HttpError(409, 'EXPORT_FILE_CHANGED', 'O tamanho do original mudou. Revise o arquivo antes de exportar.')
       const bytes = Buffer.from(original.bytes)
       validateEpub(bytes)
       await transaction(this.pool, async (client) => {
-        await lockPersonalBook(client, userId, bookId)
         const current = await this.file(client, userId, bookId, true)
         this.check(current)
-        if (current.id !== file.id)
+        if (current.id !== file.id || current.editionId !== file.editionId)
           throw new HttpError(409, 'EXPORT_FILE_CHANGED', 'O original mudou. Prepare o novo arquivo.')
         const result = await client.query(
           "UPDATE reading_export_attempts SET status='available' WHERE id=$1 AND user_id=$2 AND status='preparing'",
@@ -111,13 +111,19 @@ export class KindleExportService {
     await this.pool.query('DELETE FROM reading_export_attempts WHERE user_id=$1 AND book_id=$2', [userId, bookId])
   }
 
-  private async file(client: PoolClient, userId: string, bookId: string, lock = false) {
+  private async file(client: PoolClient, userId: string, bookId: string, lock = false): Promise<ExportableFile | undefined> {
+    const { editionId } = await lockPersonalBook(client, userId, bookId)
     const { rows } = await client.query<ExportableFile>(
       `SELECT id,filename,byte_size AS "byteSize",export_permission AS permission FROM private_book_files
        WHERE owner_user_id=$1 AND book_id=$2 AND state='active'${lock ? ' FOR UPDATE' : ''}`,
       [userId, bookId],
     )
-    return rows[0]
+    if (rows[0] || !editionId) return rows[0]
+    const curated = authorizedEditionAsset(editionId, 'transfer')
+    if (curated) return {
+      id: bookId, editionId, filename: curated.filename, byteSize: curated.byteSize,
+      permission: curated.basis === 'public-domain' ? 'public_domain' : 'licensed_transfer',
+    }
   }
 
   private missing() {

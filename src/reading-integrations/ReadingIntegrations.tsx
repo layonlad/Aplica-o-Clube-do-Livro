@@ -29,7 +29,8 @@ export function ReadingIntegrations() {
   const [includeProgress, setIncludeProgress] = useState(false)
   const [compose, setCompose] = useState(false)
   const books = snapshot?.state.books ?? []
-  const book = books.find((item) => item.id === params.get('livro')) ?? books[0]
+  const requestedBook = params.get('livro')
+  const book = requestedBook === null ? books[0] : books.find((item) => item.id === requestedBook)
   const progress = external.items.find((item) => item.bookId === book?.id && item.provider === 'kindle')
   const active = tabs.find(([key]) => key === params.get('modo'))
   const internal = book ? snapshot?.reading[book.id]?.percent ?? 0 : 0
@@ -58,7 +59,9 @@ export function ReadingIntegrations() {
     <Card className="reading-integration-form">
       <h2><Cable size={20} aria-hidden="true" /> Amazon Kindle</h2>
       {!user?.emailVerified ? <Link className="button-link" to="/account">Entrar com a conta confirmada</Link>
-        : !book ? <p>Adicione um livro à sua <Link to="/app/library">biblioteca</Link> para preencher a leitura externa.</p>
+        : !book ? requestedBook !== null
+          ? <p role="status">Este livro está indisponível. <Link to="/app/library">Voltar à biblioteca</Link></p>
+          : <p>Adicione um livro à sua <Link to="/app/library">biblioteca</Link> para preencher a leitura externa.</p>
         : <>
           <label>Livro da biblioteca<select value={book.id} onChange={(event) => { setSaved(''); open(undefined, event.target.value) }}>
             {books.map((item) => <option key={item.id} value={item.id}>{item.title} · {item.author}</option>)}

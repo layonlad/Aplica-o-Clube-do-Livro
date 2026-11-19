@@ -7,7 +7,7 @@
 | Interface | React, Vite, rotas por hash e design Coral | Menu da Biblioteca, folhas modais, navegação pessoal e formulários existentes |
 | Identidade | Firebase Auth, token verificado pela API e e-mail confirmado | Todas as rotas privadas sob /v1/me |
 | Backend e dados | Fastify no Cloud Run e PostgreSQL no Cloud SQL | Migrations e papel restrito existentes. Livros em personal_workspaces, arquivos em private_book_files |
-| EPUB | Bucket GCS privado e parser EPUB validado no backend | Entrega do mesmo original pessoal após verificar propriedade, autorização e EPUB |
+| EPUB | Bucket GCS privado e parser EPUB validado no backend | Entrega do original pessoal ou do arquivo autorizado no catálogo após verificar livro, licença e EPUB |
 | Segurança de arquivos | storage.rules nega acesso pelo SDK. API usa IAM. | Transferência autenticada pela API. A integração não precisa de URL pública ou cópia no bucket |
 | Leitor | ReadingRoom, EpubReader, posição, preferências e revisões próprias | Progresso externo independente da posição interna |
 | Privacidade | Perfis, bloqueios, posts e associação ativa aos clubes validados na API | Compartilhamento voluntário pelo compositor existente |
@@ -39,13 +39,13 @@ O módulo da API fica em `server/src/reading-integrations`. O registro `provider
 | `src/workspace/WorkspaceApp.tsx` e `WorkspaceShell.tsx` | Rota, Histórico e meta anual |
 | `src/community/ClubWall.tsx` | Reflexão editável e vinculada a título e autor, usando o compositor existente |
 
-A migration `020_reading_integrations.sql` acrescenta a permissão de exportação aos originais pessoais e cria três tabelas separadas. Arquivos existentes começam bloqueados. Cada declaração vale para o ID do original ativo e não acompanha sua substituição. O runtime recebe CRUD apenas nas novas tabelas, sem migration, DDL ou permissões para o executor. Os serviços verificam o titular e o livro na transação PostgreSQL para serializar mudanças com a remoção da Biblioteca. As atualizações de progresso usam revisão; duas gravações concorrentes com a mesma revisão retornam uma confirmação e um conflito. A importação reaplica o parser na confirmação e a restrição única protege contra duplicação.
+A migration `021_reading_integrations.sql` acrescenta a permissão de exportação aos originais pessoais e cria três tabelas separadas. Arquivos existentes começam bloqueados. Cada declaração vale para o ID do original ativo e não acompanha sua substituição. O runtime recebe CRUD apenas nas novas tabelas, sem migration, DDL ou permissões para o executor. Os serviços verificam o titular e o livro na transação PostgreSQL para serializar mudanças com a remoção da Biblioteca. As atualizações de progresso usam revisão; duas gravações concorrentes com a mesma revisão retornam uma confirmação e um conflito. A importação reaplica o parser na confirmação e a restrição única protege contra duplicação.
 
 ## Enviar o EPUB
 
 1. Entre com conta confirmada e guarde um EPUB pessoal na Biblioteca. No menu do livro, escolha **Enviar ao Kindle**.
 2. Selecione a permissão aplicável e salve. A declaração do titular cobre arquivo pessoal com direito de transferência, domínio público ou licença que autoriza transferência. O app não verifica titularidade jurídica junto a editoras. Em caso de dúvida, mantenha a exportação bloqueada.
-3. Prepare o original. A API verifica propriedade, permissão, arquivo ativo, tamanho e EPUB legível. Revalida a permissão e o ID antes de responder. Acervo de clube, arquivos sem original e DRM real ficam fora deste fluxo.
+3. Em uma edição do catálogo com licença de transferência, como *A Cartomante*, prepare diretamente o EPUB autorizado. A licença cadastrada no catálogo controla a transferência. Em livros pessoais, prepare o original após salvar a declaração. A API verifica propriedade, permissão, arquivo ativo, tamanho e EPUB legível. Revalida a permissão e o ID antes de responder. Acervo de clube, arquivos sem original e DRM real ficam fora deste fluxo.
 4. Use **Compartilhar pelo aparelho** quando o navegador aceitar esse arquivo. Selecione Kindle se aparecer. Caso contrário, use **Baixar EPUB** e selecione o arquivo no [Send to Kindle](https://www.amazon.com/sendtokindle). Também é possível usar o e-mail manual autorizado da Amazon.
 5. Confira o processamento no Kindle. O histórico guarda as 20 tentativas mais recentes por livro. Registra preparação, arquivo disponibilizado, falha ou ação informada pelo navegador. O titular pode limpar esse histórico. O EPUB transferido ao navegador fica em memória nessa tela, com URL temporária local somente para o download.
 
@@ -68,7 +68,7 @@ Em **Escrever reflexão**, escolha Comunidade ou um clube do qual participa e, s
 - Valide o download comparando os bytes do original. No aparelho Kindle, teste a disponibilidade do menu nativo com um EPUB que possa transferir ou faça o upload manual. A aceitação pela Amazon é um teste separado.
 - Valide as duas formas de progresso registrando 42% no app e 65% no Kindle, e reabra o EPUB. Para Histórico e meta anual, registre 100% e marque a opção correspondente. Publique uma reflexão em um clube de teste e confirme que o comentário privado e o trecho não aparecem.
 - Importe um TXT, repita para conferir duplicatas, tente uma obra incerta e confirme a edição manualmente. Experimente excluir anotações, progresso e histórico e verifique a limpeza ao remover o livro.
-- A validação em produção requer autorização separada. A ordem prevista é aplicar migration 020 e grants com o papel proprietário, testar com o runtime restrito, publicar a API e, depois, o frontend. O módulo não adiciona serviços, coleções Firestore, regras Firebase Storage, credenciais Amazon ou agendamento.
+- A validação em produção requer autorização separada. A ordem prevista é aplicar migrations 020 e 021 e grants com o papel proprietário, testar com o runtime restrito, publicar a API e, depois, o frontend. O módulo não adiciona serviços, coleções Firestore, regras Firebase Storage, credenciais Amazon ou agendamento.
 - A auditoria visual complementar pode focar a folha com teclado real em iOS/Android, o menu nativo de arquivos, nomes longos e o fluxo de seleção de muitas anotações. O backup JSON legado cobre a leitura no app. Os dados externos ficam na conta e podem ser gerenciados no módulo.
 
 ## Resultado dos testes

@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Bell, BookOpen, CalendarDays, Camera, Compass, Download, History, House, LogIn, MessagesSquare, NotebookPen, Palette, Search, Settings, ShieldCheck, Sparkles, UserRound, UsersRound, X, type LucideIcon } from 'lucide-react'
+import { Bell, BookOpen, CalendarDays, Camera, Compass, Download, History, House, LogIn, MessagesSquare, NotebookPen, Palette, Search, Settings, ShieldCheck, Sparkles, UserRound, UsersRound, type LucideIcon } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { NotificationBell } from '../community/NotificationBell'
 import { SpaceSwitcher } from '../components/SpaceSwitcher'
@@ -15,11 +15,6 @@ import { useWorkspace } from './WorkspaceProvider'
 
 type NavItem = { to: string; name: string; icon: LucideIcon; match: (path: string) => boolean; className: string }
 
-const DISMISS_KEY = 'clube-livro-visitor-note-dismissed'
-function readDismissed() {
-  try { return localStorage.getItem(DISMISS_KEY) === '1' } catch { return false }
-}
-
 /** Barra inferior: a mesma ordem das referências. */
 const nav: NavItem[] = [
   { to: '/app', name: 'Início', icon: House, className: 'nav-home', match: (path) => path === '/app' },
@@ -30,7 +25,7 @@ const nav: NavItem[] = [
 ]
 
 /** Telas que desenham o próprio cabeçalho em gradiente (as seis das referências). */
-const MAIN = ['/app', '/app/explore', '/app/library', '/app/community', '/app/profile', '/app/clubs']
+const MAIN = ['/app', '/app/explore', '/app/explore/gratuitos', '/app/library', '/app/community', '/app/profile', '/app/clubs']
 
 /** Título da barra compacta das telas internas. */
 function titleFor(pathname: string, personal: boolean, clubName: string) {
@@ -76,7 +71,6 @@ export function WorkspaceShell() {
     return () => { viewport?.removeEventListener('resize', update); window.removeEventListener('resize', update); document.removeEventListener('focusin', focus); document.removeEventListener('focusout', focus) }
   }, [])
 
-  const [dismissed, setDismissed] = useState(readDismissed)
   const { publicModerator, snapshot, scope, scopeName, clubs, setScope, loading, busy, error, errorCode, refresh } = useWorkspace()
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
@@ -129,9 +123,7 @@ export function WorkspaceShell() {
   }, [reading, pathname])
 
   function skip(event: MouseEvent) { event.preventDefault(); mainRef.current?.focus() }
-  function dismiss() { setDismissed(true); try { localStorage.setItem(DISMISS_KEY, '1') } catch { /* sem armazenamento */ } }
   const ownAvatar = useOwnAvatar()
-  const showVisitorNote = !user?.emailVerified && !dismissed && pathname === '/app'
 
   const content = loading && !snapshot && !globalPage
     ? <SkeletonPage label="Abrindo seu espaço…" />
@@ -139,7 +131,6 @@ export function WorkspaceShell() {
       ? <Suspense fallback={<SkeletonPage label="Abrindo esta página…" />}><Outlet /></Suspense>
       : !error ? <p role="status">Escolha seu espaço para começar.</p> : null
   const notices = <>
-    {showVisitorNote && <div className="notice visitor-note"><span><strong>Entre, fique à vontade.</strong><span>Use sem cadastro. Seus dados ficam neste navegador. Para sincronizar ou participar de um clube, <Link to="/account">entre na sua conta</Link>.</span></span><button type="button" className="icon-button" aria-label="Dispensar aviso" onClick={dismiss}><X size={18} /></button></div>}
     {unread && <p className="toast-status" role="status">{unread}</p>}
     {error && <div role="alert" className="access-error">{error} {['AUTH_REQUIRED', 'EMAIL_NOT_VERIFIED'].includes(errorCode) ? <button type="button" onClick={() => void reenter()}>Entrar novamente</button> : <button type="button" onClick={() => void refresh()}>Recarregar</button>}</div>}
     {accountError && <p role="alert" className="access-error">{accountError}</p>}
@@ -181,7 +172,7 @@ export function WorkspaceShell() {
       {reading || main ? <>
         {main ? null : notices}
         <motion.div key={reading ? 'reader' : pathname} className={reading ? 'route-view route-view--reader' : 'route-view'} initial={reading ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>
-          {main && (showVisitorNote || unread || error || accountError) ? <div className="main-notices">{notices}</div> : null}
+          {main && (unread || error || accountError) ? <div className="main-notices">{notices}</div> : null}
           {content}
         </motion.div>
       </> : <>

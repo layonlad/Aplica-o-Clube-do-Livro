@@ -10,6 +10,7 @@ export function registerPhotoMaintenance(
   pool: Pool,
   storage?: PrivateStorage,
   token?: string,
+  afterCleanup?: () => Promise<{ inserted: number; failedSources: number; skipped: boolean }>,
 ) {
   app.post(
     '/internal/photo-cleanup',
@@ -26,7 +27,14 @@ export function registerPhotoMaintenance(
       )
         throw new HttpError(401, 'AUTH_REQUIRED', 'Acesso não autorizado.')
       if (!storage) throw new HttpError(503, 'STORAGE_UNAVAILABLE', 'Armazenamento indisponível.')
-      return new PhotoUploads(pool, storage).cleanup(20)
+      const photos = await new PhotoUploads(pool, storage).cleanup(20)
+      if (!afterCleanup) return photos
+      try {
+        return { ...photos, literaryNews: await afterCleanup() }
+      } catch {
+        request.log.warn('Falha na atualização de metadados literários.')
+        return { ...photos, literaryNews: { inserted: 0, failedSources: 1, skipped: false } }
+      }
     },
   )
 }

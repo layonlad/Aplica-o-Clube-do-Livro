@@ -1,5 +1,6 @@
 import {
   notBlocked,
+  editorialAuthorId,
   visiblePublicPost,
   visibleProfile,
   requireSocialProfile,
@@ -134,7 +135,7 @@ export class PostService {
   list(
     user: UserProfile | null,
     clubId: string | null,
-    input: PostQuery & { author?: string; following?: boolean; saved?: boolean },
+    input: PostQuery & { author?: string; following?: boolean; saved?: boolean; watching?: boolean },
   ) {
     return transaction(this.pool, async (client) => {
       const club = await this.access(client, user, clubId, true),
@@ -145,6 +146,9 @@ export class PostService {
       AND ($3::timestamptz IS NULL OR (p.created_at,p.id)<($3,$4::uuid))
       AND ($5::text IS NULL OR (p.body||' '||p.book_title||' '||p.book_author) ILIKE '%'||$5||'%')
       AND ($6::text IS NULL OR p.kind=$6) AND ($7::timestamptz IS NULL OR p.created_at>=$7) AND ($8::timestamptz IS NULL OR p.created_at<$8)
+      AND ($12::boolean OR p.author_user_id<>'${editorialAuthorId}'::uuid)
+      AND (NOT $13::boolean OR (p.kind='question' AND EXISTS(SELECT 1 FROM literary_follows lf
+        WHERE lf.user_id=$2 AND lf.kind='debate' AND lf.item_key=p.id::text)))
       AND ($10::uuid IS NULL OR p.author_user_id=$10) AND (NOT $11::boolean OR EXISTS(SELECT 1 FROM follows f WHERE f.follower_id=$2 AND f.followed_id=p.author_user_id)) AND (NOT $12::boolean OR EXISTS(SELECT 1 FROM saved_posts sp WHERE sp.user_id=$2 AND sp.post_id=p.id)) ORDER BY p.created_at DESC,p.id DESC LIMIT $9`,
         [
           clubId,
@@ -159,6 +163,7 @@ export class PostService {
           input.author ?? null,
           input.following ?? false,
           input.saved ?? false,
+          input.watching ?? false,
         ],
       )
       return pageOf(

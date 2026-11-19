@@ -4,9 +4,9 @@ import { ReaderPanel, useReaderChrome } from './ImmersiveReader'
 import { useLatestSave } from './useLatestSave'
 import { readingGesture, type ReadingGesture } from './reader-gestures'
 import { preparePageTurn } from './page-turn'
-import { Fragment, createElement, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Fragment, createElement, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '../auth/AuthProvider'
-import { apiRequest, readableError } from '../auth/api'
+import { apiRequest, authenticatedResponse, readableError } from '../auth/api'
 import { useWorkspace } from './WorkspaceProvider'
 import { Button } from '../components/ui'
 import { readEpub, epubPath, type EpubArchive } from './epub-archive'
@@ -16,6 +16,7 @@ import { preferencesSchema } from '../../server/src/workspace-model'
 import { QuoteShare } from '../community/QuoteShare'
 import { readerFont } from './ReaderSettings'
 import { useEpubPagination } from './useEpubPagination'
+import { readFreeBookEpub } from '../literary/api'
 const tags = new Set(
     'p div section h1 h2 h3 h4 h5 h6 span strong em b i small sub sup br hr ul ol li blockquote table tbody thead tfoot tr th td figure figcaption pre code a img'.split(
       ' ',
@@ -26,13 +27,15 @@ export function EpubReader({
   bookId,
   title,
   author,
+  literaryEdition,
 }: {
   bookId: string
   title: string
   author: string
+  literaryEdition?: string
 }) {
   const chrome = useReaderChrome()
-  const gesture = useRef<ReadingGesture | null>(null),
+  const gesture = useRef<(ReadingGesture & { pointerId: number }) | null>(null),
     turning = useRef(false)
   const { user } = useAuth(),
     { snapshot, act, busy } = useWorkspace(),
@@ -53,7 +56,7 @@ export function EpubReader({
       end: number
     } | null>(null),
     [note, setNote] = useState(''),
-    [pendingOffset, setPendingOffset] = useState<{ offset: number; element?: number } | null>(null),
+    [pendingOffset, setPendingOffset] = useState<{ offset: number; element?: number; commit?: boolean } | null>(null),
     [confirmRemove, setConfirmRemove] = useState(false),
     [pendingFragment, setPendingFragment] = useState<string | null>(null)
   const article = useRef<HTMLElement>(null),
@@ -90,56 +93,54 @@ export function EpubReader({
   useEffect(() => {
     let live = true
     const resources: string[] = []
+    const controller = new AbortController()
     setArchive(null)
+    setPendingOffset(null)
     setSelected(null)
     setQuery('')
     setError('')
     setLoading(true)
     void (async () => {
       try {
-        let record = await localEpub(namespace, bookId).catch(() => undefined)
-        if (!record && user?.emailVerified) {
+        const shared = literaryEdition && user?.emailVerified
+          ? await readFreeBookEpub(user, literaryEdition, controller.signal)
+          : undefined
+        let record = shared ? undefined : await localEpub(namespace, bookId).catch(() => undefined)
+        if (!shared && !record && user?.emailVerified) {
           const list = await apiRequest<{
             items: { id: string; filename: string }[]
           }>(user, `/me/book-files/${bookId}`)
           if (list.items[0]) {
-            const token = await user.getIdToken()
-            const response = await fetch(
-              `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/v1/me/files/${list.items[0].id}/content`,
-              {
-                headers: { Authorization: `Bearer ${token}` },
-                credentials: 'omit',
-                cache: 'no-store',
-                referrerPolicy: 'no-referrer',
-                signal: AbortSignal.timeout(75000),
-              },
-            )
-            if (!response.ok) throw Error('Arquivo privado indisponível.')
+            const response = await authenticatedResponse(user, `/me/files/${list.items[0].id}/content`)
             const file = await response.blob()
-            await saveEpub(namespace, bookId, file, list.items[0].filename).catch(() => {})
+            if (!live) return
+            await saveEpub(namespace, bookId, file, list.items[0].filename, undefined, user).catch(() => {})
             record = {
               key: namespace + ':' + bookId,
               namespace,
               bookId,
               file,
               filename: list.items[0].filename,
+              downloadCache: true,
             }
           }
         }
-        if (!record) {
+        const editionFile = shared ?? record?.file
+        if (!editionFile) {
           if (live) setMessage('')
           return
         }
-        const value = await readEpub(record.file)
+        const value = await readEpub(editionFile)
         if (!live) return
         const cover = value.coverPath ? value.images.get(value.coverPath) : undefined
-        if (cover && !record.cover)
+        if (cover && record && !record.cover)
           void saveEpub(
             namespace,
             bookId,
             record.file,
             record.filename,
             new Blob([new Uint8Array(cover.bytes)], { type: cover.mime }),
+            record.downloadCache ? user ?? undefined : undefined,
           ).catch(() => {})
         const images = new Map<string, string>()
         for (const [path, image] of value.images) {
@@ -165,12 +166,17 @@ export function EpubReader({
     })()
     return () => {
       live = false
+      controller.abort()
       for (const url of resources) URL.revokeObjectURL(url)
     }
-  }, [user?.uid, user?.emailVerified, namespace, bookId, revision])
-  useEffect(() => {
+  }, [user?.uid, user?.emailVerified, namespace, bookId, revision, literaryEdition])
+  useLayoutEffect(() => {
     if (!archive || pendingOffset === null || !article.current) return
     pagination.revealOffset(pendingOffset.offset, pendingOffset.element)
+    if (pendingOffset.commit) {
+      const point = pagination.visibleLocator()
+      savePosition(chapter, point.offset, point.element)
+    }
     setPendingOffset(null)
   }, [archive, chapter, pendingOffset, paged, pagination.revealOffset])
   useEffect(() => {
@@ -182,21 +188,6 @@ export function EpubReader({
     }
     setPendingFragment(null)
   }, [pendingFragment, chapter, paged, pagination.revealElement])
-  useEffect(() => {
-    const position = latest.current?.epubLocator
-    if (archive && position?.hash === archive.hash && position.chapter === chapter)
-      setPendingOffset({ offset: position.offset, element: position.element })
-  }, [
-    archive,
-    prefs.flow,
-    prefs.size,
-    prefs.font,
-    prefs.margin,
-    prefs.lineHeight,
-    prefs.weight,
-    prefs.align,
-    prefs.paragraphSpacing,
-  ])
   function select() {
     const value = window.getSelection()
     if (!value?.rangeCount || value.isCollapsed || !article.current) return
@@ -221,78 +212,59 @@ export function EpubReader({
       end: prefix.toString().length + quote.length,
     })
   }
-  // A página muda na hora; a posição vai para a conta em segundo plano (sem travar o gesto).
-  async function position(target: number, offset = 0, element?: number) {
-    if (!archive || !archive.chapters[target]) return false
-    const lengths = archive.chapters.map((c) => c.text.length),
-      total = lengths.reduce((sum, n) => sum + n, 0),
-      done =
-        lengths.slice(0, target).reduce((sum, n) => sum + n, 0) + Math.min(offset, lengths[target])
-    setChapter(target)
-    setSelected(null)
-    setPendingOffset({ offset, element })
-    setMessage('')
+  function savePosition(target: number, offset: number, element?: number) {
+    if (!archive || !archive.chapters[target]) return
+    const lengths = archive.chapters.map((chapter) => chapter.text.length)
+    const total = lengths.reduce((sum, length) => sum + length, 0)
+    const done = lengths.slice(0, target).reduce((sum, length) => sum + length, 0)
+      + Math.min(offset, lengths[target])
     const hash = archive.hash
     saveLatest(() => ({
       type: 'reading.update',
       id: bookId,
       epubLocator: {
-        hash,
-        chapter: target,
-        offset,
+        hash, chapter: target, offset: Math.min(offset, 3000000),
         ...(element === undefined ? {} : { element }),
       },
       percent: Math.min(99, Math.round((done / Math.max(1, total)) * 100)),
       expectedRevision: latest.current?.revision ?? 0,
     }))
+  }
+
+  async function position(target: number, offset = 0, element?: number) {
+    if (!archive || !archive.chapters[target]) return false
+    setChapter(target)
+    setSelected(null)
+    setPendingOffset({ offset, element, commit: true })
+    setMessage('')
     return true
   }
+
   function saveVisible() {
-    if (!archive || !article.current || chrome?.panel) return
+    if (!archive || !article.current || paged || pendingOffset || chrome?.panel) return
     if (document.querySelector('.reading-room .reader-settings[open]')) return
-    const point = pagination.visibleLocator(),
-      offset = point.offset
-    const lengths = archive.chapters.map((c) => c.text.length),
-      done = lengths.slice(0, chapter).reduce((sum, n) => sum + n, 0) + offset,
-      total = lengths.reduce((sum, n) => sum + n, 0)
+    const { offset, element } = pagination.visibleLocator()
     const previous = latest.current?.epubLocator
-    if (
-      previous?.hash === archive.hash &&
-      previous.chapter === chapter &&
-      previous.offset === offset &&
-      previous.element === point.element
-    )
-      return
-    const hash = archive.hash
-    saveLatest(() => ({
-      type: 'reading.update',
-      id: bookId,
-      epubLocator: {
-        hash,
-        chapter,
-        offset: Math.min(offset, 3000000),
-        ...(point.element === undefined ? {} : { element: point.element }),
-      },
-      percent: Math.min(99, Math.round((done / Math.max(1, total)) * 100)),
-      expectedRevision: latest.current?.revision ?? 0,
-    }))
+    if (previous?.hash === archive.hash && previous.chapter === chapter &&
+      previous.offset === offset && previous.element === element) return
+    savePosition(chapter, offset, element)
   }
+  const saveRef = useRef(saveVisible)
+  saveRef.current = saveVisible
   useEffect(() => {
-    if (!archive) return
-    let timer: ReturnType<typeof setTimeout> | undefined
-    const save = () => {
-      if (timer) clearTimeout(timer)
-      timer = setTimeout(saveVisible, 1200)
-    }
-    window.addEventListener('scroll', save, { passive: true })
+    if (!archive || paged) return
     const host = viewport.current
-    host?.addEventListener('scroll', save, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', save)
-      host?.removeEventListener('scroll', save)
-      if (timer) clearTimeout(timer)
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const schedule = () => {
+      clearTimeout(timer)
+      timer = setTimeout(() => saveRef.current(), 350)
     }
-  }, [archive, chapter, paged, pagination.visibleOffset])
+    host?.addEventListener('scroll', schedule, { passive: true })
+    return () => {
+      host?.removeEventListener('scroll', schedule)
+      clearTimeout(timer)
+    }
+  }, [archive, chapter, paged])
   async function turnPage(direction: number) {
     if (!archive) return false
     const next = pagination.page + direction
@@ -310,10 +282,11 @@ export function EpubReader({
       return false
     }
     const point = pagination.visibleLocator()
-    return position(chapter, point.offset, point.element)
+    savePosition(chapter, point.offset, point.element)
+    return true
   }
   async function navigatePage(direction: number) {
-    if (turning.current || !viewport.current || !article.current) return
+    if (turning.current || pendingOffset || !viewport.current || !article.current) return
     turning.current = true
     const finish = preparePageTurn(
       viewport.current,
@@ -325,14 +298,10 @@ export function EpubReader({
       const moved = await turnPage(direction)
       finish(!!moved)
     } finally {
-      window.setTimeout(() => {
-        turning.current = false
-      }, 300)
+      turning.current = false
     }
   }
-  // Flush the latest stable visible point when leaving or hiding a book, without duplicate writes.
-  const saveRef = useRef(saveVisible)
-  saveRef.current = saveVisible
+  // Save the current scroll position while the viewport is still attached.
   useEffect(() => {
     const save = () => saveRef.current()
     const visibility = () => {
@@ -469,7 +438,7 @@ export function EpubReader({
           })
           .slice(0, 50)
       : []
-  const fileButton = (
+  const fileButton = !literaryEdition && (
     <label className="file-button">
       {archive ? 'Trocar arquivo' : 'Escolher EPUB'}
       <input
@@ -492,7 +461,7 @@ export function EpubReader({
   )
   return (
     <section className="epub-original stack-lg">
-      {!archive && (
+      {!archive && !literaryEdition && (
         <header className="epub-original__empty">
           <h2>Falta o arquivo deste livro</h2>
           <p>
@@ -584,6 +553,7 @@ export function EpubReader({
               }
               const rect = event.currentTarget.getBoundingClientRect()
               gesture.current = {
+                pointerId: event.pointerId,
                 x: event.clientX - rect.left,
                 y: event.clientY,
                 at: performance.now(),
@@ -597,7 +567,7 @@ export function EpubReader({
               const start = gesture.current
               gesture.current = null
               if (
-                !start ||
+                !start || start.pointerId !== event.pointerId ||
                 !chrome ||
                 turning.current ||
                 window.getSelection()?.isCollapsed === false
@@ -820,11 +790,11 @@ export function EpubReader({
                   </>
                 )}
               </nav>
-              <details className="reader-file">
+              {!literaryEdition && <details className="reader-file">
                 <summary>Arquivo deste leitor</summary>
                 <p>O arquivo é privado e fica separado das publicações.</p>
                 {fileButton}
-              </details>
+              </details>}
               <fieldset>
                 <legend>Sua leitura</legend>
                 <Button
@@ -896,7 +866,7 @@ export function EpubReader({
                   />
                 </div>
               ))}
-              {confirmRemove ? (
+              {!literaryEdition && (confirmRemove ? (
                 <div>
                   <p className="t-caption">
                     Apagar a cópia deste aparelho? Sua conta e anotações continuam.
@@ -918,7 +888,7 @@ export function EpubReader({
                 <Button variant="ghost" onClick={() => setConfirmRemove(true)}>
                   Apagar cópia deste aparelho
                 </Button>
-              )}
+              ))}
             </ReaderPanel>
           )}
         </>

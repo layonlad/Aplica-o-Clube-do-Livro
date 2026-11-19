@@ -1,4 +1,7 @@
 import { registerReadingIntegrations } from './reading-integrations/routes.js'
+import {registerLiteraryReads,registerLiteraryAccountRoutes} from './literary/routes.js'
+import {syncLiteraryNews} from './literary/news.js'
+import {editorialFirebaseUid} from './public-policy.js'
 import {registerPhotoMaintenance} from './photo-maintenance.js'
 import {PushSubscriptions,subscriptionInput} from './push-subscriptions.js'
 import {registerPhotoRoutes} from './photo-routes.js'
@@ -42,7 +45,7 @@ const inviteInput = z.object({
   expiresInDays: z.number().int().min(1).max(30).default(7),
 }).strict().refine((data) => !data.email || data.maxUses === 1, 'Convites por e-mail devem ter um único uso.')
 
-export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; additionalOrigins?:string[]; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage;moderatorUids?:string[];pushPublicKey?:string;photoCleanupToken?:string;afterSocialMutation?:()=>void }) {
+export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; additionalOrigins?:string[]; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage;moderatorUids?:string[];pushPublicKey?:string;photoCleanupToken?:string;literaryNewsSync?:boolean;afterSocialMutation?:()=>void }) {
   const app = Fastify({
     logger: options.logger ? { redact: ['req.headers.authorization', 'req.body', 'res.headers'] } : false,
     logController: new LogController({ disableRequestLogging: true }),
@@ -75,8 +78,9 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     request.log.error({ requestId: request.id, route: request.routeOptions.url }, 'Falha interna na API')
     return reply.code(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Não foi possível concluir a operação.' } })
   })
-  if(options.afterSocialMutation)app.addHook('onResponse',async(request,reply)=>{if(reply.statusCode<300&&request.method!=='GET'&&/\/(posts|forum|events|invites|follow|follow-requests|join-requests|invitations)(?:[/?]|$)/.test(request.url))options.afterSocialMutation!()})
-  registerPhotoMaintenance(app,options.pool,options.storage,options.photoCleanupToken)
+  if(options.afterSocialMutation)app.addHook('onResponse',async(request,reply)=>{if(reply.statusCode<300&&request.method!=='GET'&&/\/(posts|news|forum|events|invites|follow|follow-requests|join-requests|invitations)(?:[/?]|$)/.test(request.url))options.afterSocialMutation!()})
+  registerPhotoMaintenance(app,options.pool,options.storage,options.photoCleanupToken,
+    options.literaryNewsSync ? () => syncLiteraryNews(options.pool) : undefined)
   app.get('/health', async () => {
     try { await options.pool.query('SELECT 1'); return { status: 'ok' } }
     catch { throw new HttpError(503, 'DATABASE_UNAVAILABLE', 'Banco temporariamente indisponível.') }
@@ -91,14 +95,18 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
       const match = /^Bearer ([^\s]+)$/.exec(request.headers.authorization ?? '')
       if (!match || match[1].length > 8192) throw new HttpError(401, 'AUTH_REQUIRED', 'Entre na sua conta para continuar.')
       const identity = await options.verifyToken(match[1])
+      if (identity.uid === editorialFirebaseUid) throw new HttpError(401, 'AUTH_REQUIRED', 'Entre na sua conta para continuar.')
       if (!identity.emailVerified || !identity.email) throw new HttpError(403, 'EMAIL_NOT_VERIFIED', 'Confirme seu e-mail para acessar o clube.')
       request.user = await service.syncUser(identity)
     }
-  await registerPublicReads(app,options.pool,async request=>{if(request.headers.authorization)await authenticate(request)},options.storage,options.moderatorUids)
+  const optionalAuth = async (request: import('fastify').FastifyRequest) => { if (request.headers.authorization) await authenticate(request) }
+  await registerPublicReads(app,options.pool,optionalAuth,options.storage,options.moderatorUids)
+  await registerLiteraryReads(app, options.pool, optionalAuth)
   await app.register(async (api) => {
     api.addHook('onRequest',authenticate)
     registerReadingIntegrations(api, options.pool, files)
     await registerPublicMutations(api,options.pool,options.storage,options.moderatorUids)
+    registerLiteraryAccountRoutes(api, options.pool, workspace, options.moderatorUids)
     api.get('/me/push/config',()=>push.config())
     api.post('/me/push/subscriptions',{config:{rateLimit:{max:5,timeWindow:'1 minute',hook:'preHandler',keyGenerator:request=>request.user.id}}},request=>push.register(request.user,subscriptionInput.parse(request.body)))
     api.post('/me/push/status',request=>push.status(request.user,z.object({endpoint:z.string().max(2048)}).strict().parse(request.body).endpoint))
