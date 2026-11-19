@@ -1,9 +1,8 @@
-import { randomUUID } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
 import { expect, it, vi } from 'vitest'
 import { buildApp } from '../src/app.js'
 import { openEpubPackage } from '../src/epub-package.js'
 import { testDatabase } from './database.js'
-import { syncLiteraryNews } from '../src/literary/news.js'
 
 const actor = 'literary-test-reader'
 const base = '/v1/me/literary'
@@ -47,16 +46,26 @@ it('preserva a licença e a edição na biblioteca, reusa o arquivo e salva prog
 
 it('deduplica feeds, pagina e integra notícias com curtida, comentário, salvo, debate e permissão de clube', async () => {
   const db = await testDatabase(), headers = { authorization: 'Bearer ' + actor }
+  const maintenanceToken = randomBytes(32).toString('base64url')
   const app = await buildApp({ pool: db.pool, origin: 'https://app.example',
     verifyToken: async uid => ({ uid, email: uid + '@example.invalid', name: uid, emailVerified: true }),
+    storage: { put: async () => {}, get: async () => Buffer.alloc(0), remove: async () => {} },
+    photoCleanupToken: maintenanceToken,
+    literaryNewsSync: true,
   })
-  const request = vi.fn<typeof fetch>(async url => {
+  const request = vi.spyOn(globalThis, 'fetch').mockImplementation(async url => {
     if (String(url).includes('/radioagencia')) return new Response('interrompido', {status:503})
     return new Response(`<rss><channel><title>Teste</title>${example('a',0)}${example('a',0)}${example('b',1)}</channel></rss>`)
   })
   try {
-    expect(await syncLiteraryNews(db.pool, request)).toEqual({ inserted:2, failedSources:1, skipped:false })
-    expect((await syncLiteraryNews(db.pool, request)).skipped).toBe(true)
+    const maintenance = { method: 'POST', url: '/internal/photo-cleanup' } as const
+    expect((await app.inject(maintenance)).statusCode).toBe(401)
+    expect(request).not.toHaveBeenCalled()
+    const run = () => app.inject({ ...maintenance, headers: { authorization: 'Bearer ' + maintenanceToken } })
+    const collected = await run()
+    expect(collected.statusCode).toBe(200)
+    expect(collected.json().literaryNews).toEqual({ inserted:2, failedSources:1, skipped:false })
+    expect((await run()).json().literaryNews.skipped).toBe(true)
     expect(request).toHaveBeenCalledTimes(2)
     const list = (await app.inject('/v1/literary/news?limit=1')).json()
     expect(list.items).toHaveLength(1)
@@ -104,5 +113,9 @@ it('deduplica feeds, pagina e integra notícias com curtida, comentário, salvo,
     const rec = await app.inject({ url:base+'/recommendations', headers })
     expect(rec.statusCode,rec.body).toBe(200)
     expect(rec.json().news).toHaveLength(2)
-  } finally { await app.close(); await db.close() }
+  } finally {
+    request.mockRestore()
+    await app.close()
+    await db.close()
+  }
 })

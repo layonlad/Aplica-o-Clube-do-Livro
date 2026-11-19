@@ -389,8 +389,8 @@
       "data": "2026-11-18",
       "autor": "Codex",
       "titulo": "Backend da Biblioteca Gratuita e das Notícias Literárias",
-      "resumo": "Busca e edições Open Library com cache, EPUB de A Cartomante com referências pessoais, links oficiais externos, metadados editoriais com deduplicação, ações sociais e sugestões privadas. Migration aditiva e papel restrito testados localmente. Integração local com as telas do PR 43 do Claude Code, com leitura sem duplicar o arquivo e link para discussão. Sem liberação em produção.",
-      "pr": ""
+      "resumo": "Busca e edições Open Library com cache, EPUB de A Cartomante com referências pessoais, links oficiais externos, metadados editoriais com deduplicação, ações sociais e sugestões privadas. Migration aditiva e papel restrito testados localmente. Integração local com as telas do PR 43 do Claude Code, com leitura sem duplicar o arquivo e link para discussão. Retomada do EPUB, capa e ações sociais conferidas no Chrome e WebKit. Sem liberação em produção.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/44"
     },
     {
       "data": "2026-11-18",

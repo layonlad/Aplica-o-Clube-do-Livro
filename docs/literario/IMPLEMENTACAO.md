@@ -33,11 +33,11 @@ As telas, os componentes Coral e a navegação vieram do PR 43 do Claude Code. A
 ## Validação do backend
 
 - `npm run check` com codecs de vídeo, 109 testes de frontend e 51 unitários da API, builds frontend/API e validação do mapa.
-- `npm run test:integration`, 93 testes PostgreSQL. Inclui migration 020, papel restrito, entrada idempotente, leitura do EPUB, isolamento de contas, gravação do progresso, deduplicação de notícias, curtida, comentário, salvos, compartilhamento no clube, debate e assuntos seguidos.
+- `npm run test:integration`, 93 testes PostgreSQL. Inclui migration 020, papel restrito, entrada idempotente, leitura do EPUB, isolamento de contas, gravação do progresso, atualização agendada pela rota protegida, deduplicação de notícias, curtida, comentário, salvos, compartilhamento no clube, debate e assuntos seguidos.
 - `npm run test:auth --workspace server` sob Firebase Auth Emulator, dois testes aprovados.
 - Consulta real por *Dom Casmurro* retornou três resultados e três edições pedidas. A edição OL58615644M retornou empréstimo externo. Nesta execução, a primeira consulta levou aproximadamente 1,61 s e a repetição em cache menos de 1 ms, sem nova chamada. Essa medição local é uma amostra.
 - As duas URLs RSS oficiais responderam. A amostra tinha um item literário da Radioagência. Os adaptadores de importação foram exercitados com CSV e OPDS de teste.
-- Chrome local validou as telas combinadas, as larguras 320, 360, 375, 390, 393, 414, 430, 768 e 1280 px, a adição e leitura de *A Cartomante*, três viradas, a retomada na mesma página, a cota pessoal em zero e a discussão de uma notícia importada do RSS oficial.
+- Chrome e WebKit locais validaram capa carregada, adição e leitura de *A Cartomante*, três viradas, retomada na mesma página, cota pessoal em zero e discussão de uma notícia do RSS oficial, com curtida, salvamento e abertura dos comentários. O catálogo não apresentou rolagem horizontal da página em 320, 360, 375, 390, 393, 414, 430, 768 e 1280 px no Chrome e em 320, 390 e 430 px no WebKit.
 
 ## Arquivos e liberação
 
