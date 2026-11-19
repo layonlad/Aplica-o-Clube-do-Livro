@@ -20,7 +20,11 @@ if (git('status', '--porcelain', '--untracked-files=no')) {
   throw new Error('Use uma cópia limpa do commit que será publicado.')
 }
 const commit = git('rev-parse', 'HEAD')
-const source = createHash('sha256').update(git('ls-tree', '-rz', 'HEAD', '--', '.', ':(exclude)docs', ':(exclude)*.md')).digest('hex')
+const files = git('ls-tree', '-rz', 'HEAD').split('\0').filter(entry => {
+  const file = entry.slice(entry.indexOf('\t') + 1)
+  return file && !file.startsWith('docs/') && !file.endsWith('.md')
+})
+const source = createHash('sha256').update(files.join('\0')).digest('hex')
 const manifest = { environment: target, mode: demo ? 'demo' : 'connected', version, commit, source }
 
 async function readRelease(site, production = false) {
