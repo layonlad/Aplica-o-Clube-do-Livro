@@ -12,6 +12,7 @@ import type { WorkspaceState } from '../../server/src/workspace-model'
 import { useDiscoverClubs } from './data'
 import { BookCover, compact, Hero, HeroBell, HeroIcon, SectionHead, SheetBody } from './kit'
 import { ClubTile } from './pieces'
+import { FreeBooksTeaser } from './FreeBooksScreen'
 
 type Metadata = NonNullable<WorkspaceState['books'][number]['metadata']>
 interface CatalogEntry { key: string; title: string; author: string; category: string; metadata: Metadata }
@@ -144,6 +145,8 @@ export function ExploreScreen() {
           </div>
           {clubs.page && !clubs.page.items.length && <p className="soft-empty">Nenhum clube aberto encontrado{search ? ` para “${search}”` : ''}.</p>}
         </section>
+
+        {!search && !category && <FreeBooksTeaser />}
 
         {catalog && (
           <section aria-labelledby="explore-catalog">

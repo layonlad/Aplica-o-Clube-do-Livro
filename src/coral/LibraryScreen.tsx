@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BookOpen, BookPlus, ChevronDown, Ellipsis, FolderPen, Heart, Layers, Library, Plus, Search, SlidersHorizontal, Star, Trash2, Upload, X } from 'lucide-react'
+import { BookOpen, BookPlus, ChevronDown, Ellipsis, FolderPen, Gift, Heart, Layers, Library, Plus, Search, SlidersHorizontal, Star, Trash2, Upload, X } from 'lucide-react'
 import { preferencesSchema, type WorkspaceState } from '../../server/src/workspace-model'
 import { Sheet } from '../components/Sheet'
 import { Button } from '../components/ui'
@@ -179,7 +179,12 @@ export function LibraryScreen() {
               <div className="soft-empty">
                 <BookOpen size={26} aria-hidden="true" />
                 <strong>{query ? `Nada encontrado para “${query}”` : collection ? `Nenhum livro de “${collection}” aqui` : `Nenhum livro em “${tabLabel[tab]}”`}</strong>
-                {!query && <Link className="pill-button" to="/app/library/gerenciar?importar=1">Importar EPUB</Link>}
+                {!query && (
+                  <span className="soft-empty__actions">
+                    <Link className="pill-button" to="/app/library/gerenciar?importar=1">Importar EPUB</Link>
+                    <Link className="pill-button" to="/app/explore/gratuitos"><Gift size={15} aria-hidden="true" />Livros gratuitos</Link>
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -219,6 +224,10 @@ export function LibraryScreen() {
               <Link to="/app/library/gerenciar?importar=1" onClick={() => setFilters(false)}>
                 <span className="action-menu__icon"><Upload size={18} /></span>
                 <span>Importar EPUB<small>O livro fica salvo na sua conta</small></span>
+              </Link>
+              <Link to="/app/explore/gratuitos" onClick={() => setFilters(false)}>
+                <span className="action-menu__icon"><Gift size={18} /></span>
+                <span>Livros gratuitos<small>Clássicos em domínio público, com o EPUB</small></span>
               </Link>
               <Link to="/app/library/gerenciar?adicionar=1" onClick={() => setFilters(false)}>
                 <span className="action-menu__icon"><BookPlus size={18} /></span>

@@ -36,6 +36,7 @@ const SocialProfile=lazy(()=>import('../community/SocialProfile').then(module=>(
 const OwnSocialProfile=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.OwnSocialProfile})))
 const SocialProfileEditor=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.SocialProfileEditor})))
 const Explore=lazy(()=>import('../coral/ExploreScreen').then(module=>({default:module.ExploreScreen})))
+const FreeBooks=lazy(()=>import('../coral/FreeBooksScreen').then(module=>({default:module.FreeBooksScreen})))
 const ClubForum=lazy(()=>import('../forum/ClubForum').then(module=>({default:module.ClubForum})))
 const ClubWall=lazy(()=>import('../community/ClubWall').then(module=>({default:module.ClubWall})))
 const ClubGallery=lazy(()=>import('../community/ClubGallery').then(module=>({default:module.ClubGallery})))
@@ -199,6 +200,7 @@ function WorkspaceSession() {
           <Route path="wall" element={<ClubWall />} />
           <Route path="gallery" element={<ClubGallery />} />
           <Route path="explore" element={<Explore />} />
+          <Route path="explore/gratuitos" element={<FreeBooks />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="moderation" element={<Moderation />} />
           <Route path="community" element={<PublicCommunity />} />
