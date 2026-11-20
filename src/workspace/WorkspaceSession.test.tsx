@@ -87,7 +87,8 @@ it('abre o próprio perfil social mesmo se a biblioteca pessoal estiver temporar
       </ThemeProvider>
     </MemoryRouter>,
   )
-  expect(await screen.findByRole('heading', { name: 'Leitora do perfil' })).toBeInTheDocument()
+  // O perfil é carregado sob demanda (divisão de rotas do PR 42); na CI isso passa de 1 s.
+  expect(await screen.findByRole('heading', { name: 'Leitora do perfil' }, { timeout: 5000 })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Editar perfil' })).toHaveAttribute(
     'href',
     '/app/social-profile',
