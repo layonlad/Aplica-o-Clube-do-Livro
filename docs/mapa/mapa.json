@@ -418,7 +418,7 @@
       "autor": "Claude Code",
       "titulo": "Chat dos clubes no visual do modelo do dono (candidata 1.3)",
       "resumo": "Cabeçalho coral com ícone, nome do clube, membros e menu ⋯; faixa do livro em leitura com capa, \"Discussão até o capítulo\" e selo Em leitura; abas Chat, Debates e Membros; separador Hoje/Ontem; balões arredondados (os seus à direita, rosados, com Você) com a foto ao lado do nome e horário no canto; campo em pílula com botão redondo de enviar. A escolha de sala foi para o menu ⋯ e a marcação de spoiler virou ícone dentro do campo. Ações da mensagem continuam no ⋯ de cada balão. Só frontend.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/55"
     },
     {
       "data": "2026-11-20",
