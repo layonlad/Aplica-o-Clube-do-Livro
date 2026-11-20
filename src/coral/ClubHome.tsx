@@ -45,7 +45,7 @@ export function ClubHome() {
         )}
       </section>
 
-      {import.meta.env.VITE_CLUB_CHAT_ENABLED==='true' && <Link className="pill-button" to="/app/chat"><MessagesSquare size={18}/> Chat do clube</Link>}
+      {import.meta.env.VITE_CLUB_CHAT_ENABLED==='true' && <nav aria-label="Conversas do clube" className="chat-entry"><Link className="pill-button" to="/app/chat" aria-label="Chat do clube"><MessagesSquare size={18}/> Chat</Link><Link className="pill-button" to="/app/forum">Debates</Link><Link className="pill-button" to="/app/chat?tab=members">Membros</Link></nav>}
       <section aria-labelledby="club-next">
         <SectionHead id="club-next" title="Próximo encontro" to="/app/calendar" linkLabel="Agenda" />
         {next ? (

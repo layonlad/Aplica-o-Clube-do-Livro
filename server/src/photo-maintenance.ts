@@ -1,3 +1,4 @@
+import {cleanupChatMetadata} from './maintenance.js'
 import { createHash, timingSafeEqual } from 'node:crypto'
 import type { FastifyInstance } from 'fastify'
 import type { Pool } from 'pg'
@@ -27,6 +28,7 @@ export function registerPhotoMaintenance(
       )
         throw new HttpError(401, 'AUTH_REQUIRED', 'Acesso não autorizado.')
       if (!storage) throw new HttpError(503, 'STORAGE_UNAVAILABLE', 'Armazenamento indisponível.')
+      await cleanupChatMetadata(pool)
       const photos = await new PhotoUploads(pool, storage).cleanup(20)
       if (!afterCleanup) return photos
       try {

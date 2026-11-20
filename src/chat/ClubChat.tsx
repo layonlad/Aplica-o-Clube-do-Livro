@@ -79,7 +79,7 @@ function Conversation({ club }: { club: string }) {
   const { user } = useAuth(),
     { scopeName, snapshot } = useWorkspace(),
     [params] = useSearchParams()
-  const [tab, setTab] = useState('Chat'),
+  const [tab, setTab] = useState(params.get('tab')==='members'?'Membros':'Chat'),
     [room, setRoom] = useState('general'),
     [settings, setSettings] = useState<Settings | null>(null)
   const [members, setMembers] = useState<Member[]>([]),
