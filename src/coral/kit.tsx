@@ -88,13 +88,13 @@ export function HeroIcon({
   )
 }
 
-/** Sino do cabeçalho: abre a central de notificações e mostra um ponto quando há novidades. */
+/** Sino do cabeçalho: abre a central e mostra quantas notificações não lidas há (99+ acima de 99). */
 export function HeroBell() {
   const { user } = useAuth(),
     count = useUnreadCount()
   if (!user?.emailVerified) return null
   return (
-    <HeroIcon to="/app/notifications" label={count ? `Notificações: ${count} não lidas` : 'Notificações'} dot={count > 0}>
+    <HeroIcon to="/app/notifications" label={count ? `Notificações: ${count > 99 ? 'mais de 99' : count} não lidas` : 'Notificações'} badge={count}>
       <Bell size={21} strokeWidth={1.9} />
     </HeroIcon>
   )

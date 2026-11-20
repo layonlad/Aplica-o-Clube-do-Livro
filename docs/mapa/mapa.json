@@ -415,6 +415,13 @@
   "atualizacoes": [
     {
       "data": "2026-11-20",
+      "autor": "Claude",
+      "titulo": "Central de notificações, banners e preferências no visual Coral",
+      "resumo": "Serviço único de notificações no site (contador do sino com 99+, lista paginada, leitura otimista, conferência de conteúdo removido, troca de conta). Nova central agrupada em Hoje, Ontem e Anteriores, com Aceitar/Recusar convite e abertura no conteúdo certo (chat, mural, comunidade, fórum, perfil, convites). Banner discreto dentro do app, agrupado, fora do leitor e do chat aberto. Configurações → Notificações com push explicado antes de pedir, orientação quando bloqueado ou no iPhone sem instalar, cinco categorias da conta e modo do chat por clube (inclui silenciar). Corrigido: o app removia o worker de push a cada abertura. Pendências do servidor em docs/notificacoes/PENDENCIAS_BACKEND.md. 132 testes do site, tsc e build ok. Sem mudança de servidor nem produção.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/58"
+    },
+    {
+      "data": "2026-11-20",
       "autor": "Claude Code",
       "titulo": "Versão 1.3 publicada: chat dos clubes no visual do modelo",
       "resumo": "Com autorização do dono, o PR 55 foi mesclado (e4ff398) e publicado só no site, porque o backend é idêntico ao da API no ar (3c01e7a). Staging 1.3 registrado e conferido com duas contas: mensagem entregue, pessoa de fora com 403, tela do chat no visual novo. Os dois sites servem a versão 1.3 com os mesmos 132 arquivos do app; a tela de login abre com o estilo certo e o console fica sem erros.",

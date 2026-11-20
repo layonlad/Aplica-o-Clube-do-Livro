@@ -39,7 +39,10 @@ createRoot(document.getElementById('root')!).render(
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   if (import.meta.env.VITE_APP_MODE === 'connected') {
     const scope = new URL(import.meta.env.BASE_URL, window.location.href).href
-    void navigator.serviceWorker.getRegistrations().then((items) => Promise.all(items.filter((item) => item.scope === scope).map((item) => item.unregister()))).catch(() => {})
+    // Remove só o worker antigo do modo demonstração (sw.js). O worker de push (push-sw.js) fica: desregistrá-lo
+    // apagaria a inscrição de notificações do aparelho a cada abertura do app.
+    const isPush = (item: ServiceWorkerRegistration) => [item.active, item.waiting, item.installing].some((worker) => worker?.scriptURL.endsWith('/push-sw.js'))
+    void navigator.serviceWorker.getRegistrations().then((items) => Promise.all(items.filter((item) => item.scope === scope && !isPush(item)).map((item) => item.unregister()))).catch(() => {})
     if ('caches' in window) void caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith('clube-aurora-')).map((key) => caches.delete(key)))).catch(() => {})
   } else {
     window.addEventListener('load', () => { void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {}) })
