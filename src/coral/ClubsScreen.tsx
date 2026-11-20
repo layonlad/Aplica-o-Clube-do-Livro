@@ -186,7 +186,7 @@ export function ClubsScreen() {
   )
 }
 
-function MyClubCard({ club, onOpen }: { club: ClubSummary; onOpen: () => void }) {
+export function MyClubCard({ club, onOpen }: { club: ClubSummary; onOpen: () => void }) {
   return (
     <button type="button" className="my-club" onClick={onOpen} aria-label={`Abrir ${club.name}`}>
       <span className="my-club__top">

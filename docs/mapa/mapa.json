@@ -6,11 +6,13 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Sessão protegida e leitor EPUB publicados",
+    "fase": "Staging local 1.0",
     "tom": "ok",
-    "resumo": "PR 39 publicado nos dois Firebase Hosting no merge 26627b2. O app conectado exige sessão Firebase validada pela API antes das rotas privadas. Retoma o destino após login, mantém a sessão entre acessos, descarta caches transitórios ao sair e preserva navegação e posição EPUB. CI do PR e 236 testes locais aprovados. Chrome e WebKit validaram duas contas e o leitor localmente. Em produção, sete rotas por site levaram ao login sem sessão e 104 arquivos por site corresponderam ao build. API e executor em 9ce87a1.",
-    "proximoPasso": "Revisar a melhoria mobile-first em staging antes da publicação. Projetos Capacitor sincronizados, com builds nativos, assinatura, exclusão de conta e revisão das lojas pendentes. A correção Google iPhone segue no PR 41.",
+    "resumo": "Staging 1.0 em localhost com autenticação, API e banco de teste locais. Produção está no build 4c7caf5 e a primeira versão numerada aguarda a aprovação.",
+    "proximoPasso": "Validar Staging e pedir a primeira promoção. A versão inicial será 1.0 em produção e as seguintes subirão 1.1, 1.2 e assim por diante.",
     "pendencias": [
+      "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
+      "Notícias usam metadados do RSS e link original. A primeira coleta importou uma manchete real. Recomendações, filtros avançados e acompanhamento de assuntos têm rotas na API; faltam controles correspondentes nas telas.",
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
       "Planos pagos: os limites de 50 (assinatura) e 100 (premium) EPUBs já estão em server/src/plans.ts; faltam a cobrança e o plano gravado na conta.",
       "Orçamento do projeto é de R$ 70/mês com alertas, sem corte automático de cobrança. Cloud SQL mínimo e instâncias Cloud Run limitadas; acompanhar uso antes de ampliar capacidade.",
@@ -28,7 +30,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "26627b2 · PR 39 publicado em 18/11/2026; API/executor 9ce87a1",
+      "versao": "Versão 1.0 · 5063eab (PR 48) publicado em 20/11/2026; 107 arquivos do app conferidos por SHA-256; API segue em 4c7caf5",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -36,9 +38,17 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health",
-      "versao": "9ce87a1 · API clube-livro-api-00005-fqj e executor clube-notifications-00004-6vl; digest 52ccc3e2; 19 migrations existentes preservadas",
+      "versao": "4c7caf5 · API clube-livro-api-00007-kvd e executor clube-notifications-00006-cm2; digest 6541555e; 21 migrations instaladas",
       "atualizacao": "Cloud Build e deploy manual pelo digest no Cloud Run; mínimo zero, máximo uma instância",
       "tom": "ok"
+    },
+    {
+      "id": "staging",
+      "nome": "Staging (localhost)",
+      "url": "http://localhost:5174",
+      "versao": "1.0 · candidata local com dados de teste",
+      "atualizacao": "Iniciar com npm run staging e testar antes da promoção aprovada",
+      "tom": "neutro"
     },
     {
       "id": "previa",
@@ -60,7 +70,7 @@
       "id": "local",
       "nome": "Local (computador do dono)",
       "url": "",
-      "versao": "Branch codex/mobile-performance: ensaios locais isolados de feed, mídia, sessão e EPUB; projetos Capacitor para staging.",
+      "versao": "Auditoria do backend validada com PostgreSQL, Firebase Auth Emulator, Chrome e WebKit locais.",
       "atualizacao": "Cada agente trabalha na própria pasta e branch",
       "tom": "neutro"
     },
@@ -68,7 +78,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "26627b2 · mesmo frontend do site principal; 104 arquivos verificados por SHA-256",
+      "versao": "Versão 1.0 · 5063eab · mesmo frontend do site principal; 107 arquivos conferidos por SHA-256",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -242,6 +252,7 @@
     {"de": "avisos", "para": "api", "texto": "ativo: limpeza limitada autenticada"}
   ],
   "dados": [
+    {"o_que": "Progresso Kindle, anotações importadas e histórico de exportação", "onde": "banco", "privacidade": "Privados do titular. Publicações incluem somente texto e percentual escolhidos pelo leitor, com as permissões do destino. Em revisão para publicação.", "copia": "Tabelas separadas no PostgreSQL. O TXT não é armazenado. A transferência usa o original pessoal privado, quando autorizado."},
     { "o_que": "Leituras de quem usa sem conta", "onde": "pessoa", "privacidade": "Só no aparelho", "copia": "Backup JSON exportado pelo Perfil; originais e mídias baixados separadamente" },
     { "o_que": "EPUB original e capa guardados neste navegador", "onde": "pessoa", "privacidade": "Cópias locais separadas por visitante ou conta", "copia": "IndexedDB; guardar no navegador não equivale a enviar o arquivo para a nuvem" },
     { "o_que": "E-mail, senha e login com Google", "onde": "auth", "privacidade": "Privado", "copia": "Gerenciado pelo Google" },
@@ -272,9 +283,10 @@
     { "titulo": "Testes locais", "onde": "Computador", "texto": "Testes do app, da API e do banco, além de conferência visual no navegador.", "modo": "auto" },
     { "titulo": "Pull request", "onde": "GitHub", "texto": "Inclua a atualização do mapa no mesmo PR, valide e gere a página. Descreva alterações, testes, limites e operações que precisarão de autorização.", "modo": "auto" },
     { "titulo": "CI valida", "onde": "GitHub Actions — Validar aplicação e API", "texto": "Roda todos os testes, builds, imagem Docker e auditoria de segurança.", "modo": "auto" },
+    { "titulo": "Você testa em Staging", "onde": "localhost:5174", "texto": "O agente inicia a candidata local e envia o link com ambiente e versão. Ajustes usam o mesmo número. O registro local do código é conferido no build de produção.", "modo": "voce" },
     { "titulo": "Você aprova o merge", "onde": "Conversa ou GitHub", "texto": "O agente incorpora o PR após o seu sim. Uma autorização já concedida não precisa ser pedida novamente para a mesma ação.", "modo": "voce" },
     { "titulo": "Prévia e mapa atualizam", "onde": "GitHub Pages", "texto": "Cada push em main republica a prévia (demonstração) e este mapa.", "modo": "auto" },
-    { "titulo": "Liberação em produção", "onde": "Cloud Build, Cloud Run, Cloud SQL e Firebase Hosting", "texto": "Com autorização: conferir commit e CI, preservar recuperação, aplicar migrations/grants como proprietário quando houver, compilar imagem sem segredos, publicar API/executor pelo digest e testar. Publicar o frontend depois, preservando limites, identidades, CORS e Scheduler. Merge não dispara produção. PR 27 seguiu essa ordem: backup, evolução aditiva e grants mínimos, API/executor e depois os dois sites.", "modo": "aprovacao" },
+    { "titulo": "Liberação em produção", "onde": "Cloud Build, Cloud Run, Cloud SQL e Firebase Hosting", "texto": "Com autorização: conferir candidata em Staging, sequência de versão e CI, preservar recuperação, aplicar migrations/grants como proprietário quando houver, compilar imagem sem segredos, publicar API/executor pelo digest e testar. Publicar o frontend depois, preservando limites, identidades, CORS e Scheduler. Merge não dispara produção. PR 27 seguiu essa ordem: backup, evolução aditiva e grants mínimos, API/executor e depois os dois sites.", "modo": "aprovacao" },
     { "titulo": "Validar e registrar o que foi publicado", "onde": "API, Firebase Hosting e mapa", "texto": "Testar acesso e arquivos, limpar somente dados sintéticos autorizados e preservar a auditoria. Atualizar no mapa as versões realmente publicadas e o histórico; mudanças futuras aguardam nova aprovação.", "modo": "auto" }
   ],
   "jornadas": [
@@ -385,11 +397,81 @@
   ],
   "atualizacoes": [
     {
+      "data": "2026-11-20",
+      "autor": "Claude Code",
+      "titulo": "Versão 1.0 publicada (PR 48: Staging local e versões)",
+      "resumo": "Com autorização do dono, o PR 48 foi mesclado (5063eab) e só o site foi publicado: o backend é idêntico ao da API no ar (4c7caf5). Primeira promoção pelo fluxo novo: a candidata aberta no Staging local (versão 1.0) tem o mesmo hash de fonte do merge, e o build de produção conferiu esse registro e a saúde da API. Os dois sites servem release.json com versão 1.0 e os mesmos 107 arquivos do app; só a página do mapa difere por ser gerada a cada publicação. Login abre sem erros no console. PR 42 (desempenho móvel) tem conflitos e exige publicar a API; PR 49 (chat) exige Firestore, migration 022 e permissões no Google Cloud. Os dois ficaram para o Codex, que opera o Google Cloud. Kindle e menu nativo seguem sem teste em aparelho físico.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/48"
+    },
+    {
+      "data": "2026-11-19",
+      "autor": "Codex",
+      "titulo": "Staging exclusivo em localhost",
+      "resumo": "Staging passou a rodar em localhost:5174, com API, banco PostgreSQL, arquivos e autenticação de teste locais. A prévia temporária foi desativada. A candidata fica registrada localmente para conferência no build de produção.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/48"
+    },
+    {
+      "data": "2026-11-19",
+      "autor": "Codex",
+      "titulo": "Staging e versão do aplicativo",
+      "resumo": "Configurações identifica ambiente e versão. A base é 1.0 e o build de produção confere a candidata que passou por Staging.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/48"
+    },
+    {
+      "data": "2026-11-19",
+      "autor": "Codex",
+      "titulo": "Publicação da auditoria do backend",
+      "resumo": "PR 46 publicado do merge 4c7caf5. API e executor primeiro, depois ambos os Firebase Hosting. Rotas e permissões mantidas. Saúde, CORS e proteção de rotas verificados. 106 arquivos idênticos ao build em cada site.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/46"
+    },
+    {
+      "data": "2026-11-19",
+      "autor": "Codex",
+      "titulo": "Auditoria e otimização do backend",
+      "resumo": "Revisão de rotas, migrations, histórico e logs. Salvamento de leitura usa a revisão já confirmada, e a biblioteca consulta capas disponíveis. Consultas de notificações são compartilhadas. Leituras do espaço pessoal dispensam bloqueio e identidade estável dispensa gravação. O catálogo externo tem limite de espera. Arquivos obsoletos do Render e executor manual removidos. Rotas e permissões preservadas.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/46"
+    },
+    {
+      "data": "2026-11-19",
+      "autor": "Codex",
+      "titulo": "Biblioteca Gratuita, Notícias e Kindle publicados",
+      "resumo": "PRs 44 e 38 no ar. Frontend be3a3e4 nos dois endereços, API e executor f7972e1. As migrations 020 e 021 mantiveram as permissões restritas. EPUB autorizado reutilizado para ler ou enviar ao Kindle. Notícias iniciadas com RSS oficial. CI aprovado, 265 testes locais, Chrome e WebKit e verificação de 107 arquivos por site.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/38"
+    },
+    {
+      "data": "2026-11-19",
+      "autor": "Codex",
+      "titulo": "Integração do Kindle com a Biblioteca Gratuita",
+      "resumo": "PRs 38 e 44 combinados com a autenticação e a Biblioteca atuais. Migrations aditivas separadas. Candidato em validação antes de publicar.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/38"
+    },
+    {
       "data": "2026-11-18",
       "autor": "Codex",
       "titulo": "Desempenho mobile e base iOS e Android",
       "resumo": "Cache de feed e fotos por conta, paginação e rolagem preservadas, carregamento por aba e resumo agregado de clubes. Chrome e WebKit validaram as cinco abas nas doze larguras e repetiram os fluxos de sessão e EPUB. Capacitor sincronizado para staging; assinatura, binários, aparelhos físicos e requisitos de conta e moderação pendentes. Produção continua nas versões anteriores.",
       "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/42"
+    },
+    {
+      "data": "2026-11-18",
+      "autor": "Codex",
+      "titulo": "Integrações de Leitura: EPUB, progresso e anotações Kindle",
+      "resumo": "Menu da Biblioteca prepara EPUB pessoal autorizado para o Send to Kindle, com download alternativo. Progresso informado e anotações My Clippings ficam privados. Histórico e meta anual são opcionais, e a reflexão usa o compositor dos clubes ou da comunidade. Migration 020 e grants restritos validados, com 231 testes e fluxos completos em Chrome e WebKit locais. Sem sincronização automática ou publicação em produção.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/38"
+    },
+    {
+      "data": "2026-11-18",
+      "autor": "Codex",
+      "titulo": "Backend da Biblioteca Gratuita e das Notícias Literárias",
+      "resumo": "Busca e edições Open Library com cache, EPUB de A Cartomante com referências pessoais, links oficiais externos, metadados editoriais com deduplicação, ações sociais e sugestões privadas. Migration aditiva e papel restrito testados localmente. Integração local com as telas do PR 43 do Claude Code, com leitura sem duplicar o arquivo e link para discussão. Retomada do EPUB, capa e ações sociais conferidas no Chrome e WebKit. Sem liberação em produção.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/44"
+    },
+    {
+      "data": "2026-11-18",
+      "autor": "Claude",
+      "titulo": "Telas da Biblioteca Gratuita, Notícias e abas da Comunidade",
+      "resumo": "Nova tela Livros Gratuitos (Explorar → Ver todos e atalho na Biblioteca): carrosséis, categorias, idioma, busca, detalhes com licença verificada e Ler agora/Adicionar, que baixam o EPUB autorizado e usam a importação e a cota de sempre. Comunidade ganhou abas Feed, Clubes, Notícias e Debates (perguntas públicas; Abrir debate publica como pergunta). Contrato v1 em docs/CONTRATO_LIVROS_GRATUITOS_NOTICIAS.md para o Codex implementar /v1/free-books e /v1/news; até lá as telas avisam que o recurso está sendo conectado, sem dados fictícios. 109 testes do site aprovados, tsc e build ok. Sem mudança de servidor nem produção.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/43"
     },
     {
       "data": "2026-11-18",

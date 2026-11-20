@@ -18,3 +18,9 @@ Ao terminar uma tarefa pedida pelo dono:
 - **Dono:** aprova merges e autoriza qualquer operação em produção ou que gere custo.
 
 Cada agente trabalha na própria branch e pasta (worktree). Antes de editar arquivos do outro, confira a branch remota e a pasta dele para evitar sobrescrever trabalho em andamento.
+
+## Staging e Produção
+
+Inicie cada candidata com `npm run staging` e envie ao dono o link em `http://localhost:5174`, o ambiente e a versão. Staging é exclusivamente local. O dono pede a promoção depois de testar. Qualquer operação de produção segue essa aprovação.
+
+O número em `release.json` começa em `1.0`. Prepare a próxima versão em Staging avançando um número à direita do ponto da versão publicada. Ajustes na mesma candidata usam o mesmo número. O build de produção confere a candidata e a sequência. O endereço usado até aqui permanece sendo Produção. Veja [Publicação](docs/PUBLICACAO.md).

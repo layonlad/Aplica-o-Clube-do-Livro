@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Bell, Search } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
@@ -201,12 +201,14 @@ export function BookCover({
   className?: string
 }) {
   const style = { '--cover-w': `${width}px`, '--cover-ratio': ratio } as CSSProperties
+  // Capa externa que não carrega (link quebrado, fonte fora do ar) volta para a capa desenhada.
+  const [broken, setBroken] = useState<string | null>(null)
   return (
     <span className={`cover ${className}`} style={style}>
       {bookId ? (
         <PrivateBookCover id={bookId} title={title} author={author ?? ''} fallback={image ?? undefined} />
-      ) : image ? (
-        <img src={image} alt={`Capa de ${title}`} loading="lazy" referrerPolicy="no-referrer" />
+      ) : image && broken !== image ? (
+        <img src={image} alt={`Capa de ${title}`} loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(image)} />
       ) : (
         <CoverArt title={title} author={author} />
       )}

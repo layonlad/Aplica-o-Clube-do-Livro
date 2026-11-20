@@ -1,7 +1,7 @@
 import { ClubBookFile } from '../clubs/ClubBookFile'
 import { PrivateBookCover } from './PrivateBookCover'
 import { useAuth } from '../auth/AuthProvider'
-import { apiRequest, readableError } from '../auth/api'
+import { apiRequest, messageFor, readableError } from '../auth/api'
 import { localEpub, saveEpub } from './epub-storage'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -19,6 +19,7 @@ import type { ImportedBook } from './import-book'
 import { useWorkspace } from './WorkspaceProvider'
 import './library-room.css'
 import { PrivateBookFile } from './PrivateBookFile'
+import { addFreeBook, literaryCoverUrl, ServiceNotReady } from '../literary/api'
 
 const statusLabels = {
   want: 'Quero ler',
@@ -39,12 +40,15 @@ const blank = () => ({
 })
 export function LibraryRoom() {
   const { user } = useAuth(),
-    [params] = useSearchParams(),
-    sample = params.get('sample')
+    [params, setParams] = useSearchParams(),
+    sample = params.get('sample'),
+    freeBookId = params.get('gratuito'),
+    readAfter = params.get('ler') === '1'
+  const navigateTo = useNavigate()
   const [originalFile, setOriginalFile] = useState<File | null>(null)
   const { appearance, saveAppearance } = useTheme()
   const [usage, setUsage] = useState<BookFilesUsage | null>(null)
-  const { snapshot, act, busy, scope } = useWorkspace()
+  const { snapshot, act, busy, scope, refresh } = useWorkspace()
   const { state, reading, role } = snapshot!
   const preferences = preferencesSchema.parse(snapshot!.preferences)
   const [query, setQuery] = useState('')
@@ -114,7 +118,7 @@ export function LibraryRoom() {
     setDraft(blank())
     setOriginalFile(null)
   }
-  async function file(file: File) {
+  async function file(file: File, extra: Partial<Metadata> = {}, identity?: { title: string; author: string }) {
     setImporting(true)
     setMessage('')
     try {
@@ -125,11 +129,11 @@ export function LibraryRoom() {
       const { importBook } = await import('./import-book')
       const imported = await importBook(stableFile)
       setDraft({
-        title: imported.title.slice(0, 150),
-        author: imported.author.slice(0, 150),
+        title: (identity?.title || imported.title).slice(0, 150),
+        author: (identity?.author || imported.author).slice(0, 150),
         category: '',
         content: imported.content,
-        metadata: imported.metadata ?? {},
+        metadata: { ...(imported.metadata ?? {}), ...extra },
         chapters: imported.chapters,
       })
       setOriginalFile(/\.epub$/i.test(file.name) ? stableFile : null)
@@ -142,6 +146,31 @@ export function LibraryRoom() {
       setImporting(false)
     }
   }
+  useEffect(() => {
+    if (!freeBookId || !user?.emailVerified || scope !== 'personal') return
+    let live = true
+    setImporting(true)
+    setMessage('Adicionando o livro gratuito…')
+    void addFreeBook(user, freeBookId)
+      .then(async ({ bookId }) => {
+        if (!live) return
+        await refresh(true)
+        if (!live) return
+        setImporting(false)
+        setMessage('Livro salvo na sua biblioteca.')
+        if (readAfter) navigateTo(`/app/reader/${bookId}`, { replace: true })
+        else setParams({}, { replace: true })
+      })
+      .catch(error => {
+        if (live) setMessage(error instanceof ServiceNotReady
+          ? 'A Biblioteca Gratuita está sendo conectada ao servidor.'
+          : messageFor(error))
+      })
+      .finally(() => {
+        if (live) setImporting(false)
+      })
+    return () => { live = false }
+  }, [freeBookId, readAfter, user?.uid, user?.emailVerified, scope])
   useEffect(() => {
     if (sample !== 'welcome') return
     let live = true
@@ -619,7 +648,7 @@ function BookItem({ book, onEdit }: { book: Book; onEdit: () => void }) {
           id={book.id}
           title={book.title}
           author={book.author}
-          fallback={book.metadata?.cover}
+          fallback={book.metadata?.literaryEpub ? literaryCoverUrl(book.metadata.literaryEditionId) : book.metadata?.cover}
         />
       </Link>
       <div className="library-book__body">

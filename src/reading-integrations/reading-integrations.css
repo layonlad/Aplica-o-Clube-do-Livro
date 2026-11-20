@@ -1,0 +1,25 @@
+.reading-integration-form {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-3);
+  overflow-wrap: anywhere;
+}
+.reading-integration-form :is(h2, h3, p) { margin: 0; }
+.reading-integration-form h2 svg { margin-inline-end: .35em; vertical-align: middle; color: var(--brand-ink); }
+.reading-integration-form label { display: grid; gap: var(--space-1); min-width: 0; }
+.reading-integration-form :is(input, select, textarea) { max-width: 100%; min-width: 0; }
+.reading-integration-form :is(select, input[type='date'], input[type='number']) { width: 100%; }
+.reading-integration-form .reading-integration-check { display: flex; align-items: center; gap: var(--space-2); }
+.reading-integration-sheet .sheet-heading + * { margin-top: var(--space-3); }
+.reading-integration-form .workspace-actions { display: flex; flex-wrap: wrap; }
+.reading-clippings { display: grid; gap: var(--space-2); list-style: none; padding: 0; margin: 0; }
+.reading-clippings li {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+}
+.reading-clipping-content { white-space: pre-wrap; }
+.external-progress-label { display: block; color: var(--text-muted); font-size: var(--text-caption); }

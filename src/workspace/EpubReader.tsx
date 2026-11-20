@@ -16,6 +16,7 @@ import { preferencesSchema } from '../../server/src/workspace-model'
 import { QuoteShare } from '../community/QuoteShare'
 import { readerFont } from './ReaderSettings'
 import { useEpubPagination } from './useEpubPagination'
+import { readFreeBookEpub } from '../literary/api'
 const tags = new Set(
     'p div section h1 h2 h3 h4 h5 h6 span strong em b i small sub sup br hr ul ol li blockquote table tbody thead tfoot tr th td figure figcaption pre code a img'.split(
       ' ',
@@ -26,10 +27,12 @@ export function EpubReader({
   bookId,
   title,
   author,
+  literaryEdition,
 }: {
   bookId: string
   title: string
   author: string
+  literaryEdition?: string
 }) {
   const chrome = useReaderChrome()
   const gesture = useRef<(ReadingGesture & { pointerId: number }) | null>(null),
@@ -90,6 +93,7 @@ export function EpubReader({
   useEffect(() => {
     let live = true
     const resources: string[] = []
+    const controller = new AbortController()
     setArchive(null)
     setPendingOffset(null)
     setSelected(null)
@@ -98,8 +102,11 @@ export function EpubReader({
     setLoading(true)
     void (async () => {
       try {
-        let record = await localEpub(namespace, bookId).catch(() => undefined)
-        if (!record && user?.emailVerified) {
+        const shared = literaryEdition && user?.emailVerified
+          ? await readFreeBookEpub(user, literaryEdition, controller.signal)
+          : undefined
+        let record = shared ? undefined : await localEpub(namespace, bookId).catch(() => undefined)
+        if (!shared && !record && user?.emailVerified) {
           const list = await apiRequest<{
             items: { id: string; filename: string }[]
           }>(user, `/me/book-files/${bookId}`)
@@ -118,14 +125,15 @@ export function EpubReader({
             }
           }
         }
-        if (!record) {
+        const editionFile = shared ?? record?.file
+        if (!editionFile) {
           if (live) setMessage('')
           return
         }
-        const value = await readEpub(record.file)
+        const value = await readEpub(editionFile)
         if (!live) return
         const cover = value.coverPath ? value.images.get(value.coverPath) : undefined
-        if (cover && !record.cover)
+        if (cover && record && !record.cover)
           void saveEpub(
             namespace,
             bookId,
@@ -158,9 +166,10 @@ export function EpubReader({
     })()
     return () => {
       live = false
+      controller.abort()
       for (const url of resources) URL.revokeObjectURL(url)
     }
-  }, [user?.uid, user?.emailVerified, namespace, bookId, revision])
+  }, [user?.uid, user?.emailVerified, namespace, bookId, revision, literaryEdition])
   useLayoutEffect(() => {
     if (!archive || pendingOffset === null || !article.current) return
     pagination.revealOffset(pendingOffset.offset, pendingOffset.element)
@@ -429,7 +438,7 @@ export function EpubReader({
           })
           .slice(0, 50)
       : []
-  const fileButton = (
+  const fileButton = !literaryEdition && (
     <label className="file-button">
       {archive ? 'Trocar arquivo' : 'Escolher EPUB'}
       <input
@@ -452,7 +461,7 @@ export function EpubReader({
   )
   return (
     <section className="epub-original stack-lg">
-      {!archive && (
+      {!archive && !literaryEdition && (
         <header className="epub-original__empty">
           <h2>Falta o arquivo deste livro</h2>
           <p>
@@ -781,11 +790,11 @@ export function EpubReader({
                   </>
                 )}
               </nav>
-              <details className="reader-file">
+              {!literaryEdition && <details className="reader-file">
                 <summary>Arquivo deste leitor</summary>
                 <p>O arquivo é privado e fica separado das publicações.</p>
                 {fileButton}
-              </details>
+              </details>}
               <fieldset>
                 <legend>Sua leitura</legend>
                 <Button
@@ -857,7 +866,7 @@ export function EpubReader({
                   />
                 </div>
               ))}
-              {confirmRemove ? (
+              {!literaryEdition && (confirmRemove ? (
                 <div>
                   <p className="t-caption">
                     Apagar a cópia deste aparelho? Sua conta e anotações continuam.
@@ -879,7 +888,7 @@ export function EpubReader({
                 <Button variant="ghost" onClick={() => setConfirmRemove(true)}>
                   Apagar cópia deste aparelho
                 </Button>
-              )}
+              ))}
             </ReaderPanel>
           )}
         </>

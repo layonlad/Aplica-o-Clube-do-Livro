@@ -1,6 +1,6 @@
 import { useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BookMarked, BookOpen, CheckCircle2, Ellipsis, Heart, Play, Share2, Trash2, UsersRound } from 'lucide-react'
+import { FileUp, NotebookPen, RefreshCw, BookMarked, BookOpen, CheckCircle2, Ellipsis, Heart, Play, Share2, Trash2, UsersRound } from 'lucide-react'
 import type { WorkspaceState, ReadingState } from '../../server/src/workspace-model'
 import { Sheet } from '../components/Sheet'
 import { CoverArt } from '../components/ui'
@@ -85,6 +85,15 @@ export function BookActions({ book, entry, onClose, extra }: { book: Book; entry
           <span className="action-menu__icon"><BookOpen size={19} /></span>
           <span>Abrir leitor<small>Continua de onde você parou</small></span>
         </button>
+        {personal && ([
+          ['export', 'Enviar ao Kindle', FileUp],
+          ['progress', 'Atualizar progresso', RefreshCw],
+          ['annotations', 'Importar anotações', NotebookPen],
+        ] as const).map(([mode, label, Icon]) => (
+          <button key={mode} type="button" onClick={() => { onClose(); navigate(`/app/library/integracoes?livro=${book.id}&modo=${mode}`) }}>
+            <span className="action-menu__icon"><Icon size={19} aria-hidden="true" /></span><span>{label}</span>
+          </button>
+        ))}
         {personal && (
           <button type="button" disabled={busy} onClick={() => void act({ type: 'reading.update', id: book.id, ...(finished ? { status: 'reading', percent: 0 } : { status: 'finished' }) }).then((ok) => ok && onClose())}>
             <span className="action-menu__icon"><CheckCircle2 size={19} /></span>

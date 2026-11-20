@@ -51,9 +51,11 @@ function usePollUnreadCount() {
   return user?.emailVerified ? count : 0
 }
 const UnreadCount = createContext(0)
+
 export function UnreadProvider({ children }: { children: ReactNode }) {
   return <UnreadCount.Provider value={usePollUnreadCount()}>{children}</UnreadCount.Provider>
 }
+
 export function useUnreadCount() {
   return useContext(UnreadCount)
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronDown, PenLine, Plus, SquarePen, UsersRound, X } from 'lucide-react'
+import { ChevronDown, Compass, MessagesSquare, PenLine, Plus, SquarePen, UsersRound, X } from 'lucide-react'
 import type { Page, PostDto } from '../../server/src/community-contracts'
 import { useAuth } from '../auth/AuthProvider'
 import { readableError } from '../auth/api'
@@ -13,8 +13,17 @@ import { useWorkspace } from '../workspace/WorkspaceProvider'
 import { useCommunityPosts, useMyClubs } from './data'
 import { Hero, HeroBell, HeroIcon, SectionHead, SheetBody } from './kit'
 import { ClubArt } from './pieces'
+import { MyClubCard } from './ClubsScreen'
+import { NewsFeed } from './NewsFeed'
 
 type Order = 'recent' | 'following' | 'saved'
+type Tab = 'feed' | 'clubes' | 'noticias' | 'debates'
+const tabs: { id: Tab; label: string }[] = [
+  { id: 'feed', label: 'Feed' },
+  { id: 'clubes', label: 'Clubes' },
+  { id: 'noticias', label: 'Notícias' },
+  { id: 'debates', label: 'Debates' },
+]
 const orders: { id: Order; label: string }[] = [
   { id: 'recent', label: 'Mais recentes' },
   { id: 'following', label: 'De quem eu sigo' },
@@ -28,8 +37,10 @@ export function CommunityScreen() {
   const [params, setParams] = useSearchParams()
   const selected = params.get('post')
   const search = params.get('q') ?? ''
+  const tab: Tab = selected || search ? 'feed' : (tabs.find((item) => item.id === params.get('secao'))?.id ?? 'feed')
+  const debates = tab === 'debates'
   const [order, setOrder] = useState<Order>(params.get('aba') === 'seguindo' ? 'following' : params.get('aba') === 'salvos' ? 'saved' : 'recent')
-  const [composing, setComposing] = useState(params.get('publicar') === '1')
+  const [composing, setComposing] = useState<false | 'post' | 'debate'>(params.get('publicar') === '1' ? 'post' : false)
   const [revision, setRevision] = useState(0)
   const [paging, setPaging] = useState(false)
   const [pageError, setPageError] = useState('')
@@ -42,8 +53,9 @@ export function CommunityScreen() {
   const filters = new URLSearchParams({
     limit: '10',
     ...(search ? { q: search } : {}),
-    ...(order === 'following' ? { following: '1' } : {}),
-    ...(order === 'saved' ? { saved: '1' } : {}),
+    ...(debates ? { kind: 'question' } : {}),
+    ...(!debates && order === 'following' ? { following: '1' } : {}),
+    ...(!debates && order === 'saved' ? { saved: '1' } : {}),
   }).toString()
   const feed = useCommunityPosts(filters, revision, selected)
   const page = feed.page ?? { items: [], nextCursor: null }
@@ -85,6 +97,13 @@ export function CommunityScreen() {
     }
   }
   const available = orders.filter((item) => verified || item.id === 'recent')
+  function pickTab(next: Tab) {
+    const value = new URLSearchParams(params)
+    if (next === 'feed') value.delete('secao')
+    else value.set('secao', next)
+    setParams(value, { replace: true })
+  }
+  const showFeed = tab === 'feed' || tab === 'debates'
 
   return (
     <div className="community-screen">
@@ -96,14 +115,31 @@ export function CommunityScreen() {
         actions={<>
           <HeroBell />
           {verified ? (
-            <HeroIcon label="Criar publicação" onClick={() => setComposing(true)} expanded={composing}><SquarePen size={20} strokeWidth={1.9} /></HeroIcon>
+            <HeroIcon label={debates ? 'Abrir debate' : 'Criar publicação'} onClick={() => setComposing(debates ? 'debate' : 'post')} expanded={!!composing}><SquarePen size={20} strokeWidth={1.9} /></HeroIcon>
           ) : (
             <HeroIcon label="Entre para publicar" to="/account"><SquarePen size={20} strokeWidth={1.9} /></HeroIcon>
           )}
         </>}
       />
       <SheetBody>
-        {selected ? (
+        {!selected && !search && (
+          <div className="line-tabs community-tabs" role="tablist" aria-label="Seções da comunidade">
+            {tabs.map((item) => (
+              <button key={item.id} type="button" role="tab" id={`aba-${item.id}`} aria-selected={tab === item.id} aria-controls="community-panel" onClick={() => pickTab(item.id)}>{item.label}</button>
+            ))}
+          </div>
+        )}
+        <div id="community-panel" role={!selected && !search ? 'tabpanel' : undefined} aria-labelledby={!selected && !search ? `aba-${tab}` : undefined} className="community-panel">
+        {tab === 'noticias' && <NewsFeed />}
+        {tab === 'clubes' && <ClubsTab verified={verified} />}
+        {tab === 'debates' && (
+          <div className="debate-intro">
+            <MessagesSquare size={20} aria-hidden="true" />
+            <span><strong>Perguntas abertas para toda a comunidade</strong><small>Responda nos comentários ou proponha um tema novo.</small></span>
+            {verified ? <button type="button" className="pill-button pill-button--solid" onClick={() => setComposing('debate')}>Abrir debate</button> : <Link className="pill-button" to="/account">Entrar</Link>}
+          </div>
+        )}
+        {tab === 'feed' && (selected ? (
           <Link className="text-link" to="/app/community">← Voltar às novidades</Link>
         ) : (
           <section aria-labelledby="community-clubs">
@@ -125,12 +161,12 @@ export function CommunityScreen() {
               {verified && clubs.items === null && [0, 1, 2].map((key) => <span key={key} className="skeleton" style={{ width: 66, height: 66, borderRadius: '50%' }} aria-hidden="true" />)}
             </div>
           </section>
-        )}
+        ))}
 
-        {!selected && verified && <SharedBookComposer clubId={null} onPublished={() => setRevision((value) => value + 1)} />}
+        {tab === 'feed' && !selected && verified && <SharedBookComposer clubId={null} onPublished={() => setRevision((value) => value + 1)} />}
 
-        <section aria-labelledby="community-feed">
-          {!selected && (
+        {showFeed && <section aria-labelledby="community-feed">
+          {!selected && !debates && (
             <div className="section-head">
               <h2 id="community-feed">{search ? `Sobre “${search}”` : 'Novidades da comunidade'}</h2>
               {search ? (
@@ -173,11 +209,12 @@ export function CommunityScreen() {
             ))}
             {busy && !page.items.length && [0, 1].map((key) => <span key={key} className="skeleton" style={{ height: 170, borderRadius: 16 }} aria-hidden="true" />)}
           </div>
+          {debates && <h2 id="community-feed" className="sr-only">Debates</h2>}
           {!busy && !error && !page.items.length && (
             <div className="soft-empty">
               <PenLine size={26} aria-hidden="true" />
-              <h2 className="soft-empty__title">{order === 'saved' ? 'Nenhuma publicação salva' : order === 'following' ? 'Quem você segue ainda não publicou' : 'Há espaço para novas histórias'}</h2>
-              {verified && order === 'recent' && <button type="button" className="pill-button" onClick={() => setComposing(true)}>Criar publicação</button>}
+              <h2 className="soft-empty__title">{debates ? 'Nenhum debate aberto' : order === 'saved' ? 'Nenhuma publicação salva' : order === 'following' ? 'Quem você segue ainda não publicou' : 'Há espaço para novas histórias'}</h2>
+              {verified && (debates || order === 'recent') && <button type="button" className="pill-button" onClick={() => setComposing(debates ? 'debate' : 'post')}>{debates ? 'Abrir debate' : 'Criar publicação'}</button>}
               {!verified && <Link className="pill-button pill-button--solid" to="/account">Entre para publicar</Link>}
             </div>
           )}
@@ -186,13 +223,50 @@ export function CommunityScreen() {
               <Button variant="secondary" disabled={busy} aria-busy={busy} onClick={() => void more()}>Mais publicações</Button>
             </div>
           )}
-        </section>
+        </section>}
+        </div>
       </SheetBody>
       {composing && verified && (
-        <Sheet title="Criar publicação" onClose={() => setComposing(false)} className="composer-sheet">
-          <PostComposer clubId={null} onCancel={() => setComposing(false)} onPublished={() => { setComposing(false); setOrder('recent'); setRevision((value) => value + 1) }} />
+        <Sheet title={composing === 'debate' ? 'Abrir debate' : 'Criar publicação'} onClose={() => setComposing(false)} className="composer-sheet">
+          <PostComposer clubId={null} kind={composing === 'debate' ? 'question' : 'reflection'} onCancel={() => setComposing(false)} onPublished={() => { const wasDebate = composing === 'debate'; setComposing(false); if (!wasDebate) setOrder('recent'); setRevision((value) => value + 1) }} />
         </Sheet>
       )}
     </div>
+  )
+}
+
+/** Aba Clubes: os clubes da pessoa com leitura e encontro do momento, e o caminho para descobrir outros. */
+function ClubsTab({ verified }: { verified: boolean }) {
+  const clubs = useMyClubs()
+  const { setScope } = useWorkspace()
+  const navigate = useNavigate()
+  if (!verified)
+    return (
+      <div className="soft-empty">
+        <UsersRound size={26} aria-hidden="true" />
+        <h2 className="soft-empty__title">Entre para ver seus clubes</h2>
+        <Link className="pill-button pill-button--solid" to="/account">Entrar ou criar conta</Link>
+      </div>
+    )
+  return (
+    <section aria-labelledby="community-my-clubs">
+      <SectionHead id="community-my-clubs" title="Seus clubes" to="/app/clubs" linkLabel="Gerenciar" />
+      {clubs.items === null ? (
+        <div className="my-clubs-grid">{[0, 1].map((key) => <span key={key} className="skeleton" style={{ height: 250, borderRadius: 16 }} aria-hidden="true" />)}</div>
+      ) : clubs.items.length ? (
+        <div className="my-clubs-grid">
+          {clubs.items.map((club) => <MyClubCard key={club.id} club={club} onOpen={() => { setScope(club.id); navigate('/app') }} />)}
+        </div>
+      ) : (
+        <div className="soft-empty">
+          <UsersRound size={26} aria-hidden="true" />
+          <h2 className="soft-empty__title">Você ainda não participa de clubes</h2>
+          <Link className="pill-button pill-button--solid" to="/app/clubs?criar=1">Criar clube</Link>
+        </div>
+      )}
+      <div className="library-add">
+        <Link className="pill-button" to="/app/clubs"><Compass size={16} aria-hidden="true" />Descobrir clubes</Link>
+      </div>
+    </section>
   )
 }

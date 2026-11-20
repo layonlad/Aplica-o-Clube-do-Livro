@@ -1,7 +1,12 @@
+import { registerReadingIntegrations } from './reading-integrations/routes.js'
+import {registerLiteraryReads,registerLiteraryAccountRoutes} from './literary/routes.js'
+import {syncLiteraryNews} from './literary/news.js'
+import {editorialFirebaseUid} from './public-policy.js'
 import {registerPhotoMaintenance} from './photo-maintenance.js'
 import {PushSubscriptions,subscriptionInput} from './push-subscriptions.js'
 import {registerPhotoRoutes} from './photo-routes.js'
 import {ClubFiles} from './club-files.js'
+import { registerBookFileRoutes } from './book-file-routes.js'
 import {registerEventRoutes} from './event-routes.js'
 import {ModerationService} from './moderation-service.js'
 import {NotificationService} from './notification-service.js'
@@ -41,7 +46,7 @@ const inviteInput = z.object({
   expiresInDays: z.number().int().min(1).max(30).default(7),
 }).strict().refine((data) => !data.email || data.maxUses === 1, 'Convites por e-mail devem ter um único uso.')
 
-export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; additionalOrigins?:string[]; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage;moderatorUids?:string[];pushPublicKey?:string;photoCleanupToken?:string;afterSocialMutation?:()=>void }) {
+export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; additionalOrigins?:string[]; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage;moderatorUids?:string[];pushPublicKey?:string;photoCleanupToken?:string;literaryNewsSync?:boolean;afterSocialMutation?:()=>void }) {
   const app = Fastify({
     logger: options.logger ? { redact: ['req.headers.authorization', 'req.body', 'res.headers'] } : false,
     logController: new LogController({ disableRequestLogging: true }),
@@ -56,7 +61,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
   const management=new ClubManagement(options.pool)
   const notifications=new NotificationService(options.pool)
   const push=new PushSubscriptions(options.pool,options.pushPublicKey)
-  await app.register(cors, { origin: options.additionalOrigins?.length ? [options.origin,...options.additionalOrigins] : options.origin, methods: ['GET', 'POST', 'DELETE'], allowedHeaders: ['Authorization', 'Content-Type'] })
+  await app.register(cors, { origin: options.additionalOrigins?.length ? [options.origin,...options.additionalOrigins] : options.origin, methods: ['GET', 'POST', 'DELETE'], allowedHeaders: ['Authorization', 'Content-Type'], maxAge: 300, exposedHeaders: ['X-Reading-Export-Id', 'Content-Disposition'] })
   await app.register(helmet)
   await app.register(rateLimit, { max: options.rateMax ?? 120, timeWindow: '1 minute' })
   app.addHook('onSend', async (_request, reply) => {
@@ -74,8 +79,9 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     request.log.error({ requestId: request.id, route: request.routeOptions.url }, 'Falha interna na API')
     return reply.code(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Não foi possível concluir a operação.' } })
   })
-  if(options.afterSocialMutation)app.addHook('onResponse',async(request,reply)=>{if(reply.statusCode<300&&request.method!=='GET'&&/\/(posts|forum|events|invites|follow|follow-requests|join-requests|invitations)(?:[/?]|$)/.test(request.url))options.afterSocialMutation!()})
-  registerPhotoMaintenance(app,options.pool,options.storage,options.photoCleanupToken)
+  if(options.afterSocialMutation)app.addHook('onResponse',async(request,reply)=>{if(reply.statusCode<300&&request.method!=='GET'&&/\/(posts|news|forum|events|invites|follow|follow-requests|join-requests|invitations)(?:[/?]|$)/.test(request.url))options.afterSocialMutation!()})
+  registerPhotoMaintenance(app,options.pool,options.storage,options.photoCleanupToken,
+    options.literaryNewsSync ? () => syncLiteraryNews(options.pool) : undefined)
   app.get('/health', async () => {
     try { await options.pool.query('SELECT 1'); return { status: 'ok' } }
     catch { throw new HttpError(503, 'DATABASE_UNAVAILABLE', 'Banco temporariamente indisponível.') }
@@ -90,14 +96,19 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
       const match = /^Bearer ([^\s]+)$/.exec(request.headers.authorization ?? '')
       if (!match || match[1].length > 8192) throw new HttpError(401, 'AUTH_REQUIRED', 'Entre na sua conta para continuar.')
       const identity = await options.verifyToken(match[1])
+      if (identity.uid === editorialFirebaseUid) throw new HttpError(401, 'AUTH_REQUIRED', 'Entre na sua conta para continuar.')
       if (!identity.emailVerified || !identity.email) throw new HttpError(403, 'EMAIL_NOT_VERIFIED', 'Confirme seu e-mail para acessar o clube.')
       request.user = await service.syncUser(identity)
     }
-  await registerPublicReads(app,options.pool,async request=>{if(request.headers.authorization)await authenticate(request)},options.storage,options.moderatorUids)
+  const optionalAuth = async (request: import('fastify').FastifyRequest) => { if (request.headers.authorization) await authenticate(request) }
+  await registerPublicReads(app,options.pool,optionalAuth,options.storage,options.moderatorUids)
+  await registerLiteraryReads(app, options.pool, optionalAuth)
   await app.register(async (api) => {
     api.addHook('onRequest',authenticate)
+    registerReadingIntegrations(api, options.pool, files)
     await registerPublicMutations(api,options.pool,options.storage,options.moderatorUids)
     api.get('/me/clubs/summary', request => management.summaries(request.user))
+    registerLiteraryAccountRoutes(api, options.pool, workspace, options.moderatorUids)
     api.get('/me/push/config',()=>push.config())
     api.post('/me/push/subscriptions',{config:{rateLimit:{max:5,timeWindow:'1 minute',hook:'preHandler',keyGenerator:request=>request.user.id}}},request=>push.register(request.user,subscriptionInput.parse(request.body)))
     api.post('/me/push/status',request=>push.status(request.user,z.object({endpoint:z.string().max(2048)}).strict().parse(request.body).endpoint))
@@ -122,28 +133,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     api.get('/me', async request => ({...await service.session(request.user),...await new ModerationService(options.pool,options.moderatorUids).permissions(request.user)}))
     api.post('/me/invitations/:id/accept',{config:{rateLimit:{max:10,timeWindow:'1 minute'}}},request=>service.acceptInvite(request.user,z.object({id:z.uuid()}).parse(request.params).id,true))
     api.post('/me/invitations/:id/decline',{config:{rateLimit:{max:10,timeWindow:'1 minute'}}},request=>service.declineInvite(request.user,z.object({id:z.uuid()}).parse(request.params).id))
-    const fileParams=z.object({bookId:z.uuid()})
-    api.get('/clubs/:clubId/book-files/:bookId',request=>{const {clubId,bookId}=clubParams.extend({bookId:z.uuid()}).parse(request.params);return clubFiles.list(request.user,clubId,bookId)})
-    api.post('/clubs/:clubId/book-files/:bookId',{bodyLimit:15000000,config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(request,reply)=>{
-      const {clubId,bookId}=clubParams.extend({bookId:z.uuid()}).parse(request.params)
-      const input=z.object({filename:z.string().min(1).max(150).regex(/^[^\p{C}]+\.epub$/iu),source:z.string().trim().min(3).max(500),license:z.string().trim().min(5).max(1000),authorized:z.literal(true),data:z.string().min(4).max(13333336).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/)}).strict().parse(request.body)
-      return reply.code(201).send(await clubFiles.upload(request.user,clubId,bookId,input,Buffer.from(input.data,'base64')))
-    })
-    api.get('/club-files/:id/content',async(request,reply)=>{const value=await clubFiles.download(request.user,z.object({id:z.uuid()}).parse(request.params).id);return reply.type('application/epub+zip').header('Content-Disposition',`attachment; filename="book.epub"; filename*=UTF-8''${encodeURIComponent(value.filename)}`).send(Buffer.from(value.bytes))})
-    api.delete('/club-files/:id',async(request,reply)=>{const value=await clubFiles.remove(request.user,z.object({id:z.uuid()}).parse(request.params).id);return reply.code(value.purged?200:202).send(value)})
-    api.get('/me/book-files',request=>files.usage(request.user.id))
-    api.get('/me/book-files/:bookId',request=>files.list(request.user.id,fileParams.parse(request.params).bookId))
-    api.get('/me/book-files/:bookId/cover',async(request,reply)=>reply.type('image/jpeg').header('Cache-Control','private, no-store').send(await files.cover(request.user.id,fileParams.parse(request.params).bookId)))
-    api.post('/me/book-files/:bookId',{bodyLimit:15000000,config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(request,reply)=>{
-      const input=z.object({filename:z.string().min(1).max(150).regex(/^[^\p{C}]+\.epub$/iu),data:z.string().min(4).max(13333336).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/)}).strict().parse(request.body)
-      const bytes=Buffer.from(input.data,'base64')
-      return reply.code(201).send(await files.upload(request.user.id,fileParams.parse(request.params).bookId,input.filename,bytes))
-    })
-    api.get('/me/files/:id/content',async(request,reply)=>{
-      const {id}=z.object({id:z.uuid()}).parse(request.params);const file=await files.download(request.user.id,id)
-      return reply.type('application/epub+zip').header('Content-Disposition',`attachment; filename="book.epub"; filename*=UTF-8''${encodeURIComponent(file.filename)}`).send(Buffer.from(file.bytes))
-    })
-    api.delete('/me/files/:id',async(request,reply)=>{const {id}=z.object({id:z.uuid()}).parse(request.params);const result=await files.remove(request.user.id,id);return reply.code(result.purged?200:202).send(result)})
+    registerBookFileRoutes(api, files, clubFiles)
     const workspaceInput = z.object({ action: actionSchema, version: z.number().int().min(0) }).strict()
     api.get('/me/workspace', request => workspace.get(request.user))
     api.post('/me/workspace', { bodyLimit: 9000000 }, request => { const input=workspaceInput.parse(request.body); return workspace.act(request.user,input.action,input.version) })

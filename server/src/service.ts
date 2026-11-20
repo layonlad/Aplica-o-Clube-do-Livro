@@ -30,18 +30,19 @@ export class ClubService {
   async syncUser(identity: Identity): Promise<UserProfile> {
     const email = identity.email.toLowerCase()
     const name = (identity.name?.trim() || identity.email.split('@')[0]).slice(0, 100)
-    const { rows } = await this.pool.query<UserProfile>(
-      `WITH existing AS (
-         SELECT id,email,name FROM users WHERE firebase_uid=$1 AND email=$2 AND name=$3
-       ), synced AS (
-         INSERT INTO users (firebase_uid,email,name)
-         SELECT $1,$2,$3 WHERE NOT EXISTS (SELECT 1 FROM existing)
-         ON CONFLICT (firebase_uid) DO UPDATE SET email=EXCLUDED.email,name=EXCLUDED.name,updated_at=now()
-         RETURNING id,email,name
-       )
-       SELECT * FROM existing UNION ALL SELECT * FROM synced`,
-      [identity.uid, email, name],
-    )
+    const { rows } = await this.pool.query<UserProfile>(`
+      WITH current_user_profile AS (
+        SELECT id, email, name FROM users WHERE firebase_uid=$1 AND email=$2 AND name=$3
+      ), saved AS (
+        INSERT INTO users (firebase_uid, email, name)
+        SELECT $1, $2, $3 WHERE NOT EXISTS (SELECT 1 FROM current_user_profile)
+        ON CONFLICT (firebase_uid) DO UPDATE
+        SET email=EXCLUDED.email, name=EXCLUDED.name, updated_at=now()
+        RETURNING id, email, name
+      )
+      SELECT id, email, name FROM current_user_profile
+      UNION ALL
+      SELECT id, email, name FROM saved`, [identity.uid, email, name])
     return rows[0]
   }
 
@@ -66,8 +67,8 @@ export class ClubService {
 
   async details(user: UserProfile, clubId: string): Promise<ClubDetails> {
     return transaction(this.pool, async (client) => {
-      const club = await authorize(client, clubId, user.id)
-      const { rows } = await client.query<Member&{sortTime:string}>(`SELECT u.id, COALESCE((SELECT display_name FROM profiles WHERE user_id=u.id),u.name) AS name, (SELECT avatar_id FROM profiles WHERE user_id=u.id) AS "avatarId", m.role, m.status,m.joined_at::text AS "sortTime" FROM club_memberships m JOIN users u ON u.id = m.user_id
+      const club = await authorize(client, clubId, user.id, false, 'share')
+      const { rows } = await client.query<Member&{sortTime:string}>(`SELECT u.id, COALESCE(p.display_name,u.name) AS name, p.avatar_id AS "avatarId", m.role, m.status,m.joined_at::text AS "sortTime" FROM club_memberships m JOIN users u ON u.id = m.user_id LEFT JOIN profiles p ON p.user_id=u.id
         WHERE m.club_id = $1 AND ($2::boolean OR m.status = 'active') ORDER BY m.joined_at DESC,u.id DESC LIMIT 51`, [clubId, can(club.role,'manageMembers')])
       const page=pageOf(rows,50)
       const count=await client.query("SELECT count(*)::int AS count FROM club_memberships WHERE club_id=$1 AND status='active'",[clubId])
@@ -78,7 +79,7 @@ export class ClubService {
   async members(user:UserProfile,clubId:string,input:{limit:number;cursor?:string;q?:string}){
     return transaction(this.pool,async client=>{
       const club=await authorize(client,clubId,user.id,false,'share'),cursor=decodeCursor(input.cursor)
-      const {rows}=await client.query<Member&{sortTime:string}>(`SELECT u.id,COALESCE((SELECT display_name FROM profiles WHERE user_id=u.id),u.name) AS name,(SELECT avatar_id FROM profiles WHERE user_id=u.id) AS "avatarId",m.role,m.status,m.joined_at::text AS "sortTime" FROM club_memberships m JOIN users u ON u.id=m.user_id WHERE m.club_id=$1 AND ($2::boolean OR m.status='active') AND ($3::timestamptz IS NULL OR (m.joined_at,u.id)<($3,$4::uuid)) AND ($5::text IS NULL OR COALESCE((SELECT display_name FROM profiles WHERE user_id=u.id),u.name) ILIKE '%'||$5||'%') ORDER BY m.joined_at DESC,u.id DESC LIMIT $6`,[clubId,can(club.role,'manageMembers'),cursor?.time??null,cursor?.id??null,input.q??null,input.limit+1])
+      const {rows}=await client.query<Member&{sortTime:string}>(`SELECT u.id,COALESCE(p.display_name,u.name) AS name,p.avatar_id AS "avatarId",m.role,m.status,m.joined_at::text AS "sortTime" FROM club_memberships m JOIN users u ON u.id=m.user_id LEFT JOIN profiles p ON p.user_id=u.id WHERE m.club_id=$1 AND ($2::boolean OR m.status='active') AND ($3::timestamptz IS NULL OR (m.joined_at,u.id)<($3,$4::uuid)) AND ($5::text IS NULL OR COALESCE(p.display_name,u.name) ILIKE '%'||$5||'%') ORDER BY m.joined_at DESC,u.id DESC LIMIT $6`,[clubId,can(club.role,'manageMembers'),cursor?.time??null,cursor?.id??null,input.q??null,input.limit+1])
       return pageOf(rows,input.limit)
     })
   }
@@ -97,7 +98,7 @@ export class ClubService {
 
   async listInvites(user: UserProfile, clubId: string): Promise<Invite[]> {
     return transaction(this.pool, async (client) => {
-      assertCapability((await authorize(client, clubId, user.id)).role, 'invite')
+      assertCapability((await authorize(client, clubId, user.id, false, 'share')).role, 'invite')
       const { rows } = await client.query<Invite>(`SELECT ${inviteColumns} FROM invites WHERE club_id = $1 ORDER BY created_at DESC LIMIT 100`, [clubId])
       return rows
     })

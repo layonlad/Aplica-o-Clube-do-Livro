@@ -2,7 +2,7 @@
 
 Produção migrada e verificada em **16/11/2026**, com autorização do dono, para o projeto Google/Firebase `gen-lang-client-0194308411`, nome de exibição **Projeto-clube-do-Livro**. O orçamento autorizado é de **R$ 70/mês**, com alertas; não é um corte automático de cobrança.
 
-Última atualização em 18/11/2026. O PR 39 saiu nos dois Firebase Hosting no merge `26627b2`, com correções de sessão e do leitor autenticado. API e executor permanecem em `9ce87a1`. [Resultado dos testes e verificação publicada](publicacoes/2026-11-18-sessao-epub.md).
+Última atualização em **19/11/2026**. O PR 46 publicou a auditoria do backend e as correções de sincronização. Os dois sites servem o build do merge `4c7caf5`, com 106 arquivos verificados por SHA-256. A API e o executor usam a imagem deste mesmo commit. A publicação dispensou alterações no banco e nas permissões.
 
 ## Endereços
 
@@ -11,25 +11,25 @@ Produção migrada e verificada em **16/11/2026**, com autorização do dono, pa
 - [Mapa do projeto](https://layonlad.github.io/Aplica-o-Clube-do-Livro/mapa/).
 - [Endereço anterior em compatibilidade](https://project-acb850f4-4bb8-45de-a84.web.app/#/app), usando API e Auth novos.
 
-A entrada continua livre, sem cadastro ou participação em clube. Biblioteca e livros apenas locais permanecem no navegador e na origem em que foram salvos. O endereço de compatibilidade evita abandonar esse IndexedDB; o novo endereço possui armazenamento local próprio. Conta é opcional para sincronizar; convites dão acesso somente aos clubes correspondentes. A mudança de projeto Firebase pode exigir novo login.
+O app conectado exige uma conta com e-mail confirmado. O acesso aos clubes depende da associação. EPUBs locais permanecem no navegador e no endereço em que foram salvos.
 
 ## Recursos de produção
 
 | Recurso | Configuração |
 | --- | --- |
-| Frontend | Firebase Hosting, código `b7a7301`, PRs 31 e 33; redesenho em andamento do Claude preservado em branch separada |
+| Frontend | Firebase Hosting nos dois endereços, merge `4c7caf5`, PR 46 |
 | Autenticação | Firebase Authentication, Google e e-mail/senha, UIDs e provedores preservados |
-| API | Cloud Run `clube-livro-api`, revisão `clube-livro-api-00005-fqj`, 1 CPU/1 GiB, mínimo zero, máximo uma instância, concorrência 2 |
+| API | Cloud Run `clube-livro-api`, revisão `clube-livro-api-00007-kvd`, 1 CPU/1 GiB, mínimo zero, máximo uma instância, concorrência 2 |
 | Banco | Cloud SQL `clube-livro-postgres`, PostgreSQL 17, `db-f1-micro`, HDD 10 GiB, zona única, região `us-central1` |
 | Papéis SQL | `clube_migrator`, `clube_runtime` e `clube_notifications`, com grants versionados e sem superusuário/DDL no runtime |
 | Arquivos | Cloud Storage for Firebase, bucket padrão privado do projeto, acesso público impedido |
-| Executor | Cloud Run privado `clube-notifications`, revisão `clube-notifications-00004-6vl`, 1 CPU/512 MiB, mínimo zero, máximo uma instância |
+| Executor | Cloud Run privado `clube-notifications`, revisão `clube-notifications-00006-cm2`, 1 CPU/512 MiB, mínimo zero, máximo uma instância |
 | Agendamento | Cloud Scheduler, `7,22,37,52 * * * *`, UTC, OIDC e identidade exclusiva |
 | Configuração privada | Secret Manager, acessos separados por identidade; sem arquivos de chave de serviço |
 | Imagens | Cloud Build e Artifact Registry `us-central1/clube-livro`; imagem pelo digest conferido |
 | Recuperação | Sete backups Cloud SQL, exportações privadas da migração e origens anteriores preservadas |
 
-Imagem atual da API e executor construída a partir de `9ce87a1a071adbd43585ad96c92a987c304fe57d`, digest `sha256:52ccc3e2c9b43a2cc1e295daa1c8376a905823f118d5441281330e0a919d83ca`. CI do merge e 221 testes locais aprovados; novos fluxos e limpeza sintética registrados no relatório Coral. Dezenove migrations e permissões preservadas; configuração anterior guardada para recuperação.
+Imagem atual da API e do executor construída de `4c7caf508527a1cc92ce3b8f185cfa0fa9386829`, digest `sha256:6541555eaa707de608f079f0f4cc7cb0c3516227c6d6377c26ec2ad854d2fb11`. Passaram 270 testes locais, a validação em Chrome e WebKit e o CI do PR 46. As verificações da publicação cobriram saúde do banco, proteção de rotas privadas, origens de CORS, catálogo e notícias. O executor continuou inacessível sem autenticação.
 
 ## Verificações da migração anterior
 
@@ -48,6 +48,15 @@ Login interativo com a conta Google do dono, recebimento de e-mail e push em apa
 
 ## Operação e publicações futuras
 
+### Staging e numeração
+
+- **Staging** roda com `npm run staging` em [localhost:5174](http://localhost:5174/#/app/ajustes). API, PostgreSQL, arquivos e Auth Emulator são locais e ficam separados dos dados do desenvolvimento regular. O processo persiste contas e dados de teste em `.local-data/staging/`.
+- **Produção** usa os endereços do aplicativo da seção Endereços. Configurações identifica o ambiente e a versão no rodapé.
+- A base é **1.0**. A candidata da próxima publicação passa a **1.1**, depois **1.2**, e assim por diante. Iterações na mesma candidata usam o mesmo número em `release.json`.
+- Abra a candidata local e envie o link para avaliação. Ao iniciar com um commit limpo, Staging grava `.local-data/staging/release.json`, com ambiente, versão, commit e hash do código. Após a aprovação, o build de produção verifica a correspondência e a sequência. Em outra worktree, aponte `STAGING_RELEASE_FILE` para o caminho absoluto desse registro.
+
+### Produção após a aprovação
+
 O [procedimento de migração e recuperação](migracao/FIREBASE_GOOGLE.md) detalha custos, isolamento, permissões e sequência de publicação. Limites não secretos ficam em `infra/google/config.json`.
 
 Para mudanças somente de frontend, compare o backend de main com a versão da API no ar e publique apenas Hosting a partir de cópia limpa do merge aprovado. Migrations, Cloud Build, API/executor e agendamento não precisam ser executados nessa situação.
@@ -63,4 +72,4 @@ Para mudanças somente de frontend, compare o backend de main com a versão da A
 npx -y firebase-tools@latest deploy --only hosting --config firebase.production.json --project production
 ```
 
-O GitHub permanece como código, CI, prévia demonstrativa e mapa. O workflow antigo de notificações está desativado e não possui mais agendamento no código. Render está suspenso; Neon e mídia antiga preservam a fotografia da migração. Não reativar os escritores antigos ou restaurar snapshots sobre gravações novas sem conciliação. A exclusão desses recursos não fez parte desta migração.
+O GitHub permanece como código, CI, prévia demonstrativa e mapa. O agendamento de notificações executa no Google Cloud. Os arquivos de deploy legado do GitHub Actions e Render foram retirados do repositório. Render está suspenso; Neon e mídia antiga preservam a fotografia da migração. Não reativar os escritores antigos ou restaurar snapshots sobre gravações novas sem conciliação. A exclusão desses recursos não fez parte desta migração.

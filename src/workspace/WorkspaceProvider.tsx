@@ -24,7 +24,7 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
   const [busy,setBusy]=useState(false)
   const [error,setError]=useState('')
   const [errorCode,setErrorCode]=useState('')
-  const current=useRef(snapshot); current.current=snapshot
+  const current=useRef(snapshot)
   const lock=useRef(false)
   const generation=useRef(0)
   const identity=user?.emailVerified?user:null
@@ -34,7 +34,7 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
   const refresh=useCallback(async(soft=false)=>{
     const ticket=++generation.current
     const account=identityRef.current
-    if(!soft){setLoading(true);setSnapshot(null)}
+    if(!soft){current.current=null;setLoading(true);setSnapshot(null)}
     setError('');setErrorCode('')
     try {
       if (!account || sessionEnded(account)) return
@@ -58,11 +58,25 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
     const ticket=generation.current;const source=current.current
     lock.current=true;setBusy(true);setError('');setErrorCode('')
     try {
+      // Consecutive page turns can queue before React renders the last saved revision.
+      const outgoing = options.quiet && action.type === 'reading.update'
+        ? { ...action, expectedRevision: source.reading[action.id]?.revision ?? 0 }
+        : action
       const next = await apiRequest<WorkspaceSnapshot>(identity, scope === 'personal'
-        ? '/me/workspace' : `/clubs/${scope}/workspace?view=app`, 'POST', { action, version: source.version })
+        ? '/me/workspace' : `/clubs/${scope}/workspace?view=app`, 'POST', { action: outgoing, version: source.version })
       if(ticket===generation.current&&identityRef.current?.uid===identity?.uid&&scopeRef.current===scope){current.current=next;setSnapshot(next);onSaved?.(next)}
       return true
-    }catch(err){if(ticket===generation.current){const conflict=err instanceof ApiError&&['WORKSPACE_CHANGED','READING_CHANGED'].includes(err.code);if(!options.quiet){setErrorCode(err instanceof ApiError?(err.status===401?'AUTH_REQUIRED':err.code):'');setError(readableError(err))} if(conflict){void refresh(true).then(()=>{if(!options.quiet&&identityRef.current?.uid===identity?.uid&&scopeRef.current===scope)setError((err as ApiError).message)})}}return false}
+    } catch (err) {
+      if (ticket === generation.current) {
+        const conflict = err instanceof ApiError && ['WORKSPACE_CHANGED', 'READING_CHANGED'].includes(err.code)
+        if (conflict) await refresh(true)
+        if (!options.quiet && identityRef.current?.uid === identity.uid && scopeRef.current === scope) {
+          setErrorCode(err instanceof ApiError ? (err.status === 401 ? 'AUTH_REQUIRED' : err.code) : '')
+          setError(readableError(err))
+        }
+      }
+      return false
+    }
     finally{lock.current=false;setBusy(false)}
   }
   async function addToPersonal(book:{title:string;author:string;category?:string;metadata?:import('../../server/src/workspace-model').WorkspaceState['books'][number]['metadata']}){

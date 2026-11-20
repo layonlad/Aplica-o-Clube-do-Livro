@@ -45,6 +45,7 @@ export function ReadingRoom() {
   useEffect(() => {
     if (book?.id) rememberOpenedBook(book.id, user?.uid)
   }, [book?.id, user?.uid])
+  const literaryEdition = book?.metadata?.literaryEpub ? book.metadata.literaryEditionId : undefined
   const saved = id ? snapshot!.reading[id] : undefined
   const latestSaved = useRef(saved)
   latestSaved.current = saved
@@ -63,14 +64,14 @@ export function ReadingRoom() {
   const [original, setOriginal] = useState(
     Boolean(
       saved?.epubLocator ||
-      (scope === 'personal' && book?.metadata?.source?.startsWith('EPUB importado')),
+      (scope === 'personal' && (literaryEdition || book?.metadata?.source?.startsWith('EPUB importado'))),
     ),
   )
   useEffect(() => {
     setFocused(original || pages.length > 0)
   }, [id, original, pages.length])
   useEffect(() => {
-    if (!id || scope !== 'personal') return
+    if (!id || scope !== 'personal' || literaryEdition) return
     let live = true
     void (async () => {
       const record = await localEpub(user?.emailVerified ? user.uid : 'visitor', id).catch(
@@ -88,7 +89,7 @@ export function ReadingRoom() {
     return () => {
       live = false
     }
-  }, [id, scope, user?.uid, user?.emailVerified])
+  }, [id, scope, user?.uid, user?.emailVerified, literaryEdition])
   const [query, setQuery] = useState('')
   const [message, setMessage] = useState('')
   const [selection, setSelection] = useState<{
@@ -115,7 +116,7 @@ export function ReadingRoom() {
     setOriginal(
       Boolean(
         saved?.epubLocator ||
-        (scope === 'personal' && book?.metadata?.source?.startsWith('EPUB importado')),
+        (scope === 'personal' && (literaryEdition || book?.metadata?.source?.startsWith('EPUB importado'))),
       ),
     )
   }, [id])
@@ -146,6 +147,20 @@ export function ReadingRoom() {
         <Link to="/app/library">Voltar à biblioteca</Link>
       </Card>
     )
+  const reference = book.metadata?.source
+  if (book.metadata?.literaryEditionId && book.metadata.literaryEpub === false &&
+      reference && /^https:\/\/(?:www\.gutenberg\.org|standardebooks\.org)\/ebooks\//.test(reference)) {
+    return (
+      <Card>
+        <h1>{book.title}</h1>
+        <p>{book.author}</p>
+        <a href={reference} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer" className="text-link">
+          Ler na fonte oficial
+        </a>
+        <Link to="/app/library">Voltar à biblioteca</Link>
+      </Card>
+    )
+  }
   // A página muda na hora; a posição vai para a conta em segundo plano.
   async function turn(next: number) {
     const target = pages[next]
@@ -218,7 +233,7 @@ export function ReadingRoom() {
       <ImmersiveReader
         title={book.title}
         preferences={preferences}
-        mode={{
+        mode={literaryEdition ? undefined : {
           label: 'Ler versão em texto',
           run: () => {
             manualMode.current = true
@@ -226,7 +241,7 @@ export function ReadingRoom() {
           },
         }}
       >
-        <EpubReader bookId={book.id} title={book.title} author={book.author} />
+        <EpubReader bookId={book.id} title={book.title} author={book.author} literaryEdition={literaryEdition} />
         <ReaderSettings />
       </ImmersiveReader>
     )
@@ -499,7 +514,7 @@ export function ReadingRoom() {
       )}
       {original && scope === 'personal' ? (
         <Suspense fallback={<p role="status" className="t-caption">Abrindo o livro…</p>}>
-          <EpubReader key={book.id} bookId={book.id} title={book.title} author={book.author} />
+          <EpubReader key={book.id} bookId={book.id} title={book.title} author={book.author} literaryEdition={literaryEdition} />
         </Suspense>
       ) : pages.length > 0 ? (
         <>

@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { Pool } from 'pg'
 import { testDatabase } from './database.js'
 import { buildApp } from '../src/app.js'
+import { syncLiteraryNews } from '../src/literary/news.js'
 import sharp from 'sharp'
 import { zipSync, strToU8 } from 'fflate'
 it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou alteração da auditoria', async () => {
@@ -74,6 +75,18 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
       })
     const session = await call('/me')
     expect(session.statusCode, session.body).toBe(200)
+    const literary = '/me/literary/books/a-cartomante-1896-pt'
+    expect((await call(literary, 'POST')).statusCode).toBe(201)
+    expect((await call(literary + '/epub')).headers['content-type']).toBe('application/epub+zip')
+    const article = `<item><title>Feira do livro</title><link>https://agenciabrasil.ebc.com.br/cultura/noticia/feira</link><pubDate>${new Date().toUTCString()}</pubDate></item>`
+    const news = await syncLiteraryNews(runtime, async url =>
+      new Response(`<rss><channel><title>Fonte de teste</title>${String(url).includes('/radioagencia') ? '' : article}</channel></rss>`))
+    expect(news.inserted).toBe(1)
+    expect((await call('/literary/news')).json().items).toHaveLength(1)
+    const follow = await call('/me/literary/follows', 'POST', { kind: 'topic', key: 'feiras', value: true })
+    expect(follow.statusCode, follow.body).toBe(200)
+    expect((await call('/literary/news?followed=1')).json().items).toHaveLength(1)
+    expect((await call('/me/literary/follows', 'POST', { kind: 'topic', key: 'feiras', value: false })).statusCode).toBe(200)
     const club = await call('/clubs', 'POST', { name: 'Papel restrito' })
     expect(club.statusCode, club.body).toBe(201)
     const summaries = await call('/me/clubs/summary')
@@ -152,7 +165,7 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
       },
     })
     expect(bookAdded.statusCode, bookAdded.body).toBe(200)
-    const bookId = bookAdded.json().state.books[0].id
+    const bookId = bookAdded.json().state.books.find((book: {title: string}) => book.title === 'EPUB restrito').id
     const epub = zipSync({
       mimetype: strToU8('application/epub+zip'),
       'META-INF/container.xml': strToU8(
@@ -169,6 +182,27 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
       data: Buffer.from(epub).toString('base64'),
     })
     expect(epubUpload.statusCode, epubUpload.body).toBe(201)
+    const integration = '/me/reading-integrations/kindle/books/' + bookId
+    const permission = await call(integration + '/permission', 'POST', {
+      fileId: epubUpload.json().id, permission: 'licensed_transfer',
+    })
+    expect(permission.statusCode, permission.body).toBe(204)
+    const exported = await call(integration + '/exports', 'POST', { fileId: epubUpload.json().id })
+    expect(exported.statusCode).toBe(200)
+    expect(exported.rawPayload).toEqual(Buffer.from(epub))
+    const progress = await call(integration + '/progress', 'POST', {
+      percentage: 20, chapter: 'Capítulo 1', observation: '', readingDate: '2026-11-18',
+      includeInSummary: false, revision: 0,
+    })
+    expect(progress.statusCode, progress.body).toBe(200)
+    const annotations = await call(integration + '/annotations', 'POST', {
+      filename: 'My Clippings.txt', mime: 'text/plain', sourceBook: 'Obra de teste', selected: [0],
+      data: Buffer.from('Obra de teste\n- Your Note at location 15\n\nNota sintética\n==========\n').toString('base64'),
+    })
+    expect(annotations.statusCode, annotations.body).toBe(200)
+    const imported = await call(integration + '/annotations')
+    expect(imported.json()).toHaveLength(1)
+    expect((await call(integration + '/annotations/' + imported.json()[0].id, 'DELETE')).statusCode).toBe(204)
     const epubCover = await call(`/me/book-files/${bookId}/cover`)
     expect(epubCover.statusCode, epubCover.body).toBe(200)
     expect(epubCover.headers['content-type']).toContain('image/jpeg')

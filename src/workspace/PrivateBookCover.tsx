@@ -56,6 +56,7 @@ export function PrivateBookCover({
     }
   }, [namespace, id])
   useEffect(() => {
+    setUrl('')
     if (!visible || scope !== 'personal') return
     let live = true,
       href = ''

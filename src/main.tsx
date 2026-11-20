@@ -2,6 +2,7 @@ import { lazy, StrictMode, Suspense } from 'react'
 import { MotionConfig } from 'framer-motion'
 import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
+import { isStaging } from './app/release'
 import { App } from './app/App'
 import { AppErrorBoundary } from './app/AppErrorBoundary'
 import { ThemeProvider } from './app/ThemeProvider'
@@ -22,6 +23,7 @@ import './styles.css'
 
 const MobileBridge = lazy(() => import('./mobile/MobileBridge').then((m) => ({ default: m.MobileBridge })))
 const nativeBuild = import.meta.env.VITE_APP_NATIVE === '1'
+if (isStaging) document.title = 'Staging · ' + document.title
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
