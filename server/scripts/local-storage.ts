@@ -4,7 +4,7 @@ import { resolve, dirname, sep } from 'node:path'
 import type { PrivateStorage } from '../src/private-storage.js'
 export function localStorage(directory: string): PrivateStorage {
   if (
-    process.env.FIREBASE_PROJECT_ID !== 'demo-clube-do-livro' ||
+    !['demo-clube-do-livro', 'demo-clube-do-livro-staging'].includes(process.env.FIREBASE_PROJECT_ID ?? '') ||
     !process.env.FIREBASE_AUTH_EMULATOR_HOST
   )
     throw Error('Storage de desenvolvimento exige o projeto e o Auth Emulator locais.')

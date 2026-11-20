@@ -24,6 +24,8 @@ npm run dev:local
 
 Abra `http://localhost:5173`. O emulador imprime os links de confirmação de e-mail. Banco e contas locais são preservados em `.local-data/` ao encerrar com Ctrl+C. Para usar Compose ou um PostgreSQL já instalado, siga a opção de [serviços separados](docs/BACKEND.md#serviços-separados-com-compose).
 
+Use `npm run staging` para conferir uma candidata em [localhost:5174](http://localhost:5174). Staging usa serviços locais próprios e registra a versão quando iniciado em uma cópia limpa. Veja o [fluxo de publicação](docs/PUBLICACAO.md#staging-e-numeração).
+
 ### Demonstração
 
 ```bash

@@ -637,6 +637,16 @@ input[type='range'] { accent-color: var(--accent); }
 .appearance-group { box-shadow: var(--shadow-card); }
 .appearance-group .appearance-note { margin: 10px 0 0; color: var(--text-muted); }
 .settings-hub { display: grid; gap: 20px; }
+.settings-hub__release {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 1rem;
+  padding-block: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+.access-release { font-size: 0.875rem; font-weight: 700; }
 .settings-row--danger, .settings-row--danger .settings-row__icon { color: var(--danger); }
 .settings-row--danger .settings-row__icon { background: var(--danger-soft); }
 a.settings-row { color: var(--text); }
