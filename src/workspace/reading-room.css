@@ -95,16 +95,15 @@
 .reading-room a {
   color: inherit;
 }
-@media (max-width: 480px) {
-  .reading-room {
-    padding: 18px 12px;
-  }
-  .reader-settings-grid {
-    grid-template-columns: 1fr;
-  }
-  .reading-room--wide .reader-prose {
-    padding: 0 5%;
-  }
+/* sempre (layout mobile forçado; antes @media (max-width: 480px)) */
+.reading-room {
+  padding: 18px 12px;
+}
+.reader-settings-grid {
+  grid-template-columns: 1fr;
+}
+.reading-room--wide .reader-prose {
+  padding: 0 5%;
 }
 
 .epub-prose {
@@ -171,10 +170,9 @@
 .reading-room-title h1 { font-family: var(--font-display); font-size: clamp(1.5rem, 1.25rem + 1.3vw, 2.2rem); }
 .reader-file { padding-block: var(--space-3); border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent); }
 .reader-file p { margin: var(--space-2) 0 var(--space-3); font-size: var(--text-small); opacity: .75; }
-@media (max-width: 559px) {
-  .reader-toolbar-grid { grid-template-columns: 1fr; }
-  .reading-room { padding-inline: 14px; }
-}
+/* sempre (layout mobile forçado; antes @media (max-width: 559px)) */
+.reader-toolbar-grid { grid-template-columns: 1fr; }
+.reading-room { padding-inline: 14px; }
 
 /* Reader preferences stay independent of the application's appearance. */
 .reading-room .reader-prose { line-height:var(--reader-leading,1.75); font-weight:var(--reader-weight,400); text-align:var(--reader-align,left); hyphens:auto; }
@@ -196,8 +194,8 @@
 .epub-page-controls>.button { color:inherit; font-size:.75rem; box-shadow:none; padding:8px; min-height:44px; }
 .epub-page-controls>span { text-align:center; }
 :root[data-reader-focus='true'] .epub-page-controls { bottom:max(8px,env(safe-area-inset-bottom)); }
-@media(min-width:1024px){ .epub-page-controls { bottom:8px; } }
-@media(max-width:480px){ .reading-room--wide .epub-page-viewport { width:90%; } }
+/* sempre (layout mobile forçado; antes @media (max-width:480px)) */
+.reading-room--wide .epub-page-viewport { width:90%; }
 
 .reading-room, .epub-original, .epub-page-viewport { min-width:0; }
 
@@ -245,6 +243,3 @@
 }
 :root[data-reader-focus='true'] .reading-room .epub-prose--paged { height: calc(100dvh - 210px); min-height: 280px; }
 :root[data-reader-focus='true'] .reading-room .epub-page-viewport { max-width: 72ch; }
-@media (min-width: 1024px) {
-  :root[data-reader-focus='true'] .reading-room { padding-inline: max(32px, 6vw); }
-}

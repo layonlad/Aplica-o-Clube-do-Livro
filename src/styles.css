@@ -15,13 +15,8 @@
 .login-sticker--bow { top: 6px; left: 2px; }
 .login-sticker--star { top: 8px; right: 6px; }
 .login-sticker--flower { bottom: 18px; right: 10%; }
-@media (min-width: 560px) {
-  .login-sticker--bow { top: calc(50% - 360px); left: calc(50% - 270px); }
-  .login-sticker--star { top: calc(50% - 330px); right: calc(50% - 260px); }
-  .login-sticker--flower { bottom: calc(50% - 340px); right: auto; left: calc(50% - 250px); }
-}
-@media (max-width: 559px) { .login-content { align-self: center; width: auto; margin: 44px 14px 28px; padding: 36px 20px 28px; background-color: color-mix(in srgb, var(--surface) 88%, transparent); background-image: var(--paper); background-size: 560px; background-blend-mode: multiply; border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-2); } }
-@media (min-width: 560px) { .login-content { align-self: center; margin: 48px auto; padding: 40px; background-color: color-mix(in srgb, var(--surface) 90%, transparent); background-image: var(--paper); background-size: 560px; background-blend-mode: multiply; border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-3); } }
+/* sempre (layout mobile forçado; antes @media (max-width: 559px)) */
+.login-content { align-self: center; width: auto; margin: 44px 14px 28px; padding: 36px 20px 28px; background-color: color-mix(in srgb, var(--surface) 88%, transparent); background-image: var(--paper); background-size: 560px; background-blend-mode: multiply; border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-2); }
 .login-brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 38px; }
 .login-content > h1 { margin-bottom: 8px; font-family: var(--font-display); font-size: clamp(2.6rem, 12vw, 4.2rem); line-height: 0.96; }
 .login-lead { margin-bottom: 28px; color: var(--color-muted); font-family: var(--font-display); font-size: 1.18rem; line-height: 1.5; }
@@ -298,13 +293,4 @@
 .mode-toggle > button[aria-checked='true'] i { transform: translateX(20px); }
 
 
-@media (min-width: 560px) {
-  .quick-grid { grid-template-columns: 1fr 1fr; }
-  .reading-card { grid-template-columns: auto 1fr 1fr; align-items: center; }
-  .reading-card > .progress-block { grid-column: 3; }
-  .reading-card > .button-link { grid-column: 2 / 4; }
-}
 
-@media (min-width: 1024px) {
-  .reader-page { position: fixed; inset: 0; z-index: 50; overflow-y: auto; }
-}

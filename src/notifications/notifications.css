@@ -77,7 +77,6 @@
 .notif-banner__close:active { background: var(--bg-sunken); }
 @media (prefers-reduced-motion: reduce) { .notif-banner { transition: none; } }
 /* No computador o aviso fica ao lado do trilho, à direita */
-@media (min-width: 1024px) { .notif-banner-host { left: auto; right: 24px; transform: none; } }
 @media (max-width: 359px) {
   .notif-toolbar { flex-wrap: wrap; }
   .notif__actions { padding-left: calc(var(--gutter) * 0.5); }

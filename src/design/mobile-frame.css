@@ -1,0 +1,45 @@
+/* Layout mobile forçado
+ * O app é sempre a coluna de celular (até 430 px), centralizada. No computador, o espaço ao redor fica
+ * num fundo neutro escuro. Nenhuma regra de largura de tela muda o layout: quem fica preso à tela
+ * (barra inferior, botão +, folhas, avisos, leitor e animações) usa as mesmas bordas da coluna.
+ *
+ * --frame-inset: distância da borda da janela até a coluna. Em elementos fixos, 100% é a largura da janela;
+ * no celular (janela ≤ 430 px) vale 0.
+ */
+:root {
+  --app-max: 430px;
+  --app-backdrop: #0f1115;
+  --frame-inset: max(0px, calc((100% - var(--app-max)) / 2));
+}
+
+html { background: var(--app-backdrop); }
+body { background: var(--app-backdrop); }
+#root {
+  position: relative;
+  width: 100%;
+  max-width: var(--app-max);
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin-inline: auto;
+  background: var(--bg);
+  /* Borda discreta para a coluna não "flutuar" no fundo escuro do computador */
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.05), 0 24px 80px rgb(0 0 0 / 0.5);
+  isolation: isolate;
+}
+.page-content { width: 100%; max-width: none; }
+
+/* ── Elementos presos à tela: mesmas bordas da coluna ──
+ * !important só aqui: folhas de estilo carregadas sob demanda (leitor, abertura) chegam depois e não podem
+ * devolver esses elementos à largura da janela. */
+.bottom-nav { left: var(--frame-inset) !important; right: var(--frame-inset) !important; }
+.fab { right: calc(var(--frame-inset) + max(18px, env(safe-area-inset-right))) !important; }
+.shelf-backdrop,
+.page-leaf,
+.book-opener,
+.book-intro,
+.reading-room.immersive-reader,
+.reader-flip-layer.reading-room,
+.reading-progress { left: var(--frame-inset) !important; right: var(--frame-inset) !important; width: auto !important; }
+.book-menu__panel { left: calc(var(--frame-inset) + 12px) !important; right: calc(var(--frame-inset) + 12px) !important; }
+.social-sheet { left: var(--frame-inset) !important; right: var(--frame-inset) !important; width: auto !important; max-width: none !important; }
+.notif-banner-host { width: min(calc(var(--app-max) - 24px), calc(100vw - 24px)) !important; }
