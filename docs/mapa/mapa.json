@@ -418,7 +418,7 @@
       "autor": "Claude",
       "titulo": "Central de notificações, banners e preferências no visual Coral",
       "resumo": "Serviço único de notificações no site (contador do sino com 99+, lista paginada, leitura otimista, conferência de conteúdo removido, troca de conta). Nova central agrupada em Hoje, Ontem e Anteriores, com Aceitar/Recusar convite e abertura no conteúdo certo (chat, mural, comunidade, fórum, perfil, convites). Banner discreto dentro do app, agrupado, fora do leitor e do chat aberto. Configurações → Notificações com push explicado antes de pedir, orientação quando bloqueado ou no iPhone sem instalar, cinco categorias da conta e modo do chat por clube (inclui silenciar). Corrigido: o app removia o worker de push a cada abertura. Pendências do servidor em docs/notificacoes/PENDENCIAS_BACKEND.md. 132 testes do site, tsc e build ok. Sem mudança de servidor nem produção.",
-      "pr": "pendente"
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/58"
     },
     {
       "data": "2026-11-20",
