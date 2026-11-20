@@ -229,7 +229,7 @@
   --space-10: calc(40px * var(--density));
   --space-12: calc(48px * var(--density));
   --space-16: calc(64px * var(--density));
-  --gutter: 16px;                 /* margem lateral das referências */
+  --gutter: max(16px, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));                 /* margem lateral das referências */
   --section-gap: calc(16px * var(--density));
 
   /* ── Controles ── */

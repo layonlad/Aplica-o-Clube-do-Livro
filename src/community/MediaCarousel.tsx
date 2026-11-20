@@ -23,7 +23,7 @@ export function MediaCarousel({
       behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
     })
   }
-  const current = media[Math.min(active, media.length - 1)]
+  const first = media[0]
   return (
     <div
       className="media-carousel"
@@ -34,7 +34,7 @@ export function MediaCarousel({
       <div
         ref={rail}
         className="media-carousel__rail"
-        style={{ aspectRatio: `${current.width}/${current.height}` }}
+        style={{ aspectRatio: `${first.width}/${first.height}` }}
         onScroll={(event) => {
           const el = event.currentTarget
           if (el.clientWidth)

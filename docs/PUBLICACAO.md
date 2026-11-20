@@ -48,6 +48,15 @@ Login interativo com a conta Google do dono, recebimento de e-mail e push em apa
 
 ## Operação e publicações futuras
 
+### Staging e numeração
+
+- **Staging** roda com `npm run staging` em [localhost:5174](http://localhost:5174/#/app/ajustes). API, PostgreSQL, arquivos e Auth Emulator são locais e ficam separados dos dados do desenvolvimento regular. O processo persiste contas e dados de teste em `.local-data/staging/`.
+- **Produção** usa os endereços do aplicativo da seção Endereços. Configurações identifica o ambiente e a versão no rodapé.
+- A base é **1.0**. A candidata da próxima publicação passa a **1.1**, depois **1.2**, e assim por diante. Iterações na mesma candidata usam o mesmo número em `release.json`.
+- Abra a candidata local e envie o link para avaliação. Ao iniciar com um commit limpo, Staging grava `.local-data/staging/release.json`, com ambiente, versão, commit e hash do código. Após a aprovação, o build de produção verifica a correspondência e a sequência. Em outra worktree, aponte `STAGING_RELEASE_FILE` para o caminho absoluto desse registro.
+
+### Produção após a aprovação
+
 O [procedimento de migração e recuperação](migracao/FIREBASE_GOOGLE.md) detalha custos, isolamento, permissões e sequência de publicação. Limites não secretos ficam em `infra/google/config.json`.
 
 Para mudanças somente de frontend, compare o backend de main com a versão da API no ar e publique apenas Hosting a partir de cópia limpa do merge aprovado. Migrations, Cloud Build, API/executor e agendamento não precisam ser executados nessa situação.

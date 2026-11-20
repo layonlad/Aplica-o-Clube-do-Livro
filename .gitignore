@@ -18,3 +18,4 @@ firebase-service-account.json
 dist-mapa/
 
 firestore-debug.log*
+dist-mobile/

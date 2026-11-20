@@ -1,6 +1,16 @@
+import { measureApp } from '../app/performance'
+import { createReadCache } from './read-cache'
 import { isInvalidSession, reportRejectedSession, sessionEnded } from './session-events'
 import type { User } from 'firebase/auth'
 import type { ApiErrorBody } from '../../server/src/contracts'
+
+const jsonReads = createReadCache<unknown>({ freshMs: 25_000, staleMs: 60_000, maxEntries: 64 })
+export const readCached = <T>(owner: string | null, path: string, load: () => Promise<T>, refresh = false) =>
+  jsonReads.read(owner, path, load, refresh) as Promise<T>
+export const peekCached = <T>(owner: string | null, path: string) => jsonReads.peek(owner, path) as T | undefined
+export const updateCached = <T>(owner: string | null, path: string, update: (value: T) => T) =>
+  jsonReads.update(owner, path, (value) => update(value as T))
+export const forgetCached = (owner: string | null, path: string) => jsonReads.forget(owner, path)
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) { super(message) }
@@ -15,6 +25,7 @@ export async function authenticatedResponse(
   })
   if (sessionEnded(user)) throw new ApiError(401, 'INVALID_SESSION', 'Entre novamente para continuar.')
   const timeout = AbortSignal.timeout(method === 'GET' ? 75000 : 180000)
+  const startedAt = performance.now()
   const response = await fetch(`${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/v1${path}`, {
     method,
     headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
@@ -24,7 +35,7 @@ export async function authenticatedResponse(
     referrerPolicy: 'no-referrer',
     // Allow the free API host to wake up after an idle period; never retry mutations.
     signal: signal ? (AbortSignal.any?.([signal, timeout]) ?? signal) : timeout,
-  })
+  }).finally(() => measureApp(method === 'GET' ? 'api-read' : 'api-write', startedAt))
   if (!response.ok) {
     const payload = await response.json().catch(() => null) as ApiErrorBody | null
     const error = new ApiError(response.status, payload?.error?.code ?? 'API_ERROR', payload?.error?.message ?? 'O serviço está indisponível. Tente novamente.')
@@ -37,6 +48,11 @@ export async function authenticatedResponse(
 
 export async function apiRequest<T>(user: User, path: string, method = 'GET', body?: unknown): Promise<T> {
   const response = await authenticatedResponse(user, path, method, body)
+  if (method !== 'GET' && /^\/(public|clubs|people|me\/(profile|blocks|follows|invitations))(?:[/?]|$)/.test(path)) {
+    jsonReads.forget(user.uid)
+    jsonReads.forget(null, '/public/')
+    jsonReads.forget(null, '/discover/')
+  }
   return response.status === 204 ? undefined as T : response.json() as Promise<T>
 }
 export function readableError(error: unknown): string {

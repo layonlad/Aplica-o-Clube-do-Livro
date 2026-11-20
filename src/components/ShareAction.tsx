@@ -15,9 +15,17 @@ export function ShareAction({
 }) {
   const [open, setOpen] = useState(false),
     [message, setMessage] = useState('')
-  const url = new URL(import.meta.env.BASE_URL, window.location.href)
+  const nativeBuild = import.meta.env.VITE_APP_NATIVE === '1'
+  const url = new URL(import.meta.env.BASE_URL, nativeBuild ? import.meta.env.VITE_NATIVE_LINK_ORIGIN : window.location.href)
   url.hash = path
   async function share() {
+    if (nativeBuild) {
+      try {
+        const { Share } = await import('@capacitor/share')
+        await Share.share({ url: url.href })
+        return
+      } catch { /* Present the existing copy-link sheet. */ }
+    }
     if (navigator.share) {
       try {
         await navigator.share({ url: url.href })

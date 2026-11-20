@@ -12,7 +12,9 @@ interface ContextValue {
 }
 const Context=createContext<ContextValue|null>(null)
 export function WorkspaceProvider({children}:{children:ReactNode}) {
-  const {user}=useAuth()
+  const auth=useAuth()
+  const {user}=auth
+  const initialAccount=useRef(auth.status==='authenticated'?auth.accountSession:undefined)
   const [scope,setScope]=useState(()=>{if(!user?.emailVerified)return 'personal';try{const saved=sessionStorage.getItem(`clube-livro-scope:${user.uid}`);return saved&&/^[0-9a-f-]{36}$/i.test(saved)?saved:'personal'}catch{return 'personal'}})
   useEffect(()=>{if(user?.emailVerified)try{sessionStorage.setItem(`clube-livro-scope:${user.uid}`,scope)}catch{/* Storage preferences must not prevent reading. */}},[user?.uid,user?.emailVerified,scope])
   const [snapshot,setSnapshot]=useState<WorkspaceSnapshot|null>(null)
@@ -36,7 +38,7 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
     setError('');setErrorCode('')
     try {
       if (!account || sessionEnded(account)) return
-      const session = await apiRequest<Session>(account, '/me')
+      const session = initialAccount.current ?? await apiRequest<Session>(account, '/me')
       if (ticket !== generation.current) return
       setClubs(session.clubs)
       setPublicModerator(!!session.publicModerator)
@@ -46,7 +48,7 @@ export function WorkspaceProvider({children}:{children:ReactNode}) {
       }
       const value = await apiRequest<WorkspaceSnapshot>(account, scope === 'personal'
         ? '/me/workspace' : `/clubs/${scope}/workspace?view=app`)
-      if (ticket === generation.current) { current.current = value; setSnapshot(value) }
+      if (ticket === generation.current) { initialAccount.current = undefined; current.current = value; setSnapshot(value) }
     } catch(err){if(ticket===generation.current){setError(readableError(err));setErrorCode(err instanceof ApiError?(err.status===401?'AUTH_REQUIRED':err.code):'')}}
     finally {if(ticket===generation.current&&!soft)setLoading(false)}
   },[identity?.uid,scope])
