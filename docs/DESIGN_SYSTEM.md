@@ -6,13 +6,24 @@ Desde 17/11/2026 o app segue as seis referências enviadas pelo dono (Início, B
 - cabeçalho em gradiente coral → rosa;
 - folha branca com cantos de 24px que sobe sobre o gradiente;
 - cartões brancos arredondados com sombra suave;
-- Inter em todo o app;
+- DM Sans na interface e Merriweather na leitura (desde 20/11/2026);
 - um único acento coral para ação, seleção e progresso;
 - ícones finos (lucide).
 
 O nome comercial ainda não foi definido: nenhuma tela usa nome provisório como marca.
 
 A identidade anterior ("Estante Rosa & Palha", com estante, papel e adesivos) foi aposentada. Os nomes antigos de cor (`--rosa-*`, `--palha-*`, `--plum-*`, `--coral-*`, `--cream-*`…) continuam existindo como apelidos da paleta nova, para telas antigas não quebrarem.
+
+## Layout mobile forçado (desde 20/11/2026)
+
+O app é sempre a coluna de celular, em qualquer tela:
+- largura máxima de 430 px, centralizada sobre o fundo `#0f1115`;
+- barra inferior fixa com 5 destinos, sem trilho lateral;
+- nenhuma regra por largura de tela muda o layout. Só restam ajustes para celulares estreitos (abaixo de 430 px).
+
+Tudo que fica preso à tela (barra inferior, botão +, folhas, avisos, leitor e animações) usa as bordas da coluna (`--frame-inset`, em `src/design/mobile-frame.css`).
+
+Nas telas do clube, o cabeçalho é uma faixa escura (`--club-bar-bg`). As abas rolam com encaixe, e a cor de destaque aparece só no sublinhado da aba ativa. As telas principais mantêm o gradiente coral.
 
 ## Arquivos
 
@@ -45,7 +56,7 @@ O texto branco do cabeçalho segue a referência. Com "Contraste alto" ativo no 
 
 ## Tipografia
 
-Inter (variável). Base de 15px (`--text-scale`), ajustável em Aparência.
+DM Sans (variável) na interface; Merriweather na leitura, nas citações e nas capas desenhadas. Escala resumida: `--type-title`, `--type-subtitle`, `--type-body` e `--type-caption`. Base de 15px (`--text-scale`), ajustável em Aparência.
 
 | Token | Tamanho | Onde |
 | --- | --- | --- |

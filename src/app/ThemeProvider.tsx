@@ -64,7 +64,7 @@ export function readStoredAppearance(key = APPEARANCE_KEY): Appearance {
       ...defaultAppearance,
       mode: legacy.mode,
       radius: legacy.radius,
-      bodyFont: legacy.font === 'editorial' ? 'lora' : 'inter',
+      bodyFont: legacy.font === 'editorial' ? 'lora' : 'dm-sans',
     }
   } catch {
     return defaultAppearance

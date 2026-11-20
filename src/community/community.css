@@ -394,23 +394,6 @@
 .tag-consent p {
   font-size: 0.9rem;
 }
-.club-subnav {
-  display: flex;
-  gap: 0.75rem;
-  overflow: auto;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--color-border);
-}
-.club-subnav a {
-  white-space: nowrap;
-  padding: 0.5rem 0.3rem;
-  border-bottom: 2px solid transparent;
-  font-size: 0.8rem;
-}
-.club-subnav a.active {
-  border-color: var(--color-primary);
-  font-weight: 700;
-}
 @keyframes media-pulse {
   50% {
     opacity: 0.6;
@@ -422,36 +405,35 @@
     animation: none;
   }
 }
-@media (max-width: 480px) {
-  .post-heading {
-    gap: 0.6rem;
-  }
-  .post-interactions .button {
-    padding: 0.65rem 0.55rem;
-    font-size: 0.75rem;
-  }
-  .wall-filters label {
-    min-width: 100px;
-  }
-  .album-entry {
-    gap: 1rem;
-  }
-  .album-illustration {
-    width: 78px;
-    height: 110px;
-  }
-  .album-entry strong {
-    font-size: 1.3rem;
-  }
-  .post-poll .button {
-    flex-wrap: wrap;
-  }
-  .post-media-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .post-media-grid:has(> .private-media:only-child) {
-    grid-template-columns: 1fr;
-  }
+/* sempre (layout mobile forçado; antes @media (max-width: 480px)) */
+.post-heading {
+  gap: 0.6rem;
+}
+.post-interactions .button {
+  padding: 0.65rem 0.55rem;
+  font-size: 0.75rem;
+}
+.wall-filters label {
+  min-width: 100px;
+}
+.album-entry {
+  gap: 1rem;
+}
+.album-illustration {
+  width: 78px;
+  height: 110px;
+}
+.album-entry strong {
+  font-size: 1.3rem;
+}
+.post-poll .button {
+  flex-wrap: wrap;
+}
+.post-media-grid {
+  grid-template-columns: 1fr 1fr;
+}
+.post-media-grid:has(> .private-media:only-child) {
+  grid-template-columns: 1fr;
 }
 
 .profile-discovery {
@@ -596,7 +578,7 @@
 .album-entry { min-width:0; color:var(--text); text-decoration:none; }
 .album-entry > span:last-child { min-width:0; overflow-wrap:anywhere; }
 .photo-actions .social-action { font-variant-numeric:tabular-nums; }
-@media(max-width:600px) {
+/* sempre (layout mobile forçado; antes @media (max-width:600px)) */
  .social-sheet { position:fixed; inset:auto 0 0; margin:0; width:100%; border-radius:22px 22px 0 0; max-height:calc(var(--sheet-height,100dvh) - 12px); }
  .comments-sheet { height:min(80dvh,calc(var(--sheet-height,100dvh) - 12px)); }
  .comments-sheet .sheet-surface { height:100%; }
@@ -612,16 +594,14 @@
  .album-entry > span:last-child { gap:5px; font-size:.85rem; }
  .album-entry small { font-size:.75rem; }
  .gallery-photo-content .user-identity { font-size:.85rem; }
-}
 .social-more > summary::after { display:none; content:none; }
 .gallery-photo-frame { position:relative; }
 .gallery-cover-pick { position:absolute; top:12px; right:12px; padding:8px 12px; border:1px solid var(--border); box-shadow:var(--shadow-2); font-size:.75rem; }
 .gallery-cover-pick:disabled[aria-pressed=true] { opacity:1; color:var(--brand-ink); background:var(--brand-soft); }
 /* Full animated banners must keep their frame on narrow screens too. */
 .profile-header__cover .private-media img, .cover-uploader__current .private-media img { width:100%; height:100%; max-height:none; object-fit:cover; }
-@media(max-width:600px) {
- .profile-tabs [role=tab] { flex:1 1 0; min-width:0; min-height:44px; white-space:normal; padding:8px; font-size:.76rem; line-height:1.3; }
-}
+/* sempre (layout mobile forçado; antes @media (max-width:600px)) */
+.profile-tabs [role=tab] { flex:1 1 0; min-width:0; min-height:44px; white-space:normal; padding:8px; font-size:.76rem; line-height:1.3; }
 
 /* Full-width social reading and uncropped, progressive photos. */
 .social-room, .social-feed, .social-post, .post-heading, .post-heading>div { min-width:0; }
@@ -669,7 +649,7 @@
 .comment-edit textarea { width:100%; min-height:64px; }
 .comments-sheet .post-comment .comment-edit .button { min-height:44px; }
 .media-picker--compact .file-button { padding:8px 12px; min-height:44px; font-size:.8rem; }
-@media(max-width:600px){
+/* sempre (layout mobile forçado; antes @media (max-width:600px)) */
  .social-room .social-feed,.social-room .post-composer,.social-room .wall-filters { max-width:none; width:100%; }
  .social-post { padding-block:18px; }
  .post-heading { gap:10px; margin-bottom:12px; }
@@ -681,7 +661,6 @@
  .comments-sheet .comment-composer { padding-bottom:max(12px,env(safe-area-inset-bottom)); }
  .media-viewer { width:100%; }
  .media-viewer .sheet-surface { height:calc(var(--sheet-height,100dvh) - 12px); }
-}
 .comments-sheet .social-action { background:transparent; box-shadow:none; }
 .comments-sheet .social-action:hover { background:var(--brand-soft); }
 .comments-sheet .comment-like svg { width:16px; height:16px; }

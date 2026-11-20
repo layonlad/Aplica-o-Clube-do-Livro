@@ -120,7 +120,7 @@ export async function drawnCover(title: string, author: string) {
   context.fillStyle = '#f4b942'
   context.fillRect(0, 640, 600, 70)
   context.fillStyle = '#fffbf4'
-  context.font = '600 64px Fraunces, Georgia, serif'
+  context.font = "600 64px 'Merriweather Variable', Georgia, serif"
   const words = title.split(/\s+/)
   const lines: string[] = []
   for (const word of words) {

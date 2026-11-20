@@ -404,17 +404,16 @@
   padding: env(safe-area-inset-top) 0 0;
   min-width: 0;
 }
-@media (max-width: 600px) {
-  .chat-shell {
-    border-inline: 0;
-    border-radius: 0;
-  }
-  .chat-head { padding: 14px 16px; }
-  .chat-book, .chat-tabs, .chat-list, .chat-compose { padding-inline: 16px; }
-  .chat-head__text strong { font-size: 1.2rem; }
-  .chat-book__text small { font-size: 0.85rem; }
-  .chat-book__badge { padding: 5px 12px; font-size: 0.82rem; }
+/* sempre (layout mobile forçado; antes @media (max-width: 600px)) */
+.chat-shell {
+  border-inline: 0;
+  border-radius: 0;
 }
+.chat-head { padding: 14px 16px; }
+.chat-book, .chat-tabs, .chat-list, .chat-compose { padding-inline: 16px; }
+.chat-head__text strong { font-size: 1.2rem; }
+.chat-book__text small { font-size: 0.85rem; }
+.chat-book__badge { padding: 5px 12px; font-size: 0.82rem; }
 body:has(.firebase-emulator-warning) .chat-shell {
   height: calc(var(--chat-height, 100dvh) - 3.5rem - env(safe-area-inset-top));
 }
