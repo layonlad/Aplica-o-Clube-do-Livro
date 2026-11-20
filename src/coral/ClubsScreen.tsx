@@ -47,6 +47,14 @@ export function ClubsScreen() {
       .catch(() => live && setInvites([]))
     return () => { live = false }
   }, [user?.uid, verified])
+  // Vindo de uma notificação de convite: leva direto à lista de convites.
+  useEffect(() => {
+    if (params.get('convites') !== '1' || invites === null) return
+    document.getElementById('clubs-invites')?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    const next = new URLSearchParams(params)
+    next.delete('convites')
+    setParams(next, { replace: true })
+  }, [invites, params.get('convites')])
   useEffect(() => {
     if (!focus || !discover.page) return
     const club = discover.page.items.find((item) => item.id === focus)

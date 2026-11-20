@@ -30,7 +30,8 @@ const PushSettings=lazy(()=>import('../community/PushSettings').then(module=>({d
 const ClubIdentity=lazy(()=>import('../clubs/ClubIdentity').then(module=>({default:module.ClubIdentity})))
 const AuthorizedDownloads=lazy(()=>import('./AuthorizedDownloads').then(module=>({default:module.AuthorizedDownloads})))
 const ClubCalendar=lazy(()=>import('../clubs/ClubCalendar').then(module=>({default:module.ClubCalendar})))
-const Notifications=lazy(()=>import('../community/Notifications').then(module=>({default:module.Notifications})))
+const Notifications=lazy(()=>import('../notifications/NotificationCenter').then(module=>({default:module.NotificationCenter})))
+const NotificationPreferences=lazy(()=>import('../notifications/NotificationPreferences').then(module=>({default:module.NotificationPreferences})))
 const Moderation=lazy(()=>import('../community/Moderation').then(module=>({default:module.Moderation})))
 const SocialProfile=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.SocialProfile})))
 const SocialProfileEditor=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.SocialProfileEditor})))
@@ -195,6 +196,7 @@ export function WorkspaceRoutes({ accountId }: { accountId: string }) {
           <Route path="explore" element={<ExploreTab />} />
           <Route path="explore/gratuitos" element={<FreeBooks />} />
           <Route path="notifications" element={<Notifications />} />
+          <Route path="notifications/preferencias" element={<NotificationPreferences />} />
           <Route path="moderation" element={<Moderation />} />
           <Route path="community" element={<CommunityTab />} />
           <Route path="clubs" element={<ClubsScreen />} />

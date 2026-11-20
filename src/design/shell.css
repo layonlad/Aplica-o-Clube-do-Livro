@@ -1,6 +1,5 @@
-/* Estrutura de navegação
- * Celular e tablet: cada tela traz o próprio cabeçalho em gradiente; barra inferior fixa com 5 destinos.
- * Computador (≥ 1024px): trilho lateral branco com os mesmos destinos e atalhos.
+/* Estrutura de navegação — layout mobile em qualquer tela (ver mobile-frame.css)
+ * Cada tela traz o próprio cabeçalho; barra inferior fixa com 5 destinos. Não há trilho lateral.
  */
 
 .app-frame { width: 100%; min-height: 100vh; min-height: 100dvh; }
@@ -69,72 +68,68 @@
 .rail-only { display: none; }
 .app-rail { display: contents; }
 
-@media (min-width: 1024px) {
-  .app-frame { display: grid; grid-template-columns: 248px minmax(0, 1fr); }
-  .app-rail {
-    position: sticky;
-    top: 0;
-    display: flex;
-    height: 100vh;
-    height: 100dvh;
-    flex-direction: column;
-    gap: var(--space-5);
-    padding: var(--space-5) var(--space-4);
-    overflow-x: hidden;
-    overflow-y: auto;
-    background: var(--surface-raised);
-    border-right: 1px solid var(--divider);
-  }
-  .rail-only { display: revert; }
-  .mobile-only { display: none !important; }
-  .app-header { display: flex; align-items: center; gap: var(--space-2); }
-  .app-header .space-switch { flex: 1 1 auto; padding: var(--space-2) var(--space-3); background: var(--bg-sunken); border-radius: var(--radius-md); }
-  .bottom-nav { position: static; display: grid; grid-template-columns: 1fr; gap: 2px; height: auto; padding: 0; background: none; box-shadow: none; }
-  .bottom-nav a, .rail-more a {
-    min-height: var(--control-md);
-    padding: 0 var(--space-3);
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: var(--space-3);
-    border-radius: var(--radius-md);
-    font-size: var(--text-small);
-    font-weight: var(--weight-medium);
-    color: var(--text-muted);
-  }
-  .bottom-nav a svg { width: 21px; height: 21px; }
-  .bottom-nav a:hover, .rail-more a:hover { color: var(--text); background: var(--bg-sunken); }
-  .bottom-nav a.active, .rail-more a.active { color: var(--brand-ink); background: var(--brand-soft); font-weight: var(--weight-semibold); }
-  .rail-section-label { margin: 0 0 var(--space-2) var(--space-3); color: var(--text-muted); font-size: var(--text-caption); font-weight: var(--weight-semibold); letter-spacing: 0.04em; text-transform: uppercase; }
-  .rail-more { display: grid; gap: 2px; }
-  .rail-more a { display: flex; position: relative; }
-  .rail-foot { margin-top: auto; }
-  .rail-account { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--bg-sunken); border-radius: var(--radius-lg); transition: background-color var(--dur-fast) var(--ease-out); }
-  .rail-account:hover { background: var(--brand-soft); }
-  .rail-account > span:last-child { display: flex; flex-direction: column; min-width: 0; font-size: var(--text-small); }
-  .rail-account strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .rail-account small { color: var(--text-muted); }
-  .page-content { padding: var(--space-8) clamp(28px, 4vw, 56px) var(--space-12); }
-}
-@media (min-width: 1440px) { .app-frame { grid-template-columns: 272px minmax(0, 1fr); } }
 
-.rail-group { display: grid; gap: 2px; }
-.rail-group + .rail-group { margin-top: var(--space-4); }
 
 /* ── Leitura imersiva: no leitor de um livro, a navegação do app sai de cena ── */
 .app-frame.is-reading .bottom-nav { display: none; }
 .app-frame.is-reading .page-content { padding-top: 0; padding-bottom: calc(var(--space-10) + env(safe-area-inset-bottom)); }
-@media (min-width: 1024px) {
-  .app-frame.is-reading { grid-template-columns: minmax(0, 1fr); }
-  .app-frame.is-reading .app-rail { display: none; }
-  .app-frame.is-reading .page-content { max-width: 920px; padding-top: var(--space-6); }
-}
 
-/* Navegação interna do clube (pílulas roláveis) */
-.club-subnav { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); padding-bottom: 2px; overflow-x: auto; scrollbar-width: none; }
+/* ── Telas do clube: faixa escura sóbria; a cor de destaque só no indicador da aba ativa ── */
+[data-space='club'] .app-bar { background: var(--club-bar-bg); color: var(--club-bar-ink); }
+[data-space='club'] .app-bar__title { color: var(--club-bar-ink); }
+[data-space='club'] .app-bar__title small { color: var(--club-bar-muted); }
+[data-space='club'] .app-bar .hero-icon { color: var(--club-bar-ink); background: rgb(255 255 255 / 0.1); border-color: rgb(255 255 255 / 0.14); }
+[data-space='club'] .app-bar .hero-icon:hover { background: rgb(255 255 255 / 0.16); }
+
+/* Abas do clube: faixa rolável com encaixe, sem barra visível; a ativa ganha sublinhado na cor de destaque.
+ * As palavras nunca são cortadas: cada aba tem a largura do próprio rótulo. */
+.club-subnav {
+  display: flex;
+  gap: var(--space-1);
+  margin: calc(var(--space-2) * -1) calc(var(--gutter) * -1) var(--space-4);
+  padding: 0 var(--gutter);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--gutter);
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--divider);
+  -webkit-overflow-scrolling: touch;
+  /* Esmaece a borda direita: indica que há mais abas sem cortar o texto com reticências */
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+}
 .club-subnav::-webkit-scrollbar { display: none; }
-.club-subnav a { flex: 0 0 auto; display: inline-flex; align-items: center; min-height: 36px; padding: 6px 14px; color: var(--text); background: var(--surface-raised); border: 1px solid var(--border-strong); border-radius: var(--radius-pill); font-size: var(--text-small); font-weight: var(--weight-medium); white-space: nowrap; }
-.club-subnav a.active { color: var(--brand-ink); background: var(--brand-soft); border-color: transparent; font-weight: var(--weight-semibold); }
+.club-subnav a {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  scroll-snap-align: start;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.club-subnav a::after {
+  content: '';
+  position: absolute;
+  right: var(--space-3);
+  bottom: -1px;
+  left: var(--space-3);
+  height: 3px;
+  background: var(--accent);
+  border-radius: 3px 3px 0 0;
+  transform: scaleX(0);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.club-subnav a:hover { color: var(--text); }
+.club-subnav a.active { color: var(--text); font-weight: var(--weight-semibold); }
+.club-subnav a.active::after { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) { .club-subnav a, .club-subnav a::after { transition: none; } }
 
 /* Seletor flutuante de espaço (computador) */
 .space-switch { position: relative; display: flex; flex-direction: column; min-width: 0; flex: 1; }
@@ -150,12 +145,11 @@
 .space-popover button:hover, .space-popover button:focus-visible, .space-popover button[aria-selected=true] { color: var(--brand-ink); background: var(--brand-soft); }
 
 /* Espaço para a barra fixa e o teclado */
-@media (max-width: 1023px) {
-  .page-content { scroll-padding-bottom: calc(var(--nav-height) + 40px + env(safe-area-inset-bottom)); }
-  .page-content :is(input, textarea, button, a, select) { scroll-margin-block: 90px 120px; }
-  body:has(dialog[open]) .bottom-nav { visibility: hidden; }
-  .app-frame[data-keyboard='open'] .bottom-nav { visibility: hidden; }
-}
+/* sempre (layout mobile forçado; antes @media (max-width: 1023px)) */
+.page-content { scroll-padding-bottom: calc(var(--nav-height) + 40px + env(safe-area-inset-bottom)); }
+.page-content :is(input, textarea, button, a, select) { scroll-margin-block: 90px 120px; }
+body:has(dialog[open]) .bottom-nav { visibility: hidden; }
+.app-frame[data-keyboard='open'] .bottom-nav { visibility: hidden; }
 .notification-bell { flex: 0 0 var(--control-lg); position: relative; }
 .notification-badge { position: absolute; top: 4px; right: 4px; min-width: 17px; height: 17px; padding: 0 3px; display: grid; place-items: center; border-radius: 999px; background: var(--coral-500); color: #fff; font: 700 10px/1 var(--font-ui); }
 

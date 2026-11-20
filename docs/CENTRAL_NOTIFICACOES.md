@@ -1,4 +1,4 @@
-# Central de notificações · candidata 1.4
+# Central de notificações · candidata 1.5
 
 ## O que existe e onde integrar
 
@@ -19,7 +19,7 @@ O ranking de descoberta é calculado por engajamento. Para publicar um destaque 
 
 ## Contrato para o Claude Code
 
-Os tipos compartilhados estão em `server/src/notification-contracts.ts`. O SDK sem componentes visuais está em `src/notifications/client.ts`. Crie uma instância de `notificationClient(user)` por sessão Firebase. A identidade vem do token em todas as rotas.
+Os tipos compartilhados estão em `server/src/notification-contracts.ts`. O SDK sem componentes visuais está em `src/notifications/client.ts`. O site 1.4 já usa src/notifications/store.ts para a central, o sino e os banners. Ao incorporar o canal novo a esse serviço, substitua a consulta periódica e mantenha uma conexão por aba. Crie uma instância de `notificationClient(user)` por sessão Firebase. A identidade vem do token em todas as rotas.
 
 | Método do SDK | API sob /v1 |
 |---|---|

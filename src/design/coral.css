@@ -427,7 +427,6 @@ input[type='range'] { accent-color: var(--accent); }
 .fab:active { transform: scale(.92); }
 .fab[aria-expanded='true'] svg { transform: rotate(45deg); }
 .fab svg { transition: transform var(--dur-base) var(--ease-spring); }
-@media (min-width: 1024px) { .fab { bottom: 32px; right: 32px; } }
 
 /* Menu de ações (folha que sobe de baixo no celular; balão no computador) */
 .action-menu { display: grid; gap: 6px; }
@@ -446,12 +445,6 @@ input[type='range'] { accent-color: var(--accent); }
 /* Esqueleto horizontal de carrossel */
 .skeleton-tile { width: var(--tile-w, 146px); aspect-ratio: var(--tile-ratio, 1.18); border-radius: var(--radius-md); }
 
-@media (min-width: 1024px) {
-  .hero, .app-bar { margin: calc(var(--space-8) * -1) calc(clamp(28px, 4vw, 56px) * -1) 0; padding: 28px clamp(28px, 4vw, 56px) 40px; border-radius: 0 0 0 0; }
-  .app-bar { position: relative; }
-  .page-sheet { margin-left: calc(clamp(28px, 4vw, 56px) * -1); margin-right: calc(clamp(28px, 4vw, 56px) * -1); padding: 24px clamp(28px, 4vw, 56px) 0; }
-  .h-scroll { margin: 0; padding-inline: 0; }
-}
 
 /* ── Explorar ── */
 .explore-screen .hero { padding-bottom: 24px; }
@@ -617,11 +610,6 @@ input[type='range'] { accent-color: var(--accent); }
 .people-list__who > span:last-child { display: flex; min-width: 0; flex-direction: column; text-align: left; }
 .people-list__who strong { overflow: hidden; font-size: var(--text-body); text-overflow: ellipsis; white-space: nowrap; }
 .people-list__who small { color: var(--text-muted); font-size: var(--text-caption); }
-@media (min-width: 1024px) {
-  .profile-hero { margin: calc(var(--space-8) * -1) calc(clamp(28px, 4vw, 56px) * -1) 0; padding: 20px clamp(28px, 4vw, 56px) 0; height: 190px; }
-  .profile-card { margin-left: calc(clamp(28px, 4vw, 56px) * -1); margin-right: calc(clamp(28px, 4vw, 56px) * -1); }
-  .post-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
 .coral-profile .profile-stats { padding: 10px 0; background: none; border: 0; border-block: 1px solid var(--divider); border-radius: 0; box-shadow: none; }
 .coral-profile .profile-tabs.line-tabs { gap: 0; padding: 0 var(--gutter); background: none; border: 0; border-bottom: 1px solid var(--divider); border-radius: 0; box-shadow: none; }
 .coral-profile .profile-tabs.line-tabs button { min-height: 46px; padding: 0 14px; color: var(--text-muted); background: none; border: 0; border-radius: 0; box-shadow: none; font-size: var(--text-small); font-weight: var(--weight-medium); }
@@ -665,7 +653,6 @@ a.settings-row { color: var(--text); }
 .coral-connected { width: min(100%, var(--content-max)); min-height: 100dvh; margin: 0 auto; padding: 0 var(--gutter) calc(40px + env(safe-area-inset-bottom)); }
 .coral-connected .connected-content { padding-top: 20px; }
 .coral-connected .app-bar { position: sticky; }
-@media (min-width: 1024px) { .coral-connected .app-bar, .coral-connected .page-sheet { margin-left: calc(var(--gutter) * -1); margin-right: calc(var(--gutter) * -1); } .coral-connected .app-bar { margin-top: 0; padding: 18px var(--gutter) 34px; } }
 .access-glyph { display: grid; width: 60px; height: 60px; margin-bottom: 14px; place-items: center; color: #fff; background: var(--hero-gradient); border-radius: 18px; box-shadow: 0 10px 24px color-mix(in srgb, var(--coral-600) 28%, transparent); }
 
 /* ── Visão geral do clube ── */
@@ -703,11 +690,10 @@ input[type='color']::-moz-color-swatch { border: 0; border-radius: 50%; }
 .book-stack i:nth-child(4) { background: var(--coral-600); }
 .book-stack i:nth-child(5) { background: var(--coral-400); }
 /* Filtros do mural no celular: busca e tipo em linha inteira, datas lado a lado */
-@media (max-width: 600px) {
-  .wall-filters { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .wall-filters > form, .wall-filters > label:nth-of-type(1) { grid-column: 1 / -1; }
-  .wall-filters select, .wall-filters input { width: 100%; }
-}
+/* sempre (layout mobile forçado; antes @media (max-width: 600px)) */
+.wall-filters { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px; }
+.wall-filters > form, .wall-filters > label:nth-of-type(1) { grid-column: 1 / -1; }
+.wall-filters select, .wall-filters input { width: 100%; }
 .page-sheet :is(.page-intro, .social-heading) p { font-style: normal; font-family: var(--font-ui); }
 /* Acesso (entrar, criar conta, recuperar senha): gradiente coral no alto, cartão branco por cima */
 .sticker-corner { display: none !important; }

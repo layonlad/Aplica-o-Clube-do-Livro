@@ -8,9 +8,9 @@ import { AppErrorBoundary } from './app/AppErrorBoundary'
 import { ThemeProvider } from './app/ThemeProvider'
 import { BookOpening } from './app/BookOpening'
 import { ShelfBackdrop } from './app/ShelfBackdrop'
-import '@fontsource-variable/inter/index.css'
-import '@fontsource-variable/fraunces/opsz.css'
-import '@fontsource-variable/fraunces/wght-italic.css'
+// Fontes padrão: DM Sans na interface e Merriweather na leitura. As outras carregam só quando escolhidas em Aparência.
+import '@fontsource-variable/dm-sans/index.css'
+import '@fontsource-variable/merriweather/index.css'
 import './design/tokens.css'
 import './design/base.css'
 import './design/components.css'
@@ -20,6 +20,7 @@ import './design/motion.css'
 import './design/ornaments.css'
 import './design/personalization.css'
 import './styles.css'
+import './design/mobile-frame.css'
 
 const MobileBridge = lazy(() => import('./mobile/MobileBridge').then((m) => ({ default: m.MobileBridge })))
 const nativeBuild = import.meta.env.VITE_APP_NATIVE === '1'
@@ -39,7 +40,10 @@ createRoot(document.getElementById('root')!).render(
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   if (import.meta.env.VITE_APP_MODE === 'connected') {
     const scope = new URL(import.meta.env.BASE_URL, window.location.href).href
-    void navigator.serviceWorker.getRegistrations().then((items) => Promise.all(items.filter((item) => item.scope === scope).map((item) => item.unregister()))).catch(() => {})
+    // Remove só o worker antigo do modo demonstração (sw.js). O worker de push (push-sw.js) fica: desregistrá-lo
+    // apagaria a inscrição de notificações do aparelho a cada abertura do app.
+    const isPush = (item: ServiceWorkerRegistration) => [item.active, item.waiting, item.installing].some((worker) => worker?.scriptURL.endsWith('/push-sw.js'))
+    void navigator.serviceWorker.getRegistrations().then((items) => Promise.all(items.filter((item) => item.scope === scope && !isPush(item)).map((item) => item.unregister()))).catch(() => {})
     if ('caches' in window) void caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith('clube-aurora-')).map((key) => caches.delete(key)))).catch(() => {})
   } else {
     window.addEventListener('load', () => { void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {}) })

@@ -24,20 +24,6 @@
 .member-role-select {
   max-width: 170px;
 }
-.club-subnav {
-  display: flex;
-  gap: 0.75rem;
-  overflow: auto;
-  padding: 0.75rem 0;
-}
-.club-subnav a {
-  white-space: nowrap;
-  padding: 0.5rem 0.75rem;
-  border-bottom: 2px solid transparent;
-}
-.club-subnav a.active {
-  border-color: var(--color-primary);
-}
 
 .club-identity {
   padding: 1.25rem;

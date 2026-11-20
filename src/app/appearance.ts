@@ -6,7 +6,7 @@ export type PresetId = Appearance['preset']
 
 /**
  * Fontes oferecidas na personalização (todas SIL Open Font License, auto-hospedadas).
- * Fraunces e Plus Jakarta Sans já vêm no pacote principal; as demais são baixadas só quando escolhidas.
+ * DM Sans (interface) e Merriweather (leitura) já vêm no pacote principal; as demais são baixadas só quando escolhidas.
  */
 export const fontOptions: {
   id: FontId
@@ -20,6 +20,7 @@ export const fontOptions: {
     label: 'Fraunces',
     kind: 'editorial',
     family: "'Fraunces Variable', Georgia, serif",
+    load: () => Promise.all([import('@fontsource-variable/fraunces/opsz.css'), import('@fontsource-variable/fraunces/wght-italic.css')]),
   },
   {
     id: 'playfair',
@@ -40,7 +41,6 @@ export const fontOptions: {
     label: 'Merriweather',
     kind: 'editorial',
     family: "'Merriweather Variable', Georgia, serif",
-    load: () => import('@fontsource-variable/merriweather/index.css'),
   },
   {
     id: 'jakarta',
@@ -54,6 +54,7 @@ export const fontOptions: {
     label: 'Inter',
     kind: 'moderna',
     family: "'Inter Variable', ui-sans-serif, system-ui, sans-serif",
+    load: () => import('@fontsource-variable/inter/index.css'),
   },
   {
     id: 'manrope',
@@ -67,7 +68,6 @@ export const fontOptions: {
     label: 'DM Sans',
     kind: 'moderna',
     family: "'DM Sans Variable', ui-sans-serif, system-ui, sans-serif",
-    load: () => import('@fontsource-variable/dm-sans/index.css'),
   },
   {
     id: 'poppins',
@@ -124,8 +124,8 @@ export const defaultAppearance: Appearance = {
   mode: 'light',
   accent: null,
   background: null,
-  headingFont: 'inter',
-  bodyFont: 'inter',
+  headingFont: 'dm-sans',
+  bodyFont: 'dm-sans',
   radius: 'round',
   textSize: 'md',
   density: 'regular',
@@ -154,15 +154,15 @@ export const textColorOptions: { id: string; label: string; color: string | null
 
 /** Completa preferências antigas (sem os campos novos) e mantém a ordem das chaves, para comparar com segurança. */
 export function normalizeAppearance(value: Appearance): Appearance {
-  // O par de fontes padrão da identidade anterior (Fraunces + Plus Jakarta) volta ao padrão atual (Inter).
-  const oldDefaultFonts = value.headingFont === 'fraunces' && value.bodyFont === 'jakarta'
+  // Pares de fontes que foram o padrão antes (Fraunces + Plus Jakarta; depois Inter + Inter) voltam ao padrão atual (DM Sans).
+  const oldDefaultFonts = (value.headingFont === 'fraunces' && value.bodyFont === 'jakarta') || (value.headingFont === 'inter' && value.bodyFont === 'inter')
   return {
     preset: value.preset,
     mode: value.mode,
     accent: value.accent ?? null,
     background: value.background ?? null,
-    headingFont: oldDefaultFonts ? 'inter' : value.headingFont,
-    bodyFont: oldDefaultFonts ? 'inter' : value.bodyFont,
+    headingFont: oldDefaultFonts ? 'dm-sans' : value.headingFont,
+    bodyFont: oldDefaultFonts ? 'dm-sans' : value.bodyFont,
     radius: value.radius,
     textSize: value.textSize ?? 'md',
     density: value.density ?? 'regular',
@@ -275,8 +275,8 @@ export function appearanceTokens(appearance: Appearance) {
   // O fundo rebaixado (campos, trilhas) fica um pouco mais escuro; se isso tirar o texto do contraste AA, usa o próprio fundo.
   const sunkenCandidate = mix(background, darkSurface ? 0.04 : -0.035)
   const sunken = contrast(text, sunkenCandidate) >= 4.5 ? sunkenCandidate : background
-  const heading = fontOptions.find((font) => font.id === appearance.headingFont) ?? fontOptions[5]
-  const body = fontOptions.find((font) => font.id === appearance.bodyFont) ?? fontOptions[5]
+  const heading = fontOptions.find((font) => font.id === appearance.headingFont) ?? fontOptions.find((font) => font.id === 'dm-sans')!
+  const body = fontOptions.find((font) => font.id === appearance.bodyFont) ?? fontOptions.find((font) => font.id === 'dm-sans')!
   const textSize = textSizeOptions.find((item) => item.id === appearance.textSize)
   const density = densityOptions.find((item) => item.id === appearance.density)
   const leading = lineHeightOptions.find((item) => item.id === appearance.lineHeight)
@@ -327,8 +327,8 @@ export function appearanceTokens(appearance: Appearance) {
           : mix(base, 0.35),
       '--accent-ink': isDefault ? null : brand,
       '--accent-soft': isDefault ? null : `color-mix(in srgb, ${brand} ${dark ? 18 : 11}%, var(--surface))`,
-      '--font-display': appearance.headingFont === 'inter' ? null : heading.family,
-      '--font-ui': appearance.bodyFont === 'inter' ? null : body.family,
+      '--font-display': appearance.headingFont === 'dm-sans' ? null : heading.family,
+      '--font-ui': appearance.bodyFont === 'dm-sans' ? null : body.family,
       '--radius-card':
         appearance.radius === 'round'
           ? null

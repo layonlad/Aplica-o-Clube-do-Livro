@@ -19,7 +19,6 @@
 .workspace-form .button { justify-self: start; }
 .workspace-form small { color: var(--text-muted); font-weight: 500; }
 .form-row { display: grid; gap: var(--space-4); }
-@media (min-width: 640px) { .form-row { grid-template-columns: 1fr 1fr; } }
 .workspace-check { display: flex !important; align-items: center; gap: var(--space-3) !important; cursor: pointer; font-weight: 600; }
 .workspace-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-3); }
 .workspace-actions > a:not(.button-link) { color: var(--brand-ink); font-weight: 700; font-size: var(--text-small); }
@@ -61,13 +60,12 @@
 .home-current__author { margin: -4px 0 var(--space-2); color: var(--text-muted); font-weight: 500; }
 .home-current .button-link { margin-top: var(--space-2); }
 /* No celular: capa menor ao lado do título, em vez de empilhada (economiza meia tela) */
-@media (max-width: 479px) {
-  .home-current { grid-template-columns: auto minmax(0, 1fr); gap: var(--space-4); align-items: start; }
-  .home-current .cover-art--lg { width: 84px; padding: 12% 10% 10% 16%; }
-  .home-current .cover-art--lg .cover-art__title { font-size: .72rem; }
-  .home-current .cover-art--lg .cover-art__author { display: none; }
-  .home-current__body { gap: var(--space-2); }
-}
+/* sempre (layout mobile forçado; antes @media (max-width: 479px)) */
+.home-current { grid-template-columns: auto minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+.home-current .cover-art--lg { width: 84px; padding: 12% 10% 10% 16%; }
+.home-current .cover-art--lg .cover-art__title { font-size: .72rem; }
+.home-current .cover-art--lg .cover-art__author { display: none; }
+.home-current__body { gap: var(--space-2); }
 
 .home-ledger { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; border-block: 1px solid var(--divider); }
 .home-ledger p { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: var(--space-3) var(--space-3); }
@@ -87,13 +85,11 @@
 .home-event__arrow { color: var(--text-subtle); transition: transform var(--dur-fast) var(--ease-out); }
 .home-event:hover .home-event__arrow { transform: translateX(4px); color: var(--brand-ink); }
 .home-event__icon { display: grid; width: 44px; height: 44px; place-items: center; color: var(--brand-ink); background: var(--brand-soft); border-radius: var(--radius-md); }
-@media (max-width: 559px) {
-  .home-event--empty { grid-template-columns: auto minmax(0, 1fr); }
-  .home-event--empty .text-link { grid-column: 2; }
-}
+/* sempre (layout mobile forçado; antes @media (max-width: 559px)) */
+.home-event--empty { grid-template-columns: auto minmax(0, 1fr); }
+.home-event--empty .text-link { grid-column: 2; }
 
 .quick-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
-@media (min-width: 560px) { .quick-grid { grid-template-columns: 1fr 1fr; } }
 .quick-tile {
   --tile: var(--honey-500);
   --tile-soft: var(--honey-100);
@@ -183,10 +179,6 @@
 .ballot__item { display: grid !important; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: var(--space-4); }
 .workspace-app .ballot__item > * + * { margin-top: 0; }
 .ballot__item > :last-child:not(.ballot__body) { grid-column: 1 / -1; justify-self: end; }
-@media (min-width: 640px) {
-  .ballot__item { grid-template-columns: auto auto minmax(0, 1fr) auto; }
-  .ballot__item > :last-child:not(.ballot__body) { grid-column: auto; }
-}
 .ballot__number { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
 .ballot__body h2 { font-size: 1.15rem !important; }
 .ballot__body p { margin: 2px 0 4px; color: var(--text-muted); }
@@ -230,7 +222,6 @@
   .workspace-actions > .button { max-width: 100%; }
   .home-ledger p { padding-inline: var(--space-2); }
 }
-@media (max-width: 479px) {
-  .reply-form { grid-template-columns: 1fr; }
-  .reply-form .button { justify-self: end; min-height: var(--control-md); }
-}
+/* sempre (layout mobile forçado; antes @media (max-width: 479px)) */
+.reply-form { grid-template-columns: 1fr; }
+.reply-form .button { justify-self: end; min-height: var(--control-md); }

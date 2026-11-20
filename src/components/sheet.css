@@ -14,9 +14,8 @@
 .sheet-body { padding: 16px 20px max(20px, env(safe-area-inset-bottom)); }
 .social-sheet[open] { animation: social-sheet-enter 220ms var(--ease-out); }
 @keyframes social-sheet-enter { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-@media (max-width: 600px) {
-  .social-sheet { position: fixed; inset: auto 0 0; bottom: var(--sheet-bottom, 0px); margin: 0; width: 100%; border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; max-height: calc(var(--sheet-height, 100dvh) - 12px); }
-  .sheet-heading { padding-top: 22px; }
-  .sheet-heading::before { content: ''; position: absolute; top: 8px; left: 50%; width: 40px; height: 4px; margin-left: -20px; background: var(--gray-300); border-radius: 4px; }
-}
+/* sempre (layout mobile forçado; antes @media (max-width: 600px)) */
+.social-sheet { position: fixed; inset: auto 0 0; bottom: var(--sheet-bottom, 0px); margin: 0; width: 100%; border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; max-height: calc(var(--sheet-height, 100dvh) - 12px); }
+.sheet-heading { padding-top: 22px; }
+.sheet-heading::before { content: ''; position: absolute; top: 8px; left: 50%; width: 40px; height: 4px; margin-left: -20px; background: var(--gray-300); border-radius: 4px; }
 @media (prefers-reduced-motion: reduce) { .social-sheet[open] { animation: none; } }

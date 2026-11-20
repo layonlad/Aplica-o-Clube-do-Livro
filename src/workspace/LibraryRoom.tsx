@@ -5,7 +5,7 @@ import { apiRequest, messageFor, readableError } from '../auth/api'
 import { localEpub, saveEpub } from './epub-storage'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { BookOpen, BookPlus, Heart, ImageIcon, MoreHorizontal, Plus, Search, Upload } from 'lucide-react'
+import { BookOpen, BookPlus, Heart, ImageIcon, Library, MoreHorizontal, Plus, Search, Upload } from 'lucide-react'
 import { useTheme } from '../app/ThemeProvider'
 import { BOOK_FILES_EVENT, fetchUsage, uploadOriginal, type BookFilesUsage } from './book-files'
 import { openBook } from './BookOpener'
@@ -15,6 +15,7 @@ import type { bookMetadataSchema, WorkspaceState } from '../../server/src/worksp
 import { preferencesSchema } from '../../server/src/workspace-model'
 import type { CatalogEntry } from '../../server/src/catalog'
 import { Button, Card } from '../components/ui'
+import { Sheet } from '../components/Sheet'
 import type { ImportedBook } from './import-book'
 import { useWorkspace } from './WorkspaceProvider'
 import './library-room.css'
@@ -65,6 +66,7 @@ export function LibraryRoom() {
   const [catalogAuthor, setCatalogAuthor] = useState(''),
     [catalogGenre, setCatalogGenre] = useState('')
   const [searching, setSearching] = useState(false)
+  const [catalogOpen, setCatalogOpen] = useState(false)
   async function preserveOriginal(id: string, file: File) {
     try {
       const { readEpub } = await import('./epub-archive')
@@ -267,6 +269,23 @@ export function LibraryRoom() {
         filter === `shelf:${entry?.shelf}`)
     )
   })
+  const importButton = (
+    <label className={`button button--primary library-import ${params.get('importar') === '1' ? 'is-highlighted' : ''}`}>
+      <Upload size={18} aria-hidden="true" />
+      {importing ? 'Abrindo…' : 'Importar EPUB'}
+      <input
+        aria-label="Importar EPUB ou TXT"
+        type="file"
+        accept=".epub,.txt"
+        disabled={importing || busy}
+        onChange={(e) => {
+          const item = e.target.files?.[0]
+          if (item) void file(item)
+          e.target.value = ''
+        }}
+      />
+    </label>
+  )
   return (
     <div className="library-room stack-lg">
       <header className="library-heading">
@@ -283,22 +302,8 @@ export function LibraryRoom() {
         </div>
       </header>
       {['owner', 'admin'].includes(role) && (
-        <div className="library-toolbar">
-          <label className={`button button--primary library-import ${params.get('importar') === '1' ? 'is-highlighted' : ''}`}>
-            <Upload size={18} aria-hidden="true" />
-            {importing ? 'Abrindo…' : 'Importar EPUB'}
-            <input
-              aria-label="Importar EPUB ou TXT"
-              type="file"
-              accept=".epub,.txt"
-              disabled={importing || busy}
-              onChange={(e) => {
-                const item = e.target.files?.[0]
-                if (item) void file(item)
-                e.target.value = ''
-              }}
-            />
-          </label>
+        <div className="library-toolbar library-toolbar--stacked">
+          {importButton}
           <Button
             variant="secondary"
             onClick={() => {
@@ -329,11 +334,34 @@ export function LibraryRoom() {
           )}
         </div>
       )}
-      {['owner', 'admin'].includes(role) && (
-        <details className="library-discovery">
-          <summary>
-            <Search size={17} /> Buscar no catálogo
-          </summary>
+      {/* Uma única busca: filtra a biblioteca; o catálogo aberto fica num botão secundário. */}
+      <div className="library-search">
+        <div className="search-field">
+          <Search size={19} aria-hidden="true" />
+          <input
+            aria-label="Buscar na biblioteca"
+            placeholder="Título, autor, gênero ou ISBN"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+        {['owner', 'admin'].includes(role) && (
+          <button
+            type="button"
+            className="library-search__catalog"
+            aria-haspopup="dialog"
+            onClick={() => {
+              if (query.trim().length >= 2 && !catalogQuery) setCatalogQuery(query.trim())
+              setCatalogOpen(true)
+            }}
+          >
+            <Library size={18} aria-hidden="true" />
+            <span>Catálogo</span>
+          </button>
+        )}
+      </div>
+      {catalogOpen && (
+        <Sheet title="Buscar no catálogo" onClose={() => setCatalogOpen(false)} className="catalog-sheet">
           <form className="workspace-actions" onSubmit={search}>
             <input
               aria-label="Pesquisar catálogo"
@@ -397,6 +425,7 @@ export function LibraryRoom() {
                       setEditing(null)
                       setShow(true)
                       setMessage('')
+                      setCatalogOpen(false)
                     }}
                   >
                     Adicionar à minha biblioteca
@@ -405,7 +434,7 @@ export function LibraryRoom() {
               </article>
             ))}
           </div>
-        </details>
+        </Sheet>
       )}
       {message && <p role="status">{message}</p>}
       {show && (
@@ -536,16 +565,7 @@ export function LibraryRoom() {
           </form>
         </Card>
       )}
-      <div className="search-field">
-        <Search size={19} />
-        <input
-          aria-label="Buscar na biblioteca"
-          placeholder="Título, autor, gênero ou ISBN"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </div>
-      <div className="library-shelves" aria-label="Minhas estantes">
+      <div className="library-shelves" role="group" aria-label="Minhas estantes">
         {[
           ['all', 'Todos'],
           ...Object.entries(statusLabels),
@@ -554,7 +574,9 @@ export function LibraryRoom() {
         ].map(([value, label]) => (
           <button
             key={value}
+            type="button"
             className={filter === value ? 'active' : ''}
+            aria-pressed={filter === value}
             onClick={() => setFilter(value)}
           >
             {label}
@@ -618,10 +640,19 @@ export function LibraryRoom() {
         ))}
       </div>
       {!books.length && (
-        <div className="library-empty">
-          <BookOpen size={36} />
-          <h2>{state.books.length ? 'Nada nesta estante' : 'Sua estante está vazia'}</h2>
-          <p>{state.books.length ? 'Tente outro filtro.' : 'Importe um EPUB para começar.'}</p>
+        <div className="library-empty library-empty--action">
+          <span className="library-empty__icon" aria-hidden="true"><BookOpen size={30} /></span>
+          <h2>{query ? 'Nenhum livro encontrado' : state.books.length ? 'Nada nesta estante' : scope === 'personal' ? 'Sua estante está vazia' : 'O clube ainda não tem leituras'}</h2>
+          <p>
+            {query ? `Nada com “${query}”. Tente outro termo ou busque no catálogo.`
+              : state.books.length ? 'Escolha outra estante ou volte para Todos.'
+                : ['owner', 'admin'].includes(role) ? 'Importe um EPUB para começar a ler.' : 'Quem organiza o clube adiciona os livros aqui.'}
+          </p>
+          {query ? (
+            <button type="button" className="button button--secondary" onClick={() => setQuery('')}>Limpar busca</button>
+          ) : state.books.length ? (
+            <button type="button" className="button button--secondary" onClick={() => setFilter('all')}>Ver todos</button>
+          ) : ['owner', 'admin'].includes(role) ? importButton : null}
         </div>
       )}
     </div>

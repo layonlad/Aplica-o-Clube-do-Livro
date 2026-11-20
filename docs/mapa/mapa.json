@@ -6,12 +6,12 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Versão 1.3 no ar: chat dos clubes com o visual novo",
+    "fase": "Versão 1.4 em produção e backend da central em Staging 1.5",
     "tom": "ok",
-    "resumo": "Os dois endereços de produção servem a versão 1.3 (e4ff398). A API respondeu ao teste de saúde. A publicação registrada mantém o backend 3c01e7a com chat dos clubes e migration 022.",
-    "proximoPasso": "Acompanhar custo de leituras do Firestore, latência da API e fila de push com o chat ligado para todos os clubes. Testar Kindle, menu nativo e teclado virtual do chat em aparelho físico. Próxima candidata: 1.4.",
+    "resumo": "Os dois endereços de produção servem a versão 1.4 (82d607a) com a central de notificações e o layout móvel. A publicação registrada mantém o backend 3c01e7a com chat dos clubes e migration 022.",
+    "proximoPasso": "Acompanhar custo de leituras do Firestore, latência da API e fila de push com o chat ligado para todos os clubes. Testar Kindle, menu nativo e teclado virtual do chat em aparelho físico. Validar a candidata 1.5 em Staging local.",
     "pendencias": [
-      "Candidata 1.4 corrige Debates, menções, legenda e teste de spoiler. Validar o teclado virtual em aparelho e integrar pelo frontend os controles da central. FCM e APNs aguardam validação em aparelhos.",
+      "Candidata 1.5 corrige Debates, menções, legenda e teste de spoiler. Validar o teclado virtual em aparelho e integrar pelo frontend os controles da central. FCM e APNs aguardam validação em aparelhos.",
       "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
       "Notícias usam metadados do RSS e link original. A primeira coleta importou uma manchete real. Recomendações, filtros avançados e acompanhamento de assuntos têm rotas na API; faltam controles correspondentes nas telas.",
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
@@ -39,7 +39,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "Versão 1.3 · e4ff398 publicado em 20/11/2026 nos dois sites; 132 arquivos do app conferidos por SHA-256; chat dos clubes com o visual novo, ligado para todos os clubes",
+      "versao": "Versão 1.4 · 82d607a publicado em 20/11/2026 nos dois sites; 145 arquivos do app conferidos por SHA-256; layout mobile forçado, central de notificações e Livros Gratuitos",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -55,7 +55,7 @@
       "id": "staging",
       "nome": "Staging (localhost)",
       "url": "http://localhost:5174",
-      "versao": "Candidata 1.4 · chat corrigido e central de notificações, migration 023 apenas local.",
+      "versao": "Candidata 1.5 · chat corrigido e central de notificações, migration 023 apenas local.",
       "atualizacao": "Iniciar com npm run staging e testar antes da promoção aprovada",
       "tom": "neutro"
     },
@@ -87,7 +87,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "Versão 1.3 · e4ff398 · mesmo frontend do site principal; 132 arquivos conferidos por SHA-256",
+      "versao": "Versão 1.4 · 82d607a · mesmo frontend do site principal; 145 arquivos conferidos por SHA-256",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -285,7 +285,7 @@
     { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Pessoais: até 30 arquivos ativos/pendentes no plano gratuito, até 10 MB cada; livro e capa recuperados em outro contexto de navegador. Não entram no backup JSON; baixe o original separadamente. Compartilhar a capa não publica o arquivo. Acervo dos clubes mantém cotas e autorização próprias." },
     { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" },
     { "o_que": "Cópias de recuperação e fotografia da migração", "onde": "recuperacao", "privacidade": "Privadas; bucket operacional Google e origens antigas preservadas", "copia": "Dump e Auth finais verificados; fontes de build isoladas dos backups. Cloud SQL tem sete backups gerenciados; não sobrescrever dados novos sem conciliação." },
-    {"o_que": "Assinaturas de aparelhos e fila push", "onde": "banco", "privacidade": "Privado do destinatário. A candidata 1.4 reutiliza a fila para Web Push e FCM e verifica acesso e preferências antes do envio.", "copia": "Executor Cloud Run privado e Scheduler ativos, com lote real aprovado; recebimento físico ainda pendente."},
+    {"o_que": "Assinaturas de aparelhos e fila push", "onde": "banco", "privacidade": "Privado do destinatário. A candidata 1.5 reutiliza a fila para Web Push e FCM e verifica acesso e preferências antes do envio.", "copia": "Executor Cloud Run privado e Scheduler ativos, com lote real aprovado; recebimento físico ainda pendente."},
     {"o_que": "Originais temporários de fotografias", "onde": "midia", "privacidade": "POST assinado por arquivo, chave, tipo e tamanho; bucket continua privado.", "copia": "Sem original permanente: versões otimizadas e cota da conta; limpeza imediata e após expiração, com diagnóstico e limite de temporários."},
     {
       "o_que": "Pedidos para seguir, atividades e salvos do perfil",
@@ -416,8 +416,8 @@
     {
       "data": "2026-11-20",
       "autor": "Codex",
-      "titulo": "Central de notificações e correções do chat em Staging 1.4",
-      "resumo": "Caixa compartilhada para chat, mural, destaques, interações, leituras e encontros. Preferências por conta, agrupamento, fila em lotes e transporte FCM preparado. Debates e sugestões de menção revisados. Produção permanece na versão 1.3.",
+      "titulo": "Central de notificações e correções do chat em Staging 1.5",
+      "resumo": "Caixa compartilhada para chat, mural, destaques, interações, leituras e encontros. Preferências por conta, agrupamento, fila em lotes e transporte FCM preparado. Debates e sugestões de menção revisados. Manifestos dos dois sites confirmam produção 1.4 (82d607a).",
       "pr": ""
     },
     {
@@ -426,6 +426,27 @@
       "titulo": "Diagnóstico das entregas 1.1 a 1.3",
       "resumo": "Versão 1.3 confirmada nos dois sites. Ensaio de layout reproduziu cortes em Debates e no compositor com menções. Detectados prefixo duplicado na etapa, seletor antigo de spoiler e divergência documental de versões.",
       "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/57"
+    },
+    {
+      "data": "2026-11-20",
+      "autor": "Claude",
+      "titulo": "Versão 1.4 publicada nos dois sites (só frontend)",
+      "resumo": "Publicação autorizada pelo dono. Candidata 1.4 (82d607a: PRs 43, 58, 59 e 60) ensaiada em Staging local com conta sintética: login com estilo, DM Sans, Leituras do clube em 390 e 1280 px sem rolagem lateral e sem erros no console. build:production aprovou API saudável, sequência 1.3 → 1.4 e registro de Staging. Hosting publicado em produção e no endereço de compatibilidade, cada um com a conta proprietária; 145 arquivos do app idênticos ao build por SHA-256 nos dois (o mapa difere só no horário de geração). Chat dos clubes mantido ligado. API e executor continuam em 3c01e7a, sem migrations: server/ igual ao publicado.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/60"
+    },
+    {
+      "data": "2026-11-20",
+      "autor": "Claude",
+      "titulo": "Layout mobile forçado, faixa escura no clube e Leituras do clube reorganizada",
+      "resumo": "O app vira sempre a coluna de celular (até 430 px, centralizada sobre fundo #0f1115), sem trilho lateral e sem layout por largura de tela; barra, botão +, folhas, avisos e leitor presos à coluna. Telas do clube com faixa escura e abas roláveis com sublinhado na cor de destaque; as principais mantêm o gradiente coral. Leituras do clube: busca única com o catálogo numa folha, Importar EPUB e Adicionar livro empilhados, estantes em chips e estado vazio com ação. Fontes padrão DM Sans e Merriweather. 132 testes do site, tsc e build ok; conferido em 390 e 1280 px sem rolagem lateral. Só site: server/ igual ao da API publicada (3c01e7a).",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/59"
+    },
+    {
+      "data": "2026-11-20",
+      "autor": "Claude",
+      "titulo": "Central de notificações, banners e preferências no visual Coral",
+      "resumo": "Serviço único de notificações no site (contador do sino com 99+, lista paginada, leitura otimista, conferência de conteúdo removido, troca de conta). Nova central agrupada em Hoje, Ontem e Anteriores, com Aceitar/Recusar convite e abertura no conteúdo certo (chat, mural, comunidade, fórum, perfil, convites). Banner discreto dentro do app, agrupado, fora do leitor e do chat aberto. Configurações → Notificações com push explicado antes de pedir, orientação quando bloqueado ou no iPhone sem instalar, cinco categorias da conta e modo do chat por clube (inclui silenciar). Corrigido: o app removia o worker de push a cada abertura. Pendências do servidor em docs/notificacoes/PENDENCIAS_BACKEND.md. 132 testes do site, tsc e build ok. Sem mudança de servidor nem produção.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/58"
     },
     {
       "data": "2026-11-20",
