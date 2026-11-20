@@ -1,6 +1,7 @@
 import {localStorage} from './local-storage.js'
 import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
+import {realpath} from 'node:fs/promises'
 import { buildApp } from '../src/app.js'
 import { createFirebaseVerifier } from '../src/auth.js'
 import { readConfig } from '../src/config.js'
@@ -12,11 +13,11 @@ if (config.FIREBASE_PROJECT_ID !== 'demo-clube-do-livro' || !config.FIREBASE_AUT
 const pool = createPool(config.DATABASE_URL)
 await migrate(pool)
 const app = await buildApp({ pool, verifyToken: createFirebaseVerifier(config.FIREBASE_PROJECT_ID), origin: config.FRONTEND_ORIGIN,moderatorUids:config.PLATFORM_MODERATOR_UIDS,storage:localStorage(fileURLToPath(new URL('../../.local-data/media-private/',import.meta.url))) })
-const vite = await createServer({ root: fileURLToPath(new URL('../../', import.meta.url)), server: { host: '127.0.0.1', port: 5173, strictPort: true } })
+const vite = await createServer({ root: fileURLToPath(new URL('../../', import.meta.url)), server: { fs: {allow:[fileURLToPath(new URL('../../',import.meta.url)),await realpath(fileURLToPath(new URL('../../node_modules',import.meta.url)))]}, host: '127.0.0.1', port: Number(new URL(config.FRONTEND_ORIGIN).port), strictPort: true } })
 async function close() { await vite.close(); await app.close(); await pool.end() }
 for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => { void close() })
 try {
   await app.listen({ host: config.HOST, port: config.PORT })
   await vite.listen()
-  console.log('\nClube do Livro: http://localhost:5173\nContas e banco locais em .local-data/. Use Ctrl+C para encerrar e salvar.\n')
+  console.log('\nClube do Livro: ' + config.FRONTEND_ORIGIN + '\nContas e banco locais em .local-data/. Use Ctrl+C para encerrar e salvar.\n')
 } catch (error) { await close(); throw error }

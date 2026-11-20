@@ -16,3 +16,5 @@ ui-debug.log*
 clube-api.env
 firebase-service-account.json
 dist-mapa/
+
+firestore-debug.log*

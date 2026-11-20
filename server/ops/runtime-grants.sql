@@ -30,4 +30,9 @@ REVOKE ALL ON literary_news,literary_news_sync,literary_follows FROM clube_runti
 GRANT SELECT,INSERT ON literary_news TO clube_runtime;
 GRANT SELECT,INSERT,UPDATE ON literary_news_sync TO clube_runtime;
 GRANT SELECT,INSERT,DELETE ON literary_follows TO clube_runtime;
+REVOKE ALL ON chat_messages,chat_members,chat_settings,chat_reports,chat_reactions FROM clube_runtime;
+GRANT DELETE ON chat_messages TO clube_runtime;
+GRANT SELECT,INSERT,UPDATE ON chat_settings,chat_members,chat_messages TO clube_runtime;
+GRANT SELECT,INSERT,UPDATE,DELETE ON chat_reactions TO clube_runtime;
+GRANT SELECT,INSERT ON chat_reports TO clube_runtime;
 COMMIT;

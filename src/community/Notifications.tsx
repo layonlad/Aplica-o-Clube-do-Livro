@@ -95,6 +95,7 @@ export function Notifications() {
             ? `/app/wall?post=${notice.targetId}`
             : `/app/community?post=${notice.targetId}`,
         )
+      else if (notice.targetType === 'chat') navigate('/app/chat?message=' + notice.targetId)
       else if (notice.targetType === 'topic') navigate('/app/forum?topic=' + notice.targetId)
       else if (notice.targetType === 'profile') navigate(notice.followAction === 'request' ? '/app/profile?requests=1' : '/app/people/' + notice.targetId)
       else if (notice.targetType === 'request')
@@ -215,7 +216,7 @@ export function Notifications() {
                 <UserAvatar name={notice.actorName} avatarId={notice.actorAvatarId} size="sm" />
                 <span>
                   <strong>{notice.actorName}</strong>{' '}
-                  {(notice.followAction === 'request' ? 'solicitou seguir você' : notice.followAction === 'approved' ? 'aceitou sua solicitação' : labels[notice.kind]) ?? 'compartilhou uma novidade'}
+                  {notice.targetType==='chat' ? (notice.kind==='mention'?'chamou você no chat':'atualizou o chat do clube') : (notice.followAction === 'request' ? 'solicitou seguir você' : notice.followAction === 'approved' ? 'aceitou sua solicitação' : labels[notice.kind]) ?? 'compartilhou uma novidade'}
                   {notice.clubName ? ` · ${notice.clubName}` : ''}
                 </span>
                 <small>

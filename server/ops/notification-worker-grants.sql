@@ -20,4 +20,6 @@ GRANT SELECT,INSERT,UPDATE,DELETE ON push_deliveries,club_post_notices TO clube_
 GRANT SELECT,DELETE ON push_subscriptions TO clube_notifications;
 GRANT UPDATE(revoked_at) ON push_subscriptions TO clube_notifications;
 GRANT SELECT(follower_id,followed_id) ON follows TO clube_notifications;
+GRANT SELECT(id,club_id,author_id,deleted,created_at) ON chat_messages TO clube_notifications;
+GRANT SELECT(club_id,user_id,preference) ON chat_members TO clube_notifications;
 COMMIT;

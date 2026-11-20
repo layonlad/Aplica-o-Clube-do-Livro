@@ -13,6 +13,7 @@ export async function maintain(pool: Pool, storage?: PrivateStorage) {
       const removed = await pool.query(
         "DELETE FROM notifications WHERE id IN(SELECT id FROM notifications WHERE created_at<now()-interval '90 days' ORDER BY created_at LIMIT 500 FOR UPDATE SKIP LOCKED)",
       )
+      await pool.query("DELETE FROM chat_messages WHERE id IN (SELECT id FROM chat_messages WHERE created_at<now()-interval '90 days' ORDER BY created_at LIMIT 500 FOR UPDATE SKIP LOCKED)")
       return {
         notifications: removed.rowCount,
         ...(storage

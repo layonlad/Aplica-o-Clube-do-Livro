@@ -1,0 +1,174 @@
+.chat-shell {
+  background: var(--surface, #fff);
+  color: inherit;
+  border: 1px solid #8885;
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-width: 54rem;
+  margin: auto;
+  min-width: 0;
+}
+.chat-shell header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: linear-gradient(120deg, #b8453b, #ac3267);
+  color: white;
+  padding: 1rem;
+}
+.chat-shell header button,
+.chat-book > small {
+  margin-left: auto;
+}
+.chat-shell small {
+  display: block;
+  font-size: 0.78rem;
+}
+.chat-book,
+.chat-shell nav,
+.chat-compose > div,
+.chat-list strong,
+.chat-list footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.chat-book {
+  padding: 0.55rem 0.85rem;
+  color: inherit;
+}
+.chat-book > span {
+  min-width: 0;
+}
+.chat-shell button {
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0.4rem 0.6rem;
+  border-radius: 1.2rem;
+}
+.chat-shell nav {
+  padding: 0.4rem;
+}
+.chat-shell nav button {
+  flex: 1;
+  min-width: 0;
+}
+.chat-shell nav [aria-pressed='true'] {
+  background: #8883;
+  font-weight: 700;
+}
+.chat-shell select {
+  max-width: 100%;
+  align-self: flex-start;
+  margin: 0.35rem 0.65rem;
+}
+.chat-list {
+  height: clamp(12rem, 45dvh, 36rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0.8rem;
+  overflow-anchor: none;
+}
+.chat-day {
+  text-align: center;
+  opacity: 0.75;
+}
+.chat-list article {
+  width: fit-content;
+  max-width: 85%;
+  overflow-wrap: anywhere;
+  background: #8882;
+  border-radius: 1rem;
+  padding: 0.55rem 0.75rem;
+  margin: 0.4rem 0;
+  font-size: 0.94rem;
+}
+.chat-list article > div {
+  white-space: pre-wrap;
+}
+.chat-list .chat-own {
+  margin-left: auto;
+  background: #fae0d9;
+  color: #402420;
+}
+.chat-list strong,
+.chat-list footer {
+  font-size: 0.78rem;
+}
+.chat-list footer {
+  justify-content: flex-end;
+}
+.chat-actions,
+.chat-options,
+.chat-compose {
+  padding: 0.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.chat-actions input {
+  max-width: 100%;
+}
+.chat-compose {
+  padding: 0.55rem max(0.6rem, env(safe-area-inset-right))
+    max(0.6rem, env(safe-area-inset-bottom));
+  border-top: 1px solid #8884;
+}
+.chat-compose > div {
+  width: 100%;
+}
+.chat-compose input:not([type='checkbox']) {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  border: 1px solid #8886;
+  border-radius: 2rem;
+  padding: 0.65rem;
+  font-size: 16px;
+}
+.chat-compose > div button {
+  background: #ad4238;
+  color: white;
+  min-width: 44px;
+  min-height: 44px;
+}
+.chat-shell input[type='checkbox'] {
+  width: auto;
+}
+.chat-compose label {
+  font-size: 0.78rem;
+}
+
+.club-chat-page {
+  padding: env(safe-area-inset-top) 0 0;
+  min-width: 0;
+}
+.chat-shell {
+  height: calc(var(--chat-height, 100dvh) - env(safe-area-inset-top));
+  overflow: auto;
+}
+.chat-list {
+  min-height: 5rem;
+  flex: 1;
+  height: auto;
+}
+.chat-shell > header,
+.chat-shell > nav,
+.chat-book,
+.chat-compose {
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .chat-shell {
+    border-radius: 0;
+    border-inline: 0;
+  }
+}
+body:has(.firebase-emulator-warning) .chat-shell {
+  height: calc(var(--chat-height, 100dvh) - 3.5rem - env(safe-area-inset-top));
+}
