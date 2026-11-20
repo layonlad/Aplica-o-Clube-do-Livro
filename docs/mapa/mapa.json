@@ -418,7 +418,7 @@
       "autor": "Claude",
       "titulo": "Layout mobile forçado, faixa escura no clube e Leituras do clube reorganizada",
       "resumo": "O app vira sempre a coluna de celular (até 430 px, centralizada sobre fundo #0f1115), sem trilho lateral e sem layout por largura de tela; barra, botão +, folhas, avisos e leitor presos à coluna. Telas do clube com faixa escura e abas roláveis com sublinhado na cor de destaque; as principais mantêm o gradiente coral. Leituras do clube: busca única com o catálogo numa folha, Importar EPUB e Adicionar livro empilhados, estantes em chips e estado vazio com ação. Fontes padrão DM Sans e Merriweather. 132 testes do site, tsc e build ok; conferido em 390 e 1280 px sem rolagem lateral. Só site: server/ igual ao da API publicada (3c01e7a).",
-      "pr": "pendente"
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/59"
     },
     {
       "data": "2026-11-20",
