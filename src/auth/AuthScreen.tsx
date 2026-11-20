@@ -6,6 +6,8 @@ import { Button } from '../components/ui'
 import { useAuth } from './AuthProvider'
 import { readableError } from './api'
 import { BowSticker, FlowerSticker, SparkleSticker, StarSticker } from '../components/Stickers'
+// Estilo do cartão de acesso: precisa vir no pacote inicial, porque ConnectedApp agora é carregado sob demanda.
+import '../connected/connected.css'
 
 /** Painel editorial da entrada: estante em lombadas e uma citação em domínio público. */
 function AccessArt() {
