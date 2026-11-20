@@ -396,6 +396,8 @@ it('aplica a cota ao avatar e não reativa perfil suspenso', async () => {
 })
 
 it('mostra a foto e o nome público atuais de quem gerou a notificação no clube', async () => {
+  // This scenario exercises a permitted actor. The preceding moderation test suspends her.
+  await db.pool.query('UPDATE profiles SET suspended=false WHERE user_id=$1',[ids.maria])
   const {
     id: profileId,
     suspended,

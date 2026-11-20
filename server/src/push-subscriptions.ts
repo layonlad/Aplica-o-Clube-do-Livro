@@ -54,7 +54,7 @@ export class PushSubscriptions {
     private publicKey?: string,
   ) {}
   config() {
-    return { enabled: !!this.publicKey, publicKey: this.publicKey ?? null }
+    return { enabled: !!this.publicKey, publicKey: this.publicKey ?? null, fcmEnabled: process.env.FCM_PUSH_ENABLED === 'true' }
   }
   async register(user: UserProfile, input: WebSubscription) {
     if (!this.publicKey)
@@ -100,17 +100,17 @@ export class PushSubscriptions {
       )
       .then((r) => r.rows[0] as { enabled: boolean })
   }
-  revoke(user: UserProfile, endpoint: string) {
+  revoke(user: UserProfile, endpoint: string, byId=false) {
     return transaction(this.pool, async (client) => {
       const row = (
         await client.query(
-          'UPDATE push_subscriptions SET revoked_at=now() WHERE user_id=$1 AND endpoint=$2 RETURNING id',
+          `UPDATE push_subscriptions SET revoked_at=now() WHERE user_id=$1 AND ${byId?'id=$2 AND installation_id IS NOT NULL':'endpoint=$2'} RETURNING id`,
           [user.id, endpoint],
         )
       ).rows[0]
       if (row)
         await client.query(
-          "UPDATE push_deliveries SET status='cancelled',leased_at=NULL WHERE subscription_id=$1 AND status IN ('pending','leased')",
+          "UPDATE push_deliveries SET status='cancelled',leased_at=NULL,lease_token=NULL WHERE subscription_id=$1 AND status IN ('pending','leased')",
           [row.id],
         )
       return { enabled: false }

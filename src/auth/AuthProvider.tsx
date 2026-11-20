@@ -1,3 +1,4 @@
+import { unlinkPushOnLogout } from '../notifications/client'
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { onIdTokenChanged, signOut as firebaseSignOut, type Auth, type User } from 'firebase/auth'
 import type { Session as AccountSession } from '../../server/src/contracts'
@@ -46,8 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signingOut.current = true
     ++ticket.current
     validating.current = null
-    if (lastUser.current) endSession(lastUser.current)
     update({ status: 'initializing', user: null })
+    if (lastUser.current) {
+      const unlink=unlinkPushOnLogout(lastUser.current)
+      if (unlink) await unlink.catch(() => {})
+      endSession(lastUser.current)
+    }
     try {
       await firebaseSignOut(auth)
       lastUser.current = null

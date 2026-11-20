@@ -125,10 +125,12 @@ export class NotificationStore {
       // Contador subiu: relê só a primeira página para incluir as novas (e anunciá-las).
       if (grew && (this.state.items !== null || this.arrivals.size)) await this.refreshHead(ticket)
     } catch {
-      this.failures++
+      if (ticket === this.generation) this.failures++
     } finally {
       this.polling = false
-      if (ticket === this.generation) this.schedule(this.failures ? Math.min(MAX_BACKOFF, VISIBLE_INTERVAL * 2 ** this.failures) : VISIBLE_INTERVAL)
+      // A troca de conta pode ter consumido o primeiro timer enquanto a consulta anterior ainda estava aberta.
+      if (ticket !== this.generation) this.schedule(0)
+      else this.schedule(this.failures ? Math.min(MAX_BACKOFF, VISIBLE_INTERVAL * 2 ** this.failures) : VISIBLE_INTERVAL)
     }
   }
   private async refreshHead(ticket = this.generation) {

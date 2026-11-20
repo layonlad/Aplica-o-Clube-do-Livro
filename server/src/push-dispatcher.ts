@@ -31,7 +31,9 @@ export function createNotificationDispatcher(pool: Pool, env: NodeJS.ProcessEnv 
               return
             for (let cycle = 0; cycle < 3; cycle++) {
               again = false
-              await worker.run()
+              const result=await worker.run()
+              if(result.created || result.retry || result.failed || result.sent || result.pendingEvents)
+                console.info(JSON.stringify({event:'notification_batch',...result}))
               if (!again) break
             }
           } finally {

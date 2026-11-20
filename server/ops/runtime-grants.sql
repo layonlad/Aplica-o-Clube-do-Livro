@@ -35,4 +35,7 @@ GRANT DELETE ON chat_messages TO clube_runtime;
 GRANT SELECT,INSERT,UPDATE ON chat_settings,chat_members,chat_messages TO clube_runtime;
 GRANT SELECT,INSERT,UPDATE,DELETE ON chat_reactions TO clube_runtime;
 GRANT SELECT,INSERT ON chat_reports TO clube_runtime;
+REVOKE ALL ON notification_events,community_highlights FROM clube_runtime;
+GRANT SELECT,INSERT,UPDATE,DELETE ON notification_events TO clube_runtime;
+GRANT SELECT,INSERT ON community_highlights TO clube_runtime;
 COMMIT;

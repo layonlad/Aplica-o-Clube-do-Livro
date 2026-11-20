@@ -1,3 +1,4 @@
+import { reserveWait } from '../long-poll.js'
 import { createHash } from 'node:crypto'
 import { EventEmitter } from 'node:events'
 import { getFirestore, Timestamp } from 'firebase-admin/firestore'
@@ -14,7 +15,7 @@ import { notBlocked } from '../public-policy.js'
 const path = '/clubs/:clubId/chat'
 const params = z.object({ clubId: z.uuid() })
 const room = z.enum(['general', 'reading', 'spoilers'])
-const pref = z.enum(['all', 'mentions', 'announcements', 'silent'])
+const pref = z.enum(['all', 'grouped', 'mentions', 'announcements', 'silent'])
 const emoji = z.enum(['❤️', '👍', '📚', '😂', '😮'])
 const envelope = z.object({
   id: z.uuid(),
@@ -56,7 +57,7 @@ async function access(c: Pool | PoolClient, club: string, who: string) {
     throw forbidden()
 
   const { rows } = await c.query(
-    `SELECT cm.role, COALESCE(s.enabled,true) AS enabled,COALESCE(s.chapter,'') AS chapter,COALESCE(s.slow_seconds,2) AS slow,COALESCE(s.pin_limit,3) AS pins,COALESCE(p.muted,false) AS muted,COALESCE(p.preference,'mentions') AS preference FROM club_memberships cm LEFT JOIN chat_settings s USING(club_id) LEFT JOIN chat_members p USING(club_id,user_id) WHERE cm.club_id=$1 AND cm.user_id=$2 AND cm.status='active' AND NOT EXISTS(SELECT 1 FROM profiles pr WHERE pr.user_id=$2 AND pr.suspended)`,
+    `SELECT cm.role, COALESCE(s.enabled,true) AS enabled,COALESCE(s.chapter,'') AS chapter,COALESCE(s.slow_seconds,2) AS slow,COALESCE(s.pin_limit,3) AS pins,COALESCE(p.muted,false) AS muted,COALESCE(p.preference,ns.controls->>'chatDeliveryMode','mentions') AS preference FROM club_memberships cm LEFT JOIN chat_settings s USING(club_id) LEFT JOIN chat_members p USING(club_id,user_id) LEFT JOIN notification_settings ns ON ns.user_id=cm.user_id WHERE cm.club_id=$1 AND cm.user_id=$2 AND cm.status='active' AND NOT EXISTS(SELECT 1 FROM profiles pr WHERE pr.user_id=$2 AND pr.suspended)`,
     [club, who],
   )
   if (!rows[0]) throw forbidden()
@@ -71,13 +72,10 @@ async function notices(
   pin: boolean,
 ) {
   await c.query(
-    `INSERT INTO notifications(recipient_id,actor_id,club_id,kind,target_type,target_id,category,dedupe_key)
- SELECT cm.user_id,$2,$1,CASE WHEN cm.user_id=ANY($4::uuid[]) THEN 'mention' ELSE 'post' END,'chat',$3::uuid,'clubs',
- 'chat:'||($3::uuid)::text||':'||($5::boolean)::text FROM club_memberships cm LEFT JOIN chat_members p USING(club_id,user_id)
- WHERE cm.club_id=$1 AND cm.status='active' AND cm.user_id<>$2 AND ${notBlocked('cm.user_id', '$2')}
- AND (p.preference='all' OR ($5::boolean AND p.preference='announcements') OR (cm.user_id=ANY($4) AND COALESCE(p.preference,'mentions')='mentions'))
- ON CONFLICT(recipient_id,dedupe_key) DO NOTHING`,
-    [club, who, id, direct, pin],
+    `INSERT INTO notification_events(event_key,kind,target_id,actor_id,club_id,mentioned,reply_user)
+     VALUES('chat:'||$3::uuid||':'||$5::boolean,CASE WHEN $5 THEN 'pin' ELSE 'chat' END,$3,$2,$1,$4,
+       (SELECT parent.author_id FROM chat_messages m JOIN chat_messages parent ON parent.id=m.reply_to WHERE m.id=$3 AND NOT $5))
+     ON CONFLICT DO NOTHING`,[club,who,id,direct,pin],
   )
 }
 
@@ -89,7 +87,6 @@ export function registerChat(
   const wake = new EventEmitter().setMaxListeners(0)
   // The current single Cloud Run instance accepts two concurrent requests.
   // Reserve the second slot for sends and other app operations.
-  let waiting = false
   api.get(path + '/locate/:id', async (req) => {
     const { clubId, id } = params.extend({ id: z.uuid() }).parse(req.params),
       who = req.user.id
@@ -216,9 +213,9 @@ export function registerChat(
     }
     let result = await load()
     if (q.since === result.version && !q.before && !q.focus) {
-      if (waiting)
+      const release=reserveWait(pool)
+      if (!release)
         return { unchanged: true, version: result.version, retryAfterMs: 1800 }
-      waiting = true
       try {
         await new Promise<void>((resolve) => {
           const done = () => {
@@ -232,7 +229,7 @@ export function registerChat(
           reply.raw.once('close', done)
         })
       } finally {
-        waiting = false
+        release()
       }
       result = await load()
       if (q.since === result.version)
@@ -297,7 +294,7 @@ export function registerChat(
           [clubId, who, input.room, input.replyTo],
         )
         if (!target.rows[0]) throw forbidden()
-        recipients.add(target.rows[0].author_id)
+        // Reply recipients are resolved from the persisted parent.
       }
       await c.query(
         'INSERT INTO chat_messages(id,club_id,author_id,room,reply_to,spoiler,chapter) VALUES($1,$2,$3,$4,$5,$6,$7)',

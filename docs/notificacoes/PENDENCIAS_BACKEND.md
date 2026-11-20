@@ -23,7 +23,11 @@ O serviço único do site é `src/notifications/store.ts`:
 
 A lista só é relida quando o contador sobe.
 
-## Pendências do servidor
+## Situação na candidata local 1.5
+
+Os itens 1, 3, 4 e 5 abaixo têm contrato implementado na API candidata. O item 2 recebe contextId e identificadores de autoria, com texto e miniatura reservados para evolução. O push segue as categorias da caixa e dispõe de uma chave geral independente. As telas publicadas na 1.4 continuam usando o contrato anterior. Veja os métodos, migração e testes em [Central de notificações](../CENTRAL_NOTIFICACOES.md).
+
+## Lista registrada na entrega da versão 1.4
 
 1. **Tempo real de verdade.**
    - Hoje o site depende de consulta periódica.
