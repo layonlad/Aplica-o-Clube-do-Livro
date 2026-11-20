@@ -4,12 +4,12 @@ import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
-import { localProfile } from './local-profile.js'
+import { localMode, localProfile } from './local-profile.js'
 
 // A local-only launcher. It never reads server/.env or connects to a cloud project.
 const root = fileURLToPath(new URL('../../', import.meta.url))
-const staging = process.argv.includes('--staging')
-const profile = localProfile(staging)
+const profile = localProfile(localMode(process.argv))
+const staging = profile.mode === 'staging'
 const origin = `http://localhost:${profile.frontend}`
 const authHost = `127.0.0.1:${profile.auth}`
 const directory = join(root, profile.directory)
@@ -43,14 +43,15 @@ try {
   const imported = await access(join(authData, 'firebase-export-metadata.json')).then(() => true, () => false)
   const child = spawn(process.execPath, [
     join(root, 'node_modules/firebase-tools/lib/bin/firebase.js'),
-    'emulators:exec', '--only', 'auth', '--project', profile.projectId,
-    '--config', join(root, staging ? 'firebase.staging-local.json' : 'firebase.json'),
+    'emulators:exec', '--only', profile.emulators, '--project', profile.projectId,
+    '--config', join(root, profile.config),
     ...(imported ? [`--import=${authData}`] : []), `--export-on-exit=${authData}`,
     'npm run local:app --workspace server',
   ], {
     cwd: root, stdio: 'inherit',
     env: {
-      ...process.env, NODE_ENV: 'development',
+      ...process.env, NODE_ENV: 'development', LOCAL_MODE: profile.mode,
+      CLUB_CHAT_ENABLED: String(profile.chat), VITE_CLUB_CHAT_ENABLED: String(profile.chat),
       DATABASE_URL: `postgresql://clube_local:${password}@127.0.0.1:${profile.postgres}/clube_local`,
       FIREBASE_PROJECT_ID: profile.projectId, FIREBASE_AUTH_EMULATOR_HOST: authHost,
       FRONTEND_ORIGIN: origin, HOST: '127.0.0.1', PORT: String(profile.api),

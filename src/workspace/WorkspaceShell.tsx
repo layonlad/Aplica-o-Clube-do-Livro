@@ -151,6 +151,7 @@ export function WorkspaceShell() {
     {accountError && <p role="alert" className="access-error">{accountError}</p>}
   </>
 
+  if (pathname==='/app/chat' && import.meta.env.VITE_CLUB_CHAT_ENABLED==='true') return <main className="club-chat-page"><AppearanceSync/>{notices}{content}</main>
   return <div className={`app-frame workspace-app ${reading ? 'is-reading' : ''} ${main ? 'is-main' : ''}`} data-keyboard={keyboardOpen ? 'open' : 'closed'} data-space={globalPage ? 'community' : personal ? 'personal' : 'club'}>
     <a className="skip-link" href="#conteudo" onClick={skip}>Pular para o conteúdo</a>
     <AppearanceSync />

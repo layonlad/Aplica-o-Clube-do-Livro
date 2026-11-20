@@ -34,6 +34,7 @@ const Notifications=lazy(()=>import('../community/Notifications').then(module=>(
 const Moderation=lazy(()=>import('../community/Moderation').then(module=>({default:module.Moderation})))
 const SocialProfile=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.SocialProfile})))
 const SocialProfileEditor=lazy(()=>import('../community/SocialProfile').then(module=>({default:module.SocialProfileEditor})))
+const ClubChat=lazy(()=>import('../chat/ClubChat'))
 const ClubForum=lazy(()=>import('../forum/ClubForum').then(module=>({default:module.ClubForum})))
 const ClubWall=lazy(()=>import('../community/ClubWall').then(module=>({default:module.ClubWall})))
 const ClubGallery=lazy(()=>import('../community/ClubGallery').then(module=>({default:module.ClubGallery})))
@@ -188,6 +189,7 @@ export function WorkspaceRoutes({ accountId }: { accountId: string }) {
           <Route path="library/gerenciar" element={<LibraryView />} />
           <Route path="reader/:id" element={<ReaderView />} />
           <Route path="reader" element={<OpenCurrentReading />} />
+          {import.meta.env.VITE_CLUB_CHAT_ENABLED==='true'&&<Route path="chat" element={<ClubChat/>}/>}
           <Route path="wall" element={<ClubWall />} />
           <Route path="gallery" element={<ClubGallery />} />
           <Route path="explore" element={<ExploreTab />} />

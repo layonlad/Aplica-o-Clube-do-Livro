@@ -1,0 +1,29 @@
+{
+  "firestore": [
+    {
+      "database": "clube-chat",
+      "location": "us-central1",
+      "rules": "firestore.chat.rules",
+      "indexes": "firestore.chat.indexes.json"
+    }
+  ],
+  "emulators": {
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8188
+    },
+    "ui": {
+      "enabled": false
+    },
+    "hub": {
+      "port": 4518
+    },
+    "logging": {
+      "port": 4519
+    },
+    "auth": {
+      "host": "127.0.0.1",
+      "port": 9198
+    }
+  }
+}

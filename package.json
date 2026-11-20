@@ -23,6 +23,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "api:dev": "npm run dev --workspace server",
+    "staging:chat": "npm run local --workspace server -- --chat",
     "staging": "npm run local --workspace server -- --staging",
     "dev:local": "npm run local --workspace server",
     "api:build": "npm run build --workspace server",

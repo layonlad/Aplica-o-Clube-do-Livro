@@ -42,7 +42,11 @@ jobs:
           VITE_FIREBASE_API_KEY: build-validation-only
           VITE_FIREBASE_PROJECT_ID: build-validation-only
           VITE_FIREBASE_AUTH_DOMAIN: build-validation-only.firebaseapp.com
-      - run: npm run test:integration
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npx --no-install firebase emulators:exec --project demo-clube-chat --config firebase.chat.json --only firestore 'npm run test:integration'
       - run: npm run test:e2e
       - name: Auditar dependências de produção (bloqueante)
         run: npm audit --omit=dev --audit-level=high

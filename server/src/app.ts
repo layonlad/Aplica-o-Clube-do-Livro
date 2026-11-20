@@ -1,3 +1,4 @@
+import {registerChat} from './chat/routes.js'
 import { registerReadingIntegrations } from './reading-integrations/routes.js'
 import {registerLiteraryReads,registerLiteraryAccountRoutes} from './literary/routes.js'
 import {syncLiteraryNews} from './literary/news.js'
@@ -121,6 +122,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     api.post('/me/notification-preferences',request=>notifications.setPreferences(request.user,z.object({interactions:z.boolean(),mentions:z.boolean(),clubs:z.boolean(),events:z.boolean(),readings:z.boolean(),reminderMinutes:z.union([z.literal(0),z.literal(15),z.literal(60),z.literal(1440)]).optional()}).strict().parse(request.body)))
     await registerPhotoRoutes(api,options.pool,options.storage)
     await registerCommunityRoutes(api,options.pool,options.storage)
+    if(process.env.CLUB_CHAT_ENABLED==='true') registerChat(api,options.pool,options.afterSocialMutation)
     await registerForumRoutes(api,options.pool)
     await registerEventRoutes(api,options.pool)
     api.get('/clubs/:clubId/settings',request=>management.settings(request.user,clubParams.parse(request.params).clubId))

@@ -1,8 +1,8 @@
 import { localStorage } from './local-storage.js'
-import { localProfile } from './local-profile.js'
+import { localProfile, type LocalMode } from './local-profile.js'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
-import { rm, writeFile } from 'node:fs/promises'
+import { realpath, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createServer } from 'vite'
 import { buildApp } from '../src/app.js'
@@ -12,8 +12,8 @@ import { createPool } from '../src/database.js'
 import { migrate } from '../src/migrations.js'
 
 const config = readConfig()
-const staging = process.env.VITE_APP_ENVIRONMENT === 'staging'
-const profile = localProfile(staging)
+const profile = localProfile((process.env.LOCAL_MODE ?? 'local') as LocalMode)
+const staging = profile.mode === 'staging'
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const directory = join(root, profile.directory)
 const origin = `http://localhost:${profile.frontend}`
@@ -30,7 +30,8 @@ const app = await buildApp({
   pool, verifyToken: createFirebaseVerifier(config.FIREBASE_PROJECT_ID), origin,
   moderatorUids: config.PLATFORM_MODERATOR_UIDS, storage: localStorage(join(directory, 'media-private')),
 })
-const vite = await createServer({ root, server: { host: '127.0.0.1', port: profile.frontend, strictPort: true } })
+// node_modules pode ser um link para outra cópia: libera o caminho real (fontes) no servidor do Vite.
+const vite = await createServer({ root, server: { fs: { allow: [root, await realpath(join(root, 'node_modules'))] }, host: '127.0.0.1', port: profile.frontend, strictPort: true } })
 async function close() { await vite.close(); await app.close(); await pool.end() }
 for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => { void close() })
 try {
@@ -45,5 +46,5 @@ try {
       console.log('Staging com alterações locais. Reinicie com o commit salvo para registrar a candidata.')
     }
   }
-  console.log(`\n${staging ? 'Staging' : 'Clube do Livro'}: ${origin}\nContas, arquivos e banco locais em ${profile.directory}/.\n`)
+  console.log(`\n${staging ? 'Staging' : profile.mode === 'chat' ? 'Chat dos clubes' : 'Clube do Livro'}: ${origin}\nContas, arquivos e banco locais em ${profile.directory}/.\n`)
 } catch (error) { await close(); throw error }
