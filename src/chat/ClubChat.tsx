@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { BookOpen, Ellipsis, Send } from 'lucide-react'
+import { BookOpen, Ellipsis, EyeOff, MoreHorizontal, SendHorizontal } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
 import {
   apiRequest,
@@ -160,14 +160,23 @@ function Conversation({ club }: { club: string }) {
   }
   return (
     <section className="chat-shell" ref={shell}>
-      <header>
-        <BookOpen aria-hidden="true" />
-        <div>
+      <header className="chat-head">
+        <span className="chat-head__icon" aria-hidden="true">
+          <BookOpen size={22} />
+        </span>
+        <div className="chat-head__text">
           <strong>{scopeName}</strong>
-          <small>{count} membros · Leitura atual</small>
+          <small>
+            {count} {count === 1 ? 'membro' : 'membros'} • Leitura atual
+          </small>
         </div>
-        <button onClick={() => setMenu(!menu)} aria-label="Opções do chat">
-          <Ellipsis />
+        <button
+          className="chat-head__menu"
+          onClick={() => setMenu(!menu)}
+          aria-label="Opções do chat"
+          aria-expanded={menu}
+        >
+          <Ellipsis size={22} />
         </button>
       </header>
       {book && (
@@ -176,18 +185,37 @@ function Conversation({ club }: { club: string }) {
             title={book.title}
             author={book.author}
             image={book.metadata?.cover}
-            width={44}
+            width={56}
           />
-          <span>
-            {book.title}
-            <small>{settings?.chapter}</small>
+          <span className="chat-book__text">
+            <strong>{book.title}</strong>
+            <small>
+              {settings?.chapter ? 'Discussão até o ' + settings.chapter.replace(/^o\s+/i, '') : 'Leitura do clube'}
+            </small>
           </span>
-          <small>Em leitura</small>
+          <span className="chat-book__badge">Em leitura</span>
         </Link>
       )}
       {menu && settings && (
         <section className="chat-options">
           <Link to="/app">Voltar ao clube</Link>
+          <label>
+            Conversa
+            <select
+              value={room}
+              onChange={(e) => {
+                setRoom(e.target.value)
+                setTab('Chat')
+                setMenu(false)
+              }}
+            >
+              {rooms.map(([v, n]) => (
+                <option key={v} value={v}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
           <label>
             Notificações
             <select
@@ -287,7 +315,7 @@ function Conversation({ club }: { club: string }) {
           )}
         </section>
       )}
-      <nav aria-label="Seções do clube">
+      <nav className="chat-tabs" aria-label="Seções do clube">
         {['Chat', 'Debates', 'Membros'].map((t) => (
           <button key={t} aria-pressed={t === tab} onClick={() => setTab(t)}>
             {t}
@@ -349,17 +377,11 @@ function Conversation({ club }: { club: string }) {
         </section>
       ) : settings?.enabled ? (
         <>
-          <select
-            aria-label="Conversa"
-            value={room}
-            onChange={(e) => setRoom(e.target.value)}
-          >
-            {rooms.map(([v, n]) => (
-              <option key={v} value={v}>
-                {n}
-              </option>
-            ))}
-          </select>
+          {room !== 'general' && (
+            <button className="chat-room" onClick={() => setRoom('general')}>
+              {rooms.find(([v]) => v === room)?.[1]} · voltar para Geral
+            </button>
+          )}
           <Timeline
             key={room}
             {...{ room, path, settings }}
@@ -602,17 +624,24 @@ function Timeline({
             {(!i ||
               new Date(m.createdAt).toDateString() !==
                 new Date(all[i - 1].createdAt).toDateString()) && (
-              <small className="chat-day">
-                {new Date(m.createdAt).toLocaleDateString('pt-BR')}
-              </small>
+              <small className="chat-day">{dayLabel(m.createdAt)}</small>
             )}
-            <article className={m.own ? 'chat-own' : ''}>
-              <strong>
+            <article className={'chat-bubble' + (m.own ? ' chat-own' : '')}>
+              <header className="chat-bubble__head">
                 <UserAvatar name={m.name} avatarId={m.avatarId} size="xs" />
-                {m.own ? 'Você' : m.name}
-              </strong>
+                <strong>{m.own ? 'Você' : m.name}</strong>
+                {m.pinned && <span aria-label="Fixada">📌</span>}
+                <button
+                  className="chat-bubble__more"
+                  aria-label="Ações da mensagem"
+                  aria-expanded={tools === m.id}
+                  onClick={() => setTools(tools === m.id ? '' : m.id)}
+                >
+                  <MoreHorizontal size={16} />
+                </button>
+              </header>
               {m.replyTo && (
-                <button onClick={() => void show(m.replyTo!)}>
+                <button className="chat-quote" onClick={() => void show(m.replyTo!)}>
                   {(() => {
                     const quoted = all.find((x) => x.id === m.replyTo)
                     return quoted
@@ -625,22 +654,14 @@ function Timeline({
                   })()}
                 </button>
               )}
-              <div>{content(m)}</div>
-              <footer>
-                <time>
-                  {new Date(m.createdAt).toLocaleTimeString('pt-BR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </time>
-                <button
-                  aria-label="Ações da mensagem"
-                  onClick={() => setTools(tools === m.id ? '' : m.id)}
-                >
-                  •••
-                </button>
-              </footer>
-              {Object.entries(m.reactions ?? {}).map(([emoji, n]) => (
+              <div className="chat-bubble__text">{content(m)}</div>
+              <time className="chat-bubble__time">
+                {new Date(m.createdAt).toLocaleTimeString('pt-BR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </time>
+              {Object.keys(m.reactions ?? {}).length > 0 && <div className="chat-reactions">{Object.entries(m.reactions ?? {}).map(([emoji, n]) => (
                 <button
                   key={emoji}
                   onClick={() =>
@@ -652,7 +673,7 @@ function Timeline({
                 >
                   {emoji} {n}
                 </button>
-              ))}
+              ))}</div>}
               {tools === m.id && (
                 <div className="chat-actions">
                   <button
@@ -702,6 +723,7 @@ function Timeline({
                     <input
                       name="reason"
                       aria-label="Motivo da denúncia"
+                      placeholder="Motivo da denúncia"
                       required
                       minLength={3}
                       maxLength={400}
@@ -714,9 +736,10 @@ function Timeline({
           </div>
         ))}
         {drafts.map((d) => (
-          <article className="chat-own" key={d.id}>
-            {d.text}
-            <small>
+          <article className="chat-bubble chat-own" key={d.id}>
+            <header className="chat-bubble__head"><strong>Você</strong></header>
+            <div className="chat-bubble__text">{d.text}</div>
+            <small className="chat-bubble__time">
               {d.failed ? (
                 <button onClick={() => void send(d)}>Tentar novamente</button>
               ) : (
@@ -773,28 +796,49 @@ function Timeline({
               @{m.name}
             </button>
           ))}
-        <label>
-          <input
-            type="checkbox"
-            checked={spoiler}
-            onChange={(e) => setSpoiler(e.target.checked)}
-          />{' '}
-          Spoiler
-        </label>
-        <div>
-          <input
-            autoComplete="off"
-            aria-label="Mensagem para o clube"
-            placeholder="Mensagem para o clube…"
-            maxLength={2000}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <button aria-label="Enviar" disabled={!text.trim() || settings.muted}>
-            <Send size={20} />
+        <div className="chat-compose__row">
+          <div className="chat-compose__field">
+            <input
+              autoComplete="off"
+              aria-label="Mensagem para o clube"
+              placeholder="Mensagem para o clube..."
+              maxLength={2000}
+              value={text}
+              enterKeyHint="send"
+              onChange={(e) => setText(e.target.value)}
+            />
+            <button
+              type="button"
+              className="chat-compose__spoiler"
+              aria-pressed={spoiler}
+              aria-label={spoiler ? 'Mensagem marcada como spoiler' : 'Marcar como spoiler'}
+              title="Spoiler"
+              onClick={() => setSpoiler(!spoiler)}
+            >
+              <EyeOff size={18} />
+            </button>
+          </div>
+          <button
+            className="chat-compose__send"
+            aria-label="Enviar"
+            disabled={!text.trim() || settings.muted}
+          >
+            <SendHorizontal size={20} />
           </button>
         </div>
       </form>
     </>
   )
+}
+
+/** "Hoje", "Ontem" ou a data, como nos aplicativos de mensagem. */
+function dayLabel(value: string) {
+  const day = new Date(value),
+    today = new Date()
+  const same = (a: Date, b: Date) => a.toDateString() === b.toDateString()
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  if (same(day, today)) return 'Hoje'
+  if (same(day, yesterday)) return 'Ontem'
+  return day.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })
 }

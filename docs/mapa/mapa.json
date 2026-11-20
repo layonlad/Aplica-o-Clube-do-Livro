@@ -416,6 +416,13 @@
     {
       "data": "2026-11-20",
       "autor": "Claude Code",
+      "titulo": "Chat dos clubes no visual do modelo do dono (candidata 1.3)",
+      "resumo": "Cabeçalho coral com ícone, nome do clube, membros e menu ⋯; faixa do livro em leitura com capa, \"Discussão até o capítulo\" e selo Em leitura; abas Chat, Debates e Membros; separador Hoje/Ontem; balões arredondados (os seus à direita, rosados, com Você) com a foto ao lado do nome e horário no canto; campo em pílula com botão redondo de enviar. A escolha de sala foi para o menu ⋯ e a marcação de spoiler virou ícone dentro do campo. Ações da mensagem continuam no ⋯ de cada balão. Só frontend.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/55"
+    },
+    {
+      "data": "2026-11-20",
+      "autor": "Claude Code",
       "titulo": "Versões 1.1 e 1.2 publicadas: desempenho móvel e chat dos clubes",
       "resumo": "Com autorização do dono. PR 42 atualizado com a main (conflitos em rotas, API e build) e PR 49 integrado ao Staging (lançador com modos local, Staging e chat; Staging sobe Auth e Firestore). Backup do Cloud SQL antes da migration 022; migration e grants de runtime e executor aplicados como clube_migrator. API com acesso Firestore restrito ao banco clube-chat por condição IAM; regras deny-all e TTL publicados. Imagem 3c01e7a (digest 344144e6) no Cloud Build; API 00008-mxk com chat para todos os clubes, executor 00007-2jp com lote do Scheduler HTTP 200. Staging local 1.1 testado com duas contas (mensagem entregue, pessoa de fora 403). Site 1.1 publicado e a tela de login saiu sem estilo (connected.css ficou fora do pacote inicial com a divisão de rotas); corrigido no PR 53 e publicado como 1.2 nos dois sites, 132 arquivos conferidos, console sem erros. Kindle e menu nativo ainda sem teste em aparelho físico.",
       "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/53"
