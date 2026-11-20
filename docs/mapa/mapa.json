@@ -11,7 +11,7 @@
     "resumo": "PR 46 no ar em 4c7caf5 no Cloud Run e nos dois sites. Correções de progresso EPUB, capas, notificações, consultas ao banco e tempo do catálogo externo. 21 migrations, 270 testes locais, CI aprovado e 106 arquivos por site conferidos por SHA-256.",
     "proximoPasso": "Acompanhar o próximo volume de uso e comparar conflitos de leitura, requisições de capa e tempo do catálogo. Recebimento do EPUB no Kindle e menu nativo aguardam teste em aparelho físico.",
     "pendencias": [
-      "Chat de clubes em validação local. Antes da publicação, conferir teclado virtual, configurar banco dedicado, retenção e acesso IAM limitado ao banco, executar ensaio de promoção e smoke tests.",
+      "Chat de clubes em validação local. Antes da publicação, conferir teclado virtual, confirmar ativação da política de retenção e acesso IAM limitado ao banco, executar ensaio de promoção e smoke tests.",
       "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
       "Notícias usam metadados do RSS e link original. A primeira coleta importou uma manchete real. Recomendações, filtros avançados e acompanhamento de assuntos têm rotas na API; faltam controles correspondentes nas telas.",
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
@@ -85,6 +85,12 @@
     }
   ],
   "camadas": [
+    {
+      "id": "chat-firestore", "titulo": "Mensagens dos clubes", "servico": "Firestore Standard · clube-chat", "plano": "Por uso", "coluna": 4, "cor": "rose",
+      "guarda": ["Texto das mensagens e data de expiração"],
+      "detalhe": "Banco dedicado em us-central1. Regras privadas publicadas e leitura anônima recusada. A API publicada ainda não grava mensagens; a candidata usa o emulador local. Política de expiração configurada para noventa dias.",
+      "link": ""
+    },
     {
       "id": "pessoa",
       "titulo": "Pessoa usando o app",
@@ -239,6 +245,7 @@
     }
   ],
   "ligacoes": [
+    { "de": "api", "para": "chat-firestore", "texto": "conexão do chat em validação local" },
     { "de": "pessoa", "para": "site", "texto": "abre o app" },
     { "de": "pessoa", "para": "auth", "texto": "entra na conta (opcional)" },
     { "de": "site", "para": "api", "texto": "consulta pública sem conta; operações privadas com sessão confirmada" },
@@ -253,6 +260,7 @@
     {"de": "avisos", "para": "api", "texto": "ativo: limpeza limitada autenticada"}
   ],
   "dados": [
+    { "o_que": "Mensagens rápidas dos clubes", "onde": "chat-firestore", "privacidade": "A candidata confere participação, suspensão e bloqueios na API. Acesso direto ao banco pela aplicação cliente está fechado.", "copia": "Texto em documento individual. A candidata armazena referências, preferências e moderação no PostgreSQL." },
     {"o_que": "Progresso Kindle, anotações importadas e histórico de exportação", "onde": "banco", "privacidade": "Privados do titular. Publicações incluem somente texto e percentual escolhidos pelo leitor, com as permissões do destino. Em revisão para publicação.", "copia": "Tabelas separadas no PostgreSQL. O TXT não é armazenado. A transferência usa o original pessoal privado, quando autorizado."},
     { "o_que": "Leituras de quem usa sem conta", "onde": "pessoa", "privacidade": "Só no aparelho", "copia": "Backup JSON exportado pelo Perfil; originais e mídias baixados separadamente" },
     { "o_que": "EPUB original e capa guardados neste navegador", "onde": "pessoa", "privacidade": "Cópias locais separadas por visitante ou conta", "copia": "IndexedDB; guardar no navegador não equivale a enviar o arquivo para a nuvem" },
@@ -400,7 +408,7 @@
       "data": "2026-11-19",
       "autor": "Codex",
       "titulo": "Chat dos clubes em Staging local",
-      "resumo": "Candidata com mensagens privadas no Firestore emulado, associação verificada na API, spoilers, moderação e alertas. Validação em navegadores móveis simulados. Publicação pendente.",
+      "resumo": "Candidata com mensagens privadas no Firestore emulado, associação verificada na API, spoilers, moderação e alertas. Validação em navegadores móveis simulados. Banco dedicado provisionado em us-central1; acesso direto recusado. Publicação do aplicativo pendente.",
       "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/49"
     },
     {

@@ -2,6 +2,7 @@
   "firestore": [
     {
       "database": "clube-chat",
+      "location": "us-central1",
       "rules": "firestore.chat.rules",
       "indexes": "firestore.chat.indexes.json"
     }
