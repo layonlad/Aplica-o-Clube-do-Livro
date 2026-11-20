@@ -8,10 +8,10 @@
   "estado": {
     "fase": "Versão 1.3 no ar: chat dos clubes com o visual novo",
     "tom": "ok",
-    "resumo": "Versão 1.2 (8940623) nos dois sites e API 3c01e7a com o chat dos clubes ligado para todos, migration 022 aplicada e backup prévio do Cloud SQL. Staging 1.0 em localhost com autenticação, API e banco de teste locais. Produção está no build 4c7caf5 e a primeira versão numerada aguarda a aprovação.",
+    "resumo": "Os dois endereços de produção servem a versão 1.3 (e4ff398). A API respondeu ao teste de saúde. A publicação registrada mantém o backend 3c01e7a com chat dos clubes e migration 022.",
     "proximoPasso": "Acompanhar custo de leituras do Firestore, latência da API e fila de push com o chat ligado para todos os clubes. Testar Kindle, menu nativo e teclado virtual do chat em aparelho físico. Próxima candidata: 1.4.",
     "pendencias": [
-      "Chat de clubes em validação local. Antes da publicação, conferir teclado virtual, confirmar ativação da política de retenção e acesso IAM limitado ao banco, executar ensaio de promoção e smoke tests.",
+      "Chat 1.3: corrigir a rolagem de Debates, manter Enviar visível durante menções em telas baixas, revisar a legenda da etapa de leitura e atualizar o teste de spoiler. Teclado virtual ainda aguarda validação em aparelho.",
       "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
       "Notícias usam metadados do RSS e link original. A primeira coleta importou uma manchete real. Recomendações, filtros avançados e acompanhamento de assuntos têm rotas na API; faltam controles correspondentes nas telas.",
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
@@ -55,7 +55,7 @@
       "id": "staging",
       "nome": "Staging (localhost)",
       "url": "http://localhost:5174",
-      "versao": "1.0 · candidata local com dados de teste",
+      "versao": "Última candidata registrada: 1.3 · ensaio local antes da publicação do PR 55",
       "atualizacao": "Iniciar com npm run staging e testar antes da promoção aprovada",
       "tom": "neutro"
     },
@@ -413,6 +413,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-20",
+      "autor": "Codex",
+      "titulo": "Diagnóstico das entregas 1.1 a 1.3",
+      "resumo": "Versão 1.3 confirmada nos dois sites. Ensaio de layout reproduziu cortes em Debates e no compositor com menções. Detectados prefixo duplicado na etapa, seletor antigo de spoiler e divergência documental de versões.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/tree/codex/diagnostico-versao-1-3"
+    },
     {
       "data": "2026-11-20",
       "autor": "Claude Code",
