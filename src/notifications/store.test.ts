@@ -99,3 +99,21 @@ it('pagina sem repetir, tira conteúdo removido e zera tudo na troca de conta', 
   store.setUser(null)
   expect(store.state.uid).toBeNull()
 })
+
+it('retoma o sino da conta nova quando há consulta da conta anterior em andamento', async () => {
+  vi.useFakeTimers()
+  const store = new NotificationStore()
+  let finish!: (data:{count:number})=>void
+  request.mockImplementationOnce(()=>new Promise(done=>{finish=done})).mockResolvedValue({count:2})
+  store.setUser(user('primeira'))
+  const release=store.retain()
+  try {
+    await vi.advanceTimersByTimeAsync(5)
+    store.setUser(user('segunda'))
+    await vi.advanceTimersByTimeAsync(5)
+    finish({count:99})
+    await vi.advanceTimersByTimeAsync(25)
+    expect(store.state.uid).toBe('segunda')
+    expect(store.state.unread).toBe(2)
+  } finally {release()}
+})

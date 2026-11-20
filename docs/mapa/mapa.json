@@ -417,7 +417,7 @@
       "data": "2026-11-20",
       "autor": "Codex",
       "titulo": "Central de notificações e correções do chat em Staging 1.5",
-      "resumo": "Caixa compartilhada para chat, mural, destaques, interações, leituras e encontros. Preferências por conta, agrupamento, fila em lotes e transporte FCM preparado. Debates e sugestões de menção revisados. Manifestos dos dois sites confirmam produção 1.4 (82d607a).",
+      "resumo": "Caixa compartilhada para chat, mural, destaques, interações, leituras e encontros. Preferências por conta, agrupamento, fila em lotes e transporte FCM preparado. Debates e sugestões de menção revisados. Corrigida a interrupção do sino ao trocar de conta durante uma consulta. Manifestos dos dois sites confirmam produção 1.4 (82d607a).",
       "pr": ""
     },
     {
