@@ -30,7 +30,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "4c7caf5 · PR 46 publicado em 19/11/2026; 106 arquivos verificados por SHA-256",
+      "versao": "Versão 1.0 · 5063eab (PR 48) publicado em 20/11/2026; 107 arquivos do app conferidos por SHA-256; API segue em 4c7caf5",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -78,7 +78,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "4c7caf5 · mesmo frontend do site principal; 106 arquivos verificados por SHA-256",
+      "versao": "Versão 1.0 · 5063eab · mesmo frontend do site principal; 107 arquivos conferidos por SHA-256",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -396,6 +396,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-20",
+      "autor": "Claude Code",
+      "titulo": "Versão 1.0 publicada (PR 48: Staging local e versões)",
+      "resumo": "Com autorização do dono, o PR 48 foi mesclado (5063eab) e só o site foi publicado: o backend é idêntico ao da API no ar (4c7caf5). Primeira promoção pelo fluxo novo: a candidata aberta no Staging local (versão 1.0) tem o mesmo hash de fonte do merge, e o build de produção conferiu esse registro e a saúde da API. Os dois sites servem release.json com versão 1.0 e os mesmos 107 arquivos do app; só a página do mapa difere por ser gerada a cada publicação. Login abre sem erros no console. PR 42 (desempenho móvel) tem conflitos e exige publicar a API; PR 49 (chat) exige Firestore, migration 022 e permissões no Google Cloud. Os dois ficaram para o Codex, que opera o Google Cloud. Kindle e menu nativo seguem sem teste em aparelho físico.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/48"
+    },
     {
       "data": "2026-11-19",
       "autor": "Codex",
