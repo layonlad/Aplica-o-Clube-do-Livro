@@ -106,7 +106,7 @@ export class WorkspaceService {
           if(action.type==='book.remove')await client.query("UPDATE club_book_files SET purge_after=CASE WHEN state='pending' THEN now()+interval '30 minutes' ELSE purge_after END,state='deleted',deleted_at=now() WHERE club_id=$1 AND book_id=$2 AND state IN ('pending','active')",[clubId,action.id])
           await client.query('INSERT INTO audit_logs(club_id,actor_user_id,action,entity_id) VALUES($1,$2,$3,$4)',[clubId,user.id,action.type,entityId])
           const notifiedBook=action.type==='book.add'?entityId:((action.type==='book.current'||action.type==='draw')?next.state.currentBookId:null)
-          if(notifiedBook)await client.query(`SELECT emit_notification(m.user_id,$2,m.club_id,$4,'book',$3,NULL,'readings',$5) FROM club_memberships m WHERE m.club_id=$1 AND m.status='active'`,[clubId,user.id,notifiedBook,action.type==='book.add'?'book':'reading',action.type+':'+notifiedBook+':'+next.version])
+          if(notifiedBook && (action.type==='book.add' || notifiedBook!==current.state.currentBookId))await client.query(`INSERT INTO notification_events(event_key,kind,target_id,actor_id,club_id) VALUES($5,$4,$3,$2,$1) ON CONFLICT DO NOTHING`,[clubId,user.id,notifiedBook,action.type==='book.add'?'book':'reading',action.type+':'+notifiedBook+':'+next.version])
         }
       } else {
         await this.savePersonal(client,user,next)

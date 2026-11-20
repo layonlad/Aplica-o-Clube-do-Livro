@@ -190,7 +190,7 @@ function Conversation({ club }: { club: string }) {
           <span className="chat-book__text">
             <strong>{book.title}</strong>
             <small>
-              {settings?.chapter ? 'Discussão até o ' + settings.chapter.replace(/^o\s+/i, '') : 'Leitura do clube'}
+              {settings?.chapter ? settings.chapter : 'Leitura do clube'}
             </small>
           </span>
           <span className="chat-book__badge">Em leitura</span>
@@ -781,8 +781,8 @@ function Timeline({
             Respondendo a {reply.name} ×
           </button>
         )}
-        {token !== undefined &&
-          matches.map((m) => (
+        {token !== undefined && matches.length > 0 && <div className="chat-mention-list" role="group" aria-label="Sugestões de menção">
+          {matches.map((m) => (
             <button
               type="button"
               key={m.id}
@@ -795,7 +795,7 @@ function Timeline({
             >
               @{m.name}
             </button>
-          ))}
+          ))}</div>}
         <div className="chat-compose__row">
           <div className="chat-compose__field">
             <input

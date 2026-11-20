@@ -36,7 +36,7 @@ export async function buildNotificationApp(options: {
       console.log(JSON.stringify(result))
       return reply
         .code(
-          ('failed' in result && result.failed) ||
+          ('failed' in result && result.failed) || ('failedEvents' in result && result.failedEvents) ||
             ('temporaryPhotosFailed' in result && result.temporaryPhotosFailed)
             ? 500
             : 200,

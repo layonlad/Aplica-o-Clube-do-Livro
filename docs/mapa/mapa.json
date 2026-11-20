@@ -11,7 +11,7 @@
     "resumo": "Os dois endereços de produção servem a versão 1.3 (e4ff398). A API respondeu ao teste de saúde. A publicação registrada mantém o backend 3c01e7a com chat dos clubes e migration 022.",
     "proximoPasso": "Acompanhar custo de leituras do Firestore, latência da API e fila de push com o chat ligado para todos os clubes. Testar Kindle, menu nativo e teclado virtual do chat em aparelho físico. Próxima candidata: 1.4.",
     "pendencias": [
-      "Chat 1.3: corrigir a rolagem de Debates, manter Enviar visível durante menções em telas baixas, revisar a legenda da etapa de leitura e atualizar o teste de spoiler. Teclado virtual ainda aguarda validação em aparelho.",
+      "Candidata 1.4 corrige Debates, menções, legenda e teste de spoiler. Validar o teclado virtual em aparelho e integrar pelo frontend os controles da central. FCM e APNs aguardam validação em aparelhos.",
       "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
       "Notícias usam metadados do RSS e link original. A primeira coleta importou uma manchete real. Recomendações, filtros avançados e acompanhamento de assuntos têm rotas na API; faltam controles correspondentes nas telas.",
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
@@ -55,7 +55,7 @@
       "id": "staging",
       "nome": "Staging (localhost)",
       "url": "http://localhost:5174",
-      "versao": "Última candidata registrada: 1.3 · ensaio local antes da publicação do PR 55",
+      "versao": "Candidata 1.4 · chat corrigido e central de notificações, migration 023 apenas local.",
       "atualizacao": "Iniciar com npm run staging e testar antes da promoção aprovada",
       "tom": "neutro"
     },
@@ -285,7 +285,7 @@
     { "o_que": "EPUBs originais", "onde": "midia", "privacidade": "Privado do titular ou do clube", "copia": "Pessoais: até 30 arquivos ativos/pendentes no plano gratuito, até 10 MB cada; livro e capa recuperados em outro contexto de navegador. Não entram no backup JSON; baixe o original separadamente. Compartilhar a capa não publica o arquivo. Acervo dos clubes mantém cotas e autorização próprias." },
     { "o_que": "Código, documentação e este mapa", "onde": "github", "privacidade": "Público", "copia": "Histórico do Git" },
     { "o_que": "Cópias de recuperação e fotografia da migração", "onde": "recuperacao", "privacidade": "Privadas; bucket operacional Google e origens antigas preservadas", "copia": "Dump e Auth finais verificados; fontes de build isoladas dos backups. Cloud SQL tem sete backups gerenciados; não sobrescrever dados novos sem conciliação." },
-    {"o_que": "Assinaturas de aparelhos e fila push", "onde": "banco", "privacidade": "Privado; leitura e envio revalidam preferências, bloqueios e participação. Avisos externos não carregam conteúdo privado.", "copia": "Executor Cloud Run privado e Scheduler ativos, com lote real aprovado; recebimento físico ainda pendente."},
+    {"o_que": "Assinaturas de aparelhos e fila push", "onde": "banco", "privacidade": "Privado do destinatário. A candidata 1.4 reutiliza a fila para Web Push e FCM e verifica acesso e preferências antes do envio.", "copia": "Executor Cloud Run privado e Scheduler ativos, com lote real aprovado; recebimento físico ainda pendente."},
     {"o_que": "Originais temporários de fotografias", "onde": "midia", "privacidade": "POST assinado por arquivo, chave, tipo e tamanho; bucket continua privado.", "copia": "Sem original permanente: versões otimizadas e cota da conta; limpeza imediata e após expiração, com diagnóstico e limite de temporários."},
     {
       "o_que": "Pedidos para seguir, atividades e salvos do perfil",
@@ -413,6 +413,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-20",
+      "autor": "Codex",
+      "titulo": "Central de notificações e correções do chat em Staging 1.4",
+      "resumo": "Caixa compartilhada para chat, mural, destaques, interações, leituras e encontros. Preferências por conta, agrupamento, fila em lotes e transporte FCM preparado. Debates e sugestões de menção revisados. Produção permanece na versão 1.3.",
+      "pr": ""
+    },
     {
       "data": "2026-11-20",
       "autor": "Codex",

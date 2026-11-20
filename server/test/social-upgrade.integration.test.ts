@@ -117,7 +117,7 @@ it('aplica a evolução sobre a base 016 duas vezes e preserva publicação, ví
     ).toBe('Comentário histórico')
     expect(
       (await db.pool.query('SELECT count(*)::int AS count FROM schema_migrations')).rows[0].count,
-    ).toBe(22)
+    ).toBe(23)
   } finally {
     await db.close()
   }

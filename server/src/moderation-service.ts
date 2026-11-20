@@ -34,6 +34,19 @@ export class ModerationService {
         'A moderação pública exige permissão da plataforma.',
       )
   }
+  publishHighlight(user: UserProfile, postId: string) {
+    return transaction(this.pool, async client => {
+      await this.access(client,user,null)
+      const post=(await client.query(`SELECT p.author_user_id FROM social_posts p JOIN profiles pr ON pr.user_id=p.author_user_id
+        WHERE p.id=$1 AND p.created_at>now()-interval '30 days' AND p.audience='public' AND pr.is_public AND NOT pr.suspended AND p.deleted_at IS NULL
+        AND NOT EXISTS(SELECT 1 FROM profiles WHERE user_id=$2 AND suspended) FOR SHARE OF p,pr`,[postId,user.id])).rows[0]
+      if(!post) throw publicMissing()
+      const result=await client.query('INSERT INTO community_highlights(post_id,published_by) VALUES($1,$2) ON CONFLICT DO NOTHING',[postId,user.id])
+      if(result.rowCount) await client.query(`INSERT INTO notification_events(event_key,kind,target_id,actor_id)
+        VALUES('highlight:'||$1::uuid,'highlight',$1,$2)`,[postId,post.author_user_id])
+      return {published:true}
+    })
+  }
   permissions(user: UserProfile) {
     return transaction(this.pool, async (client) => ({
       publicModerator: await this.global(client, user),

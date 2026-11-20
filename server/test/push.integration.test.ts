@@ -240,7 +240,12 @@ it('executa a fila com identidade restrita sem DDL, leitura de migrations ou alt
       options: `-c search_path=${schema} -c role=${role}`,
     })
     await call(`/clubs/${club}/posts`, undefined, 'POST', { body: 'Com identidade restrita' })
-    expect((await new PushWorker(runtime, options).run()).failed).toBe(0)
+    // Resume an unfinished durable page with the production worker's grants.
+    await db.pool.query("UPDATE notification_events SET done_at=NULL,after_user=NULL WHERE kind='wall'")
+    const batch=await new PushWorker(runtime,options).run()
+    expect(batch.pages).toBeGreaterThan(0)
+    expect(batch.failedEvents).toBe(0)
+    expect(batch.failed).toBe(0)
     await expect(runtime.query('SELECT suspended FROM profiles WHERE false')).resolves.toMatchObject({rowCount:0})
     await expect(runtime.query('SELECT follower_id,followed_id FROM follows WHERE false')).resolves.toMatchObject({rowCount:0})
     await expect(runtime.query('SELECT bio FROM profiles WHERE false')).rejects.toThrow('permission denied')

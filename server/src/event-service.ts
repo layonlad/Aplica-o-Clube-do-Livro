@@ -197,6 +197,7 @@ export class EventService {
       if (event.version !== input.version)
         throw new HttpError(409, 'EVENT_CHANGED', 'Este encontro mudou. Atualize antes de salvar.')
       const bookTitle = await this.links(client, clubId, input)
+      await client.query("SELECT set_config('clube.event_actor',$1,true)", [user.id])
       await client.query(
         'UPDATE club_events SET title=$2,starts_at=$3,location=$4,description=$5,book_id=$6,book_title=$7,topic_id=$8,version=version+1,updated_at=now() WHERE id=$1',
         [

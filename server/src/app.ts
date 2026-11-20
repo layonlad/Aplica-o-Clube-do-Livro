@@ -1,3 +1,5 @@
+import { notificationSync } from './notification-sync.js'
+import {NotificationCenter,settingsPatch,deviceInput,fcmToken} from './notification-center.js'
 import {registerChat} from './chat/routes.js'
 import { registerReadingIntegrations } from './reading-integrations/routes.js'
 import {registerLiteraryReads,registerLiteraryAccountRoutes} from './literary/routes.js'
@@ -61,6 +63,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
   const files=new PrivateFiles(options.pool,options.storage)
   const management=new ClubManagement(options.pool)
   const notifications=new NotificationService(options.pool)
+  const center=new NotificationCenter(options.pool)
   const push=new PushSubscriptions(options.pool,options.pushPublicKey)
   await app.register(cors, { origin: options.additionalOrigins?.length ? [options.origin,...options.additionalOrigins] : options.origin, methods: ['GET', 'POST', 'DELETE'], allowedHeaders: ['Authorization', 'Content-Type'], maxAge: 300, exposedHeaders: ['X-Reading-Export-Id', 'Content-Disposition'] })
   await app.register(helmet)
@@ -80,7 +83,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     request.log.error({ requestId: request.id, route: request.routeOptions.url }, 'Falha interna na API')
     return reply.code(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Não foi possível concluir a operação.' } })
   })
-  if(options.afterSocialMutation)app.addHook('onResponse',async(request,reply)=>{if(reply.statusCode<300&&request.method!=='GET'&&/\/(posts|news|forum|events|invites|follow|follow-requests|join-requests|invitations)(?:[/?]|$)/.test(request.url))options.afterSocialMutation!()})
+  if(options.afterSocialMutation)app.addHook('onResponse',async(request,reply)=>{if(reply.statusCode<300&&request.method!=='GET'&&/\/(workspace|posts|news|forum|events|invites|follow|follow-requests|join-requests|invitations)(?:[/?]|$)/.test(request.url))options.afterSocialMutation!()})
   registerPhotoMaintenance(app,options.pool,options.storage,options.photoCleanupToken,
     options.literaryNewsSync ? () => syncLiteraryNews(options.pool) : undefined)
   app.get('/health', async () => {
@@ -110,10 +113,17 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     await registerPublicMutations(api,options.pool,options.storage,options.moderatorUids)
     api.get('/me/clubs/summary', request => management.summaries(request.user))
     registerLiteraryAccountRoutes(api, options.pool, workspace, options.moderatorUids)
+    api.get('/me/notification-settings',r=>center.settings(r.user.id))
+    api.post('/me/notification-settings',r=>center.update(r.user.id,settingsPatch.parse(r.body)))
+    api.post('/me/push/devices',{config:{rateLimit:{max:10,timeWindow:'1 minute',hook:'preHandler',keyGenerator:r=>r.user.id}}},r=>center.register(r.user.id,deviceInput.parse(r.body)))
+    api.delete('/me/push/devices/:id',r=>push.revoke(r.user,z.object({id:z.uuid()}).parse(r.params).id,true))
+    api.delete('/me/push/devices',r=>push.revoke(r.user,'fcm:'+z.object({token:fcmToken}).strict().parse(r.body).token))
+    api.post('/public/posts/:id/highlight',r=>new ModerationService(options.pool,options.moderatorUids).publishHighlight(r.user,z.object({id:z.uuid()}).parse(r.params).id))
     api.get('/me/push/config',()=>push.config())
     api.post('/me/push/subscriptions',{config:{rateLimit:{max:5,timeWindow:'1 minute',hook:'preHandler',keyGenerator:request=>request.user.id}}},request=>push.register(request.user,subscriptionInput.parse(request.body)))
     api.post('/me/push/status',request=>push.status(request.user,z.object({endpoint:z.string().max(2048)}).strict().parse(request.body).endpoint))
     api.delete('/me/push/subscriptions',request=>push.revoke(request.user,z.object({endpoint:z.string().max(2048)}).strict().parse(request.body).endpoint))
+    notificationSync(api,options.pool,notifications)
     api.get('/me/notifications/:id',request=>notifications.get(request.user,z.object({id:z.uuid()}).parse(request.params).id))
     api.get('/me/notifications',request=>notifications.list(request.user,pageInput.strict().parse(request.query)))
     api.get('/me/notifications/unread',request=>notifications.unread(request.user))
