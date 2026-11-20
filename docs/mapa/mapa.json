@@ -39,7 +39,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "Versão 1.3 · e4ff398 publicado em 20/11/2026 nos dois sites; 132 arquivos do app conferidos por SHA-256; chat dos clubes com o visual novo, ligado para todos os clubes",
+      "versao": "Versão 1.4 · 82d607a publicado em 20/11/2026 nos dois sites; 145 arquivos do app conferidos por SHA-256; layout mobile forçado, central de notificações e Livros Gratuitos",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -87,7 +87,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "Versão 1.3 · e4ff398 · mesmo frontend do site principal; 132 arquivos conferidos por SHA-256",
+      "versao": "Versão 1.4 · 82d607a · mesmo frontend do site principal; 145 arquivos conferidos por SHA-256",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -413,6 +413,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-20",
+      "autor": "Claude",
+      "titulo": "Versão 1.4 publicada nos dois sites (só frontend)",
+      "resumo": "Publicação autorizada pelo dono. Candidata 1.4 (82d607a: PRs 43, 58, 59 e 60) ensaiada em Staging local com conta sintética: login com estilo, DM Sans, Leituras do clube em 390 e 1280 px sem rolagem lateral e sem erros no console. build:production aprovou API saudável, sequência 1.3 → 1.4 e registro de Staging. Hosting publicado em produção e no endereço de compatibilidade, cada um com a conta proprietária; 145 arquivos do app idênticos ao build por SHA-256 nos dois (o mapa difere só no horário de geração). Chat dos clubes mantido ligado. API e executor continuam em 3c01e7a, sem migrations: server/ igual ao publicado.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/60"
+    },
     {
       "data": "2026-11-20",
       "autor": "Claude",
