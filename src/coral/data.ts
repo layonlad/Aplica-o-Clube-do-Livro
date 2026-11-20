@@ -1,97 +1,39 @@
-import { onSessionEnd, sessionEnded } from '../auth/session-events'
 import { useEffect, useRef, useState } from 'react'
-import type { User } from 'firebase/auth'
 import { useAuth } from '../auth/AuthProvider'
-import { apiRequest, publicRequest, readableError } from '../auth/api'
-import type { ClubSettings } from '../../server/src/club-management'
-import type { ClubDetails } from '../../server/src/contracts'
+import { ApiError, forgetCached, peekCached, publicRequest, readCached, readableError, updateCached } from '../auth/api'
+import type { ClubSummary } from '../../server/src/club-management'
 import type { Page, PostDto } from '../../server/src/community-contracts'
-import type { WorkspaceSnapshot } from '../../server/src/workspace-model'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
-import { socialRead } from '../community/social-api'
+import { cachedSocialRead } from '../community/social-api'
 
-/** Resumo de um clube para os cartões (Início, Comunidade, Clubes). Só dados que a API já devolve. */
-export interface ClubSummary {
-  id: string
-  name: string
-  role?: string
-  description: string
-  visibility: ClubSettings['visibility']
-  accent: string
-  coverMediaId: string | null
-  memberCount: number | null
-  currentBook: { title: string; author: string } | null
-  nextEvent: { title: string; date: string } | null
-  /** Houve publicação, comentário ou encontro nos últimos 3 dias. */
-  active: boolean
-}
+export type { ClubSummary }
+const clubSummaryPath = '/me/clubs/summary'
 
-const cache = new Map<string, { at: number; value: ClubSummary }>()
-const TTL = 60_000
-onSessionEnd((uid) => {
-  for (const key of cache.keys()) if (key.startsWith(uid + ':')) cache.delete(key)
-})
-
-async function loadClub(user: User, club: { id: string; name: string; role?: string }): Promise<ClubSummary> {
-  const cacheKey = user.uid + ':' + club.id
-  const hit = cache.get(cacheKey)
-  if (hit && Date.now() - hit.at < TTL) return hit.value
-  const [settings, details, workspace] = await Promise.all([
-    apiRequest<ClubSettings>(user, `/clubs/${club.id}/settings`).catch(() => null),
-    apiRequest<ClubDetails>(user, `/clubs/${club.id}`).catch(() => null),
-    apiRequest<WorkspaceSnapshot>(user, `/clubs/${club.id}/workspace?view=app`).catch(() => null),
-  ])
-  const state = workspace?.state
-  const book = state ? (state.books.find((item) => item.id === state.currentBookId) ?? null) : null
-  const upcoming = state
-    ? [...state.events].filter((event) => new Date(event.date).getTime() >= Date.now()).sort((a, b) => a.date.localeCompare(b.date))[0]
-    : undefined
-  const recent = Date.now() - 3 * 86400_000
-  const value: ClubSummary = {
-    id: club.id,
-    name: settings?.name ?? club.name,
-    role: club.role,
-    description: settings?.description ?? '',
-    visibility: settings?.visibility ?? 'private',
-    accent: settings?.accent ?? '#6e477c',
-    coverMediaId: settings?.coverMediaId ?? null,
-    memberCount: details?.memberCount ?? details?.members.filter((member) => member.status === 'active').length ?? null,
-    currentBook: book ? { title: book.title, author: book.author } : null,
-    nextEvent: upcoming ? { title: upcoming.title, date: upcoming.date } : null,
-    active: !!state && (state.topics.some((topic) => new Date(topic.at).getTime() > recent) || state.events.some((event) => Math.abs(new Date(event.date).getTime() - Date.now()) < 3 * 86400_000)),
-  }
-  // Só guarda o resumo quando o clube respondeu; uma falha passageira não fica presa no cache.
-  if (settings && !sessionEnded(user)) cache.set(cacheKey, { at: Date.now(), value })
-  return value
-}
-export function forgetClub(id?: string) {
-  if (id) {
-    for (const key of cache.keys()) if (key.endsWith(':' + id)) cache.delete(key)
-  } else cache.clear()
-}
-
-/** Clubes de que a pessoa participa, com capa, membros, livro do momento e próximo encontro. */
 export function useMyClubs() {
-  const { user } = useAuth(),
-    { clubs } = useWorkspace(),
-    [items, setItems] = useState<ClubSummary[] | null>(null),
-    [error, setError] = useState('')
-  const key = clubs.map((club) => club.id).join(',')
+  const { user } = useAuth()
+  const { clubs } = useWorkspace()
+  const owner = user?.emailVerified ? user.uid : null
+  const membershipKey = clubs.map(({ id, role }) => `${id}:${role}`).join(',')
+  const key = JSON.stringify([owner, membershipKey])
+  const cached = owner ? peekCached<ClubSummary[]>(owner, clubSummaryPath) : []
+  const [state, setState] = useState<{ key: string; items: ClubSummary[] | null; error: string }>({
+    key, items: cached ?? null, error: '',
+  })
   useEffect(() => {
-    if (!user?.emailVerified) {
-      setItems([])
-      return
-    }
+    if (!owner || !user) return
     let live = true
-    setError('')
-    Promise.all(clubs.map((club) => loadClub(user, club)))
-      .then((value) => live && setItems(value))
-      .catch((err) => live && setError(readableError(err)))
-    return () => {
-      live = false
-    }
-  }, [user?.uid, user?.emailVerified, key])
-  return { items, error }
+    if (state.key !== key) forgetCached(owner, clubSummaryPath)
+    void cachedSocialRead<ClubSummary[]>(user, clubSummaryPath).then((items) => {
+      if (live) setState({ key, items, error: '' })
+    }).catch((error: unknown) => {
+      if (live) setState({ key, items: [], error: readableError(error) })
+    })
+    return () => { live = false }
+  }, [key])
+  if (state.key !== key) return { items: null, error: '' }
+  // Membership changes take effect locally even if the old summary is still in memory.
+  const allowed = new Set(clubs.map(({ id }) => id))
+  return { ...state, items: state.items?.filter(({ id }) => allowed.has(id)) ?? null }
 }
 
 export interface DiscoverClub {
@@ -102,31 +44,33 @@ export interface DiscoverClub {
   accent: string
   coverMediaId?: string | null
 }
+function discoverPath(query: string, cursor?: string) {
+  const search = query.trim()
+  const params = new URLSearchParams()
+  if (search.length >= 2) params.set('q', search)
+  if (cursor) params.set('cursor', cursor)
+  return '/discover/clubs' + (params.size ? `?${params}` : '')
+}
 /** Clubes abertos a novos leitores (públicos ou que aceitam pedidos). */
 export function useDiscoverClubs(query = '', reload = 0) {
-  const [page, setPage] = useState<{ items: DiscoverClub[]; nextCursor: string | null } | null>(null)
+  const [page, setPage] = useState<{ items: DiscoverClub[]; nextCursor: string | null } | null>(() =>
+    peekCached(null, discoverPath(query)) ?? null)
   const [error, setError] = useState('')
   const [loadingMore, setLoadingMore] = useState(false)
   const generation = useRef(0)
   const paging = useRef(false)
-  const search = query.trim().length >= 2 ? query.trim() : ''
-  const path = (cursor?: string) => {
-    const params = new URLSearchParams()
-    if (search) params.set('q', search)
-    if (cursor) params.set('cursor', cursor)
-    return '/discover/clubs' + (params.size ? `?${params}` : '')
-  }
+  const initialPath = discoverPath(query)
   useEffect(() => {
     const current = ++generation.current
-    setPage(null)
+    setPage(peekCached(null, initialPath) ?? null)
     setError('')
     paging.current = false
     setLoadingMore(false)
-    publicRequest<{ items: DiscoverClub[]; nextCursor: string | null }>(path())
+    readCached(null, initialPath, () => publicRequest<Page<DiscoverClub>>(initialPath), reload > 0)
       .then((value) => current === generation.current && setPage(value))
       .catch((err) => current === generation.current && setError(readableError(err)))
     return () => { generation.current++ }
-  }, [search, reload])
+  }, [initialPath, reload])
   async function loadMore() {
     if (!page?.nextCursor || paging.current) return
     const current = generation.current
@@ -134,7 +78,7 @@ export function useDiscoverClubs(query = '', reload = 0) {
     setLoadingMore(true)
     setError('')
     try {
-      const next = await publicRequest<{ items: DiscoverClub[]; nextCursor: string | null }>(path(page.nextCursor))
+      const next = await publicRequest<{ items: DiscoverClub[]; nextCursor: string | null }>(discoverPath(query, page.nextCursor))
       if (current !== generation.current) return
       setPage((previous) => previous && ({ ...next, items: [...previous.items, ...next.items.filter((club) => !previous.items.some((item) => item.id === club.id))] }))
     } catch (err) {
@@ -156,7 +100,7 @@ export function useFollowingReaders() {
       return
     }
     let live = true
-    socialRead<Page<PostDto>>(user, '/public/posts?following=1&limit=30')
+    cachedSocialRead<Page<PostDto>>(user, '/public/posts?following=1&limit=30')
       .then((page) => {
         if (!live) return
         const seen = new Map<string, { id: string; name: string; avatarId?: string | null; book: string }>()
@@ -173,23 +117,49 @@ export function useFollowingReaders() {
   return people
 }
 
-/** Publicações públicas recentes (Novidades da comunidade). */
-export function useCommunityPosts(filters: string, revision = 0) {
-  const { user } = useAuth(),
-    [page, setPage] = useState<Page<PostDto> | null>(null),
-    [error, setError] = useState(''),
-    [busy, setBusy] = useState(false)
+const emptyPage: Page<PostDto> = { items: [], nextCursor: null }
+
+/** Retains the last verified page while it is refreshed. Filters are separate cache keys. */
+export function useCommunityPosts(filters: string, revision = 0, selected?: string | null) {
+  const { user } = useAuth()
+  const owner = user?.emailVerified ? user.uid : null
+  const path = selected ? `/public/posts/${selected}` : `/public/posts?${filters}`
+  const cached = selected
+    ? peekCached<PostDto>(owner, path)
+    : peekCached<Page<PostDto>>(owner, path)
+  const previous = cached && (selected ? { items: [cached as PostDto], nextCursor: null } : cached as Page<PostDto>)
+  const key = JSON.stringify([owner, path])
+  const [state, setState] = useState<{ key: string; page?: Page<PostDto>; error?: string; busy: boolean }>({
+    key, page: previous, busy: !previous,
+  })
+  const current = state.key === key ? state : { key, page: previous, busy: true, error: '' }
+
   useEffect(() => {
     let live = true
-    setBusy(true)
-    setError('')
-    socialRead<Page<PostDto>>(user, `/public/posts?${filters}`)
-      .then((value) => live && setPage(value))
-      .catch((err) => live && setError(readableError(err)))
-      .finally(() => live && setBusy(false))
-    return () => {
-      live = false
-    }
-  }, [user?.uid, user?.emailVerified, filters, revision])
-  return { page, setPage, error, busy }
+    setState((state) => ({ key, page: state.key === key ? state.page : previous, busy: true }))
+    const request = selected
+      ? cachedSocialRead<PostDto>(user, path, revision > 0).then((post) => ({ items: [post], nextCursor: null }))
+      : cachedSocialRead<Page<PostDto>>(user, path, revision > 0)
+    void request.then((page) => {
+      if (live) setState({ key, page, busy: false })
+    }).catch((error: unknown) => {
+      if (!live) return
+      const denied = error instanceof ApiError && [401, 403, 404].includes(error.status)
+      setState((state) => ({ key, page: denied || state.key !== key ? undefined : state.page, error: readableError(error), busy: false }))
+    })
+    return () => { live = false }
+  }, [key, revision])
+
+  return {
+    page: current.page ?? null,
+    error: current.error ?? '',
+    busy: current.busy,
+    setPage: (update: (page: Page<PostDto>) => Page<PostDto>, remember = false) => {
+      if (remember && !selected) updateCached<Page<PostDto>>(owner, path, (page) => {
+        const next = update(page)
+        return next.items.length <= 100 ? next : page
+      })
+      setState((state) => state.key === key ? { ...state, page: update(state.page ?? emptyPage) } : state)
+    },
+  }
 }

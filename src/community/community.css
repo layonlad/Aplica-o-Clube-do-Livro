@@ -631,7 +631,7 @@
 .media-carousel__rail { display:flex; width:100%; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain; }
 .media-carousel__rail::-webkit-scrollbar { display:none; }
 .media-carousel__slide { flex:0 0 100%; min-width:0; scroll-snap-align:start; scroll-snap-stop:always; }
-.media-carousel .private-media { max-height:none; border-radius:10px; width:100%; }
+.media-carousel .private-media { max-height:none; border-radius:10px; width:100%; height:100%; }
 .media-carousel .private-media img { object-fit:contain; width:100%; height:100%; }
 .media-carousel__controls { display:flex; align-items:center; justify-content:center; gap:10px; font-size:.75rem; color:var(--text-muted); }
 .media-viewer { width:min(960px,calc(100vw - 24px)); }

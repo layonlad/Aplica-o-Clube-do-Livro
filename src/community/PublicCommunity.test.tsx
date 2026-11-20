@@ -9,7 +9,8 @@ const mocks = vi.hoisted(() => ({
   add: vi.fn(),
 }))
 vi.mock('../auth/AuthProvider', () => ({ useAuth: () => ({ user: mocks.user }) }))
-vi.mock('../auth/api', () => ({
+vi.mock('../auth/api', async (original) => ({
+  ...(await original<typeof import('../auth/api')>()),
   publicRequest: (...args: unknown[]) => mocks.public(...args),
   apiRequest: (...args: unknown[]) => mocks.private(...args),
   readableError: () => 'Falha ao consultar',

@@ -65,7 +65,8 @@ export function AuthScreen() {
       {message && <p role="status">{message}</p>}
       <Button disabled={busy} type="submit">{busy ? 'Aguarde…' : mode === 'signup' ? 'Criar conta' : mode === 'reset' ? 'Enviar instruções' : 'Entrar'}</Button>
     </form>
-    <div className="access-actions"><Button variant="secondary" disabled={busy} onClick={google}>Continuar com Google</Button>
+    <div className="access-actions">{import.meta.env.VITE_APP_NATIVE !== '1' &&
+      <Button variant="secondary" disabled={busy} onClick={google}>Continuar com Google</Button>}
       <Button variant="ghost" disabled={busy} onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(''); setMessage('') }}>{mode === 'signup' ? 'Já tenho uma conta' : 'Criar uma conta'}</Button>
       <Button variant="ghost" disabled={busy} onClick={() => { setMode(mode === 'reset' ? 'login' : 'reset'); setError(''); setMessage('') }}>{mode === 'reset' ? 'Voltar para entrar' : 'Esqueci minha senha'}</Button></div>
   </section></main>

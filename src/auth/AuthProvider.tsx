@@ -1,12 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { onIdTokenChanged, signOut as firebaseSignOut, type Auth, type User } from 'firebase/auth'
+import type { Session as AccountSession } from '../../server/src/contracts'
 import { createClientAuth } from './firebase'
 import { ApiError, apiRequest } from './api'
 import { endSession, isInvalidSession, resumeSession, watchRejectedSession } from './session-events'
 
 type Session =
   | { status: 'initializing' | 'signed-out'; user: null }
-  | { status: 'unverified' | 'authenticated'; user: User }
+  | { status: 'unverified'; user: User }
+  | { status: 'authenticated'; user: User; accountSession: AccountSession }
   | { status: 'error'; user: null; operation: 'validate' | 'sign-out'; message: string }
 
 type AuthState = Session & {
@@ -75,9 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const current = ++ticket.current
     if (!sameSession) update({ status: 'initializing', user: null })
     try {
-      await apiRequest(user, '/me')
+      const accountSession = await apiRequest<AccountSession>(user, '/me')
       if (current === ticket.current && auth?.currentUser === user)
-        update({ status: 'authenticated', user })
+        update({ status: 'authenticated', user, accountSession })
     } catch (error) {
       if (current !== ticket.current || auth?.currentUser !== user) return
       if (isInvalidSession(error)) {

@@ -107,6 +107,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     api.addHook('onRequest',authenticate)
     registerReadingIntegrations(api, options.pool, files)
     await registerPublicMutations(api,options.pool,options.storage,options.moderatorUids)
+    api.get('/me/clubs/summary', request => management.summaries(request.user))
     registerLiteraryAccountRoutes(api, options.pool, workspace, options.moderatorUids)
     api.get('/me/push/config',()=>push.config())
     api.post('/me/push/subscriptions',{config:{rateLimit:{max:5,timeWindow:'1 minute',hook:'preHandler',keyGenerator:request=>request.user.id}}},request=>push.register(request.user,subscriptionInput.parse(request.body)))

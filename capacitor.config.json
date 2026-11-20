@@ -1,0 +1,16 @@
+{
+  "appId": "br.com.clubedolivro.preview",
+  "appName": "Clube do Livro",
+  "webDir": "dist-mobile",
+  "server": {
+    "hostname": "localhost",
+    "androidScheme": "https",
+    "iosScheme": "capacitor"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
+}

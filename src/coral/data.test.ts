@@ -1,11 +1,14 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 const { request } = vi.hoisted(() => ({ request: vi.fn() }))
-vi.mock('../auth/api', () => ({ publicRequest: request, readableError: (e: Error) => e.message }))
+vi.mock('../auth/api', async (original) => ({
+  ...(await original<typeof import('../auth/api')>()), publicRequest: request, readableError: (e: Error) => e.message,
+}))
 vi.mock('../auth/AuthProvider', () => ({ useAuth: () => ({ user: null }) }))
 vi.mock('../workspace/WorkspaceProvider', () => ({ useWorkspace: () => ({ clubs: [] }) }))
 import { useDiscoverClubs } from './data'
-beforeEach(() => request.mockReset())
+import { forgetCached } from '../auth/api'
+beforeEach(() => { request.mockReset(); forgetCached(null, '/discover/') })
 it('carrega a próxima página pelo cursor sem repetir clubes', async () => {
   request.mockResolvedValueOnce({ items: [{ id: 'a' }], nextCursor: 'next' })
     .mockResolvedValueOnce({ items: [{ id: 'a' }, { id: 'b' }], nextCursor: null })

@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { User } from 'firebase/auth'
 import { useAuth } from '../auth/AuthProvider'
-import { apiRequest } from '../auth/api'
+import { cachedSocialRead } from '../community/social-api'
 import { coverPalette } from './ui'
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -26,7 +26,7 @@ export function useOwnAvatar() {
     if (!ownAvatar.has(user.uid))
       ownAvatar.set(
         user.uid,
-        apiRequest<{ avatarId: string | null }>(user, '/me/profile')
+        cachedSocialRead<{ avatarId: string | null }>(user, '/me/profile')
           .then((value) => value.avatarId)
           .catch(() => null),
       )

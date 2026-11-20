@@ -1,8 +1,11 @@
 import { expect, it } from 'vitest'
 import sharp from 'sharp'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { processMedia } from '../src/media-processing.js'
+import { processMedia, processPhotoFile } from '../src/media-processing.js'
 it('valida, reduz e remove metadados das fotos no servidor', async () => {
   const original = await sharp({
     create: { width: 1600, height: 900, channels: 3, background: '#794384' },
@@ -98,4 +101,20 @@ it('aceita GIF animado e o converte em WebP animado com miniatura estática', as
   // GIF acima de 8 MB é recusado antes de qualquer processamento.
   const huge = Buffer.concat([Buffer.from('GIF89a'), Buffer.alloc(8000001)])
   await expect(processMedia(huge, 'image')).rejects.toMatchObject({ statusCode: 400 })
+})
+
+
+it('gera miniatura, foto de feed e ampliação com metadados removidos', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'clube-photo-test-'))
+  try {
+    const source = join(directory, 'original.jpg')
+    await sharp({ create: { width: 2900, height: 1600, channels: 3, background: '#4a768e' } })
+      .jpeg().withMetadata({ orientation: 6 }).toFile(source)
+    const image = await processPhotoFile(source, 'image/jpeg')
+    const sizes = await Promise.all([image.thumbnail, image.feed!, image.bytes].map((bytes) => sharp(bytes).metadata()))
+    expect(sizes.map((size) => size.height)).toEqual([480, 1120, 2560])
+    expect(sizes.every((size) => size.format === 'webp' && !size.exif)).toBe(true)
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
 })

@@ -9,7 +9,7 @@ import { Sheet } from '../components/Sheet'
 import { Button } from '../components/ui'
 import { notificationChanged } from '../community/NotificationBell'
 import { useWorkspace } from '../workspace/WorkspaceProvider'
-import { forgetClub, useDiscoverClubs, useMyClubs, type ClubSummary, type DiscoverClub } from './data'
+import { useDiscoverClubs, useMyClubs, type ClubSummary, type DiscoverClub } from './data'
 import { BookCover, compact, Hero, HeroIcon, SectionHead, SheetBody } from './kit'
 import { ClubArt } from './pieces'
 
@@ -66,7 +66,6 @@ export function ClubsScreen() {
         const club = await apiRequest<Club>(user, `/me/invitations/${notice.targetId}/accept`, 'POST', {})
         notificationChanged()
         await refresh()
-        forgetClub()
         openClub(club.id)
       } else {
         await apiRequest(user, `/me/invitations/${notice.targetId}/decline`, 'POST', {})
@@ -228,7 +227,6 @@ function CreateClub({ onClose }: { onClose: () => void }) {
     try {
       const club = await apiRequest<Club>(user, '/clubs', 'POST', { name: name.trim() })
       await refresh()
-      forgetClub()
       setScope(club.id)
       navigate(`/clubs/${club.id}`)
     } catch (err) {
