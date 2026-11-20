@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-r
 import { Bell, BookOpen, CalendarDays, Camera, Compass, Download, History, House, LogIn, MessagesSquare, NotebookPen, Palette, Search, Settings, ShieldCheck, Sparkles, UserRound, UsersRound, type LucideIcon } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { NotificationBell } from '../community/NotificationBell'
+import { NotificationBanner } from '../notifications/NotificationBanner'
 import { SpaceSwitcher } from '../components/SpaceSwitcher'
 import { useAuth } from '../auth/AuthProvider'
 import { SkeletonPage } from '../components/ui'
@@ -29,7 +30,7 @@ const nav: NavItem[] = [
 ]
 
 /** Telas que desenham o próprio cabeçalho em gradiente (as seis das referências). */
-const MAIN = ['/app', '/app/explore', '/app/explore/gratuitos', '/app/library', '/app/community', '/app/profile', '/app/clubs']
+const MAIN = ['/app', '/app/explore', '/app/explore/gratuitos', '/app/library', '/app/community', '/app/profile', '/app/clubs', '/app/notifications', '/app/notifications/preferencias']
 
 /** Título da barra compacta das telas internas. */
 function titleFor(pathname: string, personal: boolean, clubName: string) {
@@ -151,10 +152,11 @@ export function WorkspaceShell() {
     {accountError && <p role="alert" className="access-error">{accountError}</p>}
   </>
 
-  if (pathname==='/app/chat' && import.meta.env.VITE_CLUB_CHAT_ENABLED==='true') return <main className="club-chat-page"><AppearanceSync/>{notices}{content}</main>
+  if (pathname==='/app/chat' && import.meta.env.VITE_CLUB_CHAT_ENABLED==='true') return <main className="club-chat-page"><AppearanceSync/><NotificationBanner/>{notices}{content}</main>
   return <div className={`app-frame workspace-app ${reading ? 'is-reading' : ''} ${main ? 'is-main' : ''}`} data-keyboard={keyboardOpen ? 'open' : 'closed'} data-space={globalPage ? 'community' : personal ? 'personal' : 'club'}>
     <a className="skip-link" href="#conteudo" onClick={skip}>Pular para o conteúdo</a>
     <AppearanceSync />
+    <NotificationBanner />
     <BookOpenerLayer />
     <CoverBackdrop />
     <aside className="app-rail">

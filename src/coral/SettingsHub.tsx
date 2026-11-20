@@ -25,7 +25,7 @@ export function SettingsHub() {
     ...(verified
       ? [
           { title: 'Notificações e privacidade', rows: [
-            { to: '/app/notifications', label: 'Notificações', hint: 'Central, avisos no aparelho e preferências', icon: Bell },
+            { to: '/app/notifications/preferencias', label: 'Notificações', hint: 'Avisos no aparelho, o que acompanhar e chat de cada clube', icon: Bell },
             { to: '/app/social-profile#privacidade', label: 'Privacidade do perfil', hint: 'Perfil público ou privado, o que aparece para os outros', icon: KeyRound },
             { to: '/app/profile?requests=1', label: 'Solicitações para seguir', hint: 'Aprovar ou recusar pedidos', icon: UsersRound },
           ] },
