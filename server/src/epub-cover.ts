@@ -1,4 +1,4 @@
-import sharp from 'sharp'
+import { loadSharp } from './lazy-modules.js'
 import { openEpubPackage, epubCover } from './epub-package.js'
 import { HttpError } from './errors.js'
 const cache = new Map<string, { bytes: Buffer; at: number }>()
@@ -23,6 +23,7 @@ export async function privateEpubCover(key: string, source: () => Promise<Uint8A
       cover = epubCover(pkg)
     if (!cover)
       throw new HttpError(404, 'EPUB_COVER_MISSING', 'Este EPUB não informa uma capa compatível.')
+    const sharp = await loadSharp()
     const bytes = await sharp(cover.bytes, {
       animated: false,
       limitInputPixels: 20000000,

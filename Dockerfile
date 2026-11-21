@@ -16,6 +16,10 @@ RUN npm ci --omit=dev --workspace server --include-workspace-root=false && npm c
 COPY --from=build --chown=node:node /app/server/dist ./server/dist
 COPY --from=build --chown=node:node /app/server/migrations ./server/migrations
 COPY --from=build --chown=node:node /app/server/assets ./server/assets
+# Código já compilado pelo V8 dentro da imagem: a API carrega mais rápido quando o Cloud Run a acorda.
+ENV NODE_COMPILE_CACHE=/app/.node-compile-cache
+COPY --chown=node:node server/ops/warm-compile-cache.mjs ./server/ops/warm-compile-cache.mjs
+RUN node server/ops/warm-compile-cache.mjs && chown -R node:node /app/.node-compile-cache
 USER node
 EXPOSE 8080
 CMD ["node", "--env-file-if-exists=/etc/secrets/clube-api.env", "server/dist/index.js"]

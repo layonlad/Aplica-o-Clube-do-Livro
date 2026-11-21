@@ -1,4 +1,4 @@
-import sharp from 'sharp'
+import { loadSharp } from './lazy-modules.js'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
@@ -6,8 +6,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { HttpError } from './errors.js'
 const exec = promisify(execFile)
-sharp.concurrency(1)
-sharp.cache({ memory: 16, files: 0, items: 16 })
 export interface ProcessedMedia {
   bytes: Buffer
   thumbnail: Buffer
@@ -28,6 +26,7 @@ const invalid = () =>
 const isGif = (bytes: Buffer) => bytes.length > 6 && bytes.toString('ascii', 0, 4) === 'GIF8'
 /** GIFs (inclusive animados) viram WebP animado, menor e com o mesmo movimento. */
 async function processGif(bytes: Buffer): Promise<ProcessedMedia> {
+  const sharp = await loadSharp()
   const input = sharp(bytes, {
       animated: true,
       limitInputPixels: 40000000,
@@ -79,6 +78,7 @@ export async function processMedia(
     throw invalid()
   processing = true
   try {
+    const sharp = await loadSharp()
     if (gif) return await processGif(bytes)
     if (kind === 'image') {
       const input = sharp(bytes, {
@@ -285,6 +285,7 @@ export async function processPhotoFile(
     )
   processing = true
   try {
+    const sharp = await loadSharp()
     const input = sharp(path, {
       limitInputPixels: 40000000,
       animated: false,
