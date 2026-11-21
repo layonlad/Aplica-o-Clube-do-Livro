@@ -1,0 +1,20 @@
+{
+  "name": "Clubes de leitura",
+  "short_name": "Leituras",
+  "description": "Encontros, leituras e conversas em um só lugar.",
+  "lang": "pt-BR",
+  "id": "./",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f9694e",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+import{c as e,l as t,r as n}from"./AuthProvider-BMmyZqhS.js";var r=e=>e===null?`/public/posts`:`/clubs/${e}/posts`,i=e=>e===null?`/public/media`:`/clubs/${e}/media`;function a(t,r){return t?.emailVerified?n(t,r):e(r)}function o(e,n,r=!1){return t(e?.emailVerified?e.uid:null,n,()=>a(e,n),r)}export{a as i,i as n,r,o as t};

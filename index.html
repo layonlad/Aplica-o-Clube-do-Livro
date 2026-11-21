@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f9694e" />
+    <meta name="description" content="Clube do Livro — leituras que aproximam." />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>Clubes de leitura</title>
+    <style>html{background:#fbf4e8}html[data-theme=dark]{background:#17111f}</style>
+    <script>
+      // Aplica o modo salvo antes do primeiro desenho, evitando o clarão do tema padrão.
+      ;(function () {
+        try {
+          var saved = JSON.parse(localStorage.getItem('clube-livro-appearance') || 'null')
+          var mode = saved && saved.mode
+          if (mode === 'system') mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          document.documentElement.dataset.theme = mode === 'dark' ? 'dark' : 'light'
+          if (saved && /^#[0-9a-f]{6}$/i.test(saved.background || '')) document.documentElement.style.setProperty('--bg', saved.background)
+          // Tamanho do texto e espaçamento escolhidos: aplicados já no primeiro desenho, sem "pulo" de layout.
+          var scale = saved && { sm: 0.875, lg: 1, xl: 1.125 }[saved.textSize]
+          if (scale) document.documentElement.style.setProperty('--text-scale', scale)
+          var density = saved && { compact: 0.88, airy: 1.12 }[saved.density]
+          if (density) document.documentElement.style.setProperty('--density-user', density)
+        } catch (e) {}
+      })()
+    </script>
+    <script type="module" crossorigin src="./assets/index-CtAl1b6f.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/react-D50QREaB.js">
+    <link rel="modulepreload" crossorigin href="./assets/jsx-runtime-ClWjbItL.js">
+    <link rel="modulepreload" crossorigin href="./assets/createLucideIcon-Ck1d5wMm.js">
+    <link rel="modulepreload" crossorigin href="./assets/user-round-Bq-y5nCg.js">
+    <link rel="modulepreload" crossorigin href="./assets/AuthProvider-BMmyZqhS.js">
+    <link rel="modulepreload" crossorigin href="./assets/preload-helper-DclECHGd.js">
+    <link rel="modulepreload" crossorigin href="./assets/appearance-DbRoiIdF.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-BQ063N1X.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
