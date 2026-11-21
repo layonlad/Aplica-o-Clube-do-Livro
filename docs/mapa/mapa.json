@@ -421,7 +421,7 @@
       "autor": "Claude Code",
       "titulo": "Notificações em tempo real por sinal no Firestore (desligado por padrão)",
       "resumo": "Migration 024: triggers por comando somam uma versão por destinatário quando um aviso chega, é lido, reagrupado ou some. A API publica só esse número em clube-chat/notificationSignals/{uid} após cada escrita, ao fim do despachante de push e na chamada do executor. Regra do Firestore: só o titular lê, com e-mail verificado. O app escuta o próprio sinal e consulta a API apenas quando ele muda, com conferência a cada 5 min e volta a 30 s se o sinal cair. Limites do Cloud Run preservados. Ligado no Staging local; produção exige migration, grants, regras e as variáveis NOTIFICATION_SIGNALS_ENABLED e VITE_NOTIFICATION_SIGNALS. Detalhes em docs/notificacoes/TEMPO_REAL.md.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/63"
     },
     {
       "data": "2026-11-20",
