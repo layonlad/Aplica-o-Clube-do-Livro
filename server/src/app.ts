@@ -49,7 +49,7 @@ const inviteInput = z.object({
   expiresInDays: z.number().int().min(1).max(30).default(7),
 }).strict().refine((data) => !data.email || data.maxUses === 1, 'Convites por e-mail devem ter um único uso.')
 
-export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; additionalOrigins?:string[]; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage;moderatorUids?:string[];pushPublicKey?:string;photoCleanupToken?:string;literaryNewsSync?:boolean;afterSocialMutation?:()=>void }) {
+export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; additionalOrigins?:string[]; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage;moderatorUids?:string[];pushPublicKey?:string;photoCleanupToken?:string;literaryNewsSync?:boolean;afterSocialMutation?:()=>void;notificationSignals?:()=>void }) {
   const app = Fastify({
     logger: options.logger ? { redact: ['req.headers.authorization', 'req.body', 'res.headers'] } : false,
     logController: new LogController({ disableRequestLogging: true }),
@@ -84,6 +84,9 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     return reply.code(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Não foi possível concluir a operação.' } })
   })
   if(options.afterSocialMutation)app.addHook('onResponse',async(request,reply)=>{if(reply.statusCode<300&&request.method!=='GET'&&/\/(workspace|posts|news|forum|events|invites|follow|follow-requests|join-requests|invitations)(?:[/?]|$)/.test(request.url))options.afterSocialMutation!()})
+  // Any successful write may have created, read or removed notices (including the executor's maintenance call).
+  // The publisher only reads an indexed queue and coalesces calls, so this stays cheap on the single instance.
+  if(options.notificationSignals)app.addHook('onResponse',async(request,reply)=>{if(reply.statusCode<300&&request.method!=='GET')options.notificationSignals!()})
   registerPhotoMaintenance(app,options.pool,options.storage,options.photoCleanupToken,
     options.literaryNewsSync ? () => syncLiteraryNews(options.pool) : undefined)
   app.get('/health', async () => {

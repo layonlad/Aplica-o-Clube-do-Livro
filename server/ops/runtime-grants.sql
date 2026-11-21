@@ -38,4 +38,7 @@ GRANT SELECT,INSERT ON chat_reports TO clube_runtime;
 REVOKE ALL ON notification_events,community_highlights FROM clube_runtime;
 GRANT SELECT,INSERT,UPDATE,DELETE ON notification_events TO clube_runtime;
 GRANT SELECT,INSERT ON community_highlights TO clube_runtime;
+-- Real-time signal: the API reads pending versions and records what it published. Triggers bump versions as owner.
+REVOKE ALL ON notification_signals FROM clube_runtime;
+GRANT SELECT,UPDATE(published) ON notification_signals TO clube_runtime;
 COMMIT;

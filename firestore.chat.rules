@@ -3,5 +3,11 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Dedicated chat database. The authenticated API consults PostgreSQL before access.
     match /{document=**} { allow read, write: if false; }
+    // Real-time inbox signal: only `{ v: <version> }`, written by the API, readable by its owner.
+    // No list, so nobody can enumerate who has an account. The app refetches the inbox through the API.
+    match /notificationSignals/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid
+        && request.auth.token.email_verified == true;
+    }
   }
 }

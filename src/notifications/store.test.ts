@@ -117,3 +117,110 @@ it('retoma o sino da conta nova quando há consulta da conta anterior em andamen
     expect(store.state.unread).toBe(2)
   } finally {release()}
 })
+
+/** Sinal falso: guarda as funções do Firestore para o teste mudar a versão ou derrubar a escuta. */
+function fakeSignal() {
+  const watch = { version: (_v: number) => {}, fail: () => {}, stopped: 0, uids: [] as string[] }
+  const watcher = vi.fn(async (who: { uid: string }, onVersion: (v: number) => void, onError: () => void) => {
+    watch.uids.push(who.uid)
+    watch.version = onVersion
+    watch.fail = onError
+    return () => { watch.stopped++ }
+  })
+  return { watch, watcher }
+}
+const countCalls = () => request.mock.calls.filter(([, path]) => path === '/me/notifications/unread').length
+
+it('com o sinal ativo consulta só quando a versão muda e espaça a conferência para 5 min', async () => {
+  vi.useFakeTimers()
+  const { watch, watcher } = fakeSignal()
+  const store = new NotificationStore(watcher as never)
+  let unread = 0
+  request.mockImplementation(async (_user, path: string) => (path === '/me/notifications/unread' ? { count: unread } : { items: [], nextCursor: null }))
+  store.setUser(user())
+  const release = store.retain()
+  try {
+    await vi.advanceTimersByTimeAsync(10)
+    watch.version(3) // primeira leitura do sinal é a base
+    await vi.advanceTimersByTimeAsync(10)
+    const base = countCalls()
+    await vi.advanceTimersByTimeAsync(31000)
+    expect(countCalls()).toBe(base + 1) // a consulta em andamento ainda segue o intervalo antigo
+    await vi.advanceTimersByTimeAsync(120000)
+    expect(countCalls()).toBe(base + 1) // depois, nada de consultar a cada 30 s
+    unread = 4
+    watch.version(4)
+    await vi.advanceTimersByTimeAsync(10)
+    expect(store.state.unread).toBe(4)
+    expect(countCalls()).toBe(base + 2)
+    await vi.advanceTimersByTimeAsync(300000)
+    expect(countCalls()).toBe(base + 3) // conferência de segurança
+  } finally { release() }
+  expect(watch.stopped).toBe(1)
+})
+
+it('relê a primeira página quando o sinal muda sem o contador subir (lida em outro aparelho)', async () => {
+  vi.useFakeTimers()
+  const { watch, watcher } = fakeSignal()
+  const store = new NotificationStore(watcher as never)
+  let page = [notice(1)]
+  let unread = 1
+  request.mockImplementation(async (_user, path: string) => (path === '/me/notifications/unread' ? { count: unread } : { items: page, nextCursor: null }))
+  store.setUser(user())
+  const release = store.retain()
+  try {
+    await store.load()
+    await vi.advanceTimersByTimeAsync(10)
+    watch.version(1)
+    page = [notice(1, { readAt: new Date().toISOString() })]
+    unread = 0
+    watch.version(2)
+    await vi.advanceTimersByTimeAsync(10)
+    expect(store.state.unread).toBe(0)
+    expect(store.state.items?.[0].readAt).not.toBeNull()
+  } finally { release() }
+})
+
+it('se o sinal cair volta a consultar a cada 30 s e religa quando o app volta ao primeiro plano', async () => {
+  vi.useFakeTimers()
+  const { watch, watcher } = fakeSignal()
+  const store = new NotificationStore(watcher as never)
+  request.mockResolvedValue({ count: 0 })
+  store.setUser(user())
+  const release = store.retain()
+  try {
+    await vi.advanceTimersByTimeAsync(10)
+    watch.version(1)
+    await vi.advanceTimersByTimeAsync(31000)
+    watch.fail()
+    await vi.advanceTimersByTimeAsync(10)
+    const after = countCalls()
+    await vi.advanceTimersByTimeAsync(30000)
+    expect(countCalls()).toBe(after + 1)
+    expect(watcher).toHaveBeenCalledTimes(1)
+    document.dispatchEvent(new Event('visibilitychange'))
+    await vi.advanceTimersByTimeAsync(10)
+    expect(watcher).toHaveBeenCalledTimes(2)
+  } finally { release() }
+})
+
+it('troca de conta desliga o sinal anterior e ignora avisos dele', async () => {
+  vi.useFakeTimers()
+  const { watch, watcher } = fakeSignal()
+  const store = new NotificationStore(watcher as never)
+  request.mockResolvedValue({ count: 0 })
+  store.setUser(user('primeira'))
+  const release = store.retain()
+  try {
+    await vi.advanceTimersByTimeAsync(10)
+    const old = watch.version
+    store.setUser(user('segunda'))
+    await vi.advanceTimersByTimeAsync(10)
+    expect(watch.stopped).toBe(1)
+    expect(watch.uids).toEqual(['primeira', 'segunda'])
+    const before = countCalls()
+    old(1); old(2)
+    await vi.advanceTimersByTimeAsync(10)
+    expect(countCalls()).toBe(before)
+  } finally { release() }
+})

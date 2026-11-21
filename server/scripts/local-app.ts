@@ -10,6 +10,7 @@ import { createFirebaseVerifier } from '../src/auth.js'
 import { readConfig } from '../src/config.js'
 import { createPool } from '../src/database.js'
 import { migrate } from '../src/migrations.js'
+import { createSignalPublisher, firestoreSignalWriter } from '../src/notification-signals.js'
 
 const config = readConfig()
 const profile = localProfile((process.env.LOCAL_MODE ?? 'local') as LocalMode)
@@ -29,6 +30,9 @@ await migrate(pool)
 const app = await buildApp({
   pool, verifyToken: createFirebaseVerifier(config.FIREBASE_PROJECT_ID), origin,
   moderatorUids: config.PLATFORM_MODERATOR_UIDS, storage: localStorage(join(directory, 'media-private')),
+  // Sinal de tempo real no emulador do Firestore (Staging e chat); nunca toca um projeto na nuvem.
+  notificationSignals: config.NOTIFICATION_SIGNALS_ENABLED && process.env.FIRESTORE_EMULATOR_HOST
+    ? createSignalPublisher(pool, firestoreSignalWriter()).request : undefined,
 })
 // node_modules pode ser um link para outra cópia: libera o caminho real (fontes) no servidor do Vite.
 const vite = await createServer({ root, server: { fs: { allow: [root, await realpath(join(root, 'node_modules'))] }, host: '127.0.0.1', port: profile.frontend, strictPort: true } })
