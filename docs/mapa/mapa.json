@@ -47,7 +47,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health",
-      "versao": "3c01e7a · API clube-livro-api-00008-mxk (CLUB_CHAT_ENABLED=true, todos os clubes) e executor clube-notifications-00007-2jp; digest 344144e6; 22 migrations instaladas",
+      "versao": "4dac617 · API clube-livro-api-00009-dab (CLUB_CHAT_ENABLED=true, todos os clubes) e executor clube-notifications-00008-rfk; digest e98b25d9; 22 migrations instaladas; volta atrás: revisão 00008-mxk",
       "atualizacao": "Cloud Build e deploy manual pelo digest no Cloud Run; mínimo zero, máximo uma instância",
       "tom": "ok"
     },
@@ -413,6 +413,12 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-20",
+      "autor": "Claude Code",
+      "titulo": "API 4dac617 publicada: Firestore e sharp sob demanda",
+      "resumo": "Com autorização do dono, a API e o executor passaram para a imagem do merge do PR 64 (4dac617, digest e98b25d9, Cloud Build f3a5f183). Backend diferente do no ar só nesse PR, sem migrations. Backup sob demanda do Cloud SQL antes. Revisão 00009-dab subiu sem tráfego com endereço de ensaio: configuração idêntica à 00008-mxk (conta de serviço, variáveis, montagens, limites), saúde 200, /v1/me sem login 401, CORS só para a origem do app, catálogo 200. Depois recebeu 100% do tráfego; executor 00008-rfk recusa anônimo (403) e a rodada do Scheduler das 02:52 UTC respondeu 200; nenhum erro nos dois serviços. Ensaio local isolado: partida de 306 ms para 197 ms. No Cloud Run, a revisão antiga levava em mediana 3,51 s para acordar (11 partidas em 20/11) e a nova levou 3,42 s na primeira; com uma amostra, o ganho ainda não está comprovado, porque a maior parte do tempo é a máquina e a imagem. Site sem mudança (1.4)."
+    },
     {
       "data": "2026-11-20",
       "autor": "Claude",
