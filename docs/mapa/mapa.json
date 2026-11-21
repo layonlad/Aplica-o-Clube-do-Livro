@@ -11,6 +11,7 @@
     "resumo": "Os dois endereços de produção servem a versão 1.4 (82d607a) com a central de notificações e o layout móvel. A publicação registrada mantém o backend 3c01e7a com chat dos clubes e migration 022.",
     "proximoPasso": "Acompanhar custo de leituras do Firestore, latência da API e fila de push com o chat ligado para todos os clubes. Testar Kindle, menu nativo e teclado virtual do chat em aparelho físico. Validar a candidata 1.5 em Staging local.",
     "pendencias": [
+      "Tempo real das notificações pronto e desligado por padrão: para produção, aplicar migration 024 e grants, publicar regras do Firestore clube-chat, ligar NOTIFICATION_SIGNALS_ENABLED na API e depois VITE_NOTIFICATION_SIGNALS no site. Acompanhar leituras e gravações do Firestore.",
       "Candidata 1.5 corrige Debates, menções, legenda e teste de spoiler. Validar o teclado virtual em aparelho e integrar pelo frontend os controles da central. FCM e APNs aguardam validação em aparelhos.",
       "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
       "Notícias usam metadados do RSS e link original. A primeira coleta importou uma manchete real. Recomendações, filtros avançados e acompanhamento de assuntos têm rotas na API; faltam controles correspondentes nas telas.",
@@ -95,7 +96,7 @@
   "camadas": [
     {
       "id": "chat-firestore", "titulo": "Mensagens dos clubes", "servico": "Firestore Standard · clube-chat", "plano": "Por uso", "coluna": 4, "cor": "rose",
-      "guarda": ["Texto das mensagens e data de expiração"],
+      "guarda": ["Texto das mensagens e data de expiração", "Sinal de notificações: só um número de versão por conta"],
       "detalhe": "Banco dedicado em us-central1. Regras privadas publicadas e leitura anônima recusada. A API publicada ainda não grava mensagens; a candidata usa o emulador local. Política de expiração configurada para noventa dias.",
       "link": ""
     },
@@ -254,6 +255,7 @@
   ],
   "ligacoes": [
     { "de": "api", "para": "chat-firestore", "texto": "conexão do chat em validação local" },
+    { "de": "site", "para": "chat-firestore", "texto": "escuta o próprio sinal de notificações (desligado por padrão)" },
     { "de": "pessoa", "para": "site", "texto": "abre o app" },
     { "de": "pessoa", "para": "auth", "texto": "entra na conta (opcional)" },
     { "de": "site", "para": "api", "texto": "consulta pública sem conta; operações privadas com sessão confirmada" },
@@ -268,6 +270,7 @@
     {"de": "avisos", "para": "api", "texto": "ativo: limpeza limitada autenticada"}
   ],
   "dados": [
+    { "o_que": "Sinal de tempo real das notificações", "onde": "chat-firestore", "privacidade": "Só um número de versão por conta, sem nome, texto ou alvo. Leitura apenas pelo titular com e-mail verificado; gravação só pela API.", "copia": "Derivado da tabela notification_signals no PostgreSQL; pode ser recriado a qualquer momento." },
     { "o_que": "Mensagens rápidas dos clubes", "onde": "chat-firestore", "privacidade": "A candidata confere participação, suspensão e bloqueios na API. Acesso direto ao banco pela aplicação cliente está fechado.", "copia": "Texto em documento individual. A candidata armazena referências, preferências e moderação no PostgreSQL." },
     {"o_que": "Progresso Kindle, anotações importadas e histórico de exportação", "onde": "banco", "privacidade": "Privados do titular. Publicações incluem somente texto e percentual escolhidos pelo leitor, com as permissões do destino. Em revisão para publicação.", "copia": "Tabelas separadas no PostgreSQL. O TXT não é armazenado. A transferência usa o original pessoal privado, quando autorizado."},
     { "o_que": "Leituras de quem usa sem conta", "onde": "pessoa", "privacidade": "Só no aparelho", "copia": "Backup JSON exportado pelo Perfil; originais e mídias baixados separadamente" },
@@ -413,6 +416,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-21",
+      "autor": "Claude Code",
+      "titulo": "Notificações em tempo real por sinal no Firestore (desligado por padrão)",
+      "resumo": "Migration 024: triggers por comando somam uma versão por destinatário quando um aviso chega, é lido, reagrupado ou some. A API publica só esse número em clube-chat/notificationSignals/{uid} após cada escrita, ao fim do despachante de push e na chamada do executor. Regra do Firestore: só o titular lê, com e-mail verificado. O app escuta o próprio sinal e consulta a API apenas quando ele muda, com conferência a cada 5 min e volta a 30 s se o sinal cair. Limites do Cloud Run preservados. Ligado no Staging local; produção exige migration, grants, regras e as variáveis NOTIFICATION_SIGNALS_ENABLED e VITE_NOTIFICATION_SIGNALS. Detalhes em docs/notificacoes/TEMPO_REAL.md.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/63"
+    },
     {
       "data": "2026-11-20",
       "autor": "Codex",

@@ -52,6 +52,9 @@ try {
     env: {
       ...process.env, NODE_ENV: 'development', LOCAL_MODE: profile.mode,
       CLUB_CHAT_ENABLED: String(profile.chat), VITE_CLUB_CHAT_ENABLED: String(profile.chat),
+      // O sinal de tempo real das notificações usa o emulador do Firestore que já sobe com o chat.
+      NOTIFICATION_SIGNALS_ENABLED: String(profile.chat), VITE_NOTIFICATION_SIGNALS: String(profile.chat),
+      ...(profile.firestore ? { VITE_FIRESTORE_EMULATOR_HOST: '127.0.0.1:' + profile.firestore } : {}),
       DATABASE_URL: `postgresql://clube_local:${password}@127.0.0.1:${profile.postgres}/clube_local`,
       FIREBASE_PROJECT_ID: profile.projectId, FIREBASE_AUTH_EMULATOR_HOST: authHost,
       FRONTEND_ORIGIN: origin, HOST: '127.0.0.1', PORT: String(profile.api),
