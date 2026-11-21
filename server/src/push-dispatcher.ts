@@ -1,7 +1,11 @@
 import type { Pool } from 'pg'
 import { PushWorker } from './push-worker.js'
 /** Fast delivery only after social writes; no polling that would keep Neon awake. */
-export function createNotificationDispatcher(pool: Pool, env: NodeJS.ProcessEnv = process.env) {
+export function createNotificationDispatcher(
+  pool: Pool,
+  env: NodeJS.ProcessEnv = process.env,
+  afterRun?: () => void,
+) {
   if (!env.PUSH_PUBLIC_KEY || !env.PUSH_PRIVATE_KEY || !env.PUSH_SUBJECT) return undefined
   let running = false,
     again = false
@@ -44,6 +48,8 @@ export function createNotificationDispatcher(pool: Pool, env: NodeJS.ProcessEnv 
           .catch(() => console.error('A fila de notificações será retomada pelo executor externo.'))
           .finally(() => {
             running = false
+            // Fan-out and queued events create notices after the response; publish their signals now.
+            afterRun?.()
           }),
     )
   }
