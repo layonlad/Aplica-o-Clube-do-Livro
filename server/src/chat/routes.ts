@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { EventEmitter } from 'node:events'
-import { getFirestore, Timestamp } from 'firebase-admin/firestore'
+import { loadFirestore } from '../lazy-modules.js'
 import { getApp } from 'firebase-admin/app'
 import type { FastifyInstance } from 'fastify'
 import type { Pool, PoolClient } from 'pg'
@@ -42,8 +42,9 @@ const history = z
   })
   .strict()
 const visible = `m.club_id=$1 AND m.room=$3 AND NOT m.deleted AND m.created_at>now()-interval '90 days' AND ${notBlocked('m.author_id', '$2')} AND NOT EXISTS(SELECT 1 FROM profiles ps WHERE ps.user_id=m.author_id AND ps.suspended)`
-const body = (club: string, id: string) =>
-  getFirestore(getApp(), 'clube-chat').doc(`clubs/${club}/messages/${id}`)
+const chatDb = async () => (await loadFirestore()).getFirestore(getApp(), 'clube-chat')
+const body = async (club: string, id: string) =>
+  (await chatDb()).doc(`clubs/${club}/messages/${id}`)
 async function access(c: Pool | PoolClient, club: string, who: string) {
   const rollout = process.env.CLUB_CHAT_CLUB_IDS
   if (
@@ -240,8 +241,8 @@ export function registerChat(
     }
     const page = result.rows.slice(0, 30)
     const docs = page.length
-      ? await getFirestore(getApp(), 'clube-chat').getAll(
-          ...page.map((m) => body(clubId, m.id)),
+      ? await (await chatDb()).getAll(
+          ...(await Promise.all(page.map((m) => body(clubId, m.id)))),
         )
       : []
     const items = page
@@ -312,7 +313,8 @@ export function registerChat(
         ],
       )
       await notices(c, clubId, who, input.id, [...recipients], false)
-      await body(clubId, input.id).set({
+      const { Timestamp } = await loadFirestore()
+      await (await body(clubId, input.id)).set({
         text: input.text,
         expiresAt: Timestamp.fromMillis(Date.now() + 90 * 86400000),
       })

@@ -416,6 +416,12 @@
     {
       "data": "2026-11-20",
       "autor": "Claude",
+      "titulo": "API mais rápida ao acordar no Cloud Run (candidata)",
+      "resumo": "Investigação a pedido do dono: o p95 de 8,1 s de 20/11 vinha da espera longa proposital do chat (até 8 s); as telas responderam com mediana de 70 ms e p95 de 223 ms. A espera real é a partida a frio: cerca de 4 s entre a máquina ligar e a API ouvir, quase tudo carregando código. Firestore (chat) e sharp (fotos e capas) passam a carregar sob demanda, com aquecimento 3 s depois do listen, e a imagem traz o cache de compilação do Node gerado no build. Carga local da API caiu de 218 ms para 110 ms. tsc, 59 testes unitários e 97 de integração (com Firestore local e regras do chat) ok. Build Docker e ganho no Cloud Run ainda não medidos; nada publicado."
+    },
+    {
+      "data": "2026-11-20",
+      "autor": "Claude",
       "titulo": "Layout mobile forçado, faixa escura no clube e Leituras do clube reorganizada",
       "resumo": "O app vira sempre a coluna de celular (até 430 px, centralizada sobre fundo #0f1115), sem trilho lateral e sem layout por largura de tela; barra, botão +, folhas, avisos e leitor presos à coluna. Telas do clube com faixa escura e abas roláveis com sublinhado na cor de destaque; as principais mantêm o gradiente coral. Leituras do clube: busca única com o catálogo numa folha, Importar EPUB e Adicionar livro empilhados, estantes em chips e estado vazio com ação. Fontes padrão DM Sans e Merriweather. 132 testes do site, tsc e build ok; conferido em 390 e 1280 px sem rolagem lateral. Só site: server/ igual ao da API publicada (3c01e7a).",
       "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/59"
