@@ -417,3 +417,7 @@
 body:has(.firebase-emulator-warning) .chat-shell {
   height: calc(var(--chat-height, 100dvh) - 3.5rem - env(safe-area-inset-top));
 }
+
+.chat-shell > .forum-room { min-height: 0; flex: 1; overflow-y: auto; }
+.chat-mention-list { display: flex; flex-wrap: wrap; gap: 4px; overflow-y: auto; max-height: min(6rem, 16dvh, calc(var(--chat-height,100dvh) * 0.15)); }
+.chat-mention-list button { padding: 4px 10px; border-radius: 1rem; background: var(--chat-bubble); }

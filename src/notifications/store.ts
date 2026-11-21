@@ -2,14 +2,17 @@ import { useSyncExternalStore } from 'react'
 import type { User } from 'firebase/auth'
 import { apiRequest, ApiError, readableError } from '../auth/api'
 import type { Notification, NotificationPage, UnreadNotificationCount } from './types'
+import { defaultSignalWatcher, type SignalWatcher } from './signal'
 
 /**
  * Serviço único de notificações do app (um por aba). Todas as telas leem daqui; nenhuma faz consultas próprias.
  *
- * Tempo real: a API ainda não tem canal de envio contínuo para notificações, então o serviço consulta o contador
- * (barato, calculado no servidor) a cada 30 s com a aba visível e na hora em que algo acontece: o app volta ao
- * primeiro plano, a conexão volta, chega um push ou uma tela avisa que mudou algo. Só quando o contador sobe é
- * que a primeira página é relida, para incluir as novas e avisar o banner. Ver docs/notificacoes/PENDENCIAS_BACKEND.md.
+ * Tempo real: quando o sinal está ligado, o serviço escuta um número de versão no Firestore (ver ./signal.ts) e
+ * consulta a API só quando ele muda; a consulta periódica vira uma conferência a cada 5 min. Sem sinal, ou se ele
+ * cair, volta a consultar o contador (barato, calculado no servidor) a cada 30 s com a aba visível. Em ambos os
+ * casos também consulta na hora em que algo acontece: o app volta ao primeiro plano, a conexão volta, chega um
+ * push ou uma tela avisa que mudou algo. A primeira página só é relida quando o contador sobe ou o sinal avisa,
+ * para incluir as novas e avisar o banner. Ver docs/notificacoes/TEMPO_REAL.md.
  */
 
 export interface NotificationState {
@@ -26,6 +29,8 @@ export interface NotificationState {
 
 const empty = (uid: string | null): NotificationState => ({ uid, unread: 0, items: null, nextCursor: null, status: 'idle', error: '', loadingMore: false, syncedAt: null })
 const VISIBLE_INTERVAL = 30000
+/** Com o sinal ativo a consulta é só uma rede de segurança. */
+const SIGNAL_INTERVAL = 300000
 const MAX_BACKOFF = 300000
 const PAGE = 20
 
@@ -41,9 +46,18 @@ export class NotificationStore {
   private failures = 0
   private generation = 0
   private polling = false
+  private again = false
   /** IDs já vistos nesta sessão: só os outros são anunciados no banner (não depende do relógio do aparelho). */
   private seen: Set<string> | null = null
   private detach: (() => void) | null = null
+  /** Sinal de tempo real: escuta ativa, versão já vista e pedido de reler a primeira página. */
+  private unwatch: (() => void) | null = null
+  private watching = false
+  private live = false
+  private version: number | null = null
+  private signalled = false
+
+  constructor(private watcher: SignalWatcher | null = defaultSignalWatcher()) {}
 
   subscribe = (listener: () => void) => {
     this.listeners.add(listener)
@@ -67,7 +81,8 @@ export class NotificationStore {
     this.seen = null
     this.failures = 0
     this.set(empty(uid))
-    if (uid && this.retains) this.schedule(0)
+    this.unwatchSignal()
+    if (uid && this.retains) { this.schedule(0); this.watchSignal() }
     else this.stopTimer()
   }
 
@@ -81,7 +96,11 @@ export class NotificationStore {
     }
   }
   private start() {
-    const wake = () => { if (document.visibilityState === 'visible') this.schedule(0) }
+    const wake = () => {
+      if (document.visibilityState !== 'visible') return
+      this.watchSignal() // religa o sinal se ele caiu
+      this.schedule(0)
+    }
     const message = (event: MessageEvent) => { if (event.data?.type === 'notifications-changed') this.schedule(0) }
     window.addEventListener('notifications-changed', wake)
     window.addEventListener('focus', wake)
@@ -95,12 +114,47 @@ export class NotificationStore {
       document.removeEventListener('visibilitychange', wake)
       navigator.serviceWorker?.removeEventListener('message', message)
     }
-    if (this.user) this.schedule(0)
+    if (this.user) { this.schedule(0); this.watchSignal() }
   }
   private stop() {
     this.detach?.()
     this.detach = null
     this.stopTimer()
+    this.unwatchSignal()
+  }
+  private watchSignal() {
+    if (!this.watcher || !this.user || !this.retains || this.watching) return
+    const ticket = this.generation
+    const current = () => ticket === this.generation && this.watching
+    this.watching = true
+    this.watcher(
+      this.user,
+      (version) => {
+        if (!current()) return
+        const known = this.version
+        this.version = version
+        this.live = true // a próxima consulta já sai espaçada
+        if (known !== null && version !== known) {
+          this.signalled = true
+          this.schedule(0)
+        }
+      },
+      () => {
+        if (!current()) return
+        this.unwatchSignal()
+        this.schedule(0) // sem sinal: volta para a consulta a cada 30 s
+      },
+    ).then(
+      (stop) => { if (current()) this.unwatch = stop; else stop() },
+      () => { if (current()) { this.unwatchSignal(); this.schedule(0) } },
+    )
+  }
+  private unwatchSignal() {
+    this.unwatch?.()
+    this.unwatch = null
+    this.watching = false
+    this.live = false
+    this.version = null
   }
   private stopTimer() {
     if (this.timer) clearTimeout(this.timer)
@@ -112,7 +166,8 @@ export class NotificationStore {
     this.timer = setTimeout(() => void this.poll(), delay)
   }
   private async poll() {
-    if (!this.user || this.polling) return
+    if (!this.user) return
+    if (this.polling) { this.again = true; return } // um aviso durante a consulta gera mais uma, logo depois
     if (document.visibilityState === 'hidden') return // volta a consultar quando a aba aparecer
     this.polling = true
     const ticket = this.generation
@@ -120,15 +175,21 @@ export class NotificationStore {
       const { count } = await apiRequest<UnreadNotificationCount>(this.user, '/me/notifications/unread')
       if (ticket !== this.generation) return
       const grew = count > this.state.unread
+      // O sinal também avisa leituras em outro aparelho e avisos agrupados que não mudam o contador.
+      const signalled = this.signalled
+      this.signalled = false
       this.failures = 0
       this.set({ unread: count, syncedAt: Date.now() })
-      // Contador subiu: relê só a primeira página para incluir as novas (e anunciá-las).
-      if (grew && (this.state.items !== null || this.arrivals.size)) await this.refreshHead(ticket)
+      // Contador subiu ou o sinal mudou: relê só a primeira página para incluir as novas (e anunciá-las).
+      const loaded = this.state.items !== null
+      if ((grew && (loaded || this.arrivals.size)) || (signalled && loaded)) await this.refreshHead(ticket)
     } catch {
-      this.failures++
+      if (ticket === this.generation) this.failures++
     } finally {
       this.polling = false
-      if (ticket === this.generation) this.schedule(this.failures ? Math.min(MAX_BACKOFF, VISIBLE_INTERVAL * 2 ** this.failures) : VISIBLE_INTERVAL)
+      // A troca de conta pode ter consumido o primeiro timer enquanto a consulta anterior ainda estava aberta.
+      if (ticket !== this.generation || this.again) { this.again = false; this.schedule(0) }
+      else this.schedule(this.failures ? Math.min(MAX_BACKOFF, VISIBLE_INTERVAL * 2 ** this.failures) : this.live ? SIGNAL_INTERVAL : VISIBLE_INTERVAL)
     }
   }
   private async refreshHead(ticket = this.generation) {

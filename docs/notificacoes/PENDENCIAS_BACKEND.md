@@ -17,18 +17,20 @@ Frontend entregue pelo Claude em `claude/central-notificacoes`. Esta lista é pa
 
 O serviço único do site é `src/notifications/store.ts`:
 - uma consulta por aba, compartilhada por todas as telas;
-- a cada 30 s com a aba visível;
+- com o sinal de tempo real ligado, na hora em que a versão muda e numa conferência a cada 5 min (ver [TEMPO_REAL.md](TEMPO_REAL.md));
+- sem o sinal, a cada 30 s com a aba visível;
 - na hora quando o app volta ao primeiro plano, a conexão volta ou chega um push (o worker avisa a página);
 - espera progressiva em caso de erro.
 
-A lista só é relida quando o contador sobe.
+A lista só é relida quando o contador sobe ou o sinal avisa uma mudança.
 
-## Pendências do servidor
+## Situação na candidata local 1.5
 
-1. **Tempo real de verdade.**
-   - Hoje o site depende de consulta periódica.
-   - Sugestão: espera longa como a do chat, por exemplo `GET /v1/me/notifications/unread?wait=25&since=<versão>`, respondendo assim que algo mudar.
-   - Com isso, o `store.ts` troca o intervalo por esse canal sem mudar as telas.
+Os itens 1, 3, 4 e 5 abaixo têm contrato implementado na API candidata. No item 1, a rota `/me/notifications/sync` atende uma espera por vez; o tempo real para todos vem do sinal descrito em [TEMPO_REAL.md](TEMPO_REAL.md). O item 2 recebe contextId e identificadores de autoria, com texto e miniatura reservados para evolução. O push segue as categorias da caixa e dispõe de uma chave geral independente. As telas publicadas na 1.4 continuam usando o contrato anterior. Veja os métodos, migração e testes em [Central de notificações](../CENTRAL_NOTIFICACOES.md).
+
+## Lista registrada na entrega da versão 1.4
+
+1. ~~**Tempo real de verdade.**~~ Resolvido com um sinal de versão por pessoa no Firestore, desligado por padrão. A espera longa não cabe na API de uma instância com concorrência 2. Ver [TEMPO_REAL.md](TEMPO_REAL.md).
 2. **Texto e miniatura de cada notificação.** A API devolve só tipo, alvo, clube e autor. Para mostrar "Ana enviou uma mensagem: *trecho*" e a foto do mural, faltam:
    - `summary` (trecho curto, já filtrado por privacidade e bloqueios);
    - `thumbnailMediaId` (mídia que a pessoa pode ver);

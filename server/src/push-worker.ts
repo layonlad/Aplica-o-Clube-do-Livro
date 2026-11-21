@@ -1,8 +1,12 @@
+import { sendFcm, fcmErrorStatus } from './fcm-delivery.js'
 import type { Pool } from 'pg'
 import * as webpush from 'web-push'
 import { randomUUID } from 'node:crypto'
 import { transaction } from './database.js'
-import { NotificationService, visibleNotification } from './notification-service.js'
+import {
+  NotificationService,
+  visibleNotification,
+} from './notification-service.js'
 import { trustedPushEndpoint } from './push-subscriptions.js'
 import { notBlocked } from './public-policy.js'
 interface Delivery {
@@ -21,6 +25,7 @@ interface PushOptions {
   publicKey: string
   privateKey: string
   subject: string
+  sendFcm?: typeof sendFcm
   send?: (device: Device, payload: string, topic: string) => Promise<unknown>
 }
 export class PushWorker {
@@ -44,9 +49,10 @@ export class PushWorker {
         )
       ).rows[0]
       if (!post) {
-        await client.query('UPDATE club_post_notices SET done_at=now() WHERE post_id=$1', [
-          job.post_id,
-        ])
+        await client.query(
+          'UPDATE club_post_notices SET done_at=now() WHERE post_id=$1',
+          [job.post_id],
+        )
         return 0
       }
       const members = (
@@ -59,13 +65,22 @@ export class PushWorker {
         await client.query(
           `INSERT INTO notifications(recipient_id,actor_id,club_id,kind,target_type,target_id,category,dedupe_key)
           SELECT m.user_id,$2,$3,'post','post',$4,'clubs','post:'||$4::uuid FROM unnest($1::uuid[]) m(user_id) LEFT JOIN notification_settings s ON s.user_id=m.user_id
-          WHERE m.user_id<>$2 AND COALESCE(s.clubs,true) AND ${notBlocked('m.user_id', '$2')} ON CONFLICT(recipient_id,dedupe_key) DO NOTHING`,
-          [members.map((m) => m.user_id), job.actor_id, job.club_id, job.post_id],
+          WHERE m.user_id<>$2 AND notice_allowed(s,'post','post',$3,'clubs') AND ${notBlocked('m.user_id', '$2')} ON CONFLICT(recipient_id,dedupe_key) DO NOTHING`,
+          [
+            members.map((m) => m.user_id),
+            job.actor_id,
+            job.club_id,
+            job.post_id,
+          ],
         )
       }
       await client.query(
         'UPDATE club_post_notices SET after_user=$2,done_at=CASE WHEN $3 THEN now() ELSE NULL END WHERE post_id=$1',
-        [job.post_id, members.at(-1)?.user_id ?? job.after_user, members.length < 200],
+        [
+          job.post_id,
+          members.at(-1)?.user_id ?? job.after_user,
+          members.length < 200,
+        ],
       )
       return members.length
     })
@@ -84,10 +99,22 @@ export class PushWorker {
       return rows
     })
   }
-  private async finish(job: Delivery, status: string, error?: string, delay = 0) {
+  private async finish(
+    job: Delivery,
+    status: string,
+    error?: string,
+    delay = 0,
+  ) {
     await this.pool.query(
-      "UPDATE push_deliveries SET status=$4,last_error=$5,leased_at=NULL,lease_token=NULL,available_at=now()+$6*interval '1 second',sent_at=CASE WHEN $4='sent' THEN now() ELSE sent_at END WHERE notification_id=$1 AND subscription_id=$2 AND lease_token=$3",
-      [job.notification_id, job.subscription_id, job.lease_token, status, error ?? null, delay],
+      "UPDATE push_deliveries SET status=$4,last_error=$5,attempts=CASE WHEN $5='RATE_LIMIT' THEN greatest(0,attempts-1) ELSE attempts END,leased_at=NULL,lease_token=NULL,available_at=now()+$6*interval '1 second',sent_at=CASE WHEN $4='sent' THEN now() ELSE sent_at END WHERE notification_id=$1 AND subscription_id=$2 AND lease_token=$3",
+      [
+        job.notification_id,
+        job.subscription_id,
+        job.lease_token,
+        status,
+        error ?? null,
+        delay,
+      ],
     )
   }
   async process(limit = 30) {
@@ -104,7 +131,13 @@ export class PushWorker {
           [job.subscription_id],
         )
       ).rows[0]
-      if (!device || !trustedPushEndpoint(device.endpoint)) {
+      const fcm = device?.endpoint.startsWith('fcm:')
+      if (
+        !device ||
+        (fcm
+          ? process.env.FCM_PUSH_ENABLED !== 'true'
+          : !trustedPushEndpoint(device.endpoint))
+      ) {
         await this.finish(job, 'cancelled', 'DEVICE_UNAVAILABLE')
         stats.cancelled++
         continue
@@ -112,10 +145,10 @@ export class PushWorker {
       // Authorization and current category preferences are checked immediately before delivery.
       const allowed = (
         await this.pool.query(
-          `SELECT n.id FROM notifications n LEFT JOIN notification_settings s ON s.user_id=n.recipient_id WHERE ${visibleNotification} AND n.id=$2 AND n.read_at IS NULL AND n.created_at>now()-interval '24 hours'`,
+          `SELECT n.target_type FROM notifications n LEFT JOIN notification_settings s ON s.user_id=n.recipient_id WHERE ${visibleNotification} AND n.id=$2 AND n.read_at IS NULL AND COALESCE((s.controls->>'pushEnabled')::boolean,true) AND (n.target_type='chat' OR n.created_at>now()-interval '24 hours')`,
           [device.user_id, job.notification_id],
         )
-      ).rowCount
+      ).rows[0]
       if (!allowed) {
         await this.finish(job, 'cancelled', 'NOTICE_UNAVAILABLE')
         stats.cancelled++
@@ -132,13 +165,16 @@ export class PushWorker {
         stats.cancelled++
         continue
       }
-      const recent = (
-        await this.pool.query(
-          `SELECT count(DISTINCT d.notification_id)::int AS count,bool_or(d.notification_id=$2) AS already FROM push_deliveries d JOIN push_subscriptions p ON p.id=d.subscription_id WHERE p.user_id=$1 AND d.status='sent' AND d.sent_at>now()-interval '1 hour'`,
-          [device.user_id, job.notification_id],
-        )
-      ).rows[0]
-      if (recent.count >= 10 && !recent.already) {
+      const recent =
+        allowed.target_type === 'chat'
+          ? null
+          : (
+              await this.pool.query(
+                `SELECT count(DISTINCT d.notification_id)::int AS count,bool_or(d.notification_id=$2) AS already FROM push_deliveries d JOIN push_subscriptions p ON p.id=d.subscription_id WHERE p.user_id=$1 AND d.status='sent' AND d.sent_at>now()-interval '1 hour'`,
+                [device.user_id, job.notification_id],
+              )
+            ).rows[0]
+      if (recent && recent.count >= 10 && !recent.already) {
         await this.finish(job, 'pending', 'RATE_LIMIT', 3600)
         stats.throttled++
         continue
@@ -146,11 +182,23 @@ export class PushWorker {
       // No names, club titles, excerpts, photos or private target URLs leave the server.
       const payload = JSON.stringify({ notificationId: job.notification_id })
       try {
-        if (this.options.send)
-          await this.options.send(device, payload, job.notification_id.replaceAll('-', ''))
+        if (fcm)
+          await (this.options.sendFcm ?? sendFcm)(
+            device.endpoint.slice(4),
+            job.notification_id,
+          )
+        else if (this.options.send)
+          await this.options.send(
+            device,
+            payload,
+            job.notification_id.replaceAll('-', ''),
+          )
         else
           await webpush.sendNotification(
-            { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth } },
+            {
+              endpoint: device.endpoint,
+              keys: { p256dh: device.p256dh, auth: device.auth },
+            },
             payload,
             {
               TTL: 3600,
@@ -167,19 +215,25 @@ export class PushWorker {
         await this.finish(job, 'sent')
         stats.sent++
       } catch (error) {
-        const status = (error as { statusCode?: number }).statusCode
+        const status = fcm
+          ? fcmErrorStatus(error)
+          : (error as { statusCode?: number }).statusCode
         if (status === 404 || status === 410) {
           await transaction(this.pool, async (client) => {
-            await client.query('UPDATE push_subscriptions SET revoked_at=now() WHERE id=$1', [
-              job.subscription_id,
-            ])
+            await client.query(
+              'UPDATE push_subscriptions SET revoked_at=now() WHERE id=$1',
+              [job.subscription_id],
+            )
             await client.query(
               "UPDATE push_deliveries SET status='cancelled',lease_token=NULL,last_error='DEVICE_REVOKED' WHERE subscription_id=$1 AND status IN ('pending','leased')",
               [job.subscription_id],
             )
           })
           stats.cancelled++
-        } else if ((!status || status === 429 || status >= 500) && job.attempts < 8) {
+        } else if (
+          (!status || status === 429 || status >= 500) &&
+          job.attempts < 8
+        ) {
           await this.finish(
             job,
             'pending',
@@ -188,7 +242,11 @@ export class PushWorker {
           )
           stats.retry++
         } else {
-          await this.finish(job, 'failed', status ? `HTTP_${status}` : 'NETWORK')
+          await this.finish(
+            job,
+            'failed',
+            status ? `HTTP_${status}` : 'NETWORK',
+          )
           stats.failed++
         }
       }
@@ -197,28 +255,56 @@ export class PushWorker {
   }
   async cleanup() {
     await this.pool.query(
+      "DELETE FROM notification_events WHERE event_key IN (SELECT event_key FROM notification_events WHERE done_at<now()-interval '7 days' ORDER BY done_at LIMIT 200)",
+    )
+    await this.pool.query(
       "UPDATE push_subscriptions SET revoked_at=COALESCE(revoked_at,now()) WHERE last_seen_at<now()-interval '90 days'",
     )
     await this.pool.query(
       "DELETE FROM push_subscriptions WHERE id IN(SELECT id FROM push_subscriptions WHERE revoked_at<now()-interval '7 days' ORDER BY revoked_at LIMIT 100)",
     )
     await this.pool.query(
-      "DELETE FROM push_deliveries WHERE (notification_id,subscription_id) IN(SELECT d.notification_id,d.subscription_id FROM push_deliveries d JOIN notifications n ON n.id=d.notification_id WHERE n.created_at<now()-interval '7 days' ORDER BY n.created_at LIMIT 500)",
+      "DELETE FROM push_deliveries WHERE (notification_id,subscription_id) IN(SELECT d.notification_id,d.subscription_id FROM push_deliveries d JOIN notifications n ON n.id=d.notification_id WHERE d.status IN ('sent','failed','cancelled') AND n.created_at<now()-interval '7 days' ORDER BY n.created_at LIMIT 500)",
     )
     await this.pool.query(
       "DELETE FROM club_post_notices WHERE post_id IN(SELECT post_id FROM club_post_notices WHERE done_at<now()-interval '7 days' ORDER BY done_at LIMIT 100)",
     )
   }
   async run() {
+    let pages = 0,
+      created = 0
+    for (; pages < 8; pages++) {
+      const page = await this.pool.query(
+        'SELECT next_notice_page() AS inserted',
+      )
+      if (page.rows[0].inserted === null) break
+      created += page.rows[0].inserted
+    }
+    const backlog = (
+      await this.pool
+        .query(`SELECT count(*) FILTER(WHERE failed_at IS NULL)::int AS pending,count(*) FILTER(WHERE failed_at IS NOT NULL)::int AS failed,COALESCE(EXTRACT(epoch FROM now()-min(created_at) FILTER(WHERE failed_at IS NULL))::int,0) AS age
+      FROM notification_events WHERE done_at IS NULL`)
+    ).rows[0]
     let members = 0
     for (let i = 0; i < 5; i++) {
       const next = await this.fanout()
       members += next
       if (!next) break
     }
-    const reminders = await new NotificationService(this.pool).enqueueReminders()
+    const reminders = await new NotificationService(
+      this.pool,
+    ).enqueueReminders()
     const deliveries = await this.process()
     await this.cleanup()
-    return { members, reminders, ...deliveries }
+    return {
+      pages,
+      created,
+      pendingEvents: backlog.pending,
+      oldestEventSeconds: backlog.age,
+      failedEvents: backlog.failed,
+      members,
+      reminders,
+      ...deliveries,
+    }
   }
 }

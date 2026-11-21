@@ -7,8 +7,8 @@ export function localMode(argv: string[]): LocalMode {
 
 export function localProfile(mode: LocalMode) {
   if (mode === 'staging')
-    return { mode, directory: '.local-data/staging', projectId: 'demo-clube-do-livro-staging', frontend: 5174, api: 3002, postgres: 54330, auth: 9199, config: 'firebase.staging-local.json', emulators: 'auth,firestore', chat: true }
+    return { mode, directory: '.local-data/staging', projectId: 'demo-clube-do-livro-staging', frontend: 5174, api: 3002, postgres: 54330, auth: 9199, config: 'firebase.staging-local.json', emulators: 'auth,firestore', chat: true, firestore: 8189 }
   if (mode === 'chat')
-    return { mode, directory: '.local-data/chat', projectId: 'demo-clube-do-livro', frontend: 5178, api: 3008, postgres: 54338, auth: 9198, config: 'firebase.chat.json', emulators: 'auth,firestore', chat: true }
-  return { mode, directory: '.local-data', projectId: 'demo-clube-do-livro', frontend: 5173, api: 3001, postgres: 54329, auth: 9099, config: 'firebase.json', emulators: 'auth', chat: false }
+    return { mode, directory: '.local-data/chat', projectId: 'demo-clube-do-livro', frontend: 5178, api: 3008, postgres: 54338, auth: 9198, config: 'firebase.chat.json', emulators: 'auth,firestore', chat: true, firestore: 8188 }
+  return { mode, directory: '.local-data', projectId: 'demo-clube-do-livro', frontend: 5173, api: 3001, postgres: 54329, auth: 9099, config: 'firebase.json', emulators: 'auth', chat: false, firestore: 0 }
 }
