@@ -6,12 +6,12 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Versão 1.3 no ar: chat dos clubes com o visual novo",
+    "fase": "Site 1.4 e API 4dac617 em produção. Candidata 1.5 em revisão",
     "tom": "ok",
-    "resumo": "Versão 1.2 (8940623) nos dois sites e API 3c01e7a com o chat dos clubes ligado para todos, migration 022 aplicada e backup prévio do Cloud SQL. Staging 1.0 em localhost com autenticação, API e banco de teste locais. Produção está no build 4c7caf5 e a primeira versão numerada aguarda a aprovação.",
-    "proximoPasso": "Acompanhar custo de leituras do Firestore, latência da API e fila de push com o chat ligado para todos os clubes. Testar Kindle, menu nativo e teclado virtual do chat em aparelho físico. Próxima candidata: 1.4.",
+    "resumo": "Os dois manifestos Firebase confirmam 1.4 (82d607a). A API e o executor usam as revisões do PR 64. Os sinais via Firestore integram o PR 62 junto com as migrations 023 e 024.",
+    "proximoPasso": "Corrigir a atualização inicial e a remoção de avisos na central, validar a entrega do sinal no Cloud Run com CPU por requisição e testar Web Push em aparelho.",
     "pendencias": [
-      "Chat de clubes em validação local. Antes da publicação, conferir teclado virtual, confirmar ativação da política de retenção e acesso IAM limitado ao banco, executar ensaio de promoção e smoke tests.",
+      "Sinais via Firestore na candidata 1.5. A primeira versão pode atrasar a atualização do sino, e avisos removidos podem permanecer na lista. Confirmar entrega no Cloud Run antes de ativar em produção.",
       "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
       "Notícias usam metadados do RSS e link original. A primeira coleta importou uma manchete real. Recomendações, filtros avançados e acompanhamento de assuntos têm rotas na API; faltam controles correspondentes nas telas.",
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
@@ -47,7 +47,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health",
-      "versao": "3c01e7a · API clube-livro-api-00008-mxk (CLUB_CHAT_ENABLED=true, todos os clubes) e executor clube-notifications-00007-2jp; digest 344144e6; 22 migrations instaladas",
+      "versao": "4dac617 · API clube-livro-api-00009-dab e executor clube-notifications-00008-rfk, com 100% do tráfego em suas revisões · sem migration no PR 64",
       "atualizacao": "Cloud Build e deploy manual pelo digest no Cloud Run; mínimo zero, máximo uma instância",
       "tom": "ok"
     },
@@ -55,7 +55,7 @@
       "id": "staging",
       "nome": "Staging (localhost)",
       "url": "http://localhost:5174",
-      "versao": "1.0 · candidata local com dados de teste",
+      "versao": "Candidata 1.5 (PR 62) com migrations 023–024. A união com a main 4dac617 passou nos testes locais e segue em revisão.",
       "atualizacao": "Iniciar com npm run staging e testar antes da promoção aprovada",
       "tom": "neutro"
     },
@@ -413,6 +413,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-23",
+      "autor": "Codex",
+      "titulo": "Diagnóstico das entregas dos PRs 58 a 65",
+      "resumo": "Site 1.4 e API 4dac617 verificados. Logs indicam partida mediana de 2,86 s, ante 3,51 s. Duas falhas de sincronização reproduzidas na candidata 1.5. Relatório em docs/DIAGNOSTICO_2026-11-23.md.",
+      "pr": ""
+    },
     {
       "data": "2026-11-20",
       "autor": "Claude",
