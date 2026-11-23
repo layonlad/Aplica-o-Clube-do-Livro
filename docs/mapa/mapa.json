@@ -418,7 +418,7 @@
       "autor": "Codex",
       "titulo": "Diagnóstico das entregas dos PRs 58 a 65",
       "resumo": "Site 1.4 e API 4dac617 verificados. Logs indicam partida mediana de 2,86 s, ante 3,51 s. Duas falhas de sincronização reproduzidas na candidata 1.5. Relatório em docs/DIAGNOSTICO_2026-11-23.md.",
-      "pr": ""
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/66"
     },
     {
       "data": "2026-11-20",
