@@ -715,7 +715,7 @@ function BookItem({ book, onEdit }: { book: Book; onEdit: () => void }) {
           >
             <Heart size={19} fill={saved?.favorite ? 'currentColor' : 'none'} aria-hidden="true" />
           </button>
-          <BookShare compact book={{ id: book.id, title: book.title, author: book.author, coverUrl: book.metadata?.cover }} />
+          <BookShare compact book={{ id: book.id, title: book.title, author: book.author }} />
           <details className="book-menu">
             <summary className="icon-action" aria-label={`Mais opções de ${book.title}`} title="Mais opções">
               <MoreHorizontal size={19} aria-hidden="true" />

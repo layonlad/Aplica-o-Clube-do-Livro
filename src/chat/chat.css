@@ -1,11 +1,11 @@
 /* Chat dos clubes: cabeçalho coral, livro do momento, abas, balões e campo em pílula.
  * Cores pelos tokens do tema (claro e escuro); o coral do cabeçalho segue o modelo aprovado pelo dono. */
 .chat-shell {
-  --chat-head: #e57d70;
+  --chat-head: #a8372a;
   --chat-bubble: color-mix(in srgb, var(--text) 8%, var(--surface));
   --chat-own: #f8e0da;
   --chat-own-ink: #3a2420;
-  --chat-own-name: #b0503e;
+  --chat-own-name: #913526;
   display: flex;
   flex-direction: column;
   max-width: 54rem;
@@ -261,7 +261,7 @@
   font-size: 0.82rem;
   text-align: right;
 }
-.chat-own .chat-bubble__time { color: color-mix(in srgb, var(--chat-own-ink) 55%, transparent); }
+.chat-own .chat-bubble__time { color: color-mix(in srgb, var(--chat-own-ink) 72%, transparent); }
 .chat-quote {
   display: block;
   max-width: 100%;
@@ -417,3 +417,7 @@
 body:has(.firebase-emulator-warning) .chat-shell {
   height: calc(var(--chat-height, 100dvh) - 3.5rem - env(safe-area-inset-top));
 }
+
+.chat-shell > .forum-room { min-height: 0; flex: 1; overflow-y: auto; }
+.chat-mention-list { display: flex; flex-wrap: wrap; gap: 4px; overflow-y: auto; max-height: min(6rem, 16dvh, calc(var(--chat-height,100dvh) * 0.15)); }
+.chat-mention-list button { padding: 4px 10px; border-radius: 1rem; background: var(--chat-bubble); }

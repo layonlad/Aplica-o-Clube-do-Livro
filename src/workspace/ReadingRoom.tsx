@@ -372,7 +372,7 @@ export function ReadingRoom() {
               />
               <BookShare
                 compact
-                book={{ id: book.id, title: book.title, author: book.author, coverUrl: book.metadata?.cover }}
+                book={{ id: book.id, title: book.title, author: book.author }}
               />
             </div>
             <Button
@@ -733,7 +733,7 @@ export function ReadingRoom() {
               </button>
             ))}
           </div>
-          <BookShare compact book={{ id: book.id, title: book.title, author: book.author, coverUrl: book.metadata?.cover }} />
+          <BookShare compact book={{ id: book.id, title: book.title, author: book.author }} />
           <Button
             variant={saved?.percent === 100 ? 'ghost' : 'secondary'}
             disabled={busy || saved?.percent === 100}

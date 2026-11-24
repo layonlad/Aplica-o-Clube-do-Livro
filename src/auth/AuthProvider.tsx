@@ -1,3 +1,4 @@
+import { clearDevicePush } from './clear-device-push'
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { onIdTokenChanged, signOut as firebaseSignOut, type Auth, type User } from 'firebase/auth'
 import type { Session as AccountSession } from '../../server/src/contracts'
@@ -7,7 +8,7 @@ import { endSession, isInvalidSession, resumeSession, watchRejectedSession } fro
 
 type Session =
   | { status: 'initializing' | 'signed-out'; user: null }
-  | { status: 'unverified'; user: User }
+  | { status: 'unverified' | 'legal-review'; user: User }
   | { status: 'authenticated'; user: User; accountSession: AccountSession }
   | { status: 'error'; user: null; operation: 'validate' | 'sign-out'; message: string }
 
@@ -46,8 +47,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signingOut.current = true
     ++ticket.current
     validating.current = null
-    if (lastUser.current) endSession(lastUser.current)
     update({ status: 'initializing', user: null })
+    const account = lastUser.current
+    if (account) {
+      const cleanup = clearDevicePush(account)
+      if (cleanup) {
+        let timer: ReturnType<typeof setTimeout> | undefined
+        await Promise.race([cleanup.catch(() => {}), new Promise<void>(resolve => { timer = setTimeout(resolve, 3000) })])
+        clearTimeout(timer)
+      }
+      endSession(account)
+    }
     try {
       await firebaseSignOut(auth)
       lastUser.current = null
@@ -86,6 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await signOut().catch(() => {})
       } else if (error instanceof ApiError && error.code === 'EMAIL_NOT_VERIFIED') {
         update({ status: 'unverified', user })
+      } else if (error instanceof ApiError && error.code === 'LEGAL_ACCEPTANCE_REQUIRED') {
+        update({ status: 'legal-review', user })
       } else {
         endSession(user)
         update({ status: 'error', user: null, operation: 'validate', message: 'Não foi possível verificar sua sessão. Confira a conexão e tente novamente.' })
@@ -130,7 +142,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     retry: () => {
       if (session.status === 'error' && session.operation === 'sign-out') void signOut().catch(() => {})
-      else void validate(auth.currentUser, true)
+      else {
+        // A manual retry after refreshing the token must supersede a check using the old token.
+        validating.current = null
+        void validate(auth.currentUser, true)
+      }
     },
   }}>{children}</Context.Provider>
 }

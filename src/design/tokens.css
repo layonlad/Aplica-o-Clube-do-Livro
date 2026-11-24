@@ -33,7 +33,7 @@
   --gray-200: #e4e4e9;
   --gray-300: #d0d0d7;
   --gray-400: #a2a2ab;
-  --gray-500: #74747b;    /* cinza para texto secundário (AA 4,6:1) */
+  --gray-500: #62626b;    /* texto secundário em superfícies claras, inclusive fundos suaves */
   --gray-600: #5b5b62;
   --gray-700: #3f3f46;
   --gray-800: #2a2a30;
@@ -138,10 +138,10 @@
   --brand: var(--coral-600);         /* botão cheio, links e texto de ação */
   --brand-hover: var(--coral-700);
   --brand-soft: var(--coral-100);    /* pílula selecionada, fundo de ícone */
-  --brand-ink: var(--coral-600);
+  --brand-ink: var(--coral-700);
   --accent: var(--coral-500);        /* ícone ativo, barra de progresso, contorno */
   --accent-soft: var(--coral-100);
-  --accent-ink: var(--coral-600);
+  --accent-ink: var(--coral-700);
   --highlight: var(--star);
 
   --success: var(--green-600);
@@ -165,8 +165,8 @@
   --hero-gradient: linear-gradient(160deg, #c34a2a 0%, #c34439 38%, #be3a5c 72%, #aa3d7b 100%);
   --hero-ink: #ffffff;
   --hero-ink-muted: #ffffff;
-  --hero-button: rgba(255, 255, 255, 0.22);
-  --hero-button-hover: rgba(255, 255, 255, 0.32);
+  --hero-button: rgba(0, 0, 0, 0.18);
+  --hero-button-hover: rgba(0, 0, 0, 0.28);
 
   /* Ambiente atual (muda com data-space no shell) */
   --space-accent: var(--accent);
@@ -251,7 +251,7 @@
   --field-pad-x: calc(14px * var(--density-user));
   --content-max: 1040px;
   --reading-max: 66ch;
-  --nav-height: 64px;
+  --nav-height: max(64px, 4.5rem);
 
   /* ── Forma ── */
   --radius-xs: 6px;
@@ -348,7 +348,7 @@
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px #ff7a55;
   --overlay: rgba(0, 0, 0, 0.62);
 
-  --hero-gradient: linear-gradient(160deg, #c9502f 0%, #b9434b 45%, #a23f74 100%);
+  --hero-gradient: linear-gradient(160deg, #b5442a 0%, #b9434b 45%, #a23f74 100%);
 
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-2: 0 10px 28px rgba(0, 0, 0, 0.45);

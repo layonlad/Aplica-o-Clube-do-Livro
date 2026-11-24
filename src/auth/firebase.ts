@@ -18,6 +18,7 @@ export function createClientAuth() {
   // As duas opções persistem após fechar o navegador quando o armazenamento do site está disponível.
   // Sair da conta continua disponível no Perfil.
   const auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence], popupRedirectResolver: browserPopupRedirectResolver })
-  if (emulator) connectAuthEmulator(auth, emulator)
+  // Staging already identifies the environment. Firebase's fixed footer covers the mobile nav.
+  if (emulator) connectAuthEmulator(auth, emulator, { disableWarnings: env.VITE_APP_ENVIRONMENT === 'staging' })
   return auth
 }

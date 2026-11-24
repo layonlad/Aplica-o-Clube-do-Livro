@@ -84,3 +84,17 @@ it('bloqueia a interface durante logout e ignora validações pendentes', async 
   await act(async () => { notify(null); finish() })
   await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('signed-out'))
 })
+
+it('confere a nova credencial quando a consulta anterior ainda usa o token antes da verificação', async () => {
+  const user = account('confirmed-after-signup')
+  let rejectOld!: (error: Error) => void
+  vi.mocked(apiRequest)
+    .mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectOld = reject }))
+    .mockRejectedValueOnce(new ApiError(428, 'LEGAL_ACCEPTANCE_REQUIRED', 'Revise os documentos'))
+  open()
+  act(() => notify(user))
+  fireEvent.click(screen.getByText('Revalidar'))
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('legal-review'))
+  await act(async () => rejectOld(new ApiError(403, 'EMAIL_NOT_VERIFIED', 'Resposta do token antigo')))
+  expect(screen.getByRole('status')).toHaveTextContent('legal-review')
+})

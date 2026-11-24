@@ -11,7 +11,7 @@ DO $$ BEGIN
   EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I REVOKE ALL ON SEQUENCES FROM clube_runtime',current_schema());
 END $$;
 DO $$ BEGIN EXECUTE format('GRANT USAGE ON SCHEMA %I TO clube_runtime',current_schema()); END $$;
-GRANT SELECT,INSERT,UPDATE ON photo_uploads,push_subscriptions,push_deliveries,club_post_notices,users,clubs,club_memberships,invites,personal_workspaces,club_workspaces,club_reading_states,club_settings,club_join_requests,social_posts,post_comments,post_poll_votes,media_objects,club_albums,album_participant_tags,private_book_files,forum_topics,forum_replies,forum_legacy_checkpoints,profiles,reports,notification_settings,notifications,club_events,event_attendees,event_legacy_checkpoints,club_book_files TO clube_runtime;
+GRANT SELECT,INSERT,UPDATE ON photo_uploads,push_subscriptions,push_deliveries,club_post_notices,clubs,club_memberships,invites,personal_workspaces,club_workspaces,club_reading_states,club_settings,club_join_requests,social_posts,post_comments,post_poll_votes,media_objects,club_albums,album_participant_tags,private_book_files,forum_topics,forum_replies,forum_legacy_checkpoints,profiles,reports,notification_settings,notifications,club_events,event_attendees,event_legacy_checkpoints,club_book_files TO clube_runtime;
 GRANT SELECT,INSERT ON comment_media,comment_mentions,invite_acceptances,audit_logs,post_poll_options,post_media,album_media,forum_topic_media,forum_reply_media,moderation_actions TO clube_runtime;
 GRANT SELECT,INSERT,DELETE ON post_likes,saved_posts,comment_likes,post_tags,post_mentions,forum_topic_likes,follows,user_blocks TO clube_runtime;
 GRANT DELETE ON photo_uploads,comment_media,comment_mentions,push_subscriptions,push_deliveries,club_post_notices,post_media,album_media,album_participant_tags,forum_topic_media,forum_reply_media,notifications TO clube_runtime;
@@ -35,4 +35,8 @@ GRANT DELETE ON chat_messages TO clube_runtime;
 GRANT SELECT,INSERT,UPDATE ON chat_settings,chat_members,chat_messages TO clube_runtime;
 GRANT SELECT,INSERT,UPDATE,DELETE ON chat_reactions TO clube_runtime;
 GRANT SELECT,INSERT ON chat_reports TO clube_runtime;
+REVOKE INSERT, UPDATE ON users FROM clube_runtime;
+GRANT SELECT, INSERT(firebase_uid,email,name), UPDATE(email,name,updated_at) ON users TO clube_runtime;
+REVOKE ALL ON legal_acceptances FROM clube_runtime;
+GRANT SELECT, INSERT(user_id,terms_version,privacy_version) ON legal_acceptances TO clube_runtime;
 COMMIT;

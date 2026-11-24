@@ -1,3 +1,4 @@
+import { LegalPage } from '../legal/LegalPages'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { WorkspaceApp } from '../workspace/WorkspaceApp'
 import { MobileShell } from '../components/MobileShell'
@@ -14,6 +15,15 @@ import { ReaderPage } from '../pages/ReaderPage'
 import { ThemePage } from '../pages/ThemePage'
 
 export function App() {
+  return <Routes>
+    <Route path="/privacidade" element={<LegalPage page="privacy" />} />
+    <Route path="/termos" element={<LegalPage page="terms" />} />
+    <Route path="/lgpd" element={<LegalPage page="rights" />} />
+    <Route path="*" element={<Product />} />
+  </Routes>
+}
+
+function Product() {
   if (import.meta.env.VITE_APP_MODE === 'connected') return <WorkspaceApp />
   if (import.meta.env.VITE_APP_MODE && import.meta.env.VITE_APP_MODE !== 'demo') return <main><h1>Configuração inválida</h1></main>
   return (

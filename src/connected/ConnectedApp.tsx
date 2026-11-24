@@ -1,3 +1,4 @@
+import { LegalAcceptanceScreen } from '../legal/LegalAcceptanceScreen'
 import { AppBar } from '../coral/kit'
 import {ClubSettingsPanel} from '../clubs/ClubSettingsPanel'
 import {roleLabels} from '../../server/src/permissions'
@@ -12,9 +13,10 @@ import { UserIdentity } from '../components/UserAvatar'
 import './connected.css'
 
 export function Protected({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, loading, status } = useAuth()
   if (loading) return <main className="access-page" role="status">Carregando sua conta…</main>
   if (!user) return <AuthScreen />
+  if (status === 'legal-review') return <LegalAcceptanceScreen key={user.uid} />
   if (!user.emailVerified) return <VerifyEmailScreen />
   return <div key={user.uid}>{children}</div>
 }

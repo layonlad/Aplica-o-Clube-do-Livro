@@ -115,9 +115,10 @@ it('aplica a evolução sobre a base 016 duas vezes e preserva publicação, ví
     expect(
       (await db.pool.query('SELECT body FROM post_comments WHERE id=$1', [comment])).rows[0].body,
     ).toBe('Comentário histórico')
-    expect(
-      (await db.pool.query('SELECT count(*)::int AS count FROM schema_migrations')).rows[0].count,
-    ).toBe(22)
+    const migrationFiles = (await readdir(new URL('../migrations/', import.meta.url)))
+      .filter(name => /^\d+.*\.sql$/.test(name)).sort()
+    const installed = (await db.pool.query<{ name: string }>('SELECT name FROM schema_migrations ORDER BY name')).rows
+    expect(installed.map(row => row.name)).toEqual(migrationFiles)
   } finally {
     await db.close()
   }

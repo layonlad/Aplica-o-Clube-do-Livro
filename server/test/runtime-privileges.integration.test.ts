@@ -75,6 +75,10 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
       })
     const session = await call('/me')
     expect(session.statusCode, session.body).toBe(200)
+    const { termsVersion, privacyVersion } = await import('../src/legal-versions.js')
+    expect((await call('/me/legal-acceptance', 'POST', {termsVersion,privacyVersion,acceptTerms:true,acknowledgePrivacy:true})).statusCode).toBe(200)
+    await expect(runtime.query('UPDATE legal_acceptances SET accepted_at=now()')).rejects.toThrow('permission denied')
+    await expect(runtime.query('UPDATE users SET legal_review_required=false')).rejects.toThrow('permission denied')
     const literary = '/me/literary/books/a-cartomante-1896-pt'
     expect((await call(literary, 'POST')).statusCode).toBe(201)
     expect((await call(literary + '/epub')).headers['content-type']).toBe('application/epub+zip')
