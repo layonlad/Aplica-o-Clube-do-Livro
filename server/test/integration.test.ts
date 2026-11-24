@@ -107,6 +107,41 @@ describe('API com PostgreSQL real', () => {
     const actions=(await db.pool.query("SELECT action FROM audit_logs WHERE club_id=$1 ORDER BY id",[privateClub.id])).rows.map(row=>row.action)
     expect(actions).toContain('member.role.admin');expect(actions).toContain('member.left')
   })
+  it('faz a exclusão administrativa do clube sem deixar acesso, descoberta ou convites ativos', async () => {
+    const clubOwner = 'deletion-owner'
+    const manager = 'deletion-admin'
+    const member = 'deletion-member'
+    const moderator = 'deletion-moderator'
+    const request = (uid: string, url: string, method: 'GET' | 'POST' | 'DELETE' = 'GET', payload?: object) =>
+      app.inject({ url: '/v1' + url, method, headers: headers(uid), payload })
+    const created = (await request(clubOwner, '/clubs', 'POST', { name: 'Clube para exclusão' })).json<Club>()
+    const path = '/clubs/' + created.id
+    for (const [uid, role] of [[manager, 'admin'], [member, 'member'], [moderator, 'moderator']]) {
+      const id = (await request(uid, '/me')).json<Session>().user.id
+      await db.pool.query('INSERT INTO club_memberships(club_id,user_id,role) VALUES ($1,$2,$3)', [created.id, id, role])
+    }
+    const settings = (await request(clubOwner, path + '/settings')).json()
+    expect((await request(clubOwner, path + '/settings', 'POST', { ...settings, visibility: 'discoverable' })).statusCode).toBe(200)
+    const invite = (await request(clubOwner, path + '/invites', 'POST', {})).json<CreatedInvite>()
+    const discover = () => app.inject({ url: '/v1/discover/clubs?q=Clube%20para%20exclus%C3%A3o' })
+    expect((await discover()).json().items).toContainEqual(expect.objectContaining({ id: created.id }))
+    expect((await app.inject({ url: '/v1' + path, method: 'DELETE' })).statusCode).toBe(401)
+    expect((await request(member, path, 'DELETE')).statusCode).toBe(403)
+    expect((await request(moderator, path, 'DELETE')).statusCode).toBe(403)
+    expect((await request(manager, path, 'DELETE')).statusCode).toBe(204)
+    for (const uid of [clubOwner, manager, member, moderator]) {
+      expect((await request(uid, path + '/workspace')).statusCode).toBe(403)
+      expect((await request(uid, '/me')).json<Session>().clubs).toEqual([])
+    }
+    expect((await discover()).json().items).toEqual([])
+    expect((await request('deletion-visitor', path + '/join-requests', 'POST', {})).statusCode).toBe(404)
+    expect((await accept(invite.token, 'deletion-invitee')).json().error.code).toBe('INVALID_INVITE')
+    const { rows } = await db.pool.query("SELECT action FROM audit_logs WHERE club_id=$1 AND action='club.deleted'", [created.id])
+    expect(rows).toHaveLength(1)
+    await expect(db.pool.query(
+      "UPDATE club_memberships SET status='active',removed_at=NULL WHERE club_id=$1", [created.id],
+    )).rejects.toMatchObject({ code: '23514' })
+  })
   it('descobre somente clubes opt-in e aprova solicitações com isolamento, versão e paginação', async () => {
     await app.inject({url:'/v1/me',headers:headers('discover-owner')})
     const publicClubs:Club[]=[]

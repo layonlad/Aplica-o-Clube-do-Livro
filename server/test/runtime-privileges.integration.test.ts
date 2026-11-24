@@ -289,6 +289,11 @@ it('executa os fluxos essenciais com o papel restrito, sem DDL, migrations ou al
     expect((await call(`/public/posts/${sharedCopy.json().id}`)).json().media[0].id).not.toBe(
       media.json().id,
     )
+    const clubPath = '/clubs/' + club.json().id
+    const removed = await call(clubPath, 'DELETE')
+    expect(removed.statusCode, removed.body).toBe(204)
+    expect((await call(clubPath)).statusCode).toBe(403)
+    expect((await call(`/public/posts/${sharedCopy.json().id}`)).statusCode).toBe(200)
     await expect(runtime.query('SELECT * FROM schema_migrations')).rejects.toThrow(
       'permission denied',
     )

@@ -18,7 +18,7 @@ async function audit(client: PoolClient, clubId: string, actor: string, action: 
 export async function authorize(client: PoolClient, clubId: string, userId: string, ownerOnly = false, lock: 'update'|'share' = 'update'): Promise<Club> {
   await client.query(`SELECT id FROM clubs WHERE id = $1 FOR ${lock==='share'?'SHARE':'UPDATE'}`, [clubId])
   const { rows } = await client.query<Club>(`SELECT c.id, c.name, c.timezone, m.role FROM clubs c
-    JOIN club_memberships m ON m.club_id = c.id WHERE c.id = $1 AND m.user_id = $2 AND m.status = 'active'`, [clubId, userId])
+    JOIN club_memberships m ON m.club_id = c.id WHERE c.id = $1 AND c.deleted_at IS NULL AND m.user_id = $2 AND m.status = 'active'`, [clubId, userId])
   const club = rows[0]
   if (!club || (ownerOnly && club.role !== 'owner')) throw forbidden()
   return club
@@ -55,7 +55,7 @@ export class ClubService {
   async createClub(user: UserProfile, input: { name: string; timezone: string }): Promise<Club> {
     return transaction(this.pool, async (client) => {
       await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [user.id])
-      const count = await client.query('SELECT count(*)::int AS count FROM clubs WHERE owner_user_id = $1', [user.id])
+      const count = await client.query('SELECT count(*)::int AS count FROM clubs WHERE owner_user_id = $1 AND deleted_at IS NULL', [user.id])
       if (count.rows[0].count >= 5) throw new HttpError(409, 'CLUB_LIMIT', 'Você já administra o limite de cinco clubes.')
       const { rows } = await client.query<Club>('INSERT INTO clubs (name, timezone, owner_user_id) VALUES ($1, $2, $3) RETURNING id, name, timezone', [input.name, input.timezone, user.id])
       const club = { ...rows[0], role: 'owner' as const }
