@@ -6,12 +6,12 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Site 1.4 em produção. Candidata 1.5 com documentos legais e ajustes de acessibilidade",
+    "fase": "Versão 1.5 em produção nos dois sites",
     "tom": "ok",
-    "resumo": "Os dois sites servem a versão 1.4 (82d607a), com a API 4dac617. A candidata local acrescenta Política de Privacidade, Termos, Formulário LGPD e registro de aceite.",
-    "proximoPasso": "Validar a candidata 1.5 em Staging. Confirmar identificação do controlador, atendimento das solicitações e tratamento internacional antes de promover os documentos.",
+    "resumo": "Os dois sites servem o commit c8089e1 com Política de Privacidade, Termos de Serviço, Formulário LGPD, ajustes móveis e de acessibilidade. A API registra o aceite versionado das contas novas.",
+    "proximoPasso": "Concluir a revisão contratual de transferência internacional e validar a operação do atendimento de privacidade.",
     "pendencias": [
-      "Documentos legais em revisão. Confirmar o controlador e o canal de privacidade, os prazos de retenção, transferências internacionais e o enquadramento de menores. Publicação requer revisão do conteúdo e processo de atendimento.",
+      "Responsável e canal de privacidade informados e disponíveis no app. A política registra a revisão em andamento sobre transferência internacional. Validar a entrega e os prazos de atendimento, a retenção por categoria e o enquadramento de menores.",
       "Regras de cliente bloqueiam acesso direto ao Firestore do chat e Firebase Storage. Buckets de mídia e operações com bloqueio público. Falta testar recuperação de mídia e estabelecer descarte das cópias antigas.",
       "Chat de clubes em validação local. Antes da publicação, conferir teclado virtual, confirmar ativação da política de retenção e acesso IAM limitado ao banco, executar ensaio de promoção e smoke tests.",
       "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
@@ -41,7 +41,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "Versão 1.3 · e4ff398 publicado em 20/11/2026 nos dois sites; 132 arquivos do app conferidos por SHA-256; chat dos clubes com o visual novo, ligado para todos os clubes",
+      "versao": "Versão 1.5 · c8089e1 publicado em 24/11/2026; 138 arquivos conferidos por SHA-256",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -49,7 +49,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health",
-      "versao": "4dac617 · API clube-livro-api-00009-dab e executor clube-notifications-00008-rfk · sem nova migration na otimização de partida",
+      "versao": "c8089e1 · API clube-livro-api-00011-l2x e executor clube-notifications-00009-t94 · migration 025 aplicada",
       "atualizacao": "Cloud Build e deploy manual pelo digest no Cloud Run; mínimo zero, máximo uma instância",
       "tom": "ok"
     },
@@ -57,7 +57,7 @@
       "id": "staging",
       "nome": "Staging (localhost)",
       "url": "http://localhost:5174",
-      "versao": "Candidata 1.5 · privacidade, aceite e acessibilidade em localhost. A central avançada segue no PR 62.",
+      "versao": "Ensaio local da versão 1.5, já promovida. A central avançada segue no PR 62.",
       "atualizacao": "Iniciar com npm run staging e testar antes da promoção aprovada",
       "tom": "neutro"
     },
@@ -89,7 +89,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "Versão 1.3 · e4ff398 · mesmo frontend do site principal; 132 arquivos conferidos por SHA-256",
+      "versao": "Versão 1.5 · c8089e1 · mesmo frontend do site principal; 138 arquivos conferidos por SHA-256",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -156,7 +156,7 @@
         "Regras e permissões em execução",
         "Configuração privada no Secret Manager; identidade própria sem arquivo de chave"
       ],
-      "detalhe": "1 CPU/1 GiB, concorrência 2 e pool de 5 conexões, com mínimo zero e máximo uma instância. PR 35 9ce87a1 publicado pelo digest 52ccc3e2; revisão clube-livro-api-00005-fqj. Migrations existentes até 019 e grants mínimos preservados. Rotas novas de recusa e relações e campo de aparência testados com o runtime restrito, sem grants novos. Valida autenticação, privacidade do perfil, relação aprovada, associação independente aos clubes, bloqueios e moderação. Atividades paginadas e salvos do titular. Cloud SQL autenticado, GCS privado por ADC e manutenção preservados; Render antigo suspenso.",
+      "detalhe": "1 CPU/1 GiB, concorrência 2 e pool de 5 conexões, com mínimo zero e máximo uma instância. PR 67 c8089e1 publicado pelo digest 92d57ebe. Valida autenticação, aceite das contas novas, privacidade do perfil, relação aprovada, associação independente aos clubes, bloqueios e moderação. Cloud SQL autenticado, GCS privado por ADC e manutenção preservados; Render antigo suspenso.",
       "link": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health"
     },
     {
@@ -172,9 +172,9 @@
         "Fórum, encontros e álbuns",
         "Leituras sincronizadas e preferências",
         "Notificações, denúncias e moderação",
-        "Histórico de auditoria e aceites de convites"
+        "Histórico de auditoria, aceites de convites e comprovantes de aceite legal"
       ],
-      "detalhe": "Região us-central1; dezenove migrations com checksums conferidos. PR 27 aplicou evolução aditiva de solicitações e índices, preservando seguidores aprovados e clubes, após backup privado confirmado. Papéis API/executor continuam sem superusuário, DDL ou bypass; novas permissões mínimas verificadas em produção. Conector autenticado, sete backups gerenciados, proteção contra exclusão e crescimento automático de disco desligado. A fotografia da migração original de 50 tabelas permanece como recuperação histórica.",
+      "detalhe": "Região us-central1. A migration aditiva 025 foi aplicada após backup privado. O papel da API pode inserir e consultar o comprovante de aceite, com horário do banco e sem permissão de edição ou exclusão. Conector autenticado, backups gerenciados, proteção contra exclusão e crescimento automático de disco desligado. A fotografia da migração original permanece como recuperação histórica.",
       "link": "https://console.cloud.google.com/sql/instances/clube-livro-postgres/overview?project=gen-lang-client-0194308411"
     },
     {
@@ -276,6 +276,7 @@
     { "o_que": "Leituras de quem usa sem conta", "onde": "pessoa", "privacidade": "Só no aparelho", "copia": "Backup JSON exportado pelo Perfil; originais e mídias baixados separadamente" },
     { "o_que": "EPUB original e capa guardados neste navegador", "onde": "pessoa", "privacidade": "Cópias locais separadas por visitante ou conta", "copia": "IndexedDB; guardar no navegador não equivale a enviar o arquivo para a nuvem" },
     { "o_que": "E-mail, senha e login com Google", "onde": "auth", "privacidade": "Privado", "copia": "Gerenciado pelo Google" },
+    { "o_que": "Aceite dos termos e ciência da política", "onde": "banco", "privacidade": "ID interno da conta, versões dos documentos e hora do banco. Sem atribuição retroativa a contas anteriores.", "copia": "Cloud SQL com backups privados; o papel da API pode registrar e consultar o comprovante." },
     { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Público por escolha; perfil privado tem cartão mínimo autenticado. Conteúdo pessoal só do titular ou seguidores aprovados. Clube exige sua associação própria; bloqueios e suspensão são revalidados.", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON pessoal e persistência no banco; arquivos originais não entram no JSON; PRs 31/33 salvam posição em segundo plano, sem bloquear viradas, e preservam a origem dos trechos selecionados em páginas/rolagem" },
     { "o_que": "Aparência do app e controles do leitor", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "Preferências no navegador e, com conta, no banco. coverBackdrop opcional salvo pela API e recuperado em outro contexto de navegador em produção; controles do leitor continuam separados. PR 27 publicado: gestos, animação, fundo e espaçamento do leitor persistem no mesmo mecanismo, com prévia imediata." },
@@ -416,6 +417,13 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-24",
+      "autor": "Codex",
+      "titulo": "Publicação da versão 1.5",
+      "resumo": "PR 67 publicado pelo commit c8089e1. Backup do Cloud SQL confirmado, migration 025 aplicada e privilégios do aceite verificados. API e executor atualizados pelo mesmo digest, seguidos pelos dois sites Firebase. Os 138 arquivos de entrada, assets e licenças conferidos em cada site são idênticos ao build. Teste móvel confirmou documentos, formulário, bloqueio até o aceite, comprovante e reabertura da sessão. Dados sintéticos removidos. A revisão contratual de transferência segue registrada na política.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/67"
+    },
     {
       "data": "2026-11-24",
       "autor": "Codex",
