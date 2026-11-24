@@ -361,3 +361,35 @@ describe('API com PostgreSQL real', () => {
     }finally{await filesApp.close()}
   })
 })
+
+it('registra o aceite legal versionado somente para o titular autenticado e preserva as contas existentes', async () => {
+  const review = await buildApp({
+    pool: db.pool, origin: 'https://club.example', requireLegalAcceptance: true,
+    verifyToken: async token => identity(token),
+  })
+  try {
+    const { termsVersion, privacyVersion } = await import('../src/legal-versions.js')
+    const receipt = { termsVersion, privacyVersion, acceptTerms: true, acknowledgePrivacy: true }
+    const accept = (uid: string, payload: object = receipt) => review.inject({
+      method: 'POST', url: '/v1/me/legal-acceptance', headers: headers(uid), payload,
+    })
+    await db.pool.query('UPDATE users SET legal_review_required=false WHERE id=$1', [owner.user.id])
+    expect((await review.inject({ url: '/v1/me', headers: headers() })).statusCode).toBe(200)
+    const newUser = 'new-legal-reader'
+    const before = await review.inject({ url: '/v1/me', headers: headers(newUser) })
+    expect(before.statusCode).toBe(428)
+    expect(before.json().error.code).toBe('LEGAL_ACCEPTANCE_REQUIRED')
+    expect((await review.inject({ method: 'POST', url: '/v1/me/legal-acceptance', payload: receipt })).statusCode).toBe(401)
+    expect((await accept('unverified')).statusCode).toBe(403)
+    expect((await accept(newUser, { ...receipt, userId: owner.user.id })).statusCode).toBe(400)
+    expect((await accept(newUser, { ...receipt, acknowledgePrivacy: false })).statusCode).toBe(400)
+    expect((await accept(newUser, { ...receipt, termsVersion: '0.1' })).statusCode).toBe(409)
+    const recorded = await accept(newUser)
+    expect(recorded.statusCode, recorded.body).toBe(200)
+    expect((await accept(newUser)).json()).toEqual(recorded.json())
+    expect((await review.inject({ url: '/v1/me', headers: headers(newUser) })).statusCode).toBe(200)
+    expect((await review.inject({ url: '/v1/me', headers: headers('new-other-reader') })).statusCode).toBe(428)
+  } finally {
+    await review.close()
+  }
+})

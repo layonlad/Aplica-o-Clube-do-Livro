@@ -20,8 +20,11 @@ if (staged?.environment !== 'staging' || staged.source !== candidate.source || s
 try { loadEnvFile('.env.production.local') }
 catch (error) { if (error.code !== 'ENOENT') throw error }
 const project = JSON.parse(readFileSync('.firebaserc', 'utf8')).projects.production
-for (const key of ['VITE_FIREBASE_API_KEY', 'VITE_FIREBASE_AUTH_DOMAIN', 'VITE_FIREBASE_PROJECT_ID', 'VITE_API_URL']) {
-  if (!process.env[key]) throw new Error(`Configuração de publicação ausente: ${key}`)
+for (const key of ['VITE_FIREBASE_API_KEY', 'VITE_FIREBASE_AUTH_DOMAIN', 'VITE_FIREBASE_PROJECT_ID', 'VITE_API_URL', 'VITE_LEGAL_CONTROLLER', 'VITE_PRIVACY_CONTACT', 'VITE_LEGAL_TRANSFER']) {
+  if (!process.env[key]?.trim()) throw new Error(`Configuração de publicação ausente: ${key}`)
+}
+if (!/^[^\s@?&#]+@[^\s@?&#]+\.[^\s@?&#]+$/.test(process.env.VITE_PRIVACY_CONTACT.trim())) {
+  throw new Error('Configure o endereço público de atendimento à LGPD.')
 }
 if (process.env.VITE_FIREBASE_PROJECT_ID !== project) throw new Error('O app Firebase deve pertencer ao projeto de produção configurado.')
 if (![project + '.firebaseapp.com', project + '.web.app'].includes(process.env.VITE_FIREBASE_AUTH_DOMAIN)) {

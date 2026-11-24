@@ -17,14 +17,14 @@
   box-shadow: var(--shadow-3);
   animation: rise-in var(--dur-slow) var(--ease-out) both;
 }
-.access-page--split .access-card { margin: var(--space-8) var(--gutter); width: auto; max-width: 480px; justify-self: center; align-self: center; }
+.access-page--split .access-card { margin: var(--space-8) auto; width: calc(100% - 2 * var(--gutter)); max-width: 480px; padding: clamp(16px, 5vw, 32px); justify-self: center; align-self: center; }
 .access-card .eyebrow { margin-top: var(--space-4); }
 .access-card h1 { margin: var(--space-2) 0 var(--space-3); font-size: clamp(2rem, 1.6rem + 2vw, 2.6rem); }
 .access-card p, .connected-content p { line-height: var(--leading-normal); color: var(--text-muted); }
 .access-card p.eyebrow, .connected-content p.eyebrow { margin-bottom: var(--space-2); color: var(--space-accent-ink); line-height: 1.2; }
 .access-card > .button-link { width: 100%; margin-top: var(--space-2); }
 .access-form { display: grid; gap: var(--space-4); margin: var(--space-6) 0; max-width: 540px; }
-.access-form label, .invite-result label { display: grid; gap: var(--space-2); font-size: var(--text-small); font-weight: 600; }
+.access-form label:not(.legal-check), .invite-result label { display: grid; gap: var(--space-2); font-size: var(--text-small); font-weight: 600; }
 .access-form .button { width: 100%; }
 .access-form small { color: var(--text-muted); }
 .access-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }

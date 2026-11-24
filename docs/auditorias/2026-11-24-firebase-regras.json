@@ -1,0 +1,5 @@
+{
+  "score": 5,
+  "summary": "No recorte das permissões diretas no código desta branch, Firestore do chat e Firebase Storage negam leitura e gravação pelo SDK cliente. A avaliação não cobre permissões de identidades de serviço nem certifica segurança do projeto.",
+  "findings": []
+}

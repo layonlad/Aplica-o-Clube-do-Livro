@@ -1,3 +1,4 @@
+import { LegalAcceptance, legalAcceptanceRoute } from './legal-acceptance.js'
 import {registerChat} from './chat/routes.js'
 import { registerReadingIntegrations } from './reading-integrations/routes.js'
 import {registerLiteraryReads,registerLiteraryAccountRoutes} from './literary/routes.js'
@@ -47,7 +48,7 @@ const inviteInput = z.object({
   expiresInDays: z.number().int().min(1).max(30).default(7),
 }).strict().refine((data) => !data.email || data.maxUses === 1, 'Convites por e-mail devem ter um único uso.')
 
-export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; additionalOrigins?:string[]; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage;moderatorUids?:string[];pushPublicKey?:string;photoCleanupToken?:string;literaryNewsSync?:boolean;afterSocialMutation?:()=>void }) {
+export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; origin: string; additionalOrigins?:string[]; logger?: boolean; rateMax?: number;catalogSearch?:(query:string)=>Promise<CatalogEntry[]>;storage?:PrivateStorage;moderatorUids?:string[];pushPublicKey?:string;photoCleanupToken?:string;literaryNewsSync?:boolean;afterSocialMutation?:()=>void; requireLegalAcceptance?:boolean }) {
   const app = Fastify({
     logger: options.logger ? { redact: ['req.headers.authorization', 'req.body', 'res.headers'] } : false,
     logController: new LogController({ disableRequestLogging: true }),
@@ -55,6 +56,7 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
     requestTimeout: 15000,
     trustProxy: false,
   })
+  const legal = new LegalAcceptance(options.pool)
   const service = new ClubService(options.pool)
   const workspace = new WorkspaceService(options.pool)
   const clubFiles=new ClubFiles(options.pool,options.storage)
@@ -100,12 +102,15 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
       if (identity.uid === editorialFirebaseUid) throw new HttpError(401, 'AUTH_REQUIRED', 'Entre na sua conta para continuar.')
       if (!identity.emailVerified || !identity.email) throw new HttpError(403, 'EMAIL_NOT_VERIFIED', 'Confirme seu e-mail para acessar o clube.')
       request.user = await service.syncUser(identity)
+      const recordingAcceptance = request.method === 'POST' && request.routeOptions.url === legalAcceptanceRoute
+      if (options.requireLegalAcceptance && !recordingAcceptance) await legal.require(request.user.id)
     }
   const optionalAuth = async (request: import('fastify').FastifyRequest) => { if (request.headers.authorization) await authenticate(request) }
   await registerPublicReads(app,options.pool,optionalAuth,options.storage,options.moderatorUids)
   await registerLiteraryReads(app, options.pool, optionalAuth)
   await app.register(async (api) => {
     api.addHook('onRequest',authenticate)
+    api.post('/me/legal-acceptance', request => legal.record(request.user.id, request.body))
     registerReadingIntegrations(api, options.pool, files)
     await registerPublicMutations(api,options.pool,options.storage,options.moderatorUids)
     api.get('/me/clubs/summary', request => management.summaries(request.user))

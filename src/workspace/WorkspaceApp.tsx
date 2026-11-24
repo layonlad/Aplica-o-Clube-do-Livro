@@ -1,3 +1,4 @@
+import { LegalAcceptanceScreen } from '../legal/LegalAcceptanceScreen'
 import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from '../auth/AuthProvider'
@@ -19,6 +20,7 @@ function WorkspaceSession() {
     <div className="access-actions"><Button onClick={retry}>Tentar novamente</Button>
       <Button variant="ghost" onClick={() => void signOut().catch(() => {})}>Sair da conta</Button></div>
   </section></main>
+  if (status === 'legal-review') return <LegalAcceptanceScreen key={user.uid} />
   if (!user || !user.emailVerified || status === 'unverified') {
     return <Routes>
       <Route path="/account" element={user ? <VerifyEmailScreen /> : <AuthScreen />} />

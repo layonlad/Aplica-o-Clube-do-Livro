@@ -28,6 +28,7 @@ const pool = createPool(config.DATABASE_URL)
 await migrate(pool)
 const app = await buildApp({
   pool, verifyToken: createFirebaseVerifier(config.FIREBASE_PROJECT_ID), origin,
+  requireLegalAcceptance: staging,
   moderatorUids: config.PLATFORM_MODERATOR_UIDS, storage: localStorage(join(directory, 'media-private')),
 })
 // node_modules pode ser um link para outra cópia: libera o caminho real (fontes) no servidor do Vite.

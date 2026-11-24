@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { BookOpen, Compass, House, Search, UserRound, UsersRound, type LucideIcon } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { NotificationBanner } from '../notifications/NotificationBanner'
 import { useAuth } from '../auth/AuthProvider'
 import { SkeletonPage } from '../components/ui'
@@ -76,6 +76,7 @@ export function WorkspaceShell() {
 
   const { snapshot, scope, scopeName, clubs, setScope, loading, error, errorCode, refresh } = useWorkspace()
   const { user, signOut } = useAuth()
+  const reduceMotion = useReducedMotion()
   const navigate = useNavigate()
   const [accountError, setAccountError] = useState('')
   async function reenter() { try { await signOut(); navigate('/account') } catch { setAccountError('Não foi possível sair da sessão. Tente novamente.') } }
@@ -158,7 +159,7 @@ export function WorkspaceShell() {
     <main id="conteudo" ref={mainRef} tabIndex={-1} className="page-content">
       {reading || main ? <>
         {main ? null : notices}
-        <motion.div key={reading ? 'reader' : pathname} className={reading ? 'route-view route-view--reader' : 'route-view'} initial={reading ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>
+        <motion.div key={reading ? 'reader' : pathname} className={reading ? 'route-view route-view--reader' : 'route-view'} initial={reading || reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }}>
           {main && (unread || error || accountError) ? <div className="main-notices">{notices}</div> : null}
           {content}
         </motion.div>
@@ -172,7 +173,7 @@ export function WorkspaceShell() {
         <SheetBody>
           {clubPage && <nav ref={subnavRef} className="club-subnav" aria-label="Navegação do clube">{[['/app', 'Visão geral'], ['/app/wall', 'Mural'], ['/app/forum', 'Fórum'], ['/app/library', 'Leituras'], ['/app/calendar', 'Encontros'], ['/app/gallery', 'Galeria'], [`/clubs/${scope}`, ['owner', 'admin'].includes(snapshot?.role ?? 'member') ? 'Membros e administração' : 'Membros']].map(([to, label]) => { const active = to === '/app' ? pathname === '/app' : pathname.startsWith(to); return <Link key={to} to={to} aria-current={active ? 'page' : undefined} className={active ? 'active' : ''}>{label}</Link> })}{['owner', 'admin', 'moderator'].includes(snapshot?.role ?? 'member') && <Link to={`/app/moderation?club=${scope}`} aria-current={clubModeration ? 'page' : undefined} className={clubModeration ? 'active' : ''}>Moderação</Link>}</nav>}
           {notices}
-          <motion.div key={pathname} className="route-view" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+          <motion.div key={pathname} className="route-view" initial={reduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
             {content}
           </motion.div>
         </SheetBody>

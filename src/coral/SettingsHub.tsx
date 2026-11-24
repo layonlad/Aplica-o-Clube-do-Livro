@@ -1,3 +1,4 @@
+import { LegalLinks } from '../legal/LegalPages'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Bell, BookOpen, CalendarDays, ChevronRight, Download, History, KeyRound, Library, LogIn, LogOut, NotebookPen, Palette, ShieldCheck, Sparkles, Ticket, UserCog, UserRound, UsersRound, type LucideIcon } from 'lucide-react'
@@ -74,6 +75,7 @@ export function SettingsHub() {
         </div>
       )}
       {error && <p role="alert" className="access-error">{error}</p>}
+      <LegalLinks />
       <ReleaseFooter />
     </div>
   )

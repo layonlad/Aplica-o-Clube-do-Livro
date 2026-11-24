@@ -4,7 +4,7 @@ import { Globe2, Share2, UsersRound, Download, ChevronRight } from 'lucide-react
 import { useAuth } from '../auth/AuthProvider'
 import { Sheet } from '../components/Sheet'
 import { useWorkspace } from './WorkspaceProvider'
-import { bookCoverBlob, drawnCover } from './book-files'
+import { drawnCover } from './book-files'
 
 /**
  * Capa preparada para publicar. Fica só na memória, entre a biblioteca e a tela de destino;
@@ -31,15 +31,9 @@ export function clearPendingShare() {
   pending = null
 }
 
-async function coverFile(user: ReturnType<typeof useAuth>['user'], book: ShareBook) {
-  let blob: Blob | undefined = await bookCoverBlob(user, book.id).catch(() => undefined)
-  if (!blob && book.coverUrl) {
-    blob = await fetch(book.coverUrl, { referrerPolicy: 'no-referrer' })
-      .then((response) => (response.ok ? response.blob() : undefined))
-      .catch(() => undefined)
-  }
-  if (!blob || !['image/jpeg', 'image/png', 'image/webp'].includes(blob.type))
-    blob = (await drawnCover(book.title, book.author)) ?? blob
+async function coverFile(book: ShareBook) {
+  // Public catalog and personal EPUB images are for reading. Export only the app's illustration.
+  const blob = await drawnCover(book.title, book.author)
   if (!blob) return undefined
   const extension = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
   return new File([blob], `capa.${extension}`, { type: blob.type || 'image/jpeg' })
@@ -49,7 +43,6 @@ interface ShareBook {
   id: string
   title: string
   author: string
-  coverUrl?: string
 }
 
 /** Botão "Compartilhar" de um livro: a pessoa escolhe para onde vai a capa. */
@@ -60,7 +53,7 @@ export function BookShare({ book, compact = false }: { book: ShareBook; compact?
       <button
         type="button"
         className={compact ? 'icon-action' : 'button button--secondary'}
-        aria-label={`Compartilhar a capa de ${book.title}`}
+        aria-label={`Compartilhar cartão de ${book.title}`}
         title="Compartilhar"
         onClick={() => setOpen(true)}
       >
@@ -82,17 +75,17 @@ export function ShareSheet({ book, onClose }: { book: ShareBook; onClose: () => 
   useEffect(() => {
     let live = true,
       href = ''
-    void coverFile(user, book).then((value) => {
+    void coverFile(book).then((value) => {
       if (!live || !value) return
       href = URL.createObjectURL(value)
       setFile(value)
       setPreview(href)
-    })
+    }).catch(() => { if (live) setError('Não foi possível gerar o cartão de leitura.') })
     return () => {
       live = false
       if (href) URL.revokeObjectURL(href)
     }
-  }, [book.id])
+  }, [book.id, book.title, book.author])
   const canNativeShare =
     !!file && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })
   function go(target: string) {
@@ -126,24 +119,24 @@ export function ShareSheet({ book, onClose }: { book: ShareBook; onClose: () => 
     link.click()
   }
   return (
-    <Sheet title="Compartilhar capa" onClose={onClose} className="share-sheet">
+    <Sheet title="Compartilhar cartão de leitura" onClose={onClose} className="share-sheet">
       <div className="share-sheet__book">
-        {preview ? <img src={preview} alt={`Capa de ${book.title}`} /> : <span className="share-sheet__placeholder skeleton" />}
+        {preview ? <img src={preview} alt={`Cartão de leitura de ${book.title}`} /> : <span className="share-sheet__placeholder skeleton" />}
         <span>
           <strong>{book.title}</strong>
           <small>{book.author}</small>
         </span>
       </div>
-      <div className="share-targets" role="list">
+      <div className="share-targets" role="group" aria-label="Onde compartilhar">
         {user?.emailVerified ? (
           <>
-            <button type="button" role="listitem" className="share-target" disabled={!file} onClick={() => go('public')}>
+            <button type="button" className="share-target" disabled={!file} onClick={() => go('public')}>
               <span className="share-target__icon"><Globe2 size={20} aria-hidden="true" /></span>
               <span><strong>Comunidade</strong><small>Conforme a privacidade do seu perfil</small></span>
               <ChevronRight size={18} aria-hidden="true" />
             </button>
             {clubs.map((club) => (
-              <button type="button" role="listitem" key={club.id} className="share-target" disabled={!file} onClick={() => go(club.id)}>
+              <button type="button" key={club.id} className="share-target" disabled={!file} onClick={() => go(club.id)}>
                 <span className="share-target__icon"><UsersRound size={20} aria-hidden="true" /></span>
                 <span><strong>{club.name}</strong><small>Mural do clube</small></span>
                 <ChevronRight size={18} aria-hidden="true" />
@@ -151,27 +144,27 @@ export function ShareSheet({ book, onClose }: { book: ShareBook; onClose: () => 
             ))}
           </>
         ) : (
-          <Link className="share-target" role="listitem" to="/account" onClick={onClose}>
+          <Link className="share-target" to="/account" onClick={onClose}>
             <span className="share-target__icon"><Globe2 size={20} aria-hidden="true" /></span>
             <span><strong>Comunidade e clubes</strong><small>Entre na sua conta</small></span>
             <ChevronRight size={18} aria-hidden="true" />
           </Link>
         )}
         {canNativeShare ? (
-          <button type="button" role="listitem" className="share-target" onClick={() => void nativeShare()}>
+          <button type="button" className="share-target" onClick={() => void nativeShare()}>
             <span className="share-target__icon"><Share2 size={20} aria-hidden="true" /></span>
             <span><strong>Outros apps</strong><small>WhatsApp, Instagram, e-mail…</small></span>
             <ChevronRight size={18} aria-hidden="true" />
           </button>
         ) : (
-          <button type="button" role="listitem" className="share-target" disabled={!file} onClick={download}>
+          <button type="button" className="share-target" disabled={!file} onClick={download}>
             <span className="share-target__icon"><Download size={20} aria-hidden="true" /></span>
             <span><strong>Salvar imagem</strong><small>Para postar onde quiser</small></span>
             <ChevronRight size={18} aria-hidden="true" />
           </button>
         )}
       </div>
-      <p className="share-sheet__note">Só a capa é compartilhada. O arquivo do livro fica com você.</p>
+      <p className="share-sheet__note">O app cria uma ilustração com título e autoria para compartilhar.</p>
       {error && <p role="alert" className="access-error">{error}</p>}
     </Sheet>
   )

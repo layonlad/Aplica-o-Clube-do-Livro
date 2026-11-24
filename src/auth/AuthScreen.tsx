@@ -1,3 +1,5 @@
+import { LegalCheck } from '../legal/LegalAcceptanceScreen'
+import { LegalLinks } from '../legal/LegalPages'
 import { isStaging, version } from '../app/release'
 import { BookOpen } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
@@ -25,6 +27,7 @@ function AccessArt() {
 
 export function AuthScreen() {
   const { auth } = useAuth()
+  const [accepted, setAccepted] = useState(false)
   const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login')
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
@@ -33,7 +36,9 @@ export function AuthScreen() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   async function submit(event: FormEvent) {
-    event.preventDefault(); setBusy(true); setError(''); setMessage('')
+    event.preventDefault()
+    if (mode === 'signup' && !accepted) return
+    setBusy(true); setError(''); setMessage('')
     try {
       if (mode === 'reset') {
         await sendPasswordResetEmail(auth, email)
@@ -47,6 +52,7 @@ export function AuthScreen() {
     finally { setBusy(false); setPassword('') }
   }
   async function google() {
+    if (mode === 'signup' && !accepted) { setError('Revise os documentos e marque a caixa de aceite.'); return }
     setBusy(true); setError('')
     try { await signInWithPopup(auth, new GoogleAuthProvider()) }
     catch (err) { setError(readableError(err)) }
@@ -58,18 +64,20 @@ export function AuthScreen() {
     {isStaging && <p className="access-release">Staging · Versão {version}</p>}
     <h1>{mode === 'signup' ? 'Comece sua história' : mode === 'reset' ? 'Recuperar senha' : 'Bom ter você aqui'}</h1>
     <p>Entre para sincronizar suas leituras, acessar seus clubes ou aceitar um convite.</p>
+    <LegalLinks newTab />
     <form className="access-form" onSubmit={submit}>
       {mode === 'signup' && <label>Seu nome<input required maxLength={100} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} /></label>}
       <label>E-mail<input type="email" required maxLength={254} autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
       {mode !== 'reset' && <label>Senha<input type="password" required minLength={mode === 'signup' ? 12 : 1} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password} onChange={(e) => setPassword(e.target.value)} /></label>}
       {mode === 'signup' && <small>Use pelo menos 12 caracteres. Você precisará confirmar seu e-mail.</small>}
+      {mode === 'signup' && <LegalCheck checked={accepted} onChange={setAccepted} />}
       {error && <p role="alert" className="access-error">{error}</p>}
       {message && <p role="status">{message}</p>}
       <Button disabled={busy} type="submit">{busy ? 'Aguarde…' : mode === 'signup' ? 'Criar conta' : mode === 'reset' ? 'Enviar instruções' : 'Entrar'}</Button>
     </form>
     <div className="access-actions">{import.meta.env.VITE_APP_NATIVE !== '1' &&
       <Button variant="secondary" disabled={busy} onClick={google}>Continuar com Google</Button>}
-      <Button variant="ghost" disabled={busy} onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(''); setMessage('') }}>{mode === 'signup' ? 'Já tenho uma conta' : 'Criar uma conta'}</Button>
+      <Button variant="ghost" disabled={busy} onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setAccepted(false); setError(''); setMessage('') }}>{mode === 'signup' ? 'Já tenho uma conta' : 'Criar uma conta'}</Button>
       <Button variant="ghost" disabled={busy} onClick={() => { setMode(mode === 'reset' ? 'login' : 'reset'); setError(''); setMessage('') }}>{mode === 'reset' ? 'Voltar para entrar' : 'Esqueci minha senha'}</Button></div>
   </section></main>
 }

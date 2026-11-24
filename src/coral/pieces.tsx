@@ -77,7 +77,7 @@ export function BookActions({ book, entry, onClose, extra }: { book: Book; entry
   const [confirm, setConfirm] = useState(false)
   const personal = scope === 'personal'
   const finished = (entry?.percent ?? 0) >= 100
-  if (share) return <ShareSheet book={{ id: book.id, title: book.title, author: book.author, coverUrl: book.metadata?.cover }} onClose={onClose} />
+  if (share) return <ShareSheet book={{ id: book.id, title: book.title, author: book.author }} onClose={onClose} />
   return (
     <Sheet title={book.title} onClose={onClose} className="action-sheet">
       <div className="action-menu">

@@ -759,7 +759,7 @@ input[type='color']::-moz-color-swatch { border: 0; border-radius: 50%; }
 .free-tile { display: flex; width: 104px; flex-direction: column; gap: 3px; padding: 0; color: var(--text); background: none; border: 0; cursor: pointer; font: inherit; text-align: left; }
 .free-tile:active { transform: scale(.97); }
 .free-tile__cover { position: relative; display: block; }
-.free-tile__badge { position: absolute; top: 6px; left: 6px; padding: 2px 7px; color: #fff; background: var(--brand); border-radius: 999px; font-size: 0.66rem; font-weight: var(--weight-bold); letter-spacing: .01em; box-shadow: 0 1px 3px rgb(0 0 0 / .18); }
+.free-tile__badge { position: absolute; top: 6px; left: 6px; padding: 2px 7px; color: var(--text-on-brand); background: var(--brand); border-radius: 999px; font-size: 0.66rem; font-weight: var(--weight-bold); letter-spacing: .01em; box-shadow: 0 1px 3px rgb(0 0 0 / .18); }
 .free-tile strong { display: -webkit-box; margin-top: 4px; overflow: hidden; font-size: var(--text-small); font-weight: var(--weight-semibold); line-height: 1.25; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .free-tile small { overflow: hidden; color: var(--text-muted); font-size: var(--text-caption); white-space: nowrap; text-overflow: ellipsis; }
 .free-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 18px 12px; }

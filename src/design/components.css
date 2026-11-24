@@ -114,8 +114,9 @@
 .workspace-form input:focus-visible, .workspace-form select:focus-visible, .workspace-form textarea:focus-visible,
 .access-form input:focus-visible, .invite-result input:focus-visible {
   border-color: var(--accent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
-  outline: none;
+  box-shadow: var(--focus-ring);
+  outline: 2px solid var(--brand-ink);
+  outline-offset: 2px;
 }
 input[type='checkbox'], input[type='radio'] { width: 20px; height: 20px; accent-color: var(--accent); }
 input[type='color'] { width: 56px; height: 40px; padding: 2px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface-raised); cursor: pointer; }
