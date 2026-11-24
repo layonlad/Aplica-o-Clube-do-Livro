@@ -1,0 +1,1 @@
+import{H as e,L as t,U as n}from"./index-D54r_UnO.js";var r=e=>e===null?`/public/posts`:`/clubs/${e}/posts`,i=e=>e===null?`/public/media`:`/clubs/${e}/media`;function a(n,r){return n?.emailVerified?t(n,r):e(r)}function o(e,t,r=!1){return n(e?.emailVerified?e.uid:null,t,()=>a(e,t),r)}export{a as i,i as n,r,o as t};
