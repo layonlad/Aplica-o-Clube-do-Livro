@@ -1,6 +1,8 @@
 # Privacidade, acessibilidade e direitos de imagem
 
-Auditoria de 24/11/2026. Escopo web do Clube do Livro, cadastro, API, armazenamento da aplicação e controles de produção consultados em modo leitura. O trabalho está na candidata local 1.5. Os dois manifestos públicos consultados continuam mostrando a versão 1.4, commit 82d607a.
+Auditoria de 24/11/2026. Escopo web do Clube do Livro, cadastro, API, armazenamento da aplicação e controles de produção.
+
+A versão 1.5, commit `c8089e1`, foi publicada nos dois endereços. A migration 025 foi aplicada após backup. Os testes públicos confirmaram as páginas de privacidade, termos e formulário, além de 138 arquivos por endereço. Uma conta descartável validou o bloqueio antes do aceite, a gravação do comprovante e a reabertura da sessão. A conta e seu espaço pessoal de teste foram removidos. O formulário foi validado até a preparação da mensagem, sem confirmar entrega na caixa de atendimento. A política informa que o enquadramento contratual das transferências internacionais está em revisão.
 
 ## Documentos e cadastro
 
