@@ -6,14 +6,14 @@
     "repositorio": "https://github.com/layonlad/Aplica-o-Clube-do-Livro"
   },
   "estado": {
-    "fase": "Versão 1.5 em produção nos dois sites",
+    "fase": "Versão 1.6 em produção nos dois sites",
     "tom": "ok",
-    "resumo": "Os dois sites servem o commit c8089e1 com Política de Privacidade, Termos de Serviço, Formulário LGPD, ajustes móveis e de acessibilidade. A API registra o aceite versionado das contas novas.",
+    "resumo": "Os dois sites servem o commit 4510001. Proprietários e administradores podem excluir um clube após confirmar. Membros podem sair individualmente. Os documentos legais e o aceite versionado das contas novas seguem disponíveis.",
     "proximoPasso": "Concluir a revisão contratual de transferência internacional e validar a operação do atendimento de privacidade.",
     "pendencias": [
       "Responsável e canal de privacidade informados e disponíveis no app. A política registra a revisão em andamento sobre transferência internacional. Validar a entrega e os prazos de atendimento, a retenção por categoria e o enquadramento de menores.",
       "Regras de cliente bloqueiam acesso direto ao Firestore do chat e Firebase Storage. Buckets de mídia e operações com bloqueio público. Falta testar recuperação de mídia e estabelecer descarte das cópias antigas.",
-      "Chat de clubes em validação local. Antes da publicação, conferir teclado virtual, confirmar ativação da política de retenção e acesso IAM limitado ao banco, executar ensaio de promoção e smoke tests.",
+      "Chat habilitado no site e na API de produção. A validação com teclado virtual em aparelho físico permanece pendente.",
       "Integração Kindle publicada. O app prepara o arquivo autorizado e o leitor escolhe como transferir. Recebimento pela Amazon e menu nativo em aparelho físico aguardam teste. Progresso externo manual, histórico pessoal opcional e compartilhamento voluntário de reflexões.",
       "Notícias usam metadados do RSS e link original. A primeira coleta importou uma manchete real. Recomendações, filtros avançados e acompanhamento de assuntos têm rotas na API; faltam controles correspondentes nas telas.",
       "GHSA-fc5q-39xc-vjpf em picomatch até 4.0.7, somente ferramentas de desenvolvimento, sem versão corrigida na verificação de 17/11/2026. Auditoria completa informativa e produção com bloqueio por severidade alta; não há correção aplicada à biblioteca.",
@@ -41,7 +41,7 @@
       "id": "producao",
       "nome": "Produção",
       "url": "https://gen-lang-client-0194308411.web.app",
-      "versao": "Versão 1.5 · c8089e1 publicado em 24/11/2026; 138 arquivos conferidos por SHA-256",
+      "versao": "Versão 1.6 · 4510001 publicado em 24/11/2026; 138 arquivos conferidos por SHA-256",
       "atualizacao": "Manual, com autorização do dono; merge não publica produção",
       "tom": "ok"
     },
@@ -49,7 +49,7 @@
       "id": "api-producao",
       "nome": "API de produção",
       "url": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health",
-      "versao": "c8089e1 · API clube-livro-api-00011-l2x e executor clube-notifications-00009-t94 · migration 025 aplicada",
+      "versao": "4510001 · API clube-livro-api-00012-67b e executor clube-notifications-00010-9t8 · migration 026 aplicada",
       "atualizacao": "Cloud Build e deploy manual pelo digest no Cloud Run; mínimo zero, máximo uma instância",
       "tom": "ok"
     },
@@ -57,7 +57,7 @@
       "id": "staging",
       "nome": "Staging (localhost)",
       "url": "http://localhost:5174",
-      "versao": "Candidata 1.6: exclusão administrativa de clubes, com a saída de membros existente. A central avançada segue no PR 62.",
+      "versao": "Ensaio local da versão 1.6, já promovida. A central avançada segue no PR 62.",
       "atualizacao": "Iniciar com npm run staging e testar antes da promoção aprovada",
       "tom": "neutro"
     },
@@ -89,7 +89,7 @@
       "id": "compatibilidade",
       "nome": "Endereço anterior em compatibilidade",
       "url": "https://project-acb850f4-4bb8-45de-a84.web.app",
-      "versao": "Versão 1.5 · c8089e1 · mesmo frontend do site principal; 138 arquivos conferidos por SHA-256",
+      "versao": "Versão 1.6 · 4510001 · mesmo frontend do site principal; 138 arquivos conferidos por SHA-256",
       "atualizacao": "Manual junto ao site principal; sem API ou fila antiga ativa",
       "tom": "ok"
     }
@@ -98,7 +98,7 @@
     {
       "id": "chat-firestore", "titulo": "Mensagens dos clubes", "servico": "Firestore Standard · clube-chat", "plano": "Por uso", "coluna": 4, "cor": "rose",
       "guarda": ["Texto das mensagens e data de expiração"],
-      "detalhe": "Banco dedicado em us-central1. Regras privadas publicadas e leitura anônima recusada. A API publicada ainda não grava mensagens; a candidata usa o emulador local. Política de expiração configurada para noventa dias.",
+      "detalhe": "Banco dedicado em us-central1. Chat ativo em produção por meio da API, com regras privadas e acesso de cliente direto recusado. Staging usa o emulador local. Política de expiração configurada para noventa dias.",
       "link": ""
     },
     {
@@ -156,7 +156,7 @@
         "Regras e permissões em execução",
         "Configuração privada no Secret Manager; identidade própria sem arquivo de chave"
       ],
-      "detalhe": "1 CPU/1 GiB, concorrência 2 e pool de 5 conexões, com mínimo zero e máximo uma instância. PR 67 c8089e1 publicado pelo digest 92d57ebe. Valida autenticação, aceite das contas novas, privacidade do perfil, relação aprovada, associação independente aos clubes, bloqueios e moderação. Cloud SQL autenticado, GCS privado por ADC e manutenção preservados; Render antigo suspenso.",
+      "detalhe": "1 CPU/1 GiB, concorrência 2 e pool de 5 conexões, com mínimo zero e máximo uma instância. PR 69 4510001 publicado pelo digest c3977890. Valida autenticação, aceite das contas novas, privacidade, associação e papéis dos clubes. Proprietário e administrador podem excluir o clube. Cloud SQL autenticado, GCS privado por ADC e manutenção preservados; Render antigo suspenso.",
       "link": "https://clube-livro-api-34owu4acjq-uc.a.run.app/health"
     },
     {
@@ -174,7 +174,7 @@
         "Notificações, denúncias e moderação",
         "Histórico de auditoria, aceites de convites e comprovantes de aceite legal"
       ],
-      "detalhe": "Região us-central1. A migration aditiva 025 foi aplicada após backup privado. O papel da API pode inserir e consultar o comprovante de aceite, com horário do banco e sem permissão de edição ou exclusão. Conector autenticado, backups gerenciados, proteção contra exclusão e crescimento automático de disco desligado. A fotografia da migração original permanece como recuperação histórica.",
+      "detalhe": "Região us-central1. As migrations 025 e 026 foram aplicadas após backups privados. O papel da API registra aceites e pode marcar um clube como excluído. A exclusão revoga os vínculos e convites, preservando os registros históricos. Conector autenticado, backups gerenciados, proteção contra exclusão e crescimento automático de disco desligado. A fotografia da migração original permanece como recuperação histórica.",
       "link": "https://console.cloud.google.com/sql/instances/clube-livro-postgres/overview?project=gen-lang-client-0194308411"
     },
     {
@@ -280,7 +280,7 @@
     { "o_que": "Nome, @usuário, biografia e privacidade do perfil", "onde": "banco", "privacidade": "Público por escolha; perfil privado tem cartão mínimo autenticado. Conteúdo pessoal só do titular ou seguidores aprovados. Clube exige sua associação própria; bloqueios e suspensão são revalidados.", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Biblioteca, progresso, marcadores e notas da conta", "onde": "banco", "privacidade": "Privado do titular", "copia": "Backup JSON pessoal e persistência no banco; arquivos originais não entram no JSON; PRs 31/33 salvam posição em segundo plano, sem bloquear viradas, e preservam a origem dos trechos selecionados em páginas/rolagem" },
     { "o_que": "Aparência do app e controles do leitor", "onde": "banco", "privacidade": "Preferência do titular: com conta, sincronizada; visitante, somente local", "copia": "Preferências no navegador e, com conta, no banco. coverBackdrop opcional salvo pela API e recuperado em outro contexto de navegador em produção; controles do leitor continuam separados. PR 27 publicado: gestos, animação, fundo e espaçamento do leitor persistem no mesmo mecanismo, com prévia imediata." },
-    { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Metadados de descoberta por escolha do clube; membros e gestão conforme papel; convites restritos aos autorizados", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
+    { "o_que": "Clubes, membros, convites e papéis", "onde": "banco", "privacidade": "Metadados de descoberta por escolha do clube. Membros podem sair. Excluir o clube remove o acesso, a descoberta e os convites; a ação é registrada para auditoria.", "copia": "Cloud SQL com backups privados. A exclusão lógica preserva os registros históricos." },
     { "o_que": "Mural, fórum, encontros e álbuns dos clubes", "onde": "banco", "privacidade": "Só membros ativos", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Publicações e comentários da comunidade", "onde": "banco", "privacidade": "Perfil público: conteúdo disponível conforme bloqueios e moderação. Perfil privado: titular e seguidores aprovados, sem permitir cópia para alcance público. Contadores, descoberta, denúncias e mídia respeitam a mesma autorização.", "copia": "Cloud SQL, com sete backups gerenciados e cópia privada da migração" },
     { "o_que": "Notificações", "onde": "banco", "privacidade": "Privado do destinatário", "copia": "Manutenção da API e executor Google com limpeza autenticada em lotes, mantendo a retenção do app" },
@@ -421,7 +421,8 @@
       "data": "2026-11-24",
       "autor": "Codex",
       "titulo": "Exclusão de clubes por proprietários e administradores",
-      "resumo": "A candidata 1.6 acrescenta exclusão com confirmação na administração do clube. A operação desativa vínculos, revoga convites, retira o clube da descoberta e registra a ação. A saída individual dos membros permanece disponível."
+      "resumo": "A versão 1.6 foi publicada nos dois sites. Staging local validou a saída de um membro, o cancelamento e a confirmação da exclusão por um administrador. A exclusão desativa vínculos, revoga convites, retira o clube da descoberta e registra a ação. Migration 026 aplicada após backup, com zero clubes existentes marcados no deploy e sem ampliar os privilégios do runtime. Também foi restabelecida a rota do chat no build do site.",
+      "pr": "https://github.com/layonlad/Aplica-o-Clube-do-Livro/pull/69"
     },
     {
       "data": "2026-11-24",

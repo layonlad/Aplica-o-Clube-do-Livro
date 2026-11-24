@@ -65,6 +65,7 @@ Para mudanças somente de frontend, compare o backend de main com a versão da A
 2. Com autorização para o escopo, aplicar migrations/grants como proprietário, somente quando necessários, preservando recuperação.
 3. Construir o commit aprovado no Cloud Build e atualizar API/executor pelo digest. Preservar identidades, mounts, SQL, limites e IAM; conferir saúde e autorização antes do frontend.
 4. Preparar `.env.production.local` privado com a configuração pública do app novo e a URL da API. O build recusa emulador e API indisponível.
+   Enquanto o servidor oferecer chat nos clubes, manter `VITE_CLUB_CHAT_ENABLED=true` no build de produção.
 5. Publicar Hosting no projeto novo e, enquanto necessário para os dados locais, no endereço de compatibilidade. Cada projeto exige a conta proprietária correspondente.
 6. Validar publicação, Scheduler e dados sintéticos controlados; atualizar versões reais no mapa.
 
