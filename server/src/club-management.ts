@@ -181,6 +181,28 @@ export class ClubManagement {
       )
     })
   }
+  removeClub(user: UserProfile, clubId: string) {
+    return transaction(this.pool, async (client) => {
+      const club = await authorize(client, clubId, user.id)
+      assertCapability(club.role, 'deleteClub')
+      await client.query('UPDATE clubs SET deleted_at=now() WHERE id=$1', [clubId])
+      await client.query(
+        "UPDATE club_memberships SET status='removed',removed_at=now() WHERE club_id=$1 AND status='active'",
+        [clubId],
+      )
+      await client.query('UPDATE invites SET revoked_at=now() WHERE club_id=$1 AND revoked_at IS NULL', [
+        clubId,
+      ])
+      await client.query(
+        "UPDATE club_settings SET visibility='private',cover_is_public=false,version=version+1,updated_at=now() WHERE club_id=$1",
+        [clubId],
+      )
+      await client.query(
+        "INSERT INTO audit_logs(club_id,actor_user_id,action,entity_id) VALUES($1,$2,'club.deleted',$1)",
+        [clubId, user.id],
+      )
+    })
+  }
   requestJoin(user: UserProfile, clubId: string, message: string) {
     return transaction(this.pool, async (client) => {
       await client.query('SELECT id FROM clubs WHERE id=$1 FOR UPDATE', [clubId])

@@ -13,10 +13,12 @@ export function ClubSettingsPanel({
   clubId,
   role,
   onUpdated,
+  onDeleted,
 }: {
   clubId: string
   role: Role
   onUpdated: () => void
+  onDeleted: () => void
 }) {
   const { user } = useAuth(),
     [open, setOpen] = useState(false),
@@ -26,12 +28,14 @@ export function ClubSettingsPanel({
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false),
     [revision, setRevision] = useState(0)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const manager = role === 'owner' || role === 'admin'
   useEffect(() => {
     let live = true
     setSettings(null)
     setRequests({ items: [], nextCursor: null })
     setError('')
+    setConfirmDelete(false)
     if (!open || !manager) return
     Promise.all([
       apiRequest<ClubSettings>(user!, `/clubs/${clubId}/settings`),
@@ -49,6 +53,18 @@ export function ClubSettingsPanel({
     }
   }, [clubId, user?.uid, user?.emailVerified, manager, open, revision])
   if (!manager) return null
+  async function removeClub() {
+    setBusy(true)
+    setError('')
+    try {
+      await apiRequest(user!, `/clubs/${clubId}`, 'DELETE')
+      onDeleted()
+    } catch (err) {
+      setError(readableError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
   async function save(event: FormEvent) {
     event.preventDefault()
     setBusy(true)
@@ -253,6 +269,26 @@ export function ClubSettingsPanel({
               </Button>
             )}
           </div>
+          <section aria-labelledby="club-delete-title">
+            <h3 id="club-delete-title">Excluir clube</h3>
+            {confirmDelete ? (
+              <>
+                <p>Todos os participantes perderão o acesso ao clube e ao seu conteúdo. Os convites deixarão de funcionar. Não é possível reabrir o clube pelo app.</p>
+                <div className="access-actions">
+                  <Button variant="danger" disabled={busy} onClick={() => void removeClub()}>
+                    {busy ? 'Excluindo…' : 'Confirmar exclusão do clube'}
+                  </Button>
+                  <Button variant="ghost" disabled={busy} onClick={() => setConfirmDelete(false)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <Button variant="danger" disabled={busy} onClick={() => setConfirmDelete(true)}>
+                Excluir clube
+              </Button>
+            )}
+          </section>
         </div>
       )}
     </Card>

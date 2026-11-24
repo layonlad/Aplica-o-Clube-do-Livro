@@ -74,9 +74,10 @@ export function InvitePage() {
     <Link to="/app/clubs">Voltar para meus clubes</Link></Card></Shell>
 }
 
-export function ClubPage() {
+export function ClubPage({ onClubDeleted }: { onClubDeleted?: (clubId: string) => void }) {
   const { user } = useAuth()
   const { clubId } = useParams()
+  const navigate = useNavigate()
   const [details, setDetails] = useState<ClubDetails | null>(null)
   const [invites, setInvites] = useState<Invite[]>([])
   const [error, setError] = useState('')
@@ -139,7 +140,10 @@ export function ClubPage() {
         return <li key={invite.id}><div><strong>{invite.email || 'Convite para o grupo'}</strong><small>{invite.uses}/{invite.maxUses} usos · {invite.revokedAt ? 'Revogado' : new Date(invite.expiresAt).getTime() <= Date.now() ? 'Expirado' : `Válido até ${new Date(invite.expiresAt).toLocaleDateString('pt-BR')}`}</small></div>{available && <Button disabled={busy} variant="ghost" onClick={() => action(async () => { await apiRequest(user!, `/clubs/${clubId}/invites/${invite.id}`, 'DELETE'); setInviteLink(''); setMessage('Convite revogado.') })}>Revogar</Button>}</li>
       })}</ul></Card></>}
       {details.club.role!=='owner'&&<LeaveClub clubId={clubId!}/>}
-      <ClubSettingsPanel clubId={clubId!} role={details.club.role} onUpdated={()=>setReload(v=>v+1)}/>
+      <ClubSettingsPanel clubId={clubId!} role={details.club.role} onUpdated={()=>setReload(v=>v+1)} onDeleted={()=>{
+        onClubDeleted?.(details.club.id)
+        navigate('/clubs', { replace: true })
+      }}/>
       <Card><h2>O espaço do seu clube</h2><p>Acesse a biblioteca compartilhada, as leituras, os encontros, as conversas e as indicações deste grupo.</p><Link className="button-link" to={`/space/${clubId}`}>Abrir aplicativo neste clube →</Link></Card>
     </>}
   </Shell>

@@ -175,6 +175,13 @@ function ProfileRoute(){return <ProfileTab/>}
 function OpenCurrentReading(){const {snapshot}=useWorkspace();const book=snapshot?.state.books.find(book=>book.id===snapshot.state.currentBookId)??snapshot?.state.books.find(book=>(snapshot.reading[book.id]?.percent??0)<100);return <Navigate to={book?`/app/reader/${book.id}`:'/app/library'} replace/>}
 /** Abre o espaço de um clube; com ?post=<id> vai direto para a publicação no mural (link vindo de perfis). */
 function OpenClub(){const {clubId}=useParams();const [params]=useSearchParams();const post=params.get('post');const {setScope}=useWorkspace();const navigate=useNavigate();useEffect(()=>{if(clubId){setScope(clubId);navigate(post&&/^[0-9a-f-]{36}$/i.test(post)?`/app/wall?post=${post}`:'/app',{replace:true})}},[clubId,post,setScope,navigate]);return <p role="status">Abrindo espaço do clube…</p>}
+function ManageClubRoute() {
+  const { scope, setScope, refresh } = useWorkspace()
+  return <ClubPage onClubDeleted={clubId => {
+    if (scope === clubId) setScope('personal')
+    else void refresh(true)
+  }} />
+}
 export function WorkspaceRoutes({ accountId }: { accountId: string }) {
   return <ThemeProvider key={accountId} accountId={accountId}>
     <WorkspaceProvider>
@@ -213,7 +220,7 @@ export function WorkspaceRoutes({ accountId }: { accountId: string }) {
           <Route path="admin" element={<Navigate to="/clubs" replace />} />
         </Route>
         <Route path="/clubs" element={<Navigate to="/app/clubs" replace />} />
-        <Route path="/clubs/:clubId" element={<ClubPage />} />
+        <Route path="/clubs/:clubId" element={<ManageClubRoute />} />
         <Route path="/invite" element={<InvitePage />} />
         <Route path="/space/:clubId" element={<OpenClub />} />
         <Route path="*" element={<Navigate to="/app" replace />} />

@@ -151,6 +151,10 @@ export async function buildApp(options: { pool: Pool; verifyToken: VerifyToken; 
       return reply.code(201).send(club)
     })
     api.get('/clubs/:clubId', (request) => service.details(request.user, clubParams.parse(request.params).clubId))
+    api.delete('/clubs/:clubId', async (request, reply) => {
+      await management.removeClub(request.user, clubParams.parse(request.params).clubId)
+      return reply.code(204).send()
+    })
     api.get('/clubs/:clubId/members',request=>service.members(request.user,clubParams.parse(request.params).clubId,pageInput.extend({q:z.string().trim().min(2).max(100).optional()}).strict().parse(request.query)))
     api.get('/clubs/:clubId/invites', (request) => service.listInvites(request.user, clubParams.parse(request.params).clubId))
     api.post('/clubs/:clubId/invites', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (request, reply) => {

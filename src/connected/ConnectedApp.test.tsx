@@ -30,7 +30,28 @@ describe('acesso conectado', () => {
     expect(await screen.findByRole('heading', { name: 'Clube real' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Criar convite' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Remover' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Excluir clube' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sair deste clube' })).toBeInTheDocument()
     expect(apiRequest).toHaveBeenCalledTimes(1)
+  })
+  it('exige confirmação antes de excluir o clube e retorna à lista', async () => {
+    const user = userEvent.setup()
+    vi.mocked(apiRequest).mockImplementation(async (_user, path) => {
+      if (path === '/clubs/club') return { club: { id: 'club', name: 'Clube real', role: 'admin' }, members: [] }
+      if (path === '/clubs/club/invites') return []
+      if (path === '/clubs/club/settings') return { name: 'Clube real', description: '', accent: '#6e477c', visibility: 'private', version: 0 }
+      if (path === '/clubs/club/join-requests') return { items: [], nextCursor: null }
+      return { clubs: [] }
+    })
+    open('/clubs/club')
+    await user.click(await screen.findByRole('button', { name: 'Configurações e solicitações' }))
+    await user.click(screen.getByRole('button', { name: 'Excluir clube' }))
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(apiRequest).not.toHaveBeenCalledWith(state.user, '/clubs/club', 'DELETE')
+    await user.click(screen.getByRole('button', { name: 'Excluir clube' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar exclusão do clube' }))
+    expect(apiRequest).toHaveBeenCalledWith(state.user, '/clubs/club', 'DELETE')
+    expect(await screen.findByRole('heading', { name: 'Seus clubes' })).toBeInTheDocument()
   })
   it('mantém o convite na tela e informa falha sem simular sucesso', async () => {
     const user = userEvent.setup()

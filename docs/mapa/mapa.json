@@ -57,7 +57,7 @@
       "id": "staging",
       "nome": "Staging (localhost)",
       "url": "http://localhost:5174",
-      "versao": "Ensaio local da versão 1.5, já promovida. A central avançada segue no PR 62.",
+      "versao": "Candidata 1.6: exclusão administrativa de clubes, com a saída de membros existente. A central avançada segue no PR 62.",
       "atualizacao": "Iniciar com npm run staging e testar antes da promoção aprovada",
       "tom": "neutro"
     },
@@ -417,6 +417,12 @@
     }
   ],
   "atualizacoes": [
+    {
+      "data": "2026-11-24",
+      "autor": "Codex",
+      "titulo": "Exclusão de clubes por proprietários e administradores",
+      "resumo": "A candidata 1.6 acrescenta exclusão com confirmação na administração do clube. A operação desativa vínculos, revoga convites, retira o clube da descoberta e registra a ação. A saída individual dos membros permanece disponível."
+    },
     {
       "data": "2026-11-24",
       "autor": "Codex",

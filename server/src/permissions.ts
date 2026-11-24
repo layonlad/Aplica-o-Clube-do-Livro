@@ -2,6 +2,7 @@ import type { Role } from './contracts.js'
 import { forbidden } from './errors.js'
 export type ClubCapability =
   | 'configure'
+  | 'deleteClub'
   | 'invite'
   | 'manageMembers'
   | 'assignRoles'
