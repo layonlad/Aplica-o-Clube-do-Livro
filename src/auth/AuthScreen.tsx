@@ -83,7 +83,7 @@ export function AuthScreen() {
 }
 
 export function VerifyEmailScreen() {
-  const { user, signOut } = useAuth()
+  const { user, signOut, retry } = useAuth()
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   async function verify(resend: boolean) {
@@ -91,7 +91,15 @@ export function VerifyEmailScreen() {
     setBusy(true); setMessage('')
     try {
       if (resend) { await sendEmailVerification(user); setMessage('Mensagem enviada. Confira também a pasta de spam.') }
-      else { await user.reload(); await user.getIdToken(true); if (!user.emailVerified) setMessage('Seu e-mail ainda não foi confirmado.') }
+      else {
+        await user.reload()
+        if (!user.emailVerified) {
+          setMessage('Seu e-mail ainda não foi confirmado.')
+          return
+        }
+        await user.getIdToken(true)
+        retry()
+      }
     } catch (err) { setMessage(readableError(err)) }
     finally { setBusy(false) }
   }

@@ -142,7 +142,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     retry: () => {
       if (session.status === 'error' && session.operation === 'sign-out') void signOut().catch(() => {})
-      else void validate(auth.currentUser, true)
+      else {
+        // A manual retry after refreshing the token must supersede a check using the old token.
+        validating.current = null
+        void validate(auth.currentUser, true)
+      }
     },
   }}>{children}</Context.Provider>
 }

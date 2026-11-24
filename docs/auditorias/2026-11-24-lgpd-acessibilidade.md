@@ -55,4 +55,4 @@ A referência é WCAG 2.2 AA. Foram revistos contraste, foco, rótulos, ordem do
 
 - Chrome e Playwright conferiram 320, 375, 430 e 1280 px sem rolagem horizontal. O fluxo de aceite foi exercitado com foco por Tab, acionamento por Espaço e link de salto para o conteúdo.
 - O axe-core 4.14.1 não apontou violações automáticas nas 13 verificações, cobrindo cadastro claro e escuro, Política, Termos, Formulário, aceite, Início, Biblioteca, Explorar, Comunidade, Clubes, Notificações e Configurações. Algumas regras exigem avaliação manual e ficam fora dessa contagem.
-- Passaram 132 testes de frontend, 59 unitários da API e 98 integrações com PostgreSQL e Firestore emulado. A suíte local pulou um teste de vídeo que requer codecs. O build distribui os textos de licença das fontes e dos ícones.
+- Passaram 133 testes de frontend, 59 unitários da API e 98 integrações com PostgreSQL e Firestore emulado. A suíte local pulou um teste de vídeo que requer codecs. O build distribui os textos de licença das fontes e dos ícones.
